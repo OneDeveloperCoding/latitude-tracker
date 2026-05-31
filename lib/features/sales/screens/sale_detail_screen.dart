@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../buyers/models/buyer_address.dart';
+import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+import 'new_sale_screen.dart';
 
 class SaleDetailScreen extends StatelessWidget {
   final String saleId;
@@ -21,6 +25,18 @@ class SaleDetailScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text(sale?.buyerName ?? 'Sale'),
+            actions: [
+              if (sale != null)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NewSaleScreen(sale: sale),
+                    ),
+                  ),
+                ),
+            ],
           ),
           body: sale == null
               ? const Center(child: CircularProgressIndicator())
@@ -189,7 +205,13 @@ class _SaleDetailBody extends StatelessWidget {
               ),
               if (sale.shipment.type == DeliveryType.shipping) ...[
                 const SizedBox(height: 8),
-                if (sale.shipment.postalCode != null)
+                if (sale.shipment.addressId != null)
+                  _AddressDisplay(
+                    buyerId: sale.buyerId,
+                    addressId: sale.shipment.addressId!,
+                    postalCode: sale.shipment.postalCode,
+                  )
+                else if (sale.shipment.postalCode != null)
                   _InfoRow(
                     icon: Icons.location_on,
                     text: sale.shipment.postalCode!,
@@ -289,12 +311,66 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
       children: [
         const Icon(Icons.local_shipping, size: 16),
         const SizedBox(width: 8),
-        Expanded(child: Text(_controller.text)),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _openCttTracking(_controller.text),
+            child: Text(
+              _controller.text,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
         IconButton(
           icon: const Icon(Icons.edit, size: 16),
           onPressed: () => setState(() => _editing = true),
         ),
       ],
+    );
+  }
+
+  Future<void> _openCttTracking(String code) async {
+    final uri = Uri.parse(
+      'https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?codObjeto=$code',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+}
+
+class _AddressDisplay extends StatelessWidget {
+  final String buyerId;
+  final String addressId;
+  final String? postalCode;
+
+  const _AddressDisplay({
+    required this.buyerId,
+    required this.addressId,
+    this.postalCode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<BuyerAddress>>(
+      stream: BuyerRepository().watchAddresses(buyerId),
+      builder: (context, snapshot) {
+        final address = snapshot.data
+            ?.where((a) => a.id == addressId)
+            .firstOrNull;
+        if (address == null) {
+          return postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: postalCode!)
+              : const SizedBox.shrink();
+        }
+        return _InfoRow(
+          icon: Icons.location_on,
+          text:
+              '${address.street}, ${address.postalCode} ${address.city}, ${address.country}',
+        );
+      },
     );
   }
 }

@@ -6,7 +6,27 @@ import '../repositories/sale_repository.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
-enum _SaleFilter { all, unpaid, pendingShipment, assemblyNotReady }
+enum _SaleFilter {
+  all,
+  unpaid,
+  nifRequired,
+  pendingShipment,
+  shipped,
+  pickup,
+  assemblyNotReady,
+}
+
+extension _SaleFilterLabel on _SaleFilter {
+  String get label => switch (this) {
+        _SaleFilter.all => 'All',
+        _SaleFilter.unpaid => 'Unpaid',
+        _SaleFilter.nifRequired => 'NIF required',
+        _SaleFilter.pendingShipment => 'Pending shipment',
+        _SaleFilter.shipped => 'Shipped',
+        _SaleFilter.pickup => 'Pickup',
+        _SaleFilter.assemblyNotReady => 'Assembly not ready',
+      };
+}
 
 class SalesListScreen extends StatefulWidget {
   const SalesListScreen({super.key});
@@ -18,13 +38,24 @@ class SalesListScreen extends StatefulWidget {
 class _SalesListScreenState extends State<SalesListScreen> {
   final _repository = SaleRepository();
   _SaleFilter _filter = _SaleFilter.all;
+  bool _timelineView = false;
 
   List<Sale> _applyFilter(List<Sale> sales) => switch (_filter) {
         _SaleFilter.all => sales,
         _SaleFilter.unpaid =>
           sales.where((s) => s.payment.status == PaymentStatus.unpaid).toList(),
+        _SaleFilter.nifRequired =>
+          sales.where((s) => s.requiresNif).toList(),
         _SaleFilter.pendingShipment => sales
-            .where((s) => s.shipment.status != ShipmentStatus.delivered)
+            .where((s) =>
+                s.shipment.type == DeliveryType.shipping &&
+                s.shipment.status == ShipmentStatus.pending)
+            .toList(),
+        _SaleFilter.shipped => sales
+            .where((s) => s.shipment.status == ShipmentStatus.shipped)
+            .toList(),
+        _SaleFilter.pickup => sales
+            .where((s) => s.shipment.type == DeliveryType.pickup)
             .toList(),
         _SaleFilter.assemblyNotReady => sales
             .where((s) => s.assemblyStatus != AssemblyStatus.ready)
@@ -34,7 +65,16 @@ class _SalesListScreenState extends State<SalesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales')),
+      appBar: AppBar(
+        title: const Text('Sales'),
+        actions: [
+          IconButton(
+            icon: Icon(_timelineView ? Icons.list : Icons.calendar_view_week),
+            tooltip: _timelineView ? 'List view' : 'Timeline view',
+            onPressed: () => setState(() => _timelineView = !_timelineView),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
@@ -48,34 +88,17 @@ class _SalesListScreenState extends State<SalesListScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All',
-                  selected: _filter == _SaleFilter.all,
-                  onSelected: () => setState(() => _filter = _SaleFilter.all),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Unpaid',
-                  selected: _filter == _SaleFilter.unpaid,
-                  onSelected: () =>
-                      setState(() => _filter = _SaleFilter.unpaid),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Pending shipment',
-                  selected: _filter == _SaleFilter.pendingShipment,
-                  onSelected: () =>
-                      setState(() => _filter = _SaleFilter.pendingShipment),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Assembly not ready',
-                  selected: _filter == _SaleFilter.assemblyNotReady,
-                  onSelected: () =>
-                      setState(() => _filter = _SaleFilter.assemblyNotReady),
-                ),
-              ],
+              children: _SaleFilter.values
+                  .map((f) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(f.label),
+                          selected: _filter == f,
+                          onSelected: (_) =>
+                              setState(() => _filter = f),
+                        ),
+                      ))
+                  .toList(),
             ),
           ),
           Expanded(
@@ -92,16 +115,90 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 if (sales.isEmpty) {
                   return const Center(child: Text('No sales found.'));
                 }
-                return ListView.builder(
-                  itemCount: sales.length,
-                  itemBuilder: (context, index) =>
-                      _SaleTile(sale: sales[index]),
-                );
+                return _timelineView
+                    ? _TimelineView(sales: sales)
+                    : _ListView(sales: sales);
               },
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ListView extends StatelessWidget {
+  final List<Sale> sales;
+
+  const _ListView({required this.sales});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: sales.length,
+      itemBuilder: (context, index) => _SaleTile(sale: sales[index]),
+    );
+  }
+}
+
+class _TimelineView extends StatelessWidget {
+  final List<Sale> sales;
+
+  const _TimelineView({required this.sales});
+
+  Map<String, List<Sale>> _groupByWeek(List<Sale> sales) {
+    final now = DateTime.now();
+    final Map<String, List<Sale>> groups = {};
+
+    for (final sale in sales) {
+      final label = _weekLabel(sale.createdAt, now);
+      groups.putIfAbsent(label, () => []).add(sale);
+    }
+    return groups;
+  }
+
+  String _weekLabel(DateTime date, DateTime now) {
+    final startOfThisWeek =
+        now.subtract(Duration(days: now.weekday - 1));
+    final startOfLastWeek =
+        startOfThisWeek.subtract(const Duration(days: 7));
+
+    if (date.isAfter(startOfThisWeek.subtract(const Duration(seconds: 1)))) {
+      return 'This week';
+    }
+    if (date.isAfter(startOfLastWeek.subtract(const Duration(seconds: 1)))) {
+      return 'Last week';
+    }
+    return DateFormat('MMMM yyyy').format(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = _groupByWeek(sales);
+    final keys = groups.keys.toList();
+
+    return ListView.builder(
+      itemCount: keys.length,
+      itemBuilder: (context, index) {
+        final label = keys[index];
+        final groupSales = groups[label]!;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ),
+            ...groupSales.map((s) => _SaleTile(sale: s)),
+            const Divider(height: 1),
+          ],
+        );
+      },
     );
   }
 }
@@ -114,9 +211,20 @@ class _SaleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd MMM');
+    final isPickup = sale.shipment.type == DeliveryType.pickup;
 
     return ListTile(
-      title: Text(sale.buyerName),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(sale.buyerName, overflow: TextOverflow.ellipsis),
+          ),
+          if (sale.requiresNif) ...[
+            const SizedBox(width: 4),
+            _MiniChip(label: 'NIF', color: Colors.purple),
+          ],
+        ],
+      ),
       subtitle: Text(
         sale.itemDescription,
         maxLines: 1,
@@ -140,19 +248,22 @@ class _SaleTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _MiniChip(
-            label: sale.payment.status == PaymentStatus.paid ? 'Paid' : 'Unpaid',
+            label:
+                sale.payment.status == PaymentStatus.paid ? 'Paid' : 'Unpaid',
             color: sale.payment.status == PaymentStatus.paid
                 ? Colors.green
                 : Colors.orange,
           ),
           const SizedBox(height: 4),
           _MiniChip(
-            label: sale.shipment.status.label,
-            color: sale.shipment.status == ShipmentStatus.delivered
-                ? Colors.green
-                : sale.shipment.status == ShipmentStatus.shipped
-                    ? Colors.blue
-                    : Colors.grey,
+            label: isPickup ? '📦 Pickup' : sale.shipment.status.label,
+            color: isPickup
+                ? Colors.teal
+                : sale.shipment.status == ShipmentStatus.delivered
+                    ? Colors.green
+                    : sale.shipment.status == ShipmentStatus.shipped
+                        ? Colors.blue
+                        : Colors.grey,
           ),
         ],
       ),
@@ -162,27 +273,6 @@ class _SaleTile extends StatelessWidget {
           builder: (_) => SaleDetailScreen(saleId: sale.id),
         ),
       ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
     );
   }
 }
