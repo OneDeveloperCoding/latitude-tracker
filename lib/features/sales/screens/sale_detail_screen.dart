@@ -1,12 +1,383 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../models/sale.dart';
+import '../repositories/sale_repository.dart';
 
 class SaleDetailScreen extends StatelessWidget {
-  const SaleDetailScreen({super.key});
+  final String saleId;
+
+  const SaleDetailScreen({super.key, required this.saleId});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Sale Detail — coming soon')),
+    final repository = SaleRepository();
+
+    return StreamBuilder<Sale?>(
+      stream: repository.watchSale(saleId),
+      builder: (context, snapshot) {
+        final sale = snapshot.data;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(sale?.buyerName ?? 'Sale'),
+          ),
+          body: sale == null
+              ? const Center(child: CircularProgressIndicator())
+              : _SaleDetailBody(sale: sale, repository: repository),
+        );
+      },
+    );
+  }
+}
+
+class _SaleDetailBody extends StatelessWidget {
+  final Sale sale;
+  final SaleRepository repository;
+
+  const _SaleDetailBody({required this.sale, required this.repository});
+
+  Future<void> _update(BuildContext context, Sale updated) async {
+    try {
+      await repository.updateSale(updated);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('dd MMM yyyy');
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _InfoCard(children: [
+          _InfoRow(
+            icon: Icons.calendar_today,
+            text: dateFormat.format(sale.createdAt),
+          ),
+          _InfoRow(
+            icon: Icons.description,
+            text: sale.itemDescription,
+          ),
+          _InfoRow(
+            icon: Icons.euro,
+            text: '€${sale.price.toStringAsFixed(2)}',
+          ),
+          if (sale.requiresNif)
+            const _InfoRow(icon: Icons.badge, text: 'NIF receipt required'),
+        ]),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Assembly',
+          child: DropdownButton<AssemblyStatus>(
+            value: sale.assemblyStatus,
+            isExpanded: true,
+            underline: const SizedBox(),
+            items: AssemblyStatus.values
+                .map((s) => DropdownMenuItem(value: s, child: Text(s.label)))
+                .toList(),
+            onChanged: (v) => _update(
+              context,
+              sale.copyWith(assemblyStatus: v),
+            ),
+          ),
+        ),
+        if (sale.components.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: 'Components',
+            child: Column(
+              children: sale.components.map((c) {
+                return CheckboxListTile(
+                  dense: true,
+                  title: Text(c.name),
+                  subtitle:
+                      Text(c.isAvailable ? 'Have it' : 'Need to buy'),
+                  value: c.isAvailable,
+                  onChanged: (_) {
+                    final updated = sale.components
+                        .map((item) => item.id == c.id
+                            ? item.copyWith(isAvailable: !item.isAvailable)
+                            : item)
+                        .toList();
+                    _update(context, sale.copyWith(components: updated));
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Payment',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(sale.payment.method.label),
+                  _StatusChip(
+                    label: sale.payment.status == PaymentStatus.paid
+                        ? 'Paid'
+                        : 'Unpaid',
+                    color: sale.payment.status == PaymentStatus.paid
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Mark as paid'),
+                value: sale.payment.status == PaymentStatus.paid,
+                onChanged: (v) => _update(
+                  context,
+                  sale.copyWith(
+                    payment: sale.payment.copyWith(
+                      status:
+                          v ? PaymentStatus.paid : PaymentStatus.unpaid,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Delivery',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(sale.shipment.type == DeliveryType.shipping
+                      ? 'Shipping'
+                      : 'In-person pickup'),
+                  _StatusChip(
+                    label: sale.shipment.status.label,
+                    color: sale.shipment.status == ShipmentStatus.delivered
+                        ? Colors.green
+                        : sale.shipment.status == ShipmentStatus.shipped
+                            ? Colors.blue
+                            : Colors.orange,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              DropdownButton<ShipmentStatus>(
+                value: sale.shipment.status,
+                isExpanded: true,
+                underline: const SizedBox(),
+                items: _availableStatuses(sale.shipment)
+                    .map((s) =>
+                        DropdownMenuItem(value: s, child: Text(s.label)))
+                    .toList(),
+                onChanged: (v) => _update(
+                  context,
+                  sale.copyWith(shipment: sale.shipment.copyWith(status: v)),
+                ),
+              ),
+              if (sale.shipment.type == DeliveryType.shipping) ...[
+                const SizedBox(height: 8),
+                if (sale.shipment.postalCode != null)
+                  _InfoRow(
+                    icon: Icons.location_on,
+                    text: sale.shipment.postalCode!,
+                  ),
+                _TrackingCodeField(
+                  initialValue: sale.shipment.trackingCode ?? '',
+                  onSave: (code) => _update(
+                    context,
+                    sale.copyWith(
+                        shipment: sale.shipment.copyWith(
+                      trackingCode: code.isEmpty ? null : code,
+                    )),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
+  List<ShipmentStatus> _availableStatuses(SaleShipment shipment) {
+    if (shipment.type == DeliveryType.pickup) {
+      return [ShipmentStatus.pending, ShipmentStatus.delivered];
+    }
+    return ShipmentStatus.values;
+  }
+}
+
+class _TrackingCodeField extends StatefulWidget {
+  final String initialValue;
+  final ValueChanged<String> onSave;
+
+  const _TrackingCodeField({
+    required this.initialValue,
+    required this.onSave,
+  });
+
+  @override
+  State<_TrackingCodeField> createState() => _TrackingCodeFieldState();
+}
+
+class _TrackingCodeFieldState extends State<_TrackingCodeField> {
+  late final TextEditingController _controller;
+  bool _editing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_editing && _controller.text.isEmpty) {
+      return TextButton.icon(
+        onPressed: () => setState(() => _editing = true),
+        icon: const Icon(Icons.add),
+        label: const Text('Add CTT tracking code'),
+      );
+    }
+
+    if (_editing) {
+      return Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'CTT tracking code',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: () {
+              widget.onSave(_controller.text.trim());
+              setState(() => _editing = false);
+            },
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        const Icon(Icons.local_shipping, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(_controller.text)),
+        IconButton(
+          icon: const Icon(Icons.edit, size: 16),
+          onPressed: () => setState(() => _editing = true),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _SectionCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    )),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _InfoCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: children),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      label: Text(label,
+          style: const TextStyle(color: Colors.white, fontSize: 12)),
+      backgroundColor: color,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+      visualDensity: VisualDensity.compact,
     );
   }
 }
