@@ -9,7 +9,9 @@ import '../repositories/sale_repository.dart';
 import '../widgets/buyer_picker_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
-  const NewSaleScreen({super.key});
+  final Sale? sale;
+
+  const NewSaleScreen({super.key, this.sale});
 
   @override
   State<NewSaleScreen> createState() => _NewSaleScreenState();
@@ -24,20 +26,59 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   List<BuyerAddress> _buyerAddresses = [];
   BuyerAddress? _selectedAddress;
 
-  final _itemDescController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _trackingCodeController = TextEditingController();
-  final _postalCodeController = TextEditingController();
-  final _newComponentController = TextEditingController();
+  late final TextEditingController _itemDescController;
+  late final TextEditingController _priceController;
+  late final TextEditingController _trackingCodeController;
+  late final TextEditingController _postalCodeController;
+  final TextEditingController _newComponentController = TextEditingController();
 
-  AssemblyStatus _assemblyStatus = AssemblyStatus.notStarted;
-  PaymentMethod _paymentMethod = PaymentMethod.mbWay;
-  PaymentStatus _paymentStatus = PaymentStatus.unpaid;
-  DeliveryType _deliveryType = DeliveryType.shipping;
-  bool _requiresNif = false;
+  late AssemblyStatus _assemblyStatus;
+  late PaymentMethod _paymentMethod;
+  late PaymentStatus _paymentStatus;
+  late DeliveryType _deliveryType;
+  late bool _requiresNif;
+  late List<ComponentItem> _components;
   bool _isLoading = false;
 
-  final List<ComponentItem> _components = [];
+  bool get _isEditing => widget.sale != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final sale = widget.sale;
+    _itemDescController =
+        TextEditingController(text: sale?.itemDescription ?? '');
+    _priceController = TextEditingController(
+        text: sale != null ? sale.price.toStringAsFixed(2) : '');
+    _trackingCodeController =
+        TextEditingController(text: sale?.shipment.trackingCode ?? '');
+    _postalCodeController =
+        TextEditingController(text: sale?.shipment.postalCode ?? '');
+    _assemblyStatus = sale?.assemblyStatus ?? AssemblyStatus.notStarted;
+    _paymentMethod = sale?.payment.method ?? PaymentMethod.mbWay;
+    _paymentStatus = sale?.payment.status ?? PaymentStatus.unpaid;
+    _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
+    _requiresNif = sale?.requiresNif ?? false;
+    _components = List.from(sale?.components ?? []);
+
+    if (_isEditing) _loadBuyerForEdit();
+  }
+
+  Future<void> _loadBuyerForEdit() async {
+    final sale = widget.sale!;
+    final buyer = await _buyerRepository.getBuyer(sale.buyerId);
+    if (buyer == null || !mounted) return;
+    final addresses =
+        await _buyerRepository.watchAddresses(buyer.id).first;
+    final savedAddress = addresses
+        .where((a) => a.id == sale.shipment.addressId)
+        .firstOrNull;
+    setState(() {
+      _selectedBuyer = buyer;
+      _buyerAddresses = addresses;
+      _selectedAddress = savedAddress ?? addresses.firstOrNull;
+    });
+  }
 
   @override
   void dispose() {
@@ -50,18 +91,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   }
 
   Future<void> _pickBuyer() async {
+    if (_isEditing) return;
     final buyer = await Navigator.push<Buyer>(
       context,
       MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
     );
     if (buyer == null) return;
-
-    final addresses = await _buyerRepository
-        .watchAddresses(buyer.id)
-        .first;
-
-    final defaultAddress = addresses.where((a) => a.isDefault).firstOrNull;
-
+    final addresses =
+        await _buyerRepository.watchAddresses(buyer.id).first;
+    final defaultAddress =
+        addresses.where((a) => a.isDefault).firstOrNull;
     setState(() {
       _selectedBuyer = buyer;
       _buyerAddresses = addresses;
@@ -92,9 +131,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     });
   }
 
-  void _removeComponent(int index) {
-    setState(() => _components.removeAt(index));
-  }
+  void _removeComponent(int index) =>
+      setState(() => _components.removeAt(index));
+
+  String? _nullIfEmpty(String value) =>
+      value.trim().isEmpty ? null : value.trim();
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -104,32 +145,53 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       );
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
-      final sale = Sale(
-        id: FirebaseFirestore.instance.collection('_').doc().id,
-        buyerId: _selectedBuyer!.id,
-        buyerName: _selectedBuyer!.name,
-        itemDescription: _itemDescController.text.trim(),
-        price: double.parse(_priceController.text.trim().replaceAll(',', '.')),
-        assemblyStatus: _assemblyStatus,
-        components: _components,
-        payment: SalePayment(status: _paymentStatus, method: _paymentMethod),
-        shipment: SaleShipment(
-          type: _deliveryType,
-          status: ShipmentStatus.pending,
-          trackingCode: _deliveryType == DeliveryType.shipping
-              ? _nullIfEmpty(_trackingCodeController.text)
-              : null,
-          addressId: _selectedAddress?.id,
-          postalCode: _nullIfEmpty(_postalCodeController.text),
-        ),
-        requiresNif: _requiresNif,
-        createdAt: DateTime.now(),
+      final shipment = SaleShipment(
+        type: _deliveryType,
+        status: _isEditing
+            ? widget.sale!.shipment.status
+            : ShipmentStatus.pending,
+        trackingCode: _deliveryType == DeliveryType.shipping
+            ? _nullIfEmpty(_trackingCodeController.text)
+            : null,
+        addressId: _selectedAddress?.id,
+        postalCode: _deliveryType == DeliveryType.shipping
+            ? _nullIfEmpty(_postalCodeController.text)
+            : null,
       );
-      await _saleRepository.createSale(sale);
+
+      if (_isEditing) {
+        final updated = widget.sale!.copyWith(
+          itemDescription: _itemDescController.text.trim(),
+          price: double.parse(
+              _priceController.text.trim().replaceAll(',', '.')),
+          assemblyStatus: _assemblyStatus,
+          components: _components,
+          payment: SalePayment(
+              status: _paymentStatus, method: _paymentMethod),
+          shipment: shipment,
+          requiresNif: _requiresNif,
+        );
+        await _saleRepository.updateSale(updated);
+      } else {
+        final sale = Sale(
+          id: FirebaseFirestore.instance.collection('_').doc().id,
+          buyerId: _selectedBuyer!.id,
+          buyerName: _selectedBuyer!.name,
+          itemDescription: _itemDescController.text.trim(),
+          price: double.parse(
+              _priceController.text.trim().replaceAll(',', '.')),
+          assemblyStatus: _assemblyStatus,
+          components: _components,
+          payment: SalePayment(
+              status: _paymentStatus, method: _paymentMethod),
+          shipment: shipment,
+          requiresNif: _requiresNif,
+          createdAt: DateTime.now(),
+        );
+        await _saleRepository.createSale(sale);
+      }
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -141,14 +203,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
   }
 
-  String? _nullIfEmpty(String value) =>
-      value.trim().isEmpty ? null : value.trim();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Sale'),
+        title: Text(_isEditing ? 'Edit Sale' : 'New Sale'),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -170,15 +229,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             _SectionTitle('Buyer'),
             _BuyerSelector(
               buyer: _selectedBuyer,
+              isEditing: _isEditing,
               onTap: _pickBuyer,
             ),
-            if (_selectedBuyer != null && _buyerAddresses.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _requiresNif
-                  ? Text('NIF: ${_selectedBuyer!.nif ?? 'not saved on profile'}',
-                      style: Theme.of(context).textTheme.bodySmall)
-                  : const SizedBox.shrink(),
-            ],
             const SizedBox(height: 24),
             _SectionTitle('Item'),
             TextFormField(
@@ -190,8 +243,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 hintText: 'e.g. Silver necklace with blue beads',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Description is required' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Description is required'
+                  : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<AssemblyStatus>(
@@ -201,22 +255,26 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 border: OutlineInputBorder(),
               ),
               items: AssemblyStatus.values
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s.label)))
+                  .map((s) =>
+                      DropdownMenuItem(value: s, child: Text(s.label)))
                   .toList(),
               onChanged: (v) => setState(() => _assemblyStatus = v!),
             ),
             const SizedBox(height: 24),
             _SectionTitle('Components needed'),
-            ..._components.asMap().entries.map((entry) => CheckboxListTile(
-                  title: Text(entry.value.name),
-                  subtitle: Text(entry.value.isAvailable ? 'Have it' : 'Need to buy'),
-                  value: entry.value.isAvailable,
-                  onChanged: (_) => _toggleComponent(entry.key),
-                  secondary: IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => _removeComponent(entry.key),
+            ..._components.asMap().entries.map(
+                  (entry) => CheckboxListTile(
+                    title: Text(entry.value.name),
+                    subtitle: Text(
+                        entry.value.isAvailable ? 'Have it' : 'Need to buy'),
+                    value: entry.value.isAvailable,
+                    onChanged: (_) => _toggleComponent(entry.key),
+                    secondary: IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => _removeComponent(entry.key),
+                    ),
                   ),
-                )),
+                ),
             Row(
               children: [
                 Expanded(
@@ -252,7 +310,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 if (v == null || v.trim().isEmpty) return 'Price is required';
                 final parsed =
                     double.tryParse(v.trim().replaceAll(',', '.'));
-                if (parsed == null || parsed <= 0) return 'Enter a valid price';
+                if (parsed == null || parsed <= 0) {
+                  return 'Enter a valid price';
+                }
                 return null;
               },
             ),
@@ -264,8 +324,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 border: OutlineInputBorder(),
               ),
               items: PaymentMethod.values
-                  .map((m) =>
-                      DropdownMenuItem(value: m, child: Text(m.label)))
+                  .map((m) => DropdownMenuItem(
+                      value: m, child: Text(m.label)))
                   .toList(),
               onChanged: (v) => setState(() => _paymentMethod = v!),
             ),
@@ -310,8 +370,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   items: _buyerAddresses
                       .map((a) => DropdownMenuItem(
                             value: a,
-                            child: Text(
-                                '${a.label} — ${a.street}, ${a.city}'),
+                            child: Text('${a.label} — ${a.street}, ${a.city}'),
                           ))
                       .toList(),
                   onChanged: (a) => setState(() {
@@ -321,6 +380,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     }
                   }),
                 ),
+                if (_selectedAddress != null) ...[
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      '${_selectedAddress!.street}, ${_selectedAddress!.postalCode} ${_selectedAddress!.city}, ${_selectedAddress!.country}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
               ],
               TextFormField(
@@ -382,20 +451,27 @@ class _SectionTitle extends StatelessWidget {
 
 class _BuyerSelector extends StatelessWidget {
   final Buyer? buyer;
+  final bool isEditing;
   final VoidCallback onTap;
 
-  const _BuyerSelector({required this.buyer, required this.onTap});
+  const _BuyerSelector({
+    required this.buyer,
+    required this.isEditing,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: isEditing ? null : onTap,
       borderRadius: BorderRadius.circular(4),
       child: InputDecorator(
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Buyer *',
-          border: OutlineInputBorder(),
-          suffixIcon: Icon(Icons.arrow_forward_ios, size: 16),
+          border: const OutlineInputBorder(),
+          suffixIcon: isEditing
+              ? null
+              : const Icon(Icons.arrow_forward_ios, size: 16),
         ),
         child: Text(
           buyer?.name ?? 'Tap to select a buyer',

@@ -72,6 +72,8 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
           createdAt: DateTime.now(),
         );
         await _repository.createBuyer(buyer);
+        if (mounted) Navigator.pop(context, buyer);
+        return;
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../buyers/models/buyer.dart';
 import '../../buyers/repositories/buyer_repository.dart';
+import '../../buyers/screens/buyer_form_screen.dart';
 
 class BuyerPickerScreen extends StatefulWidget {
   const BuyerPickerScreen({super.key});
@@ -31,10 +32,25 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
         .toList();
   }
 
+  Future<void> _createAndPickBuyer() async {
+    final buyer = await Navigator.push<Buyer>(
+      context,
+      MaterialPageRoute(builder: (_) => const BuyerFormScreen()),
+    );
+    if (buyer != null && mounted) {
+      Navigator.pop(context, buyer);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Select Buyer')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _createAndPickBuyer,
+        icon: const Icon(Icons.person_add),
+        label: const Text('New Buyer'),
+      ),
       body: Column(
         children: [
           Padding(
@@ -60,7 +76,9 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
                 }
                 final buyers = _filtered(snapshot.data ?? []);
                 if (buyers.isEmpty) {
-                  return const Center(child: Text('No buyers found.'));
+                  return const Center(
+                    child: Text('No buyers found. Tap + to add one.'),
+                  );
                 }
                 return ListView.builder(
                   itemCount: buyers.length,
