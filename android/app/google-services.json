@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "352952277354",
+    "project_id": "latitude-tracker-f5d03",
+    "storage_bucket": "latitude-tracker-f5d03.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352952277354:android:6ab65b61f1c8635da0ed13",
+        "android_client_info": {
+          "package_name": "com.onedevelopercoding.latitude_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrkWRxaTdMeg_pT7gWho_SmJXP4qxrHo8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
