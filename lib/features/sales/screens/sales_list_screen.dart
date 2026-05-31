@@ -10,6 +10,7 @@ enum _SaleFilter {
   all,
   unpaid,
   nifRequired,
+  scheduled,
   pendingShipment,
   shipped,
   pickup,
@@ -21,6 +22,7 @@ extension _SaleFilterLabel on _SaleFilter {
         _SaleFilter.all => 'All',
         _SaleFilter.unpaid => 'Unpaid',
         _SaleFilter.nifRequired => 'NIF required',
+        _SaleFilter.scheduled => 'Scheduled',
         _SaleFilter.pendingShipment => 'Pending shipment',
         _SaleFilter.shipped => 'Shipped',
         _SaleFilter.pickup => 'Pickup',
@@ -46,6 +48,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
           sales.where((s) => s.payment.status == PaymentStatus.unpaid).toList(),
         _SaleFilter.nifRequired =>
           sales.where((s) => s.requiresNif).toList(),
+        _SaleFilter.scheduled =>
+          sales.where((s) => s.scheduledDate != null).toList(),
         _SaleFilter.pendingShipment => sales
             .where((s) =>
                 s.shipment.type == DeliveryType.shipping &&
@@ -149,27 +153,54 @@ class _TimelineView extends StatelessWidget {
   Map<String, List<Sale>> _groupByWeek(List<Sale> sales) {
     final now = DateTime.now();
     final Map<String, List<Sale>> groups = {};
+    // Preserve order: Overdue → This week → Next week → Later → past months
+    const order = ['Overdue', 'This week', 'Next week', 'Later'];
 
     for (final sale in sales) {
-      final label = _weekLabel(sale.createdAt, now);
+      final label = _weekLabel(sale, now);
       groups.putIfAbsent(label, () => []).add(sale);
     }
-    return groups;
+
+    final sorted = <String, List<Sale>>{};
+    for (final key in order) {
+      if (groups.containsKey(key)) sorted[key] = groups[key]!;
+    }
+    for (final key in groups.keys) {
+      if (!order.contains(key)) sorted[key] = groups[key]!;
+    }
+    return sorted;
   }
 
-  String _weekLabel(DateTime date, DateTime now) {
+  String _weekLabel(Sale sale, DateTime now) {
+    final relevantDate = sale.scheduledDate ?? sale.createdAt;
     final startOfThisWeek =
-        now.subtract(Duration(days: now.weekday - 1));
-    final startOfLastWeek =
-        startOfThisWeek.subtract(const Duration(days: 7));
+        DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: now.weekday - 1));
+    final startOfNextWeek =
+        startOfThisWeek.add(const Duration(days: 7));
+    final endOfNextWeek =
+        startOfNextWeek.add(const Duration(days: 7));
 
-    if (date.isAfter(startOfThisWeek.subtract(const Duration(seconds: 1)))) {
+    // Overdue: has a scheduled date in the past and not yet delivered
+    if (sale.scheduledDate != null &&
+        sale.scheduledDate!.isBefore(startOfThisWeek) &&
+        sale.shipment.status != ShipmentStatus.delivered) {
+      return 'Overdue';
+    }
+    if (relevantDate.isAfter(
+        startOfThisWeek.subtract(const Duration(seconds: 1))) &&
+        relevantDate.isBefore(startOfNextWeek)) {
       return 'This week';
     }
-    if (date.isAfter(startOfLastWeek.subtract(const Duration(seconds: 1)))) {
-      return 'Last week';
+    if (relevantDate.isAfter(
+        startOfNextWeek.subtract(const Duration(seconds: 1))) &&
+        relevantDate.isBefore(endOfNextWeek)) {
+      return 'Next week';
     }
-    return DateFormat('MMMM yyyy').format(date);
+    if (relevantDate.isAfter(endOfNextWeek)) {
+      return 'Later';
+    }
+    return DateFormat('MMMM yyyy').format(relevantDate);
   }
 
   @override
@@ -225,10 +256,23 @@ class _SaleTile extends StatelessWidget {
           ],
         ],
       ),
-      subtitle: Text(
-        sale.itemDescription,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sale.itemDescription,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (sale.scheduledDate != null)
+            Text(
+              '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: Theme.of(context).colorScheme.primary),
+            ),
+        ],
       ),
       leading: Column(
         mainAxisAlignment: MainAxisAlignment.center,
