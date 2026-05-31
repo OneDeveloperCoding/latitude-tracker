@@ -168,6 +168,18 @@ class _SaleDetailBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Scheduled delivery',
+          child: _ScheduledDateField(
+            date: sale.scheduledDate,
+            onChanged: (date) => _update(
+              context,
+              sale.copyWith(scheduledDate: date),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         _SectionCard(
           title: 'Delivery',
           child: Column(
@@ -338,6 +350,50 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+}
+
+class _ScheduledDateField extends StatelessWidget {
+  final DateTime? date;
+  final ValueChanged<DateTime?> onChanged;
+
+  const _ScheduledDateField({required this.date, required this.onChanged});
+
+  Future<void> _pick(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: date ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('EEE, dd MMM yyyy');
+    if (date == null) {
+      return TextButton.icon(
+        onPressed: () => _pick(context),
+        icon: const Icon(Icons.event),
+        label: const Text('Set scheduled date'),
+      );
+    }
+    return Row(
+      children: [
+        const Icon(Icons.event, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(dateFormat.format(date!))),
+        TextButton(
+          onPressed: () => _pick(context),
+          child: const Text('Change'),
+        ),
+        TextButton(
+          onPressed: () => onChanged(null),
+          child: const Text('Clear'),
+        ),
+      ],
+    );
   }
 }
 

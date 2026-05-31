@@ -147,6 +147,7 @@ class Sale {
   final SaleShipment shipment;
   final bool requiresNif;
   final DateTime createdAt;
+  final DateTime? scheduledDate;
 
   const Sale({
     required this.id,
@@ -161,6 +162,7 @@ class Sale {
     required this.shipment,
     required this.requiresNif,
     required this.createdAt,
+    this.scheduledDate,
   });
 
   factory Sale.fromFirestore(DocumentSnapshot doc) {
@@ -181,6 +183,9 @@ class Sale {
       shipment: SaleShipment.fromMap(data['shipment'] as Map<String, dynamic>),
       requiresNif: data['requiresNif'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
+      scheduledDate: data['scheduledDate'] != null
+          ? (data['scheduledDate'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -196,8 +201,11 @@ class Sale {
         'shipment': shipment.toMap(),
         'requiresNif': requiresNif,
         'createdAt': Timestamp.fromDate(createdAt),
+        'scheduledDate':
+            scheduledDate != null ? Timestamp.fromDate(scheduledDate!) : null,
       };
 
+  // scheduledDate uses a sentinel to distinguish "clear to null" from "not provided"
   Sale copyWith({
     String? itemDescription,
     String? photoUrl,
@@ -207,6 +215,7 @@ class Sale {
     SalePayment? payment,
     SaleShipment? shipment,
     bool? requiresNif,
+    Object? scheduledDate = _unset,
   }) =>
       Sale(
         id: id,
@@ -221,5 +230,10 @@ class Sale {
         shipment: shipment ?? this.shipment,
         requiresNif: requiresNif ?? this.requiresNif,
         createdAt: createdAt,
+        scheduledDate: scheduledDate == _unset
+            ? this.scheduledDate
+            : scheduledDate as DateTime?,
       );
 }
+
+const _unset = Object();
