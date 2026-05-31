@@ -410,7 +410,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         if (v == null || v.trim().isEmpty) {
                           return 'Postal code is required';
                         }
-                        if (!RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
+                        final isPortugal =
+                            (_selectedAddress?.country ?? 'Portugal')
+                                    .toLowerCase() ==
+                                'portugal';
+                        if (isPortugal &&
+                            !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
                           return 'Format: 0000-000';
                         }
                         return null;
