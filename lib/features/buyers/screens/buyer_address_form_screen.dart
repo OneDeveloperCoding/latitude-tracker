@@ -162,9 +162,15 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
                 border: OutlineInputBorder(),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Postal code is required';
-                final pattern = RegExp(r'^\d{4}-\d{3}$');
-                if (!pattern.hasMatch(v.trim())) return 'Format: 0000-000';
+                if (v == null || v.trim().isEmpty) {
+                  return 'Postal code is required';
+                }
+                final isPortugal =
+                    _countryController.text.trim().toLowerCase() == 'portugal';
+                if (isPortugal &&
+                    !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
+                  return 'Format: 0000-000';
+                }
                 return null;
               },
             ),

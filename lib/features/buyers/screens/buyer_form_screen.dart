@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/buyer.dart';
+import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
 
 class BuyerFormScreen extends StatefulWidget {
@@ -21,6 +22,14 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   late final TextEditingController _instagramController;
   late final TextEditingController _phoneController;
   late final TextEditingController _nifController;
+
+  // Quick address fields — only shown when creating a new buyer
+  bool _addAddress = false;
+  final _labelController = TextEditingController(text: 'Home');
+  final _streetController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _postalCodeController = TextEditingController();
+  final _countryController = TextEditingController(text: 'Portugal');
 
   bool _isLoading = false;
 
@@ -42,11 +51,21 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
     _instagramController.dispose();
     _phoneController.dispose();
     _nifController.dispose();
+    _labelController.dispose();
+    _streetController.dispose();
+    _cityController.dispose();
+    _postalCodeController.dispose();
+    _countryController.dispose();
     super.dispose();
   }
 
   String? _nullIfEmpty(String value) =>
       value.trim().isEmpty ? null : value.trim();
+
+  bool get _addressFilled =>
+      _streetController.text.trim().isNotEmpty &&
+      _cityController.text.trim().isNotEmpty &&
+      _postalCodeController.text.trim().isNotEmpty;
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -62,6 +81,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
           nif: _nullIfEmpty(_nifController.text),
         );
         await _repository.updateBuyer(updated);
+        if (mounted) Navigator.pop(context);
       } else {
         final buyer = Buyer(
           id: FirebaseFirestore.instance.collection('_').doc().id,
@@ -72,10 +92,26 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
           createdAt: DateTime.now(),
         );
         await _repository.createBuyer(buyer);
+
+        if (_addAddress && _addressFilled) {
+          final address = BuyerAddress(
+            id: FirebaseFirestore.instance.collection('_').doc().id,
+            label: _labelController.text.trim().isEmpty
+                ? 'Home'
+                : _labelController.text.trim(),
+            street: _streetController.text.trim(),
+            city: _cityController.text.trim(),
+            postalCode: _postalCodeController.text.trim(),
+            country: _countryController.text.trim().isEmpty
+                ? 'Portugal'
+                : _countryController.text.trim(),
+            isDefault: true,
+          );
+          await _repository.createAddress(buyer.id, address);
+        }
+
         if (mounted) Navigator.pop(context, buyer);
-        return;
       }
-      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -152,6 +188,89 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                 return null;
               },
             ),
+            if (!_isEditing) ...[
+              const SizedBox(height: 24),
+              const Divider(),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Add shipping address'),
+                subtitle: const Text('Optional — can be added later'),
+                value: _addAddress,
+                onChanged: (v) => setState(() => _addAddress = v),
+              ),
+              if (_addAddress) ...[
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _labelController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Label',
+                    hintText: 'e.g. Home, Work',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _streetController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Street *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => _addAddress && (v == null || v.trim().isEmpty)
+                      ? 'Street is required'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _cityController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'City *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => _addAddress && (v == null || v.trim().isEmpty)
+                      ? 'City is required'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _postalCodeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Postal code *',
+                    hintText: '0000-000',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) {
+                    if (!_addAddress) return null;
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Postal code is required';
+                    }
+                    final isPortugal = _countryController.text
+                            .trim()
+                            .toLowerCase() ==
+                        'portugal';
+                    if (isPortugal &&
+                        !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
+                      return 'Format: 0000-000';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _countryController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Country',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ],
+            const SizedBox(height: 32),
           ],
         ),
       ),
