@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
@@ -38,6 +39,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   late DeliveryType _deliveryType;
   late bool _requiresNif;
   late List<ComponentItem> _components;
+  DateTime? _scheduledDate;
   bool _isLoading = false;
 
   bool get _isEditing => widget.sale != null;
@@ -60,6 +62,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
     _requiresNif = sale?.requiresNif ?? false;
     _components = List.from(sale?.components ?? []);
+    _scheduledDate = sale?.scheduledDate;
 
     if (_isEditing) _loadBuyerForEdit();
   }
@@ -172,6 +175,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               status: _paymentStatus, method: _paymentMethod),
           shipment: shipment,
           requiresNif: _requiresNif,
+          scheduledDate: _scheduledDate,
         );
         await _saleRepository.updateSale(updated);
       } else {
@@ -188,6 +192,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               status: _paymentStatus, method: _paymentMethod),
           shipment: shipment,
           requiresNif: _requiresNif,
+          scheduledDate: _scheduledDate,
           createdAt: DateTime.now(),
         );
         await _saleRepository.createSale(sale);
@@ -422,10 +427,60 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            _ScheduledDatePicker(
+              date: _scheduledDate,
+              onChanged: (date) => setState(() => _scheduledDate = date),
+            ),
             const SizedBox(height: 32),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ScheduledDatePicker extends StatelessWidget {
+  final DateTime? date;
+  final ValueChanged<DateTime?> onChanged;
+
+  const _ScheduledDatePicker({required this.date, required this.onChanged});
+
+  Future<void> _pick(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: date ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('EEE, dd MMM yyyy');
+    return Row(
+      children: [
+        const Icon(Icons.event, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            date != null
+                ? 'Scheduled: ${dateFormat.format(date!)}'
+                : 'No scheduled date',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+        TextButton(
+          onPressed: () => _pick(context),
+          child: Text(date != null ? 'Change' : 'Set date'),
+        ),
+        if (date != null)
+          TextButton(
+            onPressed: () => onChanged(null),
+            child: const Text('Clear'),
+          ),
+      ],
     );
   }
 }
