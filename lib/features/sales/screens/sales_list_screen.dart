@@ -15,6 +15,7 @@ enum SaleFilter {
   shipped,
   pickup,
   assemblyNotReady,
+  overdue,
 }
 
 extension SaleFilterLabel on SaleFilter {
@@ -27,6 +28,7 @@ extension SaleFilterLabel on SaleFilter {
         SaleFilter.shipped => 'Shipped',
         SaleFilter.pickup => 'Pickup',
         SaleFilter.assemblyNotReady => 'Assembly not ready',
+        SaleFilter.overdue => 'Overdue',
       };
 }
 
@@ -74,6 +76,12 @@ class _SalesListScreenState extends State<SalesListScreen> {
             .toList(),
         SaleFilter.assemblyNotReady => sales
             .where((s) => s.assemblyStatus != AssemblyStatus.ready)
+            .toList(),
+        SaleFilter.overdue => sales
+            .where((s) =>
+                s.scheduledDate != null &&
+                s.scheduledDate!.isBefore(DateTime.now()) &&
+                s.shipment.status != ShipmentStatus.delivered)
             .toList(),
       };
 

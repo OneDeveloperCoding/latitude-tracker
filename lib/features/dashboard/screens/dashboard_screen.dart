@@ -5,6 +5,8 @@ import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sales_list_screen.dart';
 
+enum _ViewMode { yearly, monthly, weekly }
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -14,49 +16,129 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _repository = SaleRepository();
-  DateTime _selectedMonth = DateTime.now();
+  _ViewMode _viewMode = _ViewMode.monthly;
 
-  void _previousMonth() => setState(() {
-        _selectedMonth =
-            DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+  // Yearly state
+  int _year = DateTime.now().year;
+
+  // Monthly state — first day of the displayed month
+  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  // Weekly state — Monday of the displayed week
+  DateTime _weekStart = _mondayOf(DateTime.now());
+
+  static DateTime _mondayOf(DateTime date) =>
+      date.subtract(Duration(days: date.weekday - 1));
+
+  // Date range for the current view
+  DateTime get _periodStart => switch (_viewMode) {
+        _ViewMode.yearly => DateTime(_year),
+        _ViewMode.monthly => _month,
+        _ViewMode.weekly => _weekStart,
+      };
+
+  DateTime get _periodEnd => switch (_viewMode) {
+        _ViewMode.yearly => DateTime(_year + 1),
+        _ViewMode.monthly => DateTime(_month.year, _month.month + 1),
+        _ViewMode.weekly => _weekStart.add(const Duration(days: 7)),
+      };
+
+  bool get _isCurrentPeriod {
+    final now = DateTime.now();
+    return switch (_viewMode) {
+      _ViewMode.yearly => _year == now.year,
+      _ViewMode.monthly =>
+        _month.year == now.year && _month.month == now.month,
+      _ViewMode.weekly => _weekStart == _mondayOf(now),
+    };
+  }
+
+  void _previous() => setState(() {
+        switch (_viewMode) {
+          case _ViewMode.yearly:
+            _year--;
+          case _ViewMode.monthly:
+            _month = DateTime(_month.year, _month.month - 1);
+          case _ViewMode.weekly:
+            _weekStart = _weekStart.subtract(const Duration(days: 7));
+        }
       });
 
-  void _nextMonth() {
-    final next = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
-    if (next.isBefore(DateTime.now().add(const Duration(days: 1)))) {
-      setState(() => _selectedMonth = next);
-    }
+  void _next() {
+    if (_isCurrentPeriod) return;
+    setState(() {
+      switch (_viewMode) {
+        case _ViewMode.yearly:
+          _year++;
+        case _ViewMode.monthly:
+          _month = DateTime(_month.year, _month.month + 1);
+        case _ViewMode.weekly:
+          _weekStart = _weekStart.add(const Duration(days: 7));
+      }
+    });
   }
 
-  bool get _isCurrentMonth {
-    final now = DateTime.now();
-    return _selectedMonth.year == now.year &&
-        _selectedMonth.month == now.month;
-  }
+  String get _periodLabel => switch (_viewMode) {
+        _ViewMode.yearly => '$_year',
+        _ViewMode.monthly => DateFormat('MMMM yyyy').format(_month),
+        _ViewMode.weekly => () {
+            final end = _weekStart.add(const Duration(days: 6));
+            return '${DateFormat('d MMM').format(_weekStart)} – ${DateFormat('d MMM yyyy').format(end)}';
+          }(),
+      };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          SegmentedButton<_ViewMode>(
+            segments: const [
+              ButtonSegment(
+                value: _ViewMode.yearly,
+                icon: Icon(Icons.calendar_today, size: 18),
+                tooltip: 'Year',
+              ),
+              ButtonSegment(
+                value: _ViewMode.monthly,
+                icon: Icon(Icons.calendar_month, size: 18),
+                tooltip: 'Month',
+              ),
+              ButtonSegment(
+                value: _ViewMode.weekly,
+                icon: Icon(Icons.calendar_view_week, size: 18),
+                tooltip: 'Week',
+              ),
+            ],
+            selected: {_viewMode},
+            onSelectionChanged: (v) => setState(() => _viewMode = v.first),
+            style: const ButtonStyle(
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: StreamBuilder<List<Sale>>(
         stream: _repository.watchSales(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final allSales = snapshot.data ?? [];
-          final stats = _DashboardStats.compute(allSales, _selectedMonth);
+          final all = snapshot.data ?? [];
+          final stats = _DashboardStats.compute(all, _periodStart, _periodEnd);
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _MonthHeader(
-                month: _selectedMonth,
-                onPrevious: _previousMonth,
-                onNext: _isCurrentMonth ? null : _nextMonth,
+              _PeriodHeader(
+                label: _periodLabel,
+                onPrevious: _previous,
+                onNext: _isCurrentPeriod ? null : _next,
               ),
               const SizedBox(height: 16),
-              _RevenueCard(stats: stats),
+              _RevenueCard(stats: stats, periodLabel: _periodLabel),
               const SizedBox(height: 24),
               Text(
                 'Action needed',
@@ -95,43 +177,44 @@ class _DashboardStats {
     required this.overdueCount,
   });
 
-  factory _DashboardStats.compute(List<Sale> all, DateTime month) {
-    final monthSales = all.where((s) =>
-        s.createdAt.year == month.year &&
-        s.createdAt.month == month.month);
+  factory _DashboardStats.compute(
+    List<Sale> all,
+    DateTime start,
+    DateTime end,
+  ) {
+    final period = all.where((s) =>
+        !s.createdAt.isBefore(start) && s.createdAt.isBefore(end)).toList();
 
     final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
 
     return _DashboardStats(
-      paidRevenue: monthSales
+      paidRevenue: period
           .where((s) => s.payment.status == PaymentStatus.paid)
-          .fold(0, (sum, s) => sum + s.price),
-      unpaidRevenue: monthSales
+          .fold(0.0, (sum, s) => sum + s.price),
+      unpaidRevenue: period
           .where((s) => s.payment.status == PaymentStatus.unpaid)
-          .fold(0, (sum, s) => sum + s.price),
-      paidCount: monthSales
-          .where((s) => s.payment.status == PaymentStatus.paid)
-          .length,
-      unpaidCount: all
-          .where((s) => s.payment.status == PaymentStatus.unpaid)
-          .length,
-      pendingShipmentCount: all
+          .fold(0.0, (sum, s) => sum + s.price),
+      paidCount:
+          period.where((s) => s.payment.status == PaymentStatus.paid).length,
+      unpaidCount:
+          period.where((s) => s.payment.status == PaymentStatus.unpaid).length,
+      pendingShipmentCount: period
           .where((s) =>
               s.shipment.type == DeliveryType.shipping &&
               s.shipment.status == ShipmentStatus.pending)
           .length,
-      assemblyNotReadyCount: all
+      assemblyNotReadyCount: period
           .where((s) =>
               s.shipment.status != ShipmentStatus.delivered &&
               s.assemblyStatus != AssemblyStatus.ready)
           .length,
-      nifRequiredCount: all
+      nifRequiredCount: period
           .where((s) =>
               s.requiresNif &&
               s.shipment.status != ShipmentStatus.delivered)
           .length,
-      overdueCount: all
+      overdueCount: period
           .where((s) =>
               s.scheduledDate != null &&
               s.scheduledDate!.isBefore(startOfToday) &&
@@ -141,13 +224,13 @@ class _DashboardStats {
   }
 }
 
-class _MonthHeader extends StatelessWidget {
-  final DateTime month;
+class _PeriodHeader extends StatelessWidget {
+  final String label;
   final VoidCallback onPrevious;
   final VoidCallback? onNext;
 
-  const _MonthHeader({
-    required this.month,
+  const _PeriodHeader({
+    required this.label,
     required this.onPrevious,
     this.onNext,
   });
@@ -161,16 +244,21 @@ class _MonthHeader extends StatelessWidget {
           icon: const Icon(Icons.chevron_left),
           onPressed: onPrevious,
         ),
-        Text(
-          DateFormat('MMMM yyyy').format(month),
-          style: Theme.of(context).textTheme.titleMedium,
+        Expanded(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ),
         IconButton(
-          icon: const Icon(Icons.chevron_right),
+          icon: Icon(
+            Icons.chevron_right,
+            color: onNext == null
+                ? Theme.of(context).disabledColor
+                : null,
+          ),
           onPressed: onNext,
-          color: onNext == null
-              ? Theme.of(context).disabledColor
-              : null,
         ),
       ],
     );
@@ -179,8 +267,9 @@ class _MonthHeader extends StatelessWidget {
 
 class _RevenueCard extends StatelessWidget {
   final _DashboardStats stats;
+  final String periodLabel;
 
-  const _RevenueCard({required this.stats});
+  const _RevenueCard({required this.stats, required this.periodLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -192,69 +281,67 @@ class _RevenueCard extends StatelessWidget {
       color: colorScheme.primaryContainer,
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              'This month',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    periodLabel,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    currencyFormat.format(stats.paidRevenue),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    '${stats.paidCount} sale${stats.paidCount == 1 ? '' : 's'}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        currencyFormat.format(stats.paidRevenue),
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              color: colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      Text(
-                        '${stats.paidCount} sale${stats.paidCount == 1 ? '' : 's'} received',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
-                                ),
-                      ),
-                    ],
+            if (stats.unpaidRevenue > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Pending',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color:
+                              colorScheme.onPrimaryContainer.withAlpha(180),
+                        ),
                   ),
-                ),
-                if (stats.unpaidRevenue > 0)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        currencyFormat.format(stats.unpaidRevenue),
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(
-                              color: colorScheme.onPrimaryContainer
-                                  .withAlpha(180),
-                            ),
-                      ),
-                      Text(
-                        '${stats.unpaidCount} unpaid',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onPrimaryContainer
-                                      .withAlpha(180),
-                                ),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    currencyFormat.format(stats.unpaidRevenue),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color:
+                              colorScheme.onPrimaryContainer.withAlpha(180),
+                        ),
                   ),
-              ],
-            ),
+                  Text(
+                    '${stats.unpaidCount} unpaid',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              colorScheme.onPrimaryContainer.withAlpha(180),
+                        ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
@@ -269,6 +356,44 @@ class _ActionGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final items = [
+      (
+        icon: Icons.euro,
+        label: 'Unpaid',
+        count: stats.unpaidCount,
+        color: Colors.orange,
+        filter: SaleFilter.unpaid,
+      ),
+      (
+        icon: Icons.local_shipping,
+        label: 'Pending shipment',
+        count: stats.pendingShipmentCount,
+        color: Colors.blue,
+        filter: SaleFilter.pendingShipment,
+      ),
+      (
+        icon: Icons.build,
+        label: 'Assembly not ready',
+        count: stats.assemblyNotReadyCount,
+        color: Colors.purple,
+        filter: SaleFilter.assemblyNotReady,
+      ),
+      (
+        icon: Icons.badge,
+        label: 'NIF required',
+        count: stats.nifRequiredCount,
+        color: Colors.teal,
+        filter: SaleFilter.nifRequired,
+      ),
+      (
+        icon: Icons.warning_amber,
+        label: 'Overdue',
+        count: stats.overdueCount,
+        color: Colors.red,
+        filter: SaleFilter.overdue,
+      ),
+    ];
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -276,43 +401,15 @@ class _ActionGrid extends StatelessWidget {
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: 1.4,
-      children: [
-        _ActionCard(
-          icon: Icons.euro,
-          label: 'Unpaid',
-          count: stats.unpaidCount,
-          color: Colors.orange,
-          filter: SaleFilter.unpaid,
-        ),
-        _ActionCard(
-          icon: Icons.local_shipping,
-          label: 'Pending shipment',
-          count: stats.pendingShipmentCount,
-          color: Colors.blue,
-          filter: SaleFilter.pendingShipment,
-        ),
-        _ActionCard(
-          icon: Icons.build,
-          label: 'Assembly not ready',
-          count: stats.assemblyNotReadyCount,
-          color: Colors.purple,
-          filter: SaleFilter.assemblyNotReady,
-        ),
-        _ActionCard(
-          icon: Icons.badge,
-          label: 'NIF required',
-          count: stats.nifRequiredCount,
-          color: Colors.teal,
-          filter: SaleFilter.nifRequired,
-        ),
-        _ActionCard(
-          icon: Icons.warning_amber,
-          label: 'Overdue',
-          count: stats.overdueCount,
-          color: Colors.red,
-          filter: SaleFilter.assemblyNotReady,
-        ),
-      ],
+      children: items
+          .map((item) => _ActionCard(
+                icon: item.icon,
+                label: item.label,
+                count: item.count,
+                color: item.color,
+                filter: item.filter,
+              ))
+          .toList(),
     );
   }
 }
@@ -334,39 +431,43 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isActive = count > 0;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: count == 0
-            ? null
-            : () => Navigator.push(
+        onTap: isActive
+            ? () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        SalesListScreen(initialFilter: filter),
+                    builder: (_) => SalesListScreen(initialFilter: filter),
                   ),
-                ),
+                )
+            : null,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: count > 0 ? color : Colors.grey, size: 24),
+              Icon(icon,
+                  color: isActive ? color : Colors.grey, size: 24),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '$count',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: count > 0 ? color : Colors.grey,
+                          color: isActive ? color : Colors.grey,
                         ),
                   ),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: count > 0
+                          color: isActive
                               ? Theme.of(context).colorScheme.onSurface
                               : Colors.grey,
                         ),
