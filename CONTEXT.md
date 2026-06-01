@@ -134,7 +134,9 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/photos/{
 
 ## Screens
 
-1. **Login** — email + password, stays logged in permanently
+1. **Login** — email + password, stays logged in permanently; "Try Demo" button enters Demo mode without credentials
+
+1a. **Demo mode** — read-only sandbox with 255 pre-seeded sales across 18 months (7 hand-crafted active + 248 generated historical, fixed `Random(42)` seed). A tutorial bottom sheet auto-displays on first entry; re-accessible via **?** in the demo banner. Write operations (add/edit/delete) are blocked. Demo data strings are in English regardless of app language setting.
 
 2. **Dashboard** — period selector (yearly / monthly / weekly); paid + pending revenue card; five action cards (Unpaid, Pending shipment, Assembly not ready, NIF required, Overdue) — Unpaid shows count and total €; each card taps to its dedicated view:
    - Unpaid → UnpaidBalances screen
@@ -160,7 +162,7 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/photos/{
 
 11. **Sales heat map** — third view mode in Sales list; groups shipped sales by 4-digit postal code locality prefix; geocodes via Nominatim (1 req/sec); markers sized by count; tap → snackbar
 
-12. **Settings** — sign out; export year to JSON (share sheet); import archive (read-only preview → Import button writes to Firestore, skipping existing records); delete year (optional photo deletion toggle); app version
+12. **Settings** — sign out; export year to JSON (share sheet); import archive (read-only preview → Import button writes to Firestore, skipping existing records); delete year (optional photo deletion toggle); language toggle (PT / EN, persisted); app version
 
 ## Example dialogue
 
