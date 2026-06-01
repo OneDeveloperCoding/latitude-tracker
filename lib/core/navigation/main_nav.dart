@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/buyers/screens/buyers_list_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/demo/demo_mode.dart';
+import '../../features/demo/demo_tutorial_sheet.dart';
 import '../../features/sales/screens/sales_list_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
@@ -22,6 +23,26 @@ class _MainNavState extends State<MainNav> {
     BuyersListScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    DemoMode.pendingTutorial.addListener(_onPendingTutorial);
+  }
+
+  @override
+  void dispose() {
+    DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
+    super.dispose();
+  }
+
+  void _onPendingTutorial() {
+    if (!DemoMode.pendingTutorial.value) return;
+    DemoMode.pendingTutorial.value = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) DemoTutorialSheet.show(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +74,8 @@ class _MainNavState extends State<MainNav> {
 class _DemoBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final onContainer = Theme.of(context).colorScheme.onPrimaryContainer;
+
     return Material(
       color: Theme.of(context).colorScheme.primaryContainer,
       child: SafeArea(
@@ -61,25 +84,27 @@ class _DemoBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(
             children: [
-              Icon(Icons.science_outlined,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer),
+              Icon(Icons.science_outlined, size: 16, color: onContainer),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Demo mode — changes are not saved',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onPrimaryContainer,
+                        color: onContainer,
                       ),
                 ),
+              ),
+              IconButton(
+                icon: Icon(Icons.help_outline, size: 18, color: onContainer),
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                tooltip: 'Tour',
+                onPressed: () => DemoTutorialSheet.show(context),
               ),
               TextButton(
                 onPressed: () => DemoMode.exit(),
                 style: TextButton.styleFrom(
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  foregroundColor: onContainer,
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),

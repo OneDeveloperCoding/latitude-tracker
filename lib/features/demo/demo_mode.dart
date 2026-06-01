@@ -8,6 +8,9 @@ class DemoMode {
 
   static final active = ValueNotifier<bool>(false);
 
+  // Fires once each time demo mode is entered; MainNav listens and shows the tutorial.
+  static final pendingTutorial = ValueNotifier<bool>(false);
+
   static final InMemorySaleRepository saleRepo = InMemorySaleRepository();
   static final InMemoryBuyerRepository buyerRepo = InMemoryBuyerRepository();
 
@@ -15,6 +18,7 @@ class DemoMode {
     saleRepo.seed();
     buyerRepo.seed();
     active.value = true;
+    pendingTutorial.value = true;
   }
 
   static void exit() {
