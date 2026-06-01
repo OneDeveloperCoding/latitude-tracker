@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../buyers/screens/unpaid_balances_screen.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/models/sale_filter.dart';
@@ -23,19 +24,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _repository = SaleRepository();
   _ViewMode _viewMode = _ViewMode.monthly;
 
-  // Yearly state
   int _year = DateTime.now().year;
-
-  // Monthly state — first day of the displayed month
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
-
-  // Weekly state — Monday of the displayed week
   DateTime _weekStart = _mondayOf(DateTime.now());
 
   static DateTime _mondayOf(DateTime date) =>
       date.subtract(Duration(days: date.weekday - 1));
 
-  // Date range for the current view
   DateTime get _periodStart => switch (_viewMode) {
         _ViewMode.yearly => DateTime(_year),
         _ViewMode.monthly => _month,
@@ -94,26 +89,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(s.dashboard),
         actions: [
           SegmentedButton<_ViewMode>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: _ViewMode.yearly,
-                icon: Icon(Icons.calendar_today, size: 18),
-                tooltip: 'Year',
+                icon: const Icon(Icons.calendar_today, size: 18),
+                tooltip: s.tooltipYear,
               ),
               ButtonSegment(
                 value: _ViewMode.monthly,
-                icon: Icon(Icons.calendar_month, size: 18),
-                tooltip: 'Month',
+                icon: const Icon(Icons.calendar_month, size: 18),
+                tooltip: s.tooltipMonth,
               ),
               ButtonSegment(
                 value: _ViewMode.weekly,
-                icon: Icon(Icons.calendar_view_week, size: 18),
-                tooltip: 'Week',
+                icon: const Icon(Icons.calendar_view_week, size: 18),
+                tooltip: s.tooltipWeek,
               ),
             ],
             selected: {_viewMode},
@@ -147,7 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _RevenueCard(stats: stats, periodLabel: _periodLabel),
               const SizedBox(height: 24),
               Text(
-                'Action needed',
+                s.actionNeeded,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -192,9 +188,7 @@ class _PeriodHeader extends StatelessWidget {
         IconButton(
           icon: Icon(
             Icons.chevron_right,
-            color: onNext == null
-                ? Theme.of(context).disabledColor
-                : null,
+            color: onNext == null ? Theme.of(context).disabledColor : null,
           ),
           onPressed: onNext,
         ),
@@ -211,6 +205,7 @@ class _RevenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final colorScheme = Theme.of(context).colorScheme;
     final currencyFormat =
         NumberFormat.currency(locale: 'pt_PT', symbol: '€');
@@ -244,7 +239,7 @@ class _RevenueCard extends StatelessWidget {
                         ),
                   ),
                   Text(
-                    '${stats.paidCount} sale${stats.paidCount == 1 ? '' : 's'}',
+                    s.nSales(stats.paidCount),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onPrimaryContainer,
                         ),
@@ -257,7 +252,7 @@ class _RevenueCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Pending',
+                    s.pending,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color:
                               colorScheme.onPrimaryContainer.withAlpha(180),
@@ -272,7 +267,7 @@ class _RevenueCard extends StatelessWidget {
                         ),
                   ),
                   Text(
-                    '${stats.unpaidCount} unpaid',
+                    s.nUnpaid(stats.unpaidCount),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color:
                               colorScheme.onPrimaryContainer.withAlpha(180),
@@ -294,6 +289,7 @@ class _ActionGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
 
     return GridView.count(
@@ -306,7 +302,7 @@ class _ActionGrid extends StatelessWidget {
       children: [
         _ActionCard(
           icon: Icons.euro,
-          label: 'Unpaid',
+          label: s.unpaid,
           count: stats.unpaidCount,
           subtitle: currency.format(stats.unpaidRevenue),
           color: Colors.orange,
@@ -314,31 +310,33 @@ class _ActionGrid extends StatelessWidget {
         ),
         _ActionCard(
           icon: Icons.local_shipping,
-          label: 'Pending shipment',
+          label: s.pendingShipment,
           count: stats.pendingShipmentCount,
           color: Colors.blue,
-          destination: const SalesListScreen(initialFilter: SaleFilter.pendingShipment),
+          destination: const SalesListScreen(
+              initialFilter: SaleFilter.pendingShipment),
         ),
         _ActionCard(
           icon: Icons.build,
-          label: 'Assembly not ready',
+          label: s.assemblyNotReady,
           count: stats.assemblyNotReadyCount,
           color: Colors.purple,
           destination: const ShoppingListScreen(),
         ),
         _ActionCard(
           icon: Icons.badge,
-          label: 'NIF required',
+          label: s.nifRequired,
           count: stats.nifRequiredCount,
           color: Colors.teal,
           destination: const NifPendingScreen(),
         ),
         _ActionCard(
           icon: Icons.warning_amber,
-          label: 'Overdue',
+          label: s.overdue,
           count: stats.overdueCount,
           color: Colors.red,
-          destination: const SalesListScreen(initialFilter: SaleFilter.overdue),
+          destination:
+              const SalesListScreen(initialFilter: SaleFilter.overdue),
         ),
       ],
     );

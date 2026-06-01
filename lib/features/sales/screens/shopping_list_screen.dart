@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 
@@ -24,8 +25,9 @@ class ShoppingListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
-      appBar: AppBar(title: const Text('Shopping list')),
+      appBar: AppBar(title: Text(s.shoppingList)),
       body: StreamBuilder<List<Sale>>(
         stream: SaleRepository().watchSales(),
         builder: (context, snapshot) {
@@ -51,7 +53,7 @@ class ShoppingListScreen extends StatelessWidget {
                       size: 48,
                       color: Theme.of(context).colorScheme.primary),
                   const SizedBox(height: 12),
-                  const Text('Nothing left to buy!'),
+                  Text(s.nothingLeftToBuy),
                 ],
               ),
             );
@@ -98,11 +100,11 @@ class _ShoppingListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Row(
       children: [
         Text(
-          '$totalNeeded item${totalNeeded == 1 ? '' : 's'} across '
-          '$totalSales sale${totalSales == 1 ? '' : 's'}',
+          s.itemsAcrossSales(totalNeeded, totalSales),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -118,7 +120,7 @@ class _ShoppingListHeader extends StatelessWidget {
                   color: Theme.of(context).colorScheme.error.withAlpha(100)),
             ),
             child: Text(
-              '$urgentCount urgent',
+              s.nUrgent(urgentCount),
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.error,
@@ -219,6 +221,7 @@ class _DueDateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final scheduled = DateTime(
@@ -235,11 +238,11 @@ class _DueDateLabel extends StatelessWidget {
     };
 
     final String label = urgency == _Urgency.overdue
-        ? '${days.abs()}d overdue'
+        ? s.daysOverdue(days.abs())
         : days == 0
-            ? 'Today'
+            ? s.today
             : days == 1
-                ? 'Tomorrow'
+                ? s.tomorrow
                 : DateFormat('dd MMM').format(sale.scheduledDate!);
 
     return Text(
@@ -259,12 +262,16 @@ class _AssemblyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final (color, label) = switch (status) {
-      AssemblyStatus.notStarted => (Colors.red, 'Not started'),
+      AssemblyStatus.notStarted =>
+        (Colors.red, s.assemblyLabel(AssemblyStatus.notStarted)),
       AssemblyStatus.waitingForMaterials =>
-        (Colors.amber[700]!, 'Waiting for materials'),
-      AssemblyStatus.inProgress => (Colors.orange, 'In progress'),
-      AssemblyStatus.ready => (Colors.green, 'Ready'),
+        (Colors.amber[700]!, s.assemblyLabel(AssemblyStatus.waitingForMaterials)),
+      AssemblyStatus.inProgress =>
+        (Colors.orange, s.assemblyLabel(AssemblyStatus.inProgress)),
+      AssemblyStatus.ready =>
+        (Colors.green, s.assemblyLabel(AssemblyStatus.ready)),
     };
 
     return Container(
