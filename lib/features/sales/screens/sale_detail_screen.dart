@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -110,6 +111,21 @@ class _SaleDetailBody extends StatelessWidget {
           ),
           if (sale.requiresNif)
             const _InfoRow(icon: Icons.badge, text: 'NIF receipt required'),
+          if (sale.requiresNif && sale.payment.status == PaymentStatus.paid)
+            _InfoRow(
+              icon: sale.atSubmissionDone
+                  ? Icons.check_circle
+                  : Icons.check_circle_outline,
+              text: sale.atSubmissionDone
+                  ? 'AT receipt filed'
+                  : 'AT receipt pending',
+              color: sale.atSubmissionDone ? Colors.green : Colors.orange,
+              onTap: () => _update(
+                context,
+                sale.copyWith(
+                    atSubmissionDone: !sale.atSubmissionDone),
+              ),
+            ),
         ]),
         const SizedBox(height: 16),
         _SectionCard(
@@ -266,6 +282,17 @@ class _SaleDetailBody extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Notes',
+          child: _NotesField(
+            initialValue: sale.notes ?? '',
+            onSave: (text) => _update(
+              context,
+              sale.copyWith(notes: text.isEmpty ? null : text),
+            ),
+          ),
+        ),
         const SizedBox(height: 32),
       ],
     );
@@ -349,7 +376,9 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
         const SizedBox(width: 8),
         Expanded(
           child: GestureDetector(
-            onTap: () => _openCttTracking(_controller.text),
+            // Tap copies the code — faster for pasting into DMs or email.
+            onTap: () => _copyCode(context),
+            onLongPress: () => _openCttTracking(_controller.text),
             child: Text(
               _controller.text,
               style: TextStyle(
@@ -360,11 +389,28 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
           ),
         ),
         IconButton(
+          icon: const Icon(Icons.open_in_new, size: 16),
+          tooltip: 'Open on CTT website',
+          onPressed: () => _openCttTracking(_controller.text),
+        ),
+        IconButton(
           icon: const Icon(Icons.edit, size: 16),
           onPressed: () => setState(() => _editing = true),
         ),
       ],
     );
+  }
+
+  Future<void> _copyCode(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: _controller.text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tracking code copied'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _openCttTracking(String code) async {
@@ -502,8 +548,9 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
+  final Color? color;
 
-  const _InfoRow({required this.icon, required this.text, this.onTap});
+  const _InfoRow({required this.icon, required this.text, this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -511,7 +558,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+          Icon(icon, size: 16, color: color ?? Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
           if (onTap != null)
@@ -523,6 +570,94 @@ class _InfoRow extends StatelessWidget {
     );
     if (onTap == null) return row;
     return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(4), child: row);
+  }
+}
+
+class _NotesField extends StatefulWidget {
+  final String initialValue;
+  final ValueChanged<String> onSave;
+
+  const _NotesField({required this.initialValue, required this.onSave});
+
+  @override
+  State<_NotesField> createState() => _NotesFieldState();
+}
+
+class _NotesFieldState extends State<_NotesField> {
+  late final TextEditingController _controller;
+  bool _editing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_editing && _controller.text.isEmpty) {
+      return TextButton.icon(
+        onPressed: () => setState(() => _editing = true),
+        icon: const Icon(Icons.add),
+        label: const Text('Add notes'),
+      );
+    }
+
+    if (_editing) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLines: null,
+            decoration: const InputDecoration(
+              hintText: 'e.g. Gift wrap requested, specific colour...',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () {
+                  _controller.text = widget.initialValue;
+                  setState(() => _editing = false);
+                },
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: () {
+                  widget.onSave(_controller.text.trim());
+                  setState(() => _editing = false);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Text(_controller.text)),
+        IconButton(
+          icon: const Icon(Icons.edit, size: 16),
+          onPressed: () => setState(() => _editing = true),
+        ),
+      ],
+    );
   }
 }
 

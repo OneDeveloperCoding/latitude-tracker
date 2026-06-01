@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../buyers/screens/unpaid_balances_screen.dart';
 import '../../sales/models/sale.dart';
+import '../../sales/models/sale_filter.dart';
 import '../../sales/repositories/sale_repository.dart';
+import '../../sales/screens/nif_pending_screen.dart';
 import '../../sales/screens/sales_list_screen.dart';
+import '../../sales/screens/shopping_list_screen.dart';
+import '../models/dashboard_stats.dart';
 
 enum _ViewMode { yearly, monthly, weekly }
 
@@ -127,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final all = snapshot.data ?? [];
-          final stats = _DashboardStats.compute(all, _periodStart, _periodEnd);
+          final stats = DashboardStats.compute(all, _periodStart, _periodEnd);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -152,74 +157,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
-    );
-  }
-}
-
-class _DashboardStats {
-  final double paidRevenue;
-  final double unpaidRevenue;
-  final int paidCount;
-  final int unpaidCount;
-  final int pendingShipmentCount;
-  final int assemblyNotReadyCount;
-  final int nifRequiredCount;
-  final int overdueCount;
-
-  const _DashboardStats({
-    required this.paidRevenue,
-    required this.unpaidRevenue,
-    required this.paidCount,
-    required this.unpaidCount,
-    required this.pendingShipmentCount,
-    required this.assemblyNotReadyCount,
-    required this.nifRequiredCount,
-    required this.overdueCount,
-  });
-
-  factory _DashboardStats.compute(
-    List<Sale> all,
-    DateTime start,
-    DateTime end,
-  ) {
-    final period = all.where((s) =>
-        !s.createdAt.isBefore(start) && s.createdAt.isBefore(end)).toList();
-
-    final now = DateTime.now();
-    final startOfToday = DateTime(now.year, now.month, now.day);
-
-    return _DashboardStats(
-      paidRevenue: period
-          .where((s) => s.payment.status == PaymentStatus.paid)
-          .fold(0.0, (sum, s) => sum + s.price),
-      unpaidRevenue: period
-          .where((s) => s.payment.status == PaymentStatus.unpaid)
-          .fold(0.0, (sum, s) => sum + s.price),
-      paidCount:
-          period.where((s) => s.payment.status == PaymentStatus.paid).length,
-      unpaidCount:
-          period.where((s) => s.payment.status == PaymentStatus.unpaid).length,
-      pendingShipmentCount: period
-          .where((s) =>
-              s.shipment.type == DeliveryType.shipping &&
-              s.shipment.status == ShipmentStatus.pending)
-          .length,
-      assemblyNotReadyCount: period
-          .where((s) =>
-              s.shipment.status != ShipmentStatus.delivered &&
-              s.assemblyStatus != AssemblyStatus.ready)
-          .length,
-      nifRequiredCount: period
-          .where((s) =>
-              s.requiresNif &&
-              s.shipment.status != ShipmentStatus.delivered)
-          .length,
-      overdueCount: period
-          .where((s) =>
-              s.scheduledDate != null &&
-              s.scheduledDate!.isBefore(startOfToday) &&
-              s.shipment.status != ShipmentStatus.delivered)
-          .length,
     );
   }
 }
@@ -266,7 +203,7 @@ class _PeriodHeader extends StatelessWidget {
 }
 
 class _RevenueCard extends StatelessWidget {
-  final _DashboardStats stats;
+  final DashboardStats stats;
   final String periodLabel;
 
   const _RevenueCard({required this.stats, required this.periodLabel});
@@ -350,49 +287,13 @@ class _RevenueCard extends StatelessWidget {
 }
 
 class _ActionGrid extends StatelessWidget {
-  final _DashboardStats stats;
+  final DashboardStats stats;
 
   const _ActionGrid({required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      (
-        icon: Icons.euro,
-        label: 'Unpaid',
-        count: stats.unpaidCount,
-        color: Colors.orange,
-        filter: SaleFilter.unpaid,
-      ),
-      (
-        icon: Icons.local_shipping,
-        label: 'Pending shipment',
-        count: stats.pendingShipmentCount,
-        color: Colors.blue,
-        filter: SaleFilter.pendingShipment,
-      ),
-      (
-        icon: Icons.build,
-        label: 'Assembly not ready',
-        count: stats.assemblyNotReadyCount,
-        color: Colors.purple,
-        filter: SaleFilter.assemblyNotReady,
-      ),
-      (
-        icon: Icons.badge,
-        label: 'NIF required',
-        count: stats.nifRequiredCount,
-        color: Colors.teal,
-        filter: SaleFilter.nifRequired,
-      ),
-      (
-        icon: Icons.warning_amber,
-        label: 'Overdue',
-        count: stats.overdueCount,
-        color: Colors.red,
-        filter: SaleFilter.overdue,
-      ),
-    ];
+    final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
 
     return GridView.count(
       crossAxisCount: 2,
@@ -401,15 +302,44 @@ class _ActionGrid extends StatelessWidget {
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: 1.4,
-      children: items
-          .map((item) => _ActionCard(
-                icon: item.icon,
-                label: item.label,
-                count: item.count,
-                color: item.color,
-                filter: item.filter,
-              ))
-          .toList(),
+      children: [
+        _ActionCard(
+          icon: Icons.euro,
+          label: 'Unpaid',
+          count: stats.unpaidCount,
+          subtitle: currency.format(stats.unpaidRevenue),
+          color: Colors.orange,
+          destination: const UnpaidBalancesScreen(),
+        ),
+        _ActionCard(
+          icon: Icons.local_shipping,
+          label: 'Pending shipment',
+          count: stats.pendingShipmentCount,
+          color: Colors.blue,
+          destination: const SalesListScreen(initialFilter: SaleFilter.pendingShipment),
+        ),
+        _ActionCard(
+          icon: Icons.build,
+          label: 'Assembly not ready',
+          count: stats.assemblyNotReadyCount,
+          color: Colors.purple,
+          destination: const ShoppingListScreen(),
+        ),
+        _ActionCard(
+          icon: Icons.badge,
+          label: 'NIF required',
+          count: stats.nifRequiredCount,
+          color: Colors.teal,
+          destination: const NifPendingScreen(),
+        ),
+        _ActionCard(
+          icon: Icons.warning_amber,
+          label: 'Overdue',
+          count: stats.overdueCount,
+          color: Colors.red,
+          destination: const SalesListScreen(initialFilter: SaleFilter.overdue),
+        ),
+      ],
     );
   }
 }
@@ -419,14 +349,16 @@ class _ActionCard extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
-  final SaleFilter filter;
+  final Widget destination;
+  final String? subtitle;
 
   const _ActionCard({
     required this.icon,
     required this.label,
     required this.count,
     required this.color,
-    required this.filter,
+    required this.destination,
+    this.subtitle,
   });
 
   @override
@@ -438,9 +370,7 @@ class _ActionCard extends StatelessWidget {
         onTap: isActive
             ? () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => SalesListScreen(initialFilter: filter),
-                  ),
+                  MaterialPageRoute(builder: (_) => destination),
                 )
             : null,
         child: Padding(
@@ -449,21 +379,25 @@ class _ActionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon,
-                  color: isActive ? color : Colors.grey, size: 24),
+              Icon(icon, color: isActive ? color : Colors.grey, size: 24),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '$count',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isActive ? color : Colors.grey,
                         ),
                   ),
+                  if (subtitle != null && isActive)
+                    Text(
+                      subtitle!,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(

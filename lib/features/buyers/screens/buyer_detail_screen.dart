@@ -6,6 +6,7 @@ import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sale_detail_screen.dart';
 import '../models/buyer.dart';
 import '../models/buyer_address.dart';
+import '../models/buyer_stats.dart';
 import '../repositories/buyer_repository.dart';
 import 'buyer_address_form_screen.dart';
 import 'buyer_form_screen.dart';
@@ -287,42 +288,30 @@ class _PurchaseSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
-
-    final totalPaid = sales
-        .where((s) => s.payment.status == PaymentStatus.paid)
-        .fold(0.0, (sum, s) => sum + s.price);
-    final unpaid = sales
-        .where((s) => s.payment.status == PaymentStatus.unpaid)
-        .fold(0.0, (sum, s) => sum + s.price);
-    final avg = sales.fold(0.0, (sum, s) => sum + s.price) / sales.length;
+    final stats = BuyerStats.compute(sales);
 
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           children: [
-            _StatRow(
-              label: 'Total sales',
-              value: '${sales.length}',
-            ),
-            _StatRow(
-              label: 'Total paid',
-              value: currency.format(totalPaid),
-            ),
-            if (unpaid > 0)
+            _StatRow(label: 'Total sales', value: '${stats.saleCount}'),
+            _StatRow(label: 'Total paid', value: currency.format(stats.totalPaid)),
+            if (stats.unpaidBalance > 0)
               _StatRow(
                 label: 'Unpaid balance',
-                value: currency.format(unpaid),
+                value: currency.format(stats.unpaidBalance),
                 valueColor: Colors.orange,
               ),
             _StatRow(
               label: 'Average order',
-              value: currency.format(avg),
+              value: currency.format(stats.averageOrderValue),
             ),
-            _StatRow(
-              label: 'Last purchase',
-              value: DateFormat('dd MMM yyyy').format(sales.first.createdAt),
-            ),
+            if (stats.lastPurchaseAt != null)
+              _StatRow(
+                label: 'Last purchase',
+                value: DateFormat('dd MMM yyyy').format(stats.lastPurchaseAt!),
+              ),
           ],
         ),
       ),
