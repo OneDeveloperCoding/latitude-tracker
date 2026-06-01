@@ -200,7 +200,7 @@ class _PhotoTile extends StatelessWidget {
                           child: const Center(
                               child: CircularProgressIndicator()),
                         ),
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stack) => Container(
                     color: Colors.grey[200],
                     child: const Icon(Icons.broken_image),
                   ),
