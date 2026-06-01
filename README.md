@@ -9,7 +9,7 @@ Private Android app for tracking sales, buyers, shipments, and payments for a ha
   - Firestore (eur3 — Europe multi-region)
   - Storage (europe-west1)
   - Auth (email/password, single account)
-- Key packages: `flutter_map` + `latlong2` (heat map), `image_picker` (photos), `share_plus` + `file_picker` (archive export/import)
+- Key packages: `flutter_map` + `latlong2` (heat map), `image_picker` (photos), `share_plus` + `file_picker` (archive export/import), `shared_preferences` (language preference), `flutter_localizations` (PT/EN Material widget translations), `intl` (date formatting locale)
 
 ## Local setup
 
@@ -54,6 +54,16 @@ Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 | `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
 | `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping + rate-limited Nominatim geocoding; `_MapView` is a pure rendering widget |
 | `features/sales/services/photo_service.dart` | All Firebase Storage operations; swap storage backend here only |
+
+### Language
+
+The app defaults to Portuguese (`pt`). The user can switch to English via **Settings → Language** (`SegmentedButton` PT / EN). The preference is persisted via `shared_preferences`. Changing language instantly rebuilds the entire widget tree — `MaterialApp.locale` is driven by `ValueListenableBuilder<Locale>` on `LocaleSettings.locale`. `Intl.defaultLocale` is also updated so `DateFormat` month names switch automatically.
+
+All UI strings live in `lib/core/l10n/app_strings.dart` (`AppStrings.pt` / `AppStrings.en` const instances). Access via `context.s` extension. Demo data strings remain in English regardless of locale.
+
+### Demo mode
+
+Accessible from the login screen without credentials. Seeded with 7 hand-crafted active sales (covering all UI states) and 248 generated historical sales across 18 months, using a fixed `Random(42)` seed for deterministic output. A tutorial bottom sheet auto-displays on first entry and can be re-opened via the **?** button in the demo banner.
 
 ### Sale card progress path
 
