@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../models/buyer.dart';
+import '../models/buyer_stats.dart';
 import '../repositories/buyer_repository.dart';
 import 'buyer_detail_screen.dart';
 import 'buyer_form_screen.dart';
@@ -25,26 +26,22 @@ extension _RankingMetricLabel on _RankingMetric {
 
 class _BuyerWithStats {
   final Buyer buyer;
-  final DateTime? lastPurchaseAt;
-  final int saleCount;
-  final double totalPaid;
-  final double unpaidBalance;
-  final double averageOrderValue;
+  final BuyerStats stats;
 
-  const _BuyerWithStats({
-    required this.buyer,
-    required this.saleCount,
-    required this.totalPaid,
-    required this.unpaidBalance,
-    required this.averageOrderValue,
-    this.lastPurchaseAt,
-  });
+  const _BuyerWithStats({required this.buyer, required this.stats});
+
+  // Proxy getters so tile widgets don't need to know about the stats nesting.
+  DateTime? get lastPurchaseAt => stats.lastPurchaseAt;
+  int get saleCount => stats.saleCount;
+  double get totalPaid => stats.totalPaid;
+  double get unpaidBalance => stats.unpaidBalance;
+  double get averageOrderValue => stats.averageOrderValue;
 
   double metricValue(_RankingMetric metric) => switch (metric) {
-        _RankingMetric.totalSpent => totalPaid,
-        _RankingMetric.frequency => saleCount.toDouble(),
-        _RankingMetric.averageOrder => averageOrderValue,
-        _RankingMetric.unpaidBalance => unpaidBalance,
+        _RankingMetric.totalSpent => stats.totalPaid,
+        _RankingMetric.frequency => stats.saleCount.toDouble(),
+        _RankingMetric.averageOrder => stats.averageOrderValue,
+        _RankingMetric.unpaidBalance => stats.unpaidBalance,
       };
 }
 
@@ -95,32 +92,9 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
   _BuyerWithStats _statsFor(Buyer buyer) {
     final buyerSales = _sales.where((s) => s.buyerId == buyer.id).toList();
-    if (buyerSales.isEmpty) {
-      return _BuyerWithStats(
-        buyer: buyer,
-        saleCount: 0,
-        totalPaid: 0,
-        unpaidBalance: 0,
-        averageOrderValue: 0,
-      );
-    }
-    final lastSale = buyerSales
-        .reduce((a, b) => a.createdAt.isAfter(b.createdAt) ? a : b);
-    final totalPaid = buyerSales
-        .where((s) => s.payment.status == PaymentStatus.paid)
-        .fold(0.0, (sum, s) => sum + s.price);
-    final unpaidBalance = buyerSales
-        .where((s) => s.payment.status == PaymentStatus.unpaid)
-        .fold(0.0, (sum, s) => sum + s.price);
-    final averageOrderValue =
-        buyerSales.fold(0.0, (sum, s) => sum + s.price) / buyerSales.length;
     return _BuyerWithStats(
       buyer: buyer,
-      saleCount: buyerSales.length,
-      lastPurchaseAt: lastSale.createdAt,
-      totalPaid: totalPaid,
-      unpaidBalance: unpaidBalance,
-      averageOrderValue: averageOrderValue,
+      stats: BuyerStats.compute(buyerSales),
     );
   }
 

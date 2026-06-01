@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
+import '../../buyers/models/buyer_stats.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
@@ -26,10 +27,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   final _buyerRepository = BuyerRepository();
 
   Buyer? _selectedBuyer;
+  BuyerStats? _selectedBuyerStats;
   List<BuyerAddress> _buyerAddresses = [];
   BuyerAddress? _selectedAddress;
 
   late final TextEditingController _itemDescController;
+  late final TextEditingController _notesController;
   late final TextEditingController _priceController;
   late final TextEditingController _trackingCodeController;
   late final TextEditingController _postalCodeController;
@@ -58,6 +61,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final sale = widget.sale;
     _itemDescController =
         TextEditingController(text: sale?.itemDescription ?? '');
+    _notesController = TextEditingController(text: sale?.notes ?? '');
     _priceController = TextEditingController(
         text: sale != null ? sale.price.toStringAsFixed(2) : '');
     _trackingCodeController =
@@ -83,8 +87,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final sale = widget.sale!;
     final buyer = await _buyerRepository.getBuyer(sale.buyerId);
     if (buyer == null || !mounted) return;
-    final addresses =
-        await _buyerRepository.watchAddresses(buyer.id).first;
+    final results = await Future.wait([
+      _buyerRepository.watchAddresses(buyer.id).first,
+      _saleRepository.getSalesForBuyer(buyer.id),
+    ]);
+    final addresses = results[0] as List<BuyerAddress>;
+    final buyerSales = results[1] as List<Sale>;
     final savedAddress = addresses
         .where((a) => a.id == sale.shipment.addressId)
         .firstOrNull;
@@ -92,12 +100,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       _selectedBuyer = buyer;
       _buyerAddresses = addresses;
       _selectedAddress = savedAddress ?? addresses.firstOrNull;
+      _selectedBuyerStats = BuyerStats.compute(buyerSales);
     });
   }
 
   @override
   void dispose() {
     _itemDescController.dispose();
+    _notesController.dispose();
     _priceController.dispose();
     _trackingCodeController.dispose();
     _postalCodeController.dispose();
@@ -112,13 +122,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
     );
     if (buyer == null) return;
-    final addresses =
-        await _buyerRepository.watchAddresses(buyer.id).first;
-    final defaultAddress =
-        addresses.where((a) => a.isDefault).firstOrNull;
+    final results = await Future.wait([
+      _buyerRepository.watchAddresses(buyer.id).first,
+      _saleRepository.getSalesForBuyer(buyer.id),
+    ]);
+    final addresses = results[0] as List<BuyerAddress>;
+    final buyerSales = results[1] as List<Sale>;
+    final defaultAddress = addresses.where((a) => a.isDefault).firstOrNull;
     setState(() {
       _selectedBuyer = buyer;
       _buyerAddresses = addresses;
+      _selectedBuyerStats = BuyerStats.compute(buyerSales);
       _selectedAddress = defaultAddress ?? addresses.firstOrNull;
       if (_selectedAddress != null) {
         _postalCodeController.text = _selectedAddress!.postalCode;
@@ -197,6 +211,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         await _photoService.deletePhoto(_saleId, url);
       }
 
+      final notesValue = _nullIfEmpty(_notesController.text);
+
       if (_isEditing) {
         final updated = widget.sale!.copyWith(
           itemDescription: _itemDescController.text.trim(),
@@ -210,6 +226,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           shipment: shipment,
           requiresNif: _requiresNif,
           scheduledDate: _scheduledDate,
+          notes: notesValue,
         );
         await _saleRepository.updateSale(updated);
       } else {
@@ -229,6 +246,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           requiresNif: _requiresNif,
           scheduledDate: _scheduledDate,
           createdAt: DateTime.now(),
+          notes: notesValue,
         );
         await _saleRepository.createSale(sale);
       }
@@ -281,6 +299,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               isEditing: _isEditing,
               onTap: _pickBuyer,
             ),
+            if (_selectedBuyerStats != null &&
+                _selectedBuyerStats!.saleCount > 0) ...[
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  '${_selectedBuyerStats!.saleCount} previous sale${_selectedBuyerStats!.saleCount == 1 ? '' : 's'}'
+                  '${_selectedBuyerStats!.lastPurchaseAt != null ? ' · last: ${DateFormat('MMM yyyy').format(_selectedBuyerStats!.lastPurchaseAt!)}' : ''}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             _SectionTitle('Item'),
             TextFormField(
@@ -429,6 +461,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               if (_buyerAddresses.isNotEmpty) ...[
                 DropdownButtonFormField<BuyerAddress>(
                   value: _selectedAddress,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Ship to address',
                     border: OutlineInputBorder(),
@@ -436,7 +469,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   items: _buyerAddresses
                       .map((a) => DropdownMenuItem(
                             value: a,
-                            child: Text('${a.label} — ${a.street}, ${a.city}'),
+                            child: Text(
+                              '${a.label} — ${a.street}, ${a.city}',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ))
                       .toList(),
                   onChanged: (a) => setState(() {
@@ -496,6 +533,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             _ScheduledDatePicker(
               date: _scheduledDate,
               onChanged: (date) => setState(() => _scheduledDate = date),
+            ),
+            const SizedBox(height: 24),
+            _SectionTitle('Notes'),
+            TextFormField(
+              controller: _notesController,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Gift wrap, colour preference, special instructions...',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 32),
           ],

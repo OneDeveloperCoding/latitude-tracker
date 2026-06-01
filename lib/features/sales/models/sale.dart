@@ -4,7 +4,7 @@ enum PaymentMethod { mbWay, cash, sumup, bankTransfer }
 
 enum PaymentStatus { paid, unpaid }
 
-enum AssemblyStatus { notStarted, inProgress, ready }
+enum AssemblyStatus { notStarted, waitingForMaterials, inProgress, ready }
 
 enum DeliveryType { shipping, pickup }
 
@@ -22,6 +22,7 @@ extension PaymentMethodLabel on PaymentMethod {
 extension AssemblyStatusLabel on AssemblyStatus {
   String get label => switch (this) {
         AssemblyStatus.notStarted => 'Not started',
+        AssemblyStatus.waitingForMaterials => 'Waiting for materials',
         AssemblyStatus.inProgress => 'In progress',
         AssemblyStatus.ready => 'Ready',
       };
@@ -146,8 +147,10 @@ class Sale {
   final SalePayment payment;
   final SaleShipment shipment;
   final bool requiresNif;
+  final bool atSubmissionDone;
   final DateTime createdAt;
   final DateTime? scheduledDate;
+  final String? notes;
 
   const Sale({
     required this.id,
@@ -161,8 +164,10 @@ class Sale {
     required this.payment,
     required this.shipment,
     required this.requiresNif,
+    this.atSubmissionDone = false,
     required this.createdAt,
     this.scheduledDate,
+    this.notes,
   });
 
   factory Sale.fromFirestore(DocumentSnapshot doc) {
@@ -182,10 +187,12 @@ class Sale {
       payment: SalePayment.fromMap(data['payment'] as Map<String, dynamic>),
       shipment: SaleShipment.fromMap(data['shipment'] as Map<String, dynamic>),
       requiresNif: data['requiresNif'] as bool? ?? false,
+      atSubmissionDone: data['atSubmissionDone'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       scheduledDate: data['scheduledDate'] != null
           ? (data['scheduledDate'] as Timestamp).toDate()
           : null,
+      notes: data['notes'] as String?,
     );
   }
 
@@ -200,12 +207,14 @@ class Sale {
         'payment': payment.toMap(),
         'shipment': shipment.toMap(),
         'requiresNif': requiresNif,
+        if (atSubmissionDone) 'atSubmissionDone': true,
         'createdAt': Timestamp.fromDate(createdAt),
         'scheduledDate':
             scheduledDate != null ? Timestamp.fromDate(scheduledDate!) : null,
+        if (notes != null) 'notes': notes!,
       };
 
-  // scheduledDate uses a sentinel to distinguish "clear to null" from "not provided"
+  // Nullable fields use a sentinel to distinguish "clear to null" from "not provided".
   Sale copyWith({
     String? itemDescription,
     List<String>? photoUrls,
@@ -215,7 +224,9 @@ class Sale {
     SalePayment? payment,
     SaleShipment? shipment,
     bool? requiresNif,
+    bool? atSubmissionDone,
     Object? scheduledDate = _unset,
+    Object? notes = _unset,
   }) =>
       Sale(
         id: id,
@@ -229,10 +240,11 @@ class Sale {
         payment: payment ?? this.payment,
         shipment: shipment ?? this.shipment,
         requiresNif: requiresNif ?? this.requiresNif,
+        atSubmissionDone: atSubmissionDone ?? this.atSubmissionDone,
         createdAt: createdAt,
-        scheduledDate: scheduledDate == _unset
-            ? this.scheduledDate
-            : scheduledDate as DateTime?,
+        scheduledDate:
+            scheduledDate == _unset ? this.scheduledDate : scheduledDate as DateTime?,
+        notes: notes == _unset ? this.notes : notes as String?,
       );
 }
 

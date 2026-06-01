@@ -43,4 +43,40 @@ Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 - Feature-based folder structure under `lib/features/`
 - All Firestore data scoped to `users/{uid}/` — single-user, no sharing
 - Photos stored at `users/{uid}/sales/{saleId}/photos/` in Firebase Storage
-- See `CONTEXT.md` for domain language, data model, and deletion rules
+- See `CONTEXT.md` for domain language, data model, screen inventory, and deletion rules
+
+### Key modules
+
+| File | Purpose |
+|------|---------|
+| `features/sales/models/sale_filter.dart` | `SaleFilter` enum + `.test(sale)` predicate extension — single definition used by the sales list, dashboard stats, and any future callers |
+| `features/dashboard/models/dashboard_stats.dart` | `DashboardStats.compute(sales, start, end)` — pure function, no Flutter dependency, straightforward to unit test |
+| `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
+| `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping + rate-limited Nominatim geocoding; `_MapView` is a pure rendering widget |
+| `features/sales/services/photo_service.dart` | All Firebase Storage operations; swap storage backend here only |
+
+### Sale card progress path
+
+Each sale card in the list shows a three-node path: **Assembly → Payment → Shipment**. Nodes are icon + colour per state; connectors turn green as steps complete. Long-press the path bar to open a legend. The path is implemented in `_SaleProgressPath` / `_PathNode` inside `sales_list_screen.dart` — no external widget file needed at this scale.
+
+Urgency signals on each card:
+- **Left accent bar** — red (overdue + blocker) or amber (this week + blocker); drawn via `BoxDecoration(border: Border(left: ...))` to avoid layout issues inside `ListView`
+- **`receipt_long` badge** — purple = NIF unfiled after payment, green = filed; tap opens AT status sheet
+- **Blocker badge** — specific icon per single blocker, generic ⚠️ for multiple; tap lists all reasons
+
+### Sale fields of note
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `assemblyStatus` | `AssemblyStatus` enum | 4 values: `notStarted`, `waitingForMaterials`, `inProgress`, `ready` |
+| `atSubmissionDone` | `bool` | Omitted from Firestore when `false`; existing documents deserialise correctly via `?? false` |
+| `notes` | `String?` | Omitted from Firestore when null |
+| `scheduledDate` | `DateTime?` | Used for timeline grouping and urgency thresholds |
+
+### Screens added since initial build
+
+| Screen | Entry point |
+|--------|------------|
+| `UnpaidBalancesScreen` | Dashboard Unpaid card |
+| `NifPendingScreen` | Dashboard NIF required card |
+| `ShoppingListScreen` | Dashboard Assembly not ready card |

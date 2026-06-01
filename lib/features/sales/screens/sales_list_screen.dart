@@ -3,37 +3,29 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../heat_map/services/geocoding_service.dart';
+import '../../heat_map/services/heat_map_service.dart';
 import '../models/sale.dart';
+import '../models/sale_filter.dart';
 import '../repositories/sale_repository.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
-enum SaleFilter {
-  all,
-  unpaid,
-  nifRequired,
-  scheduled,
-  pendingShipment,
-  shipped,
-  pickup,
-  assemblyNotReady,
-  overdue,
-}
+// Chips shown permanently in the filter row — covers daily workflow actions.
+const _kPrimaryFilters = [
+  SaleFilter.all,
+  SaleFilter.unpaid,
+  SaleFilter.pendingShipment,
+  SaleFilter.overdue,
+  SaleFilter.assemblyNotReady,
+];
 
-extension SaleFilterLabel on SaleFilter {
-  String get label => switch (this) {
-        SaleFilter.all => 'All',
-        SaleFilter.unpaid => 'Unpaid',
-        SaleFilter.nifRequired => 'NIF required',
-        SaleFilter.scheduled => 'Scheduled',
-        SaleFilter.pendingShipment => 'Pending shipment',
-        SaleFilter.shipped => 'Shipped',
-        SaleFilter.pickup => 'Pickup',
-        SaleFilter.assemblyNotReady => 'Assembly not ready',
-        SaleFilter.overdue => 'Overdue',
-      };
-}
+// Accessed via the filter icon in the AppBar — reference/info filters.
+const _kSecondaryFilters = [
+  SaleFilter.shipped,
+  SaleFilter.nifRequired,
+  SaleFilter.scheduled,
+  SaleFilter.pickup,
+];
 
 class SalesListScreen extends StatefulWidget {
   final SaleFilter initialFilter;
@@ -49,10 +41,26 @@ class SalesListScreen extends StatefulWidget {
 
 enum _ViewMode { list, timeline, map }
 
+enum _SortOrder { newestFirst, oldestFirst, priceHigh, priceLow }
+
+extension _SortOrderLabel on _SortOrder {
+  String get label => switch (this) {
+        _SortOrder.newestFirst => 'Newest first',
+        _SortOrder.oldestFirst => 'Oldest first',
+        _SortOrder.priceHigh => 'Price: high to low',
+        _SortOrder.priceLow => 'Price: low to high',
+      };
+}
+
 class _SalesListScreenState extends State<SalesListScreen> {
   final _repository = SaleRepository();
   late SaleFilter _filter;
-  _ViewMode _viewMode = _ViewMode.list;
+  _ViewMode _viewMode = _ViewMode.timeline;
+  _SortOrder _sortOrder = _SortOrder.newestFirst;
+
+  bool _isSearching = false;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -60,57 +68,101 @@ class _SalesListScreenState extends State<SalesListScreen> {
     _filter = widget.initialFilter;
   }
 
-  List<Sale> _applyFilter(List<Sale> sales) => switch (_filter) {
-        SaleFilter.all => sales,
-        SaleFilter.unpaid =>
-          sales.where((s) => s.payment.status == PaymentStatus.unpaid).toList(),
-        SaleFilter.nifRequired =>
-          sales.where((s) => s.requiresNif).toList(),
-        SaleFilter.scheduled =>
-          sales.where((s) => s.scheduledDate != null).toList(),
-        SaleFilter.pendingShipment => sales
-            .where((s) =>
-                s.shipment.type == DeliveryType.shipping &&
-                s.shipment.status == ShipmentStatus.pending)
-            .toList(),
-        SaleFilter.shipped => sales
-            .where((s) => s.shipment.status == ShipmentStatus.shipped)
-            .toList(),
-        SaleFilter.pickup => sales
-            .where((s) => s.shipment.type == DeliveryType.pickup)
-            .toList(),
-        SaleFilter.assemblyNotReady => sales
-            .where((s) => s.assemblyStatus != AssemblyStatus.ready)
-            .toList(),
-        SaleFilter.overdue => sales
-            .where((s) =>
-                s.scheduledDate != null &&
-                s.scheduledDate!.isBefore(DateTime.now()) &&
-                s.shipment.status != ShipmentStatus.delivered)
-            .toList(),
-      };
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _stopSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+  }
+
+  List<Sale> _applyFilter(List<Sale> sales) =>
+      _filter == SaleFilter.all ? sales : sales.where(_filter.test).toList();
+
+  List<Sale> _applySearch(List<Sale> sales) {
+    if (_searchQuery.isEmpty) return sales;
+    final q = _searchQuery.toLowerCase();
+    return sales
+        .where((s) =>
+            s.buyerName.toLowerCase().contains(q) ||
+            s.itemDescription.toLowerCase().contains(q))
+        .toList();
+  }
+
+  List<Sale> _applySort(List<Sale> sales) {
+    if (_sortOrder == _SortOrder.newestFirst) return sales;
+    final sorted = List<Sale>.from(sales);
+    switch (_sortOrder) {
+      case _SortOrder.oldestFirst:
+        sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      case _SortOrder.priceHigh:
+        sorted.sort((a, b) => b.price.compareTo(a.price));
+      case _SortOrder.priceLow:
+        sorted.sort((a, b) => a.price.compareTo(b.price));
+      case _SortOrder.newestFirst:
+        break;
+    }
+    return sorted;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sales'),
-        actions: [
-          PopupMenuButton<_ViewMode>(
-            icon: Icon(switch (_viewMode) {
-              _ViewMode.list => Icons.list,
-              _ViewMode.timeline => Icons.calendar_view_week,
-              _ViewMode.map => Icons.map,
-            }),
-            onSelected: (mode) => setState(() => _viewMode = mode),
-            itemBuilder: (_) => [
-              _viewMenuItem(_ViewMode.list, Icons.list, 'List'),
-              _viewMenuItem(_ViewMode.timeline, Icons.calendar_view_week, 'Timeline'),
-              _viewMenuItem(_ViewMode.map, Icons.map, 'Map'),
-            ],
-          ),
-        ],
-      ),
+      appBar: _isSearching
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _stopSearch,
+              ),
+              title: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search buyer or item...',
+                  border: InputBorder.none,
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              ),
+            )
+          : AppBar(
+              title: const Text('Sales'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () => setState(() => _isSearching = true),
+                ),
+                // Filter & sort sheet — badge when secondary filter or non-default sort active.
+                Badge(
+                  isLabelVisible: _kSecondaryFilters.contains(_filter) ||
+                      _sortOrder != _SortOrder.newestFirst,
+                  child: IconButton(
+                    icon: const Icon(Icons.tune),
+                    tooltip: 'Filter & sort',
+                    onPressed: _showOptionsSheet,
+                  ),
+                ),
+                PopupMenuButton<_ViewMode>(
+                  icon: Icon(switch (_viewMode) {
+                    _ViewMode.list => Icons.list,
+                    _ViewMode.timeline => Icons.calendar_view_week,
+                    _ViewMode.map => Icons.map,
+                  }),
+                  onSelected: (mode) => setState(() => _viewMode = mode),
+                  itemBuilder: (_) => [
+                    _viewMenuItem(_ViewMode.list, Icons.list, 'List'),
+                    _viewMenuItem(
+                        _ViewMode.timeline, Icons.calendar_view_week, 'Timeline'),
+                    _viewMenuItem(_ViewMode.map, Icons.map, 'Map'),
+                  ],
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
@@ -124,17 +176,27 @@ class _SalesListScreenState extends State<SalesListScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-              children: SaleFilter.values
-                  .map((f) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(f.label),
-                          selected: _filter == f,
-                          onSelected: (_) =>
-                              setState(() => _filter = f),
-                        ),
-                      ))
-                  .toList(),
+              children: [
+                ..._kPrimaryFilters.map((f) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(f.label),
+                        selected: _filter == f,
+                        onSelected: (_) => setState(() => _filter = f),
+                      ),
+                    )),
+                // When a secondary filter is active, surface it inline so the
+                // user can see and clear it without opening the filter sheet.
+                if (_kSecondaryFilters.contains(_filter))
+                  FilterChip(
+                    label: Text(_filter.label),
+                    selected: true,
+                    showCheckmark: false,
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => setState(() => _filter = SaleFilter.all),
+                    onSelected: (_) => setState(() => _filter = SaleFilter.all),
+                  ),
+              ],
             ),
           ),
           Expanded(
@@ -147,7 +209,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
-                final sales = _applyFilter(snapshot.data ?? []);
+                var sales = _applyFilter(snapshot.data ?? []);
+                sales = _applySearch(sales);
+                sales = _applySort(sales);
                 if (_viewMode != _ViewMode.map && sales.isEmpty) {
                   return const Center(child: Text('No sales found.'));
                 }
@@ -160,6 +224,58 @@ class _SalesListScreenState extends State<SalesListScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showOptionsSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (_, setSheetState) => SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text('More filters',
+                      style: Theme.of(context).textTheme.titleSmall),
+                ),
+                ..._kSecondaryFilters.map((f) => ListTile(
+                      title: Text(f.label),
+                      selected: _filter == f,
+                      leading: _filter == f
+                          ? const Icon(Icons.check)
+                          : const SizedBox(width: 24),
+                      onTap: () {
+                        setState(() => _filter = f);
+                        Navigator.pop(sheetContext);
+                      },
+                    )),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Text('Sort by',
+                      style: Theme.of(context).textTheme.titleSmall),
+                ),
+                ..._SortOrder.values.map((order) => ListTile(
+                      title: Text(order.label),
+                      selected: _sortOrder == order,
+                      leading: _sortOrder == order
+                          ? const Icon(Icons.check)
+                          : const SizedBox(width: 24),
+                      onTap: () {
+                        setState(() => _sortOrder = order);
+                        setSheetState(() {});
+                      },
+                    )),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -185,18 +301,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
 // ── Map view ──────────────────────────────────────────────────────────────────
 
-class _PostalCodePoint {
-  final String postalCode;
-  final LatLng position;
-  final int count;
-
-  const _PostalCodePoint({
-    required this.postalCode,
-    required this.position,
-    required this.count,
-  });
-}
-
 class _MapView extends StatefulWidget {
   final List<Sale> sales;
 
@@ -207,70 +311,38 @@ class _MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<_MapView> {
-  List<_PostalCodePoint> _points = [];
+  List<HeatMapPoint> _points = [];
   bool _loading = true;
   String _status = 'Locating postal codes...';
 
   @override
   void initState() {
     super.initState();
-    _geocode(widget.sales);
+    _load(widget.sales);
   }
 
   @override
   void didUpdateWidget(_MapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldCodes = _postalCodes(oldWidget.sales);
-    final newCodes = _postalCodes(widget.sales);
+    final oldCodes = HeatMapService.postalCounts(oldWidget.sales).keys.toSet();
+    final newCodes = HeatMapService.postalCounts(widget.sales).keys.toSet();
     if (!oldCodes.containsAll(newCodes) || !newCodes.containsAll(oldCodes)) {
-      _geocode(widget.sales);
+      _load(widget.sales);
     }
   }
 
-  Map<String, int> _extractPostalCounts(List<Sale> sales) {
-    final counts = <String, int>{};
-    for (final sale in sales) {
-      final code = sale.shipment.postalCode;
-      if (sale.shipment.type == DeliveryType.shipping &&
-          code != null &&
-          code.isNotEmpty) {
-        counts[code] = (counts[code] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }
-
-  Set<String> _postalCodes(List<Sale> sales) =>
-      _extractPostalCounts(sales).keys.toSet();
-
-  Future<void> _geocode(List<Sale> sales) async {
+  Future<void> _load(List<Sale> sales) async {
     setState(() {
       _loading = true;
       _status = 'Locating postal codes...';
     });
 
-    final counts = _extractPostalCounts(sales);
-    final points = <_PostalCodePoint>[];
-    var done = 0;
-
-    for (final entry in counts.entries) {
-      if (!mounted) return;
-      setState(() =>
-          _status = 'Locating ${entry.key} ($done/${counts.length})...');
-
-      final latLng = await GeocodingService.geocode(entry.key);
-      if (latLng != null) {
-        points.add(_PostalCodePoint(
-          postalCode: entry.key,
-          position: latLng,
-          count: entry.value,
-        ));
-      }
-
-      done++;
-      // Nominatim requires max 1 request/second
-      await Future.delayed(const Duration(seconds: 1));
-    }
+    final points = await HeatMapService.buildPoints(
+      sales,
+      onProgress: (status, done, total) {
+        if (mounted) setState(() => _status = '$status ($done/$total)...');
+      },
+    );
 
     if (mounted) {
       setState(() {
@@ -280,8 +352,7 @@ class _MapViewState extends State<_MapView> {
     }
   }
 
-  double _markerSize(int count) =>
-      (32 + (count - 1) * 8).clamp(32, 80).toDouble();
+  double _markerSize(int count) => (32 + (count - 1) * 8).clamp(32, 80).toDouble();
 
   @override
   Widget build(BuildContext context) {
@@ -421,8 +492,9 @@ class _ListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       itemCount: sales.length,
-      itemBuilder: (context, index) => _SaleTile(sale: sales[index]),
+      itemBuilder: (context, index) => _SaleCard(sale: sales[index]),
     );
   }
 }
@@ -507,7 +579,10 @@ class _TimelineView extends StatelessWidget {
                     ),
               ),
             ),
-            ...groupSales.map((s) => _SaleTile(sale: s)),
+            ...groupSales.map((s) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: _SaleCard(sale: s),
+                )),
             const Divider(height: 1),
           ],
         );
@@ -516,112 +591,468 @@ class _TimelineView extends StatelessWidget {
   }
 }
 
-class _SaleTile extends StatelessWidget {
+// Returns blocker reasons for the ⚠️ badge. Empty list = no badge.
+typedef _UrgencyReason = ({String label, IconData icon, Color color});
+
+List<_UrgencyReason> _urgencyReasons(Sale sale) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
+  final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
+
+  if (sale.scheduledDate == null) return [];
+  if (sale.shipment.status == ShipmentStatus.delivered) return [];
+
+  final isOverdue = sale.scheduledDate!.isBefore(startOfThisWeek);
+  final isThisWeek = !isOverdue && sale.scheduledDate!.isBefore(startOfNextWeek);
+  if (!isOverdue && !isThisWeek) return [];
+
+  final reasons = <_UrgencyReason>[];
+  if (sale.assemblyStatus == AssemblyStatus.waitingForMaterials) {
+    reasons.add((
+      label: 'Waiting for materials',
+      icon: Icons.shopping_bag_outlined,
+      color: Colors.amber[700]!,
+    ));
+  } else if (sale.assemblyStatus != AssemblyStatus.ready) {
+    reasons.add((
+      label: 'Assembly not ready',
+      icon: Icons.construction,
+      color: Colors.amber[700]!,
+    ));
+  }
+  if (sale.payment.status == PaymentStatus.unpaid) {
+    reasons.add((
+      label: 'Payment pending',
+      icon: Icons.credit_card_off,
+      color: Colors.orange,
+    ));
+  }
+  if (isOverdue && sale.shipment.status == ShipmentStatus.pending) {
+    reasons.add((
+      label: 'Not yet shipped',
+      icon: Icons.schedule,
+      color: Colors.red,
+    ));
+  }
+  return reasons;
+}
+
+// Returns days until scheduled date (negative = overdue). Null if no date.
+int? _daysUntilScheduled(Sale sale) {
+  if (sale.scheduledDate == null) return null;
+  final today = DateTime.now();
+  final todayDate = DateTime(today.year, today.month, today.day);
+  final scheduled = DateTime(
+    sale.scheduledDate!.year,
+    sale.scheduledDate!.month,
+    sale.scheduledDate!.day,
+  );
+  return scheduled.difference(todayDate).inDays;
+}
+
+class _SaleCard extends StatelessWidget {
   final Sale sale;
 
-  const _SaleTile({required this.sale});
+  const _SaleCard({required this.sale});
+
+  bool _isOverdue() {
+    final days = _daysUntilScheduled(sale);
+    return days != null && days < 0;
+  }
+
+  Color? _accentColor(BuildContext context) {
+    if (_urgencyReasons(sale).isEmpty) return null;
+    return _isOverdue() ? Theme.of(context).colorScheme.error : Colors.amber[700]!;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMM');
-    final isPickup = sale.shipment.type == DeliveryType.pickup;
+    final dateFormat = DateFormat('dd MMM yyyy');
 
-    return ListTile(
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(sale.buyerName, overflow: TextOverflow.ellipsis),
-          ),
-          if (sale.requiresNif) ...[
-            const SizedBox(width: 4),
-            _MiniChip(label: 'NIF', color: Colors.purple),
-          ],
-        ],
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            sale.itemDescription,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (sale.scheduledDate != null)
-            Text(
-              '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}',
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.primary),
-            ),
-        ],
-      ),
-      leading: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            '€${sale.price.toStringAsFixed(2)}',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          Text(
-            dateFormat.format(sale.createdAt),
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
-        ],
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _MiniChip(
-            label:
-                sale.payment.status == PaymentStatus.paid ? 'Paid' : 'Unpaid',
-            color: sale.payment.status == PaymentStatus.paid
-                ? Colors.green
-                : Colors.orange,
-          ),
-          const SizedBox(height: 4),
-          _MiniChip(
-            label: isPickup ? '📦 Pickup' : sale.shipment.status.label,
-            color: isPickup
-                ? Colors.teal
-                : sale.shipment.status == ShipmentStatus.delivered
-                    ? Colors.green
-                    : sale.shipment.status == ShipmentStatus.shipped
-                        ? Colors.blue
-                        : Colors.grey,
-          ),
-        ],
-      ),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SaleDetailScreen(saleId: sale.id),
+    final accentColor = _accentColor(context);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+        ),
+        child: Container(
+          decoration: accentColor != null
+              ? BoxDecoration(
+                  border: Border(
+                    left: BorderSide(color: accentColor, width: 4),
+                  ),
+                )
+              : null,
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            sale.buyerName,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '€${sale.price.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            sale.itemDescription,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        _AttentionBadges(sale: sale),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          dateFormat.format(sale.createdAt),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const Spacer(),
+                        if (sale.scheduledDate != null)
+                          _ScheduledDateLabel(sale: sale),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => _showPathLegend(context),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          const Divider(height: 1),
+                          const SizedBox(height: 8),
+                          _SaleProgressPath(sale: sale),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
   }
 }
 
-class _MiniChip extends StatelessWidget {
-  final String label;
-  final Color color;
+class _AttentionBadges extends StatelessWidget {
+  final Sale sale;
 
-  const _MiniChip({required this.label, required this.color});
+  const _AttentionBadges({required this.sale});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha(38),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withAlpha(102)),
+    final nifPaid = sale.requiresNif && sale.payment.status == PaymentStatus.paid;
+    final reasons = _urgencyReasons(sale);
+
+    if (!nifPaid && reasons.isEmpty) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (nifPaid) ...[
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: () => _showNifDetail(context, sale.atSubmissionDone),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                Icons.receipt_long,
+                size: 22,
+                color: sale.atSubmissionDone ? Colors.green : Colors.purple,
+              ),
+            ),
+          ),
+        ],
+        if (reasons.isNotEmpty) ...[
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: () => _showUrgencyDetail(context, reasons),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                reasons.length == 1
+                    ? reasons.first.icon
+                    : Icons.warning_amber_rounded,
+                size: 22,
+                color: reasons.length == 1
+                    ? reasons.first.color
+                    : Colors.orange,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ScheduledDateLabel extends StatelessWidget {
+  final Sale sale;
+
+  const _ScheduledDateLabel({required this.sale});
+
+  @override
+  Widget build(BuildContext context) {
+    final days = _daysUntilScheduled(sale)!;
+    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
+
+    final Color color;
+    if (isDelivered) {
+      color = Theme.of(context).colorScheme.onSurfaceVariant;
+    } else if (days < 0) {
+      color = Theme.of(context).colorScheme.error;
+    } else if (days <= 2) {
+      color = Theme.of(context).colorScheme.error;
+    } else if (days <= 3) {
+      color = Colors.amber[700]!;
+    } else {
+      color = Theme.of(context).colorScheme.onSurfaceVariant;
+    }
+
+    final label = isDelivered
+        ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}'
+        : days < 0
+            ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)} (${days.abs()}d overdue)'
+            : days == 0
+                ? '📅 Today'
+                : days == 1
+                    ? '📅 Tomorrow'
+                    : '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}';
+
+    return Text(
+      label,
+      style: Theme.of(context)
+          .textTheme
+          .labelSmall
+          ?.copyWith(color: color, fontWeight: FontWeight.w500),
+    );
+  }
+}
+
+void _showNifDetail(BuildContext context, bool atSubmissionDone) {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.receipt_long,
+                  color: atSubmissionDone ? Colors.green : Colors.purple),
+              const SizedBox(width: 12),
+              Text(
+                atSubmissionDone
+                    ? 'Filed with AT'
+                    : 'NIF receipt required',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            atSubmissionDone
+                ? 'This receipt has been filed with AT.'
+                : 'Payment received — file this sale\'s receipt with AT. '
+                    'The buyer\'s NIF is available on their profile.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
       ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 10, color: color),
+    ),
+  );
+}
+
+void _showUrgencyDetail(
+    BuildContext context, List<_UrgencyReason> reasons) {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Action needed',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          ...reasons.map(
+            (r) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Icon(r.icon, size: 20, color: r.color),
+                  const SizedBox(width: 12),
+                  Text(r.label,
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
+    ),
+  );
+}
+
+void _showPathLegend(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Sale progress',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          _LegendRow(Icons.build_outlined, Colors.grey, 'Assembly: not started'),
+          _LegendRow(Icons.shopping_bag_outlined, Colors.amber[700]!,
+              'Assembly: waiting for materials'),
+          _LegendRow(Icons.build_outlined, Colors.amber[700]!,
+              'Assembly: in progress'),
+          _LegendRow(Icons.build, Colors.green, 'Assembly: ready'),
+          const Divider(height: 20),
+          _LegendRow(Icons.payments_outlined, Colors.grey, 'Payment: unpaid'),
+          _LegendRow(Icons.payments, Colors.green, 'Payment: paid'),
+          const Divider(height: 20),
+          _LegendRow(
+              Icons.local_shipping_outlined, Colors.grey, 'Shipment: pending'),
+          _LegendRow(Icons.local_shipping, Colors.blue, 'Shipment: shipped'),
+          _LegendRow(
+              Icons.local_shipping, Colors.green, 'Shipment: delivered'),
+          _LegendRow(Icons.store, Colors.green, 'Pickup (no shipment needed)'),
+        ],
+      ),
+    ),
+  );
+}
+
+class _LegendRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  const _LegendRow(this.icon, this.color, this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Text(label,
+                  style: Theme.of(context).textTheme.bodySmall)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SaleProgressPath extends StatelessWidget {
+  final Sale sale;
+
+  const _SaleProgressPath({required this.sale});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _assemblyNode(),
+        _line(sale.assemblyStatus == AssemblyStatus.ready),
+        _paymentNode(),
+        _line(sale.payment.status == PaymentStatus.paid),
+        _shipmentNode(),
+      ],
+    );
+  }
+
+  Widget _assemblyNode() {
+    final (icon, color) = switch (sale.assemblyStatus) {
+      AssemblyStatus.notStarted => (Icons.build_outlined, Colors.grey),
+      AssemblyStatus.waitingForMaterials =>
+        (Icons.shopping_bag_outlined, Colors.amber[700]!),
+      AssemblyStatus.inProgress => (Icons.build_outlined, Colors.amber[700]!),
+      AssemblyStatus.ready => (Icons.build, Colors.green),
+    };
+    return _PathNode(icon: icon, color: color);
+  }
+
+  Widget _paymentNode() {
+    final paid = sale.payment.status == PaymentStatus.paid;
+    return _PathNode(
+      icon: paid ? Icons.payments : Icons.payments_outlined,
+      color: paid ? Colors.green : Colors.grey,
+    );
+  }
+
+  Widget _shipmentNode() {
+    if (sale.shipment.type == DeliveryType.pickup) {
+      return _PathNode(icon: Icons.store, color: Colors.green);
+    }
+    final (icon, color) = switch (sale.shipment.status) {
+      ShipmentStatus.pending =>
+        (Icons.local_shipping_outlined, Colors.grey),
+      ShipmentStatus.shipped => (Icons.local_shipping, Colors.blue),
+      ShipmentStatus.delivered => (Icons.local_shipping, Colors.green),
+    };
+    return _PathNode(icon: icon, color: color);
+  }
+
+  Widget _line(bool active) => Expanded(
+        child: Container(
+          height: 2,
+          color: active ? Colors.green : Colors.grey[300],
+        ),
+      );
+}
+
+class _PathNode extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _PathNode({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: Center(child: Icon(icon, size: 16, color: color)),
     );
   }
 }

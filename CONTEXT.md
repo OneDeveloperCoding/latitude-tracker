@@ -5,7 +5,7 @@ A private mobile app for a solo artisan seller in Portugal to track sales, payme
 ## Language
 
 **Sale**:
-A transaction where one or more Items are sold to a Buyer at an agreed price. Records payment, shipment, NIF requirement, components checklist, and photos.
+A transaction where one or more Items are sold to a Buyer at an agreed price. Records payment, shipment, NIF requirement, AT submission status, components checklist, photos, and optional free-text notes (e.g. gift wrap requests, colour preferences).
 _Avoid_: Order, purchase, transaction
 
 **Buyer**:
@@ -25,7 +25,7 @@ A unique, one-of-a-kind physical product (e.g. necklace, earring, tote bag, hat)
 _Avoid_: Product, SKU, stock
 
 **AssemblyStatus**:
-The production state of an Item within a Sale: `not_started`, `in_progress`, or `ready`. Determines whether the Item can be shipped.
+The production state of an Item within a Sale: `not_started`, `waiting_for_materials`, `in_progress`, or `ready`. `waiting_for_materials` means the seller knows components must be purchased before work can start — typically used for event orders taken before materials are sourced. Determines whether the Item can be shipped.
 _Avoid_: Production status, build status
 
 **ComponentChecklist**:
@@ -45,8 +45,24 @@ A summary screen showing revenue and action counts for a selected period (yearly
 _Avoid_: Report, analytics, overview
 
 **SalesHeatMap**:
-A geographic view showing the distribution of online Sales by postal code, visualised as a heat map over a map of Portugal.
+A geographic view showing the distribution of online Sales by postal code, visualised as a heat map over a map of Portugal. Sales are grouped by 4-digit locality prefix (e.g. 3000-550 and 3000-313 both map to "3000" → one marker for Coimbra). Only Portuguese postal codes are plotted; foreign addresses are excluded.
 _Avoid_: Geographic report, map view
+
+**ShoppingList**:
+An aggregated view of all materials still needed to complete open Sales. Shows every ComponentItem with `isAvailable: false` grouped by Sale, filtered to Sales that are not yet assembled and not yet delivered.
+_Avoid_: Inventory, stock, bill of materials (those imply tracked quantities)
+
+**UnpaidBalances**:
+A buyer-centric view of all outstanding payments. Groups unpaid Sales by Buyer, sorted by total amount owed descending. The entry point when deciding who to follow up with.
+_Avoid_: Debt, accounts receivable
+
+**NifPending**:
+A list of Sales that require a NIF receipt, shown alongside the Buyer's saved NIF number and AT submission status. Pending submissions are shown first; filed ones remain visible as a historical record.
+_Avoid_: Tax report, invoice list
+
+**ATSubmission**:
+The act of filing a NIF receipt with the Autoridade Tributária for a given Sale. A Sale either has a pending AT submission (not yet filed) or a completed one (filed). This is a one-way toggle tracked per Sale — once filed it can be undone if needed. Unrelated to whether the Buyer's NIF is saved on their profile.
+_Avoid_: Invoice, filing, tax return
 
 **Archive**:
 A read-only export of Sales, Buyers, and BuyerAddresses for a given year, shared via the OS share sheet (Google Drive, email, etc.). Can be re-imported into the app for historical lookup only. The JSON includes `photoUrls` for each Sale — since photos are kept in Firebase Storage after a year purge, they remain viewable in the import screen via those URLs.
@@ -57,10 +73,12 @@ _Avoid_: Backup, dump
 - A **Sale** belongs to exactly one **Buyer** (stores `buyerId` + `buyerName` as a snapshot)
 - A **Sale** has one **Payment** (which may be unpaid)
 - A **Sale** records whether a NIF receipt was requested (independent of the Buyer's saved NIF)
+- A **Sale** with `requiresNif` tracks whether its **ATSubmission** is pending or completed
 - A **Sale** has one **Shipment** OR is marked as in-person pickup (no Shipment needed)
 - A **Sale** has one **ComponentChecklist** and one **AssemblyStatus** per Item
 - A **Shipment** references one **BuyerAddress** and records a postal code
 - A **Sale** may have zero or more photos (compressed to max 1200px wide, JPEG quality 85, ~200–300KB each)
+- A **Sale** may have optional free-text notes (special instructions, gift requests, colour choices)
 - A **Buyer** may have multiple **Sales** over time
 - A **Buyer** may have multiple **BuyerAddresses**; one is marked as default
 - A **Buyer** may optionally have a saved **NIF**
@@ -117,14 +135,32 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/photos/{
 ## Screens
 
 1. **Login** — email + password, stays logged in permanently
-2. **Dashboard** — period selector (yearly / monthly / weekly); paid + pending revenue; action cards for unpaid, pending shipment, assembly not ready, NIF required, overdue; tapping a card navigates to filtered Sales list
-3. **Sales list** — all Sales, filter chips (all, unpaid, NIF required, scheduled, pending shipment, shipped, pickup, assembly not ready, overdue); timeline view groups by scheduled/created date with an Overdue section for past-due undelivered Sales
-4. **New/edit sale** — pick Buyer (with quick inline Buyer + address creation), describe Item, add multiple photos, set AssemblyStatus, add ComponentChecklist, set price, Payment method, NIF required flag, shipping or in-person pickup, optional scheduled delivery date; orphan photo cleanup on cancel
-5. **Sale detail** — live view/edit via stream; photo grid at top; assembly dropdown; component checklist; scheduled date (set / change / clear); payment card with paid toggle; delivery card with status dropdown, full address display, CTT tracking code (tappable → opens ctt.pt)
-6. **Buyers list** — all Buyers, searchable
-7. **Buyer detail** — view/edit Buyer info (name, Instagram, phone, NIF); BuyerAddresses list with default badge, add/edit/delete; each address shows full address with edit/delete popup
-8. **Sales heat map** — placeholder; planned: postal code heat map of online Sales over Portugal
-9. **Settings** — account info + sign out; export year (JSON via share sheet); import archive (browse read-only); delete year (double-confirmed, deletes sales + photos); app version
+
+2. **Dashboard** — period selector (yearly / monthly / weekly); paid + pending revenue card; five action cards (Unpaid, Pending shipment, Assembly not ready, NIF required, Overdue) — Unpaid shows count and total €; each card taps to its dedicated view:
+   - Unpaid → UnpaidBalances screen
+   - Assembly not ready → ShoppingList screen
+   - NIF required → NifPending screen
+   - Pending shipment / Overdue → filtered Sales list
+
+3. **Sales list** — default view is timeline (grouped Overdue → This week → Next week → Later → past months); five primary filter chips; secondary filters + sort via tune icon; live search; three view modes (list, timeline, map). Each Sale shown as a card: buyer name + price top row; item description + attention badges right; creation date left + due date right; progress path spanning full card width at the bottom (tap → legend). Left accent bar: red = overdue with blockers, amber = this week with blockers. Attention badges (tap to open detail sheet): `receipt_long` purple = NIF unfiled, green = NIF filed; specific blocker icon = single urgency reason, generic ⚠️ = multiple.
+
+4. **New/edit sale** — pick Buyer (inline Buyer + address creation); repeat-buyer hint shows "X previous sales · last: MMM YYYY" after selection; describe Item, photos, AssemblyStatus (including `waiting_for_materials`), ComponentChecklist, price, payment method, NIF required flag, delivery type (shipping or pickup), optional scheduled date, optional free-text Notes; orphan photo cleanup on cancel
+
+5. **Sale detail** — live stream; photo grid; assembly dropdown (includes `waiting_for_materials`); component checklist; scheduled date (set / change / clear); payment toggle; AT submission toggle (shown when `requiresNif && paid` — tap to mark filed/unfiled, green when filed); delivery card with status, address, CTT tracking code (tap → copy to clipboard, long-press → ctt.pt, open-in-new icon); Notes card (inline editable); buyer name taps to Buyer detail
+
+6. **Buyers list** — all Buyers, searchable; three sort modes (alphabetical, grouped by last purchase, ranking); ranking metric chips (total spent, frequency, average order, unpaid balance)
+
+7. **Buyer detail** — view/edit Buyer info; purchase history with month filter chips and summary (total sales, paid, unpaid balance, avg order, last purchase); BuyerAddresses list
+
+8. **Unpaid balances** — unpaid Sales grouped by Buyer, sorted by total owed; grand total header; collapsible buyer cards (name → buyer profile, sales → sale detail)
+
+9. **NIF receipts pending** — all Sales with `requiresNif: true`; pending AT submissions first, filed ones after (history); header shows "X pending · Y filed"; each row shows buyer name, item, price, date, Buyer's saved NIF (red "No NIF on file" if absent), and a checkmark toggle to mark AT submission done/undone; filed rows shown at reduced opacity; taps to Sale detail
+
+10. **Shopping list** — open Sales (assembly not ready + not delivered) that have unacquired components; grouped by Sale with buyer name, item, assembly badge, and each needed component
+
+11. **Sales heat map** — third view mode in Sales list; groups shipped sales by 4-digit postal code locality prefix; geocodes via Nominatim (1 req/sec); markers sized by count; tap → snackbar
+
+12. **Settings** — sign out; export year to JSON (share sheet); import archive (read-only preview → Import button writes to Firestore, skipping existing records); delete year (optional photo deletion toggle); app version
 
 ## Example dialogue
 
