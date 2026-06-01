@@ -29,6 +29,23 @@ class SaleRepository {
   Future<void> updateSale(Sale sale) =>
       _salesRef.doc(sale.id).update(sale.toFirestore());
 
+  Future<List<Sale>> getSalesForYear(int year) async {
+    final snap = await _salesRef
+        .where('createdAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(year)))
+        .where('createdAt',
+            isLessThan: Timestamp.fromDate(DateTime(year + 1)))
+        .get();
+    return snap.docs.map(Sale.fromFirestore).toList();
+  }
+
+  Future<void> deleteAllSalesForYear(int year) async {
+    final sales = await getSalesForYear(year);
+    for (final sale in sales) {
+      await deleteSale(sale.id);
+    }
+  }
+
   Future<void> deleteSale(String id) async {
     await PhotoService().deleteAllPhotos(id);
     await _salesRef.doc(id).delete();

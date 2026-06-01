@@ -16,6 +16,16 @@ class BuyerRepository {
   CollectionReference<Map<String, dynamic>> _addressesRef(String buyerId) =>
       _buyersRef.doc(buyerId).collection('addresses');
 
+  Future<List<Buyer>> getAllBuyers() async {
+    final snap = await _buyersRef.orderBy('name').get();
+    return snap.docs.map(Buyer.fromFirestore).toList();
+  }
+
+  Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId) async {
+    final snap = await _addressesRef(buyerId).get();
+    return snap.docs.map(BuyerAddress.fromFirestore).toList();
+  }
+
   Stream<List<Buyer>> watchBuyers() => _buyersRef
       .orderBy('name')
       .snapshots()
