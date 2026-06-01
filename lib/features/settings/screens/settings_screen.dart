@@ -52,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Delete archived year',
                 style: TextStyle(color: Colors.red)),
             subtitle: const Text(
-                'Permanently removes a year\'s sales — export first'),
+                'Removes a year\'s sales — photos are kept for archive viewing'),
             onTap: () => _deleteYear(context),
           ),
           const Divider(),
@@ -103,9 +103,18 @@ class SettingsScreen extends StatelessWidget {
     final service = ArchiveService();
     File? file;
 
-    await _runWithProgress(context, 'Exporting $year...', () async {
-      file = await service.exportYear(year);
-    });
+    try {
+      await _runWithProgress(context, 'Exporting $year...', () async {
+        file = await service.exportYear(year);
+      });
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+      return;
+    }
 
     if (file == null || !context.mounted) return;
     await SharePlus.instance.share(
@@ -150,35 +159,32 @@ class SettingsScreen extends StatelessWidget {
     final year = await _pickYear(context, title: 'Delete which year?');
     if (year == null || !context.mounted) return;
 
-    final confirmed = await showDialog<bool>(
+    // Returns null = cancelled, false = keep photos, true = delete photos too
+    final deletePhotos = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Delete all $year data?'),
-        content: Text(
-          'This permanently deletes all sales and photos from $year. '
-          'Make sure you have exported a backup first.\n\n'
-          'This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete permanently'),
-          ),
-        ],
-      ),
+      builder: (_) => _DeleteYearDialog(year: year),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (deletePhotos == null || !context.mounted) return;
 
-    await _runWithProgress(
-      context,
-      'Deleting $year data...',
-      () => SaleRepository().deleteAllSalesForYear(year),
-    );
+    final progressLabel = deletePhotos
+        ? 'Deleting $year data and photos...'
+        : 'Deleting $year data...';
+
+    try {
+      await _runWithProgress(
+        context,
+        progressLabel,
+        () => SaleRepository()
+            .deleteAllSalesForYear(year, deletePhotos: deletePhotos),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e')),
+        );
+      }
+      return;
+    }
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -249,6 +255,57 @@ class _SectionHeader extends StatelessWidget {
               letterSpacing: 1.2,
             ),
       ),
+    );
+  }
+}
+
+class _DeleteYearDialog extends StatefulWidget {
+  final int year;
+
+  const _DeleteYearDialog({required this.year});
+
+  @override
+  State<_DeleteYearDialog> createState() => _DeleteYearDialogState();
+}
+
+class _DeleteYearDialogState extends State<_DeleteYearDialog> {
+  bool _deletePhotos = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Delete all ${widget.year} data?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'This permanently removes all sales from ${widget.year}. '
+            'Make sure you have exported a backup first.',
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Also delete photos'),
+            subtitle: const Text(
+              'Removes photos from Storage — archive photo previews will no longer work',
+            ),
+            value: _deletePhotos,
+            onChanged: (v) => setState(() => _deletePhotos = v),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, _deletePhotos),
+          child: const Text('Delete permanently'),
+        ),
+      ],
     );
   }
 }
