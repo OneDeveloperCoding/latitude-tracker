@@ -4,6 +4,19 @@ import 'package:flutter/material.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
 
+const _kCountries = [
+  'Portugal',
+  'Spain',
+  'France',
+  'Germany',
+  'United Kingdom',
+  'Netherlands',
+  'Belgium',
+  'Italy',
+  'Switzerland',
+  'Other',
+];
+
 class BuyerAddressFormScreen extends StatefulWidget {
   final String buyerId;
   final BuyerAddress? address;
@@ -26,7 +39,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
   late final TextEditingController _streetController;
   late final TextEditingController _cityController;
   late final TextEditingController _postalCodeController;
-  late final TextEditingController _countryController;
+  late String _country;
   late bool _isDefault;
 
   bool _isLoading = false;
@@ -41,8 +54,8 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
     _cityController = TextEditingController(text: widget.address?.city);
     _postalCodeController =
         TextEditingController(text: widget.address?.postalCode);
-    _countryController =
-        TextEditingController(text: widget.address?.country ?? 'Portugal');
+    final saved = widget.address?.country ?? 'Portugal';
+    _country = _kCountries.contains(saved) ? saved : 'Other';
     _isDefault = widget.address?.isDefault ?? false;
   }
 
@@ -52,7 +65,6 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
     _streetController.dispose();
     _cityController.dispose();
     _postalCodeController.dispose();
-    _countryController.dispose();
     super.dispose();
   }
 
@@ -68,7 +80,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
           street: _streetController.text.trim(),
           city: _cityController.text.trim(),
           postalCode: _postalCodeController.text.trim(),
-          country: _countryController.text.trim(),
+          country: _country,
           isDefault: _isDefault,
         );
         await _repository.updateAddress(widget.buyerId, updated);
@@ -79,7 +91,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
           street: _streetController.text.trim(),
           city: _cityController.text.trim(),
           postalCode: _postalCodeController.text.trim(),
-          country: _countryController.text.trim(),
+          country: _country,
           isDefault: _isDefault,
         );
         await _repository.createAddress(widget.buyerId, address);
@@ -165,9 +177,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
                 if (v == null || v.trim().isEmpty) {
                   return 'Postal code is required';
                 }
-                final isPortugal =
-                    _countryController.text.trim().toLowerCase() == 'portugal';
-                if (isPortugal &&
+                if (_country == 'Portugal' &&
                     !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
                   return 'Format: 0000-000';
                 }
@@ -175,15 +185,16 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
               },
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _countryController,
-              textCapitalization: TextCapitalization.words,
+            DropdownButtonFormField<String>(
+              value: _country,
               decoration: const InputDecoration(
                 labelText: 'Country *',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Country is required' : null,
+              items: _kCountries
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: (v) => setState(() => _country = v!),
             ),
             const SizedBox(height: 8),
             SwitchListTile(
