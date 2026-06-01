@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
 import '../../buyers/screens/unpaid_balances_screen.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/models/sale_filter.dart';
-import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/nif_pending_screen.dart';
 import '../../sales/screens/sales_list_screen.dart';
 import '../../sales/screens/shopping_list_screen.dart';
@@ -21,7 +22,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _repository = SaleRepository();
   _ViewMode _viewMode = _ViewMode.monthly;
 
   int _year = DateTime.now().year;
@@ -121,13 +121,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: StreamBuilder<List<Sale>>(
-        stream: _repository.watchSales(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: ValueListenableBuilder<StoreState<List<Sale>>>(
+        valueListenable: SalesStore.state,
+        builder: (context, storeState, _) {
+          if (storeState is! StoreLoaded<List<Sale>>) {
             return const Center(child: CircularProgressIndicator());
           }
-          final all = snapshot.data ?? [];
+          final all = storeState.data;
           final stats = DashboardStats.compute(all, _periodStart, _periodEnd);
 
           return ListView(

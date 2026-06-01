@@ -168,13 +168,23 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _toggleComponent(int index) {
     setState(() {
-      final c = _components[index];
-      _components[index] = c.copyWith(isAvailable: !c.isAvailable);
+      final updated = List<ComponentItem>.from(_components);
+      updated[index] = updated[index].copyWith(isAvailable: !updated[index].isAvailable);
+      _applyComponentRule(updated);
     });
   }
 
-  void _removeComponent(int index) =>
-      setState(() => _components.removeAt(index));
+  void _removeComponent(int index) {
+    setState(() {
+      final updated = List<ComponentItem>.from(_components)..removeAt(index);
+      _applyComponentRule(updated);
+    });
+  }
+
+  void _applyComponentRule(List<ComponentItem> updated) {
+    _components = updated;
+    _assemblyStatus = Sale.deriveAssemblyStatus(updated, _assemblyStatus);
+  }
 
   String? _nullIfEmpty(String value) =>
       value.trim().isEmpty ? null : value.trim();

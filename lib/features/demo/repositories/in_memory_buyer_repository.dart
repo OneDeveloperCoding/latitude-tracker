@@ -2,9 +2,10 @@ import 'dart:async';
 
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
+import '../../buyers/repositories/buyer_repository.dart';
 import '../demo_data.dart';
 
-class InMemoryBuyerRepository {
+class InMemoryBuyerRepository implements BuyerRepository {
   final _buyers = <Buyer>[];
   final _addresses = <String, List<BuyerAddress>>{};
   final _buyerController = StreamController<List<Buyer>>.broadcast();
@@ -45,29 +46,36 @@ class InMemoryBuyerRepository {
     }
   }
 
+  @override
   Stream<List<Buyer>> watchBuyers() async* {
     yield _sorted;
     yield* _buyerController.stream;
   }
 
+  @override
   Future<Buyer?> getBuyer(String id) async =>
       _buyers.where((b) => b.id == id).firstOrNull;
 
+  @override
   Future<List<Buyer>> getAllBuyers() async => _sorted;
 
+  @override
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId) async =>
       List.from(_addresses[buyerId] ?? []);
 
+  @override
   Stream<List<BuyerAddress>> watchAddresses(String buyerId) async* {
     yield List.from(_addresses[buyerId] ?? []);
     yield* _addressController(buyerId).stream;
   }
 
+  @override
   Future<void> createBuyer(Buyer buyer) async {
     _buyers.add(buyer);
     _emitBuyers();
   }
 
+  @override
   Future<void> updateBuyer(Buyer buyer) async {
     final idx = _buyers.indexWhere((b) => b.id == buyer.id);
     if (idx != -1) {
@@ -76,12 +84,14 @@ class InMemoryBuyerRepository {
     }
   }
 
+  @override
   Future<void> deleteBuyer(String id) async {
     _buyers.removeWhere((b) => b.id == id);
     _addresses.remove(id);
     _emitBuyers();
   }
 
+  @override
   Future<void> createAddress(String buyerId, BuyerAddress address) async {
     final list = _addresses.putIfAbsent(buyerId, () => []);
     if (address.isDefault) {
@@ -93,6 +103,7 @@ class InMemoryBuyerRepository {
     _emitAddresses(buyerId);
   }
 
+  @override
   Future<void> updateAddress(String buyerId, BuyerAddress address) async {
     final list = _addresses[buyerId] ?? [];
     if (address.isDefault) {
@@ -109,6 +120,7 @@ class InMemoryBuyerRepository {
     }
   }
 
+  @override
   Future<void> deleteAddress(String buyerId, String addressId) async {
     _addresses[buyerId]?.removeWhere((a) => a.id == addressId);
     _emitAddresses(buyerId);
