@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/l10n/app_strings.dart';
+import '../../../core/l10n/locale_settings.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
 import 'archive_import_screen.dart';
@@ -15,49 +17,49 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(s.navSettings)),
       body: ListView(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         children: [
-          _SectionHeader('Account'),
+          _SectionHeader(s.account),
           ListTile(
             leading: const Icon(Icons.person),
-            title: const Text('Signed in as'),
+            title: Text(s.signedInAs),
             subtitle: Text(user?.email ?? ''),
           ),
           ListTile(
             leading: const Icon(Icons.logout),
-            title: const Text('Sign out'),
+            title: Text(s.signOut),
             onTap: () => _confirmSignOut(context),
           ),
           const Divider(),
-          _SectionHeader('Archive'),
+          _SectionHeader(s.archive),
           ListTile(
             leading: const Icon(Icons.upload),
-            title: const Text('Export year'),
-            subtitle: const Text('Save a backup of all sales data'),
+            title: Text(s.exportYear),
+            subtitle: Text(s.exportYearSubtitle),
             onTap: () => _exportYear(context),
           ),
           ListTile(
             leading: const Icon(Icons.download),
-            title: const Text('Import archive'),
-            subtitle: const Text('Browse a previously exported backup'),
+            title: Text(s.importArchive),
+            subtitle: Text(s.importArchiveSubtitle),
             onTap: () => _importArchive(context),
           ),
           ListTile(
-            leading: const Icon(Icons.delete_forever,
-                color: Colors.red),
-            title: const Text('Delete archived year',
-                style: TextStyle(color: Colors.red)),
-            subtitle: const Text(
-                'Removes a year\'s sales — photos are kept for archive viewing'),
+            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            title: Text(s.deleteArchivedYear,
+                style: const TextStyle(color: Colors.red)),
+            subtitle: Text(s.deleteArchivedYearSubtitle),
             onTap: () => _deleteYear(context),
           ),
           const Divider(),
-          _SectionHeader('App'),
+          _SectionHeader(s.app),
+          _LanguageTile(),
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
@@ -65,7 +67,7 @@ class SettingsScreen extends StatelessWidget {
               final build = snapshot.data?.buildNumber ?? '';
               return ListTile(
                 leading: const Icon(Icons.info_outline),
-                title: const Text('Version'),
+                title: Text(s.version),
                 trailing: Text('$version ($build)'),
               );
             },
@@ -76,18 +78,19 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
+    final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Sign out?'),
+        title: Text(s.signOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign out'),
+            child: Text(s.signOut),
           ),
         ],
       ),
@@ -98,20 +101,21 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _exportYear(BuildContext context) async {
-    final year = await _pickYear(context, title: 'Export which year?');
+    final s = context.s;
+    final year = await _pickYear(context, title: s.exportWhichYear);
     if (year == null || !context.mounted) return;
 
     final service = ArchiveService();
     File? file;
 
     try {
-      await _runWithProgress(context, 'Exporting $year...', () async {
+      await _runWithProgress(context, s.exportingYear(year), () async {
         file = await service.exportYear(year);
       });
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
+          SnackBar(content: Text(s.exportFailed(e))),
         );
       }
       return;
@@ -121,12 +125,13 @@ class SettingsScreen extends StatelessWidget {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file!.path)],
-        subject: 'Latitude Tracker — $year archive',
+        subject: s.exportSubject(year),
       ),
     );
   }
 
   Future<void> _importArchive(BuildContext context) async {
+    final s = context.s;
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['json'],
@@ -143,7 +148,7 @@ class SettingsScreen extends StatelessWidget {
 
     if (archive == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid archive file')),
+        SnackBar(content: Text(s.invalidArchive)),
       );
       return;
     }
@@ -157,31 +162,27 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _deleteYear(BuildContext context) async {
-    final year = await _pickYear(context, title: 'Delete which year?');
+    final s = context.s;
+    final year = await _pickYear(context, title: s.deleteWhichYear);
     if (year == null || !context.mounted) return;
 
-    // Returns null = cancelled, false = keep photos, true = delete photos too
     final deletePhotos = await showDialog<bool>(
       context: context,
       builder: (_) => _DeleteYearDialog(year: year),
     );
     if (deletePhotos == null || !context.mounted) return;
 
-    final progressLabel = deletePhotos
-        ? 'Deleting $year data and photos...'
-        : 'Deleting $year data...';
-
     try {
       await _runWithProgress(
         context,
-        progressLabel,
+        s.deletingYear(year, deletePhotos),
         () => SaleRepository()
             .deleteAllSalesForYear(year, deletePhotos: deletePhotos),
       );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e')),
+          SnackBar(content: Text(s.deleteFailed(e))),
         );
       }
       return;
@@ -189,15 +190,14 @@ class SettingsScreen extends StatelessWidget {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$year data deleted')),
+        SnackBar(content: Text(s.yearDataDeleted(year))),
       );
     }
   }
 
   Future<int?> _pickYear(BuildContext context, {required String title}) {
     final currentYear = DateTime.now().year;
-    final years =
-        List.generate(5, (i) => currentYear - i);
+    final years = List.generate(5, (i) => currentYear - i);
 
     return showDialog<int>(
       context: context,
@@ -240,6 +240,31 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
+class _LanguageTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final currentCode = LocaleSettings.locale.value.languageCode;
+
+    return ListTile(
+      leading: const Icon(Icons.language),
+      title: Text(s.language),
+      trailing: SegmentedButton<String>(
+        segments: const [
+          ButtonSegment(value: 'pt', label: Text('PT')),
+          ButtonSegment(value: 'en', label: Text('EN')),
+        ],
+        selected: {currentCode},
+        onSelectionChanged: (v) =>
+            LocaleSettings.setLocale(Locale(v.first)),
+        style: const ButtonStyle(
+          visualDensity: VisualDensity.compact,
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
   final String title;
 
@@ -274,22 +299,18 @@ class _DeleteYearDialogState extends State<_DeleteYearDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return AlertDialog(
-      title: Text('Delete all ${widget.year} data?'),
+      title: Text(s.deleteAllYearTitle(widget.year)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'This permanently removes all sales from ${widget.year}. '
-            'Make sure you have exported a backup first.',
-          ),
+          Text(s.deleteAllYearBody(widget.year)),
           const SizedBox(height: 16),
           SwitchListTile(
-            title: const Text('Also delete photos'),
-            subtitle: const Text(
-              'Removes photos from Storage — archive photo previews will no longer work',
-            ),
+            title: Text(s.alsoDeletePhotos),
+            subtitle: Text(s.alsoDeletePhotosSubtitle),
             value: _deletePhotos,
             onChanged: (v) => setState(() => _deletePhotos = v),
             contentPadding: EdgeInsets.zero,
@@ -299,12 +320,12 @@ class _DeleteYearDialogState extends State<_DeleteYearDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(s.cancel),
         ),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: Colors.red),
           onPressed: () => Navigator.pop(context, _deletePhotos),
-          child: const Text('Delete permanently'),
+          child: Text(s.deletePermanently),
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sale_detail_screen.dart';
@@ -26,7 +27,7 @@ class BuyerDetailScreen extends StatelessWidget {
         final buyer = snapshot.data;
         return Scaffold(
           appBar: AppBar(
-            title: Text(buyer?.name ?? 'Buyer'),
+            title: Text(buyer?.name ?? context.s.saleFallbackTitle),
             actions: [
               if (buyer != null) ...[
                 IconButton(
@@ -53,30 +54,29 @@ class BuyerDetailScreen extends StatelessWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, Buyer buyer) async {
+    final s = context.s;
     final sales = await SaleRepository().getSalesForBuyer(buyer.id);
     if (!context.mounted) return;
 
     final count = sales.length;
     final message = count == 0
-        ? '${buyer.name} will be permanently removed.'
-        : '${buyer.name} has $count sale${count == 1 ? '' : 's'} on record. '
-            'Their sales history will be kept, but the buyer profile and all '
-            'saved addresses will be removed.';
+        ? s.deleteBuyerNoSalesBody(buyer.name)
+        : s.deleteBuyerWithSalesBody(buyer.name, count);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Delete ${buyer.name}?'),
+        title: Text(s.deleteBuyerTitle(buyer.name)),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(s.delete),
           ),
         ],
       ),
@@ -96,6 +96,7 @@ class _BuyerDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -105,14 +106,14 @@ class _BuyerDetailBody extends StatelessWidget {
       children: [
         _InfoSection(buyer: buyer),
         const SizedBox(height: 24),
-        Text('Purchase history', style: textTheme.titleMedium),
+        Text(s.purchaseHistory, style: textTheme.titleMedium),
         const SizedBox(height: 8),
         _BuyerSalesSection(buyerId: buyer.id),
         const SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Addresses', style: textTheme.titleMedium),
+            Text(s.addresses, style: textTheme.titleMedium),
             TextButton.icon(
               onPressed: () => Navigator.push(
                 context,
@@ -122,7 +123,7 @@ class _BuyerDetailBody extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.add),
-              label: const Text('Add'),
+              label: Text(s.add),
             ),
           ],
         ),
@@ -136,7 +137,7 @@ class _BuyerDetailBody extends StatelessWidget {
             final addresses = snapshot.data ?? [];
             if (addresses.isEmpty) {
               return Text(
-                'No addresses saved.',
+                s.noAddressesSaved,
                 style: textTheme.bodyMedium
                     ?.copyWith(color: colorScheme.onSurfaceVariant),
               );
@@ -164,19 +165,20 @@ class _BuyerDetailBody extends StatelessWidget {
 
   Future<void> _deleteAddress(
       BuildContext context, BuyerAddress address) async {
+    final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete address?'),
-        content: Text('Remove "${address.label}"?'),
+        title: Text(s.deleteAddressTitle),
+        content: Text(s.deleteAddressConfirm(address.label)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(s.delete),
           ),
         ],
       ),
@@ -204,11 +206,12 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return StreamBuilder<List<Sale>>(
       stream: _saleRepo.watchSalesForBuyer(widget.buyerId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Text('Error loading sales: ${snapshot.error}',
+          return Text(s.errorLoadingSalesMsg(snapshot.error!),
               style: TextStyle(
                   color: Theme.of(context).colorScheme.error));
         }
@@ -223,7 +226,7 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
 
         if (allSales.isEmpty) {
           return Text(
-            'No purchases yet.',
+            s.noPurchasesYet,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -231,17 +234,17 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
         }
 
         final months = ({
-          for (final s in allSales)
-            DateTime(s.createdAt.year, s.createdAt.month)
+          for (final sale in allSales)
+            DateTime(sale.createdAt.year, sale.createdAt.month)
         }.toList()
               ..sort((a, b) => b.compareTo(a)));
 
         final filtered = _filterMonth == null
             ? allSales
             : allSales
-                .where((s) =>
-                    s.createdAt.year == _filterMonth!.year &&
-                    s.createdAt.month == _filterMonth!.month)
+                .where((sale) =>
+                    sale.createdAt.year == _filterMonth!.year &&
+                    sale.createdAt.month == _filterMonth!.month)
                 .toList();
 
         return Column(
@@ -254,7 +257,7 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
               child: Row(
                 children: [
                   FilterChip(
-                    label: const Text('All'),
+                    label: Text(s.all),
                     selected: _filterMonth == null,
                     onSelected: (_) => setState(() => _filterMonth = null),
                   ),
@@ -286,6 +289,7 @@ class _PurchaseSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final stats = BuyerStats.compute(sales);
 
@@ -294,22 +298,25 @@ class _PurchaseSummary extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           children: [
-            _StatRow(label: 'Total sales', value: '${stats.saleCount}'),
-            _StatRow(label: 'Total paid', value: currency.format(stats.totalPaid)),
+            _StatRow(label: s.totalSalesLabel, value: '${stats.saleCount}'),
+            _StatRow(
+                label: s.totalPaidLabel,
+                value: currency.format(stats.totalPaid)),
             if (stats.unpaidBalance > 0)
               _StatRow(
-                label: 'Unpaid balance',
+                label: s.unpaidBalanceLabel,
                 value: currency.format(stats.unpaidBalance),
                 valueColor: Colors.orange,
               ),
             _StatRow(
-              label: 'Average order',
+              label: s.averageOrderLabel,
               value: currency.format(stats.averageOrderValue),
             ),
             if (stats.lastPurchaseAt != null)
               _StatRow(
-                label: 'Last purchase',
-                value: DateFormat('dd MMM yyyy').format(stats.lastPurchaseAt!),
+                label: s.lastPurchaseLabel,
+                value:
+                    DateFormat('dd MMM yyyy').format(stats.lastPurchaseAt!),
               ),
           ],
         ),
@@ -348,6 +355,7 @@ class _SaleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final isPaid = sale.payment.status == PaymentStatus.paid;
 
     return Card(
@@ -360,7 +368,7 @@ class _SaleTile extends StatelessWidget {
           children: [
             Text('€${sale.price.toStringAsFixed(2)}'),
             Text(
-              isPaid ? 'Paid' : 'Unpaid',
+              isPaid ? s.paid : s.unpaid,
               style: TextStyle(
                 fontSize: 11,
                 color: isPaid ? Colors.green : Colors.orange,
@@ -387,6 +395,7 @@ class _InfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -404,7 +413,7 @@ class _InfoSection extends StatelessWidget {
             if (buyer.instagramHandle == null &&
                 buyer.phone == null &&
                 buyer.nif == null)
-              const Text('No contact details saved.'),
+              Text(s.noContactDetails),
           ],
         ),
       ),
@@ -448,6 +457,7 @@ class _AddressTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Card(
       child: ListTile(
         title: Row(
@@ -456,7 +466,7 @@ class _AddressTile extends StatelessWidget {
             if (address.isDefault) ...[
               const SizedBox(width: 8),
               Chip(
-                label: const Text('Default'),
+                label: Text(s.defaultChip),
                 padding: EdgeInsets.zero,
                 labelPadding:
                     const EdgeInsets.symmetric(horizontal: 6),
@@ -471,8 +481,8 @@ class _AddressTile extends StatelessWidget {
         isThreeLine: true,
         trailing: PopupMenuButton(
           itemBuilder: (_) => [
-            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            PopupMenuItem(value: 'edit', child: Text(s.edit)),
+            PopupMenuItem(value: 'delete', child: Text(s.delete)),
           ],
           onSelected: (value) {
             if (value == 'edit') onEdit();

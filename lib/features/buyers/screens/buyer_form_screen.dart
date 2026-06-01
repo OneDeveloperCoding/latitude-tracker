@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../models/buyer.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
@@ -36,7 +37,6 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   late final TextEditingController _phoneController;
   late final TextEditingController _nifController;
 
-  // Quick address fields — only shown when creating a new buyer
   bool _addAddress = false;
   final _labelController = TextEditingController(text: 'Home');
   final _streetController = TextEditingController();
@@ -125,7 +125,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving buyer: $e')),
+          SnackBar(content: Text(context.s.errorSavingBuyerMsg(e))),
         );
       }
     } finally {
@@ -135,9 +135,10 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Buyer' : 'New Buyer'),
+        title: Text(_isEditing ? s.editBuyer : s.newBuyer),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -147,7 +148,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                     width: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Save'),
+                : Text(s.save),
           ),
         ],
       ),
@@ -203,8 +204,8 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
               const Divider(),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Add shipping address'),
-                subtitle: const Text('Optional — can be added later'),
+                title: Text(s.addShippingAddress),
+                subtitle: Text(s.addShippingAddressSubtitle),
                 value: _addAddress,
                 onChanged: (v) => setState(() => _addAddress = v),
               ),
@@ -227,9 +228,10 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                     labelText: 'Street *',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => _addAddress && (v == null || v.trim().isEmpty)
-                      ? 'Street is required'
-                      : null,
+                  validator: (v) =>
+                      _addAddress && (v == null || v.trim().isEmpty)
+                          ? 'Street is required'
+                          : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -239,23 +241,24 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                     labelText: 'City *',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => _addAddress && (v == null || v.trim().isEmpty)
-                      ? 'City is required'
-                      : null,
+                  validator: (v) =>
+                      _addAddress && (v == null || v.trim().isEmpty)
+                          ? 'City is required'
+                          : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _postalCodeController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Postal code *',
-                    hintText: '0000-000',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: s.postalCodeLabel,
+                    hintText: s.postalCodeHint,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (v) {
                     if (!_addAddress) return null;
                     if (v == null || v.trim().isEmpty) {
-                      return 'Postal code is required';
+                      return s.postalCodeRequired;
                     }
                     if (_quickAddressCountry == 'Portugal' &&
                         !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {

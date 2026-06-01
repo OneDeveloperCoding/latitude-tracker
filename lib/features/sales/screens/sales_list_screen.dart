@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../heat_map/services/heat_map_service.dart';
 import '../models/sale.dart';
 import '../models/sale_filter.dart';
@@ -10,7 +11,6 @@ import '../repositories/sale_repository.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
-// Chips shown permanently in the filter row — covers daily workflow actions.
 const _kPrimaryFilters = [
   SaleFilter.all,
   SaleFilter.unpaid,
@@ -19,7 +19,6 @@ const _kPrimaryFilters = [
   SaleFilter.assemblyNotReady,
 ];
 
-// Accessed via the filter icon in the AppBar — reference/info filters.
 const _kSecondaryFilters = [
   SaleFilter.shipped,
   SaleFilter.nifRequired,
@@ -42,15 +41,6 @@ class SalesListScreen extends StatefulWidget {
 enum _ViewMode { list, timeline, map }
 
 enum _SortOrder { newestFirst, oldestFirst, priceHigh, priceLow }
-
-extension _SortOrderLabel on _SortOrder {
-  String get label => switch (this) {
-        _SortOrder.newestFirst => 'Newest first',
-        _SortOrder.oldestFirst => 'Oldest first',
-        _SortOrder.priceHigh => 'Price: high to low',
-        _SortOrder.priceLow => 'Price: low to high',
-      };
-}
 
 class _SalesListScreenState extends State<SalesListScreen> {
   final _repository = SaleRepository();
@@ -111,8 +101,19 @@ class _SalesListScreenState extends State<SalesListScreen> {
     return sorted;
   }
 
+  String _sortOrderLabel(_SortOrder order) {
+    final s = context.s;
+    return switch (order) {
+      _SortOrder.newestFirst => s.newestFirst,
+      _SortOrder.oldestFirst => s.oldestFirst,
+      _SortOrder.priceHigh => s.priceHighToLow,
+      _SortOrder.priceLow => s.priceLowToHigh,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: _isSearching
           ? AppBar(
@@ -123,27 +124,26 @@ class _SalesListScreenState extends State<SalesListScreen> {
               title: TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search buyer or item...',
+                decoration: InputDecoration(
+                  hintText: s.searchSales,
                   border: InputBorder.none,
                 ),
                 onChanged: (v) => setState(() => _searchQuery = v),
               ),
             )
           : AppBar(
-              title: const Text('Sales'),
+              title: Text(s.navSales),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.search),
                   onPressed: () => setState(() => _isSearching = true),
                 ),
-                // Filter & sort sheet — badge when secondary filter or non-default sort active.
                 Badge(
                   isLabelVisible: _kSecondaryFilters.contains(_filter) ||
                       _sortOrder != _SortOrder.newestFirst,
                   child: IconButton(
                     icon: const Icon(Icons.tune),
-                    tooltip: 'Filter & sort',
+                    tooltip: s.filterSort,
                     onPressed: _showOptionsSheet,
                   ),
                 ),
@@ -155,10 +155,10 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   }),
                   onSelected: (mode) => setState(() => _viewMode = mode),
                   itemBuilder: (_) => [
-                    _viewMenuItem(_ViewMode.list, Icons.list, 'List'),
-                    _viewMenuItem(
-                        _ViewMode.timeline, Icons.calendar_view_week, 'Timeline'),
-                    _viewMenuItem(_ViewMode.map, Icons.map, 'Map'),
+                    _viewMenuItem(_ViewMode.list, Icons.list, s.viewList),
+                    _viewMenuItem(_ViewMode.timeline,
+                        Icons.calendar_view_week, s.viewTimeline),
+                    _viewMenuItem(_ViewMode.map, Icons.map, s.viewMap),
                   ],
                 ),
               ],
@@ -180,21 +180,21 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 ..._kPrimaryFilters.map((f) => Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
-                        label: Text(f.label),
+                        label: Text(s.filterLabel(f)),
                         selected: _filter == f,
                         onSelected: (_) => setState(() => _filter = f),
                       ),
                     )),
-                // When a secondary filter is active, surface it inline so the
-                // user can see and clear it without opening the filter sheet.
                 if (_kSecondaryFilters.contains(_filter))
                   FilterChip(
-                    label: Text(_filter.label),
+                    label: Text(s.filterLabel(_filter)),
                     selected: true,
                     showCheckmark: false,
                     deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () => setState(() => _filter = SaleFilter.all),
-                    onSelected: (_) => setState(() => _filter = SaleFilter.all),
+                    onDeleted: () =>
+                        setState(() => _filter = SaleFilter.all),
+                    onSelected: (_) =>
+                        setState(() => _filter = SaleFilter.all),
                   ),
               ],
             ),
@@ -207,13 +207,14 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                      child: Text(s.errorMsg(snapshot.error!)));
                 }
                 var sales = _applyFilter(snapshot.data ?? []);
                 sales = _applySearch(sales);
                 sales = _applySort(sales);
                 if (_viewMode != _ViewMode.map && sales.isEmpty) {
-                  return const Center(child: Text('No sales found.'));
+                  return Center(child: Text(s.noSalesFound));
                 }
                 return switch (_viewMode) {
                   _ViewMode.list => _ListView(sales: sales),
@@ -229,6 +230,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _showOptionsSheet() {
+    final s = context.s;
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => StatefulBuilder(
@@ -240,11 +242,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text('More filters',
+                  child: Text(s.moreFilters,
                       style: Theme.of(context).textTheme.titleSmall),
                 ),
                 ..._kSecondaryFilters.map((f) => ListTile(
-                      title: Text(f.label),
+                      title: Text(s.filterLabel(f)),
                       selected: _filter == f,
                       leading: _filter == f
                           ? const Icon(Icons.check)
@@ -257,11 +259,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Text('Sort by',
+                  child: Text(s.sortBy,
                       style: Theme.of(context).textTheme.titleSmall),
                 ),
                 ..._SortOrder.values.map((order) => ListTile(
-                      title: Text(order.label),
+                      title: Text(_sortOrderLabel(order)),
                       selected: _sortOrder == order,
                       leading: _sortOrder == order
                           ? const Icon(Icons.check)
@@ -313,28 +315,32 @@ class _MapView extends StatefulWidget {
 class _MapViewState extends State<_MapView> {
   List<HeatMapPoint> _points = [];
   bool _loading = true;
-  String _status = 'Locating postal codes...';
+  String _status = '';
 
   @override
   void initState() {
     super.initState();
+    _status = context.s.locatingPostalCodes;
     _load(widget.sales);
   }
 
   @override
   void didUpdateWidget(_MapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldCodes = HeatMapService.postalCounts(oldWidget.sales).keys.toSet();
+    final oldCodes =
+        HeatMapService.postalCounts(oldWidget.sales).keys.toSet();
     final newCodes = HeatMapService.postalCounts(widget.sales).keys.toSet();
-    if (!oldCodes.containsAll(newCodes) || !newCodes.containsAll(oldCodes)) {
+    if (!oldCodes.containsAll(newCodes) ||
+        !newCodes.containsAll(oldCodes)) {
       _load(widget.sales);
     }
   }
 
   Future<void> _load(List<Sale> sales) async {
+    final s = context.s;
     setState(() {
       _loading = true;
-      _status = 'Locating postal codes...';
+      _status = s.locatingPostalCodes;
     });
 
     final points = await HeatMapService.buildPoints(
@@ -352,10 +358,12 @@ class _MapViewState extends State<_MapView> {
     }
   }
 
-  double _markerSize(int count) => (32 + (count - 1) * 8).clamp(32, 80).toDouble();
+  double _markerSize(int count) =>
+      (32 + (count - 1) * 8).clamp(32, 80).toDouble();
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Stack(
       children: [
         FlutterMap(
@@ -377,12 +385,14 @@ class _MapViewState extends State<_MapView> {
                         width: _markerSize(p.count),
                         height: _markerSize(p.count),
                         child: GestureDetector(
-                          onTap: () => ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(
-                            content: Text(
-                                '${p.postalCode} — ${p.count} sale${p.count == 1 ? '' : 's'}'),
-                            duration: const Duration(seconds: 2),
-                          )),
+                          onTap: () =>
+                              ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  '${p.postalCode} — ${s.nSales(p.count)}'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          ),
                           child: Container(
                             decoration: BoxDecoration(
                               color: Theme.of(context)
@@ -446,7 +456,7 @@ class _MapViewState extends State<_MapView> {
                             .colorScheme
                             .onSurfaceVariant),
                     const SizedBox(height: 8),
-                    const Text('No shipped sales with postal codes.'),
+                    Text(s.noShippedSalesWithPostalCode),
                   ],
                 ),
               ),
@@ -465,11 +475,11 @@ class _MapViewState extends State<_MapView> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${_points.length} postal code${_points.length == 1 ? '' : 's'}',
+                      s.nPostalCodes(_points.length),
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                     Text(
-                      '${_points.fold(0, (s, p) => s + p.count)} shipped sale${_points.fold(0, (s, p) => s + p.count) == 1 ? '' : 's'}',
+                      s.nSales(_points.fold(0, (sum, p) => sum + p.count)),
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                   ],
@@ -507,12 +517,12 @@ class _TimelineView extends StatelessWidget {
 
   Map<String, List<Sale>> _groupByWeek(List<Sale> sales) {
     final now = DateTime.now();
-    final Map<String, List<Sale>> groups = {};
-    // Preserve order: Overdue → This week → Next week → Later → past months
+    // Keys are always English — used for ordering logic.
     const order = ['Overdue', 'This week', 'Next week', 'Later'];
+    final Map<String, List<Sale>> groups = {};
 
     for (final sale in sales) {
-      final label = _weekLabel(sale, now);
+      final label = _weekKey(sale, now);
       groups.putIfAbsent(label, () => []).add(sale);
     }
 
@@ -526,29 +536,27 @@ class _TimelineView extends StatelessWidget {
     return sorted;
   }
 
-  String _weekLabel(Sale sale, DateTime now) {
+  String _weekKey(Sale sale, DateTime now) {
     final relevantDate = sale.scheduledDate ?? sale.createdAt;
     final startOfThisWeek =
         DateTime(now.year, now.month, now.day)
             .subtract(Duration(days: now.weekday - 1));
     final startOfNextWeek =
         startOfThisWeek.add(const Duration(days: 7));
-    final endOfNextWeek =
-        startOfNextWeek.add(const Duration(days: 7));
+    final endOfNextWeek = startOfNextWeek.add(const Duration(days: 7));
 
-    // Overdue: has a scheduled date in the past and not yet delivered
     if (sale.scheduledDate != null &&
         sale.scheduledDate!.isBefore(startOfThisWeek) &&
         sale.shipment.status != ShipmentStatus.delivered) {
       return 'Overdue';
     }
     if (relevantDate.isAfter(
-        startOfThisWeek.subtract(const Duration(seconds: 1))) &&
+            startOfThisWeek.subtract(const Duration(seconds: 1))) &&
         relevantDate.isBefore(startOfNextWeek)) {
       return 'This week';
     }
     if (relevantDate.isAfter(
-        startOfNextWeek.subtract(const Duration(seconds: 1))) &&
+            startOfNextWeek.subtract(const Duration(seconds: 1))) &&
         relevantDate.isBefore(endOfNextWeek)) {
       return 'Next week';
     }
@@ -560,6 +568,7 @@ class _TimelineView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final groups = _groupByWeek(sales);
     final keys = groups.keys.toList();
 
@@ -567,23 +576,23 @@ class _TimelineView extends StatelessWidget {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       itemCount: keys.length,
       itemBuilder: (context, index) {
-        final label = keys[index];
-        final groupSales = groups[label]!;
+        final key = keys[index];
+        final groupSales = groups[key]!;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
-                label,
+                s.timelineLabel(key),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),
               ),
             ),
-            ...groupSales.map((s) => Padding(
+            ...groupSales.map((sale) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: _SaleCard(sale: s),
+                  child: _SaleCard(sale: sale),
                 )),
             const Divider(height: 1),
           ],
@@ -596,7 +605,7 @@ class _TimelineView extends StatelessWidget {
 // Returns blocker reasons for the ⚠️ badge. Empty list = no badge.
 typedef _UrgencyReason = ({String label, IconData icon, Color color});
 
-List<_UrgencyReason> _urgencyReasons(Sale sale) {
+List<_UrgencyReason> _urgencyReasons(Sale sale, AppStrings s) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
@@ -606,33 +615,34 @@ List<_UrgencyReason> _urgencyReasons(Sale sale) {
   if (sale.shipment.status == ShipmentStatus.delivered) return [];
 
   final isOverdue = sale.scheduledDate!.isBefore(startOfThisWeek);
-  final isThisWeek = !isOverdue && sale.scheduledDate!.isBefore(startOfNextWeek);
+  final isThisWeek =
+      !isOverdue && sale.scheduledDate!.isBefore(startOfNextWeek);
   if (!isOverdue && !isThisWeek) return [];
 
   final reasons = <_UrgencyReason>[];
   if (sale.assemblyStatus == AssemblyStatus.waitingForMaterials) {
     reasons.add((
-      label: 'Waiting for materials',
+      label: s.urgencyWaitingForMaterials,
       icon: Icons.shopping_bag_outlined,
       color: Colors.amber[700]!,
     ));
   } else if (sale.assemblyStatus != AssemblyStatus.ready) {
     reasons.add((
-      label: 'Assembly not ready',
+      label: s.urgencyAssemblyNotReady,
       icon: Icons.construction,
       color: Colors.amber[700]!,
     ));
   }
   if (sale.payment.status == PaymentStatus.unpaid) {
     reasons.add((
-      label: 'Payment pending',
+      label: s.urgencyPaymentPending,
       icon: Icons.credit_card_off,
       color: Colors.orange,
     ));
   }
   if (isOverdue && sale.shipment.status == ShipmentStatus.pending) {
     reasons.add((
-      label: 'Not yet shipped',
+      label: s.urgencyNotYetShipped,
       icon: Icons.schedule,
       color: Colors.red,
     ));
@@ -640,7 +650,6 @@ List<_UrgencyReason> _urgencyReasons(Sale sale) {
   return reasons;
 }
 
-// Returns days until scheduled date (negative = overdue). Null if no date.
 int? _daysUntilScheduled(Sale sale) {
   if (sale.scheduledDate == null) return null;
   final today = DateTime.now();
@@ -664,14 +673,16 @@ class _SaleCard extends StatelessWidget {
   }
 
   Color? _accentColor(BuildContext context) {
-    if (_urgencyReasons(sale).isEmpty) return null;
-    return _isOverdue() ? Theme.of(context).colorScheme.error : Colors.amber[700]!;
+    if (_urgencyReasons(sale, context.s).isEmpty) return null;
+    return _isOverdue()
+        ? Theme.of(context).colorScheme.error
+        : Colors.amber[700]!;
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
-
     final accentColor = _accentColor(context);
 
     return Card(
@@ -680,7 +691,8 @@ class _SaleCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+          MaterialPageRoute(
+              builder: (_) => SaleDetailScreen(saleId: sale.id)),
         ),
         child: Container(
           decoration: accentColor != null
@@ -692,69 +704,74 @@ class _SaleCard extends StatelessWidget {
               : null,
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
           child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      sale.buyerName,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '€${sale.price.toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      sale.itemDescription,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  _AttentionBadges(sale: sale),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    dateFormat.format(sale.createdAt),
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant,
+                        ),
+                  ),
+                  const Spacer(),
+                  if (sale.scheduledDate != null)
+                    _ScheduledDateLabel(sale: sale),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => _showPathLegend(context, s),
+                child: Column(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            sale.buyerName,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '€${sale.price.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            sale.itemDescription,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                        _AttentionBadges(sale: sale),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          dateFormat.format(sale.createdAt),
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        const Spacer(),
-                        if (sale.scheduledDate != null)
-                          _ScheduledDateLabel(sale: sale),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () => _showPathLegend(context),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 8),
-                          const Divider(height: 1),
-                          const SizedBox(height: 8),
-                          _SaleProgressPath(sale: sale),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    _SaleProgressPath(sale: sale),
                   ],
                 ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -768,8 +785,10 @@ class _AttentionBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nifPaid = sale.requiresNif && sale.payment.status == PaymentStatus.paid;
-    final reasons = _urgencyReasons(sale);
+    final s = context.s;
+    final nifPaid =
+        sale.requiresNif && sale.payment.status == PaymentStatus.paid;
+    final reasons = _urgencyReasons(sale, s);
 
     if (!nifPaid && reasons.isEmpty) return const SizedBox.shrink();
 
@@ -786,7 +805,8 @@ class _AttentionBadges extends StatelessWidget {
               child: Icon(
                 Icons.receipt_long,
                 size: 22,
-                color: sale.atSubmissionDone ? Colors.green : Colors.purple,
+                color:
+                    sale.atSubmissionDone ? Colors.green : Colors.purple,
               ),
             ),
           ),
@@ -822,6 +842,7 @@ class _ScheduledDateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final days = _daysUntilScheduled(sale)!;
     final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
 
@@ -838,14 +859,14 @@ class _ScheduledDateLabel extends StatelessWidget {
       color = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
-    final label = isDelivered
+    final String label = isDelivered
         ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}'
         : days < 0
-            ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)} (${days.abs()}d overdue)'
+            ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)} (${s.daysOverdue(days.abs())})'
             : days == 0
-                ? '📅 Today'
+                ? '📅 ${s.today}'
                 : days == 1
-                    ? '📅 Tomorrow'
+                    ? '📅 ${s.tomorrow}'
                     : '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}';
 
     return Text(
@@ -859,6 +880,7 @@ class _ScheduledDateLabel extends StatelessWidget {
 }
 
 void _showNifDetail(BuildContext context, bool atSubmissionDone) {
+  final s = context.s;
   showModalBottomSheet(
     context: context,
     builder: (_) => Padding(
@@ -870,22 +892,18 @@ void _showNifDetail(BuildContext context, bool atSubmissionDone) {
           Row(
             children: [
               Icon(Icons.receipt_long,
-                  color: atSubmissionDone ? Colors.green : Colors.purple),
+                  color:
+                      atSubmissionDone ? Colors.green : Colors.purple),
               const SizedBox(width: 12),
               Text(
-                atSubmissionDone
-                    ? 'Filed with AT'
-                    : 'NIF receipt required',
+                atSubmissionDone ? s.atFiledWithAt : s.nifSheetTitle,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            atSubmissionDone
-                ? 'This receipt has been filed with AT.'
-                : 'Payment received — file this sale\'s receipt with AT. '
-                    'The buyer\'s NIF is available on their profile.',
+            atSubmissionDone ? s.atFiledWithAtBody : s.nifSheetBody,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -896,6 +914,7 @@ void _showNifDetail(BuildContext context, bool atSubmissionDone) {
 
 void _showUrgencyDetail(
     BuildContext context, List<_UrgencyReason> reasons) {
+  final s = context.s;
   showModalBottomSheet(
     context: context,
     builder: (_) => Padding(
@@ -904,7 +923,7 @@ void _showUrgencyDetail(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Action needed',
+          Text(s.urgencySheetTitle,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           ...reasons.map(
@@ -926,7 +945,7 @@ void _showUrgencyDetail(
   );
 }
 
-void _showPathLegend(BuildContext context) {
+void _showPathLegend(BuildContext context, AppStrings s) {
   showModalBottomSheet(
     context: context,
     builder: (_) => Padding(
@@ -935,25 +954,30 @@ void _showPathLegend(BuildContext context) {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Sale progress',
+          Text(s.legendTitle,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
-          _LegendRow(Icons.build_outlined, Colors.grey, 'Assembly: not started'),
+          _LegendRow(Icons.build_outlined, Colors.grey,
+              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.notStarted)}'),
           _LegendRow(Icons.shopping_bag_outlined, Colors.amber[700]!,
-              'Assembly: waiting for materials'),
+              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.waitingForMaterials)}'),
           _LegendRow(Icons.build_outlined, Colors.amber[700]!,
-              'Assembly: in progress'),
-          _LegendRow(Icons.build, Colors.green, 'Assembly: ready'),
+              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.inProgress)}'),
+          _LegendRow(Icons.build, Colors.green,
+              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.ready)}'),
           const Divider(height: 20),
-          _LegendRow(Icons.payments_outlined, Colors.grey, 'Payment: unpaid'),
-          _LegendRow(Icons.payments, Colors.green, 'Payment: paid'),
+          _LegendRow(Icons.payments_outlined, Colors.grey,
+              '${s.paymentLegendHeader}: ${s.unpaid}'),
+          _LegendRow(Icons.payments, Colors.green,
+              '${s.paymentLegendHeader}: ${s.paid}'),
           const Divider(height: 20),
-          _LegendRow(
-              Icons.local_shipping_outlined, Colors.grey, 'Shipment: pending'),
-          _LegendRow(Icons.local_shipping, Colors.blue, 'Shipment: shipped'),
-          _LegendRow(
-              Icons.local_shipping, Colors.green, 'Shipment: delivered'),
-          _LegendRow(Icons.store, Colors.green, 'Pickup (no shipment needed)'),
+          _LegendRow(Icons.local_shipping_outlined, Colors.grey,
+              '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.pending)}'),
+          _LegendRow(Icons.local_shipping, Colors.blue,
+              '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.shipped)}'),
+          _LegendRow(Icons.local_shipping, Colors.green,
+              '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.delivered)}'),
+          _LegendRow(Icons.store, Colors.green, s.pickupNoShipment),
         ],
       ),
     ),
@@ -1008,7 +1032,8 @@ class _SaleProgressPath extends StatelessWidget {
       AssemblyStatus.notStarted => (Icons.build_outlined, Colors.grey),
       AssemblyStatus.waitingForMaterials =>
         (Icons.shopping_bag_outlined, Colors.amber[700]!),
-      AssemblyStatus.inProgress => (Icons.build_outlined, Colors.amber[700]!),
+      AssemblyStatus.inProgress =>
+        (Icons.build_outlined, Colors.amber[700]!),
       AssemblyStatus.ready => (Icons.build, Colors.green),
     };
     return _PathNode(icon: icon, color: color);

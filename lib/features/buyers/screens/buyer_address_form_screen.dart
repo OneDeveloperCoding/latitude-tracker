@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
 
@@ -100,7 +101,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving address: $e')),
+          SnackBar(content: Text(context.s.errorSavingAddressMsg(e))),
         );
       }
     } finally {
@@ -110,9 +111,10 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Address' : 'New Address'),
+        title: Text(_isEditing ? s.editAddress : s.newAddress),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -122,7 +124,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
                     width: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Save'),
+                : Text(s.save),
           ),
         ],
       ),
@@ -168,14 +170,14 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
             TextFormField(
               controller: _postalCodeController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Postal code *',
-                hintText: '0000-000',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: s.postalCodeLabel,
+                hintText: s.postalCodeHint,
+                border: const OutlineInputBorder(),
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
-                  return 'Postal code is required';
+                  return s.postalCodeRequired;
                 }
                 if (_country == 'Portugal' &&
                     !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
@@ -198,8 +200,8 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
             ),
             const SizedBox(height: 8),
             SwitchListTile(
-              title: const Text('Default address'),
-              subtitle: const Text('Pre-filled when creating a new sale'),
+              title: Text(s.defaultAddressLabel),
+              subtitle: Text(s.defaultAddressSubtitle),
               value: _isDefault,
               onChanged: (value) => setState(() => _isDefault = value),
             ),

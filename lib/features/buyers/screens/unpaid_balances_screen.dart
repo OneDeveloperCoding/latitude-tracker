@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sale_detail_screen.dart';
@@ -15,13 +16,13 @@ class UnpaidBalancesScreen extends StatefulWidget {
   State<UnpaidBalancesScreen> createState() => _UnpaidBalancesScreenState();
 }
 
-class _UnpaidBalancesScreen {
+class _UnpaidBalancesGroup {
   final String buyerId;
   final String buyerName;
   final List<Sale> unpaidSales;
   final double totalOwed;
 
-  _UnpaidBalancesScreen({
+  _UnpaidBalancesGroup({
     required this.buyerId,
     required this.buyerName,
     required this.unpaidSales,
@@ -31,7 +32,7 @@ class _UnpaidBalancesScreen {
 class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
   final _saleRepo = SaleRepository();
   late StreamSubscription<List<Sale>> _salesSub;
-  List<_UnpaidBalancesScreen> _groups = [];
+  List<_UnpaidBalancesGroup> _groups = [];
   double _grandTotal = 0;
   bool _loading = true;
 
@@ -48,7 +49,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
       }
 
       final groups = bySeller.entries
-          .map((e) => _UnpaidBalancesScreen(
+          .map((e) => _UnpaidBalancesGroup(
                 buyerId: e.key,
                 buyerName: e.value.first.buyerName,
                 unpaidSales: e.value,
@@ -72,12 +73,11 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Unpaid balances'),
-      ),
+      appBar: AppBar(title: Text(s.unpaid)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _groups.isEmpty
@@ -89,7 +89,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
                           size: 48,
                           color: Theme.of(context).colorScheme.primary),
                       const SizedBox(height: 12),
-                      const Text('All paid up!'),
+                      Text(s.allPaid),
                     ],
                   ),
                 )
@@ -105,7 +105,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Total outstanding',
+                              s.totalOutstanding,
                               style: Theme.of(context)
                                   .textTheme
                                   .labelMedium
@@ -143,7 +143,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
 }
 
 class _BuyerDebtCard extends StatefulWidget {
-  final _UnpaidBalancesScreen group;
+  final _UnpaidBalancesGroup group;
   final NumberFormat currency;
 
   const _BuyerDebtCard({required this.group, required this.currency});
@@ -157,6 +157,7 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final group = widget.group;
     final dateFormat = DateFormat('dd MMM');
 
@@ -178,10 +179,7 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            subtitle: Text(
-              '${group.unpaidSales.length} '
-              'sale${group.unpaidSales.length == 1 ? '' : 's'}',
-            ),
+            subtitle: Text(s.nSales(group.unpaidSales.length)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

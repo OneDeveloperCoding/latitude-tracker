@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../buyers/screens/buyer_detail_screen.dart';
@@ -29,7 +30,7 @@ class SaleDetailScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(sale?.buyerName ?? 'Sale'),
+            title: Text(sale?.buyerName ?? context.s.saleFallbackTitle),
             actions: [
               if (sale != null) ...[
                 IconButton(
@@ -43,7 +44,7 @@ class SaleDetailScreen extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy_outlined),
-                  tooltip: 'Duplicate sale',
+                  tooltip: context.s.duplicateSaleTooltip,
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -54,8 +55,9 @@ class SaleDetailScreen extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Delete sale',
-                  onPressed: () => _confirmDelete(context, sale, repository),
+                  tooltip: context.s.deleteSaleTooltip,
+                  onPressed: () =>
+                      _confirmDelete(context, sale, repository),
                 ),
               ],
             ],
@@ -71,6 +73,7 @@ class SaleDetailScreen extends StatelessWidget {
 
 Future<void> _confirmDelete(
     BuildContext context, Sale sale, SaleRepository repository) async {
+  final s = context.s;
   final shipped = sale.shipment.status == ShipmentStatus.shipped ||
       sale.shipment.status == ShipmentStatus.delivered;
   final paid = sale.payment.status == PaymentStatus.paid;
@@ -79,25 +82,18 @@ Future<void> _confirmDelete(
   final String message;
 
   if (shipped) {
-    title = 'Delete shipped sale?';
-    message =
-        'This sale has already been ${sale.shipment.status == ShipmentStatus.delivered ? 'delivered' : 'shipped'}. '
-        'Deleting it removes all records — including shipping history'
-        '${sale.atSubmissionDone ? ', AT submission status' : ''}${sale.photoUrls.isNotEmpty ? ', and ${sale.photoUrls.length} photo${sale.photoUrls.length == 1 ? '' : 's'}' : ''}. '
-        'This cannot be undone.';
+    title = s.deleteShippedSaleTitle;
+    final statusLabel = sale.shipment.status == ShipmentStatus.delivered
+        ? s.delivered
+        : s.shippedStatus;
+    message = s.deleteShippedSaleBody(
+        statusLabel, sale.atSubmissionDone, sale.photoUrls.length);
   } else if (paid) {
-    title = 'Delete paid sale?';
-    message =
-        'This sale has a recorded payment of €${sale.price.toStringAsFixed(2)}. '
-        'Deleting it will remove all financial records for this transaction'
-        '${sale.photoUrls.isNotEmpty ? ', along with ${sale.photoUrls.length} photo${sale.photoUrls.length == 1 ? '' : 's'}' : ''}. '
-        'This cannot be undone.';
+    title = s.deletePaidSaleTitle;
+    message = s.deletePaidSaleBody(sale.price, sale.photoUrls.length);
   } else {
-    title = 'Delete sale?';
-    message =
-        'This sale will be permanently removed'
-        '${sale.photoUrls.isNotEmpty ? ', along with ${sale.photoUrls.length} photo${sale.photoUrls.length == 1 ? '' : 's'}' : ''}. '
-        'This cannot be undone.';
+    title = s.deleteSaleTitle;
+    message = s.deleteSaleBody(sale.photoUrls.length);
   }
 
   final confirmed = await showDialog<bool>(
@@ -108,12 +104,12 @@ Future<void> _confirmDelete(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(s.cancel),
         ),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: Colors.red),
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete'),
+          child: Text(s.delete),
         ),
       ],
     ),
@@ -126,8 +122,8 @@ Future<void> _confirmDelete(
     if (context.mounted) Navigator.of(context).pop();
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error deleting sale: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
     }
   }
 }
@@ -144,13 +140,14 @@ class _SaleDetailBody extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
 
     return ListView(
@@ -159,7 +156,7 @@ class _SaleDetailBody extends StatelessWidget {
       children: [
         if (sale.photoUrls.isNotEmpty) ...[
           _SectionCard(
-            title: 'Photos',
+            title: s.sectionPhotos,
             child: PhotoGrid(
               saleId: sale.id,
               photoUrls: sale.photoUrls,
@@ -193,15 +190,15 @@ class _SaleDetailBody extends StatelessWidget {
             text: '€${sale.price.toStringAsFixed(2)}',
           ),
           if (sale.requiresNif)
-            const _InfoRow(icon: Icons.badge, text: 'NIF receipt required'),
+            _InfoRow(icon: Icons.badge, text: s.nifReceiptRequiredInfo),
           if (sale.requiresNif && sale.payment.status == PaymentStatus.paid)
             _InfoRow(
               icon: sale.atSubmissionDone
                   ? Icons.check_circle
                   : Icons.check_circle_outline,
               text: sale.atSubmissionDone
-                  ? 'AT receipt filed'
-                  : 'AT receipt pending',
+                  ? s.atReceiptFiled
+                  : s.atReceiptPending,
               color: sale.atSubmissionDone ? Colors.green : Colors.orange,
               onTap: () => _update(
                 context,
@@ -212,13 +209,15 @@ class _SaleDetailBody extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
         _SectionCard(
-          title: 'Assembly',
+          title: s.assemblyLegendHeader,
           child: DropdownButton<AssemblyStatus>(
             value: sale.assemblyStatus,
             isExpanded: true,
             underline: const SizedBox(),
             items: AssemblyStatus.values
-                .map((s) => DropdownMenuItem(value: s, child: Text(s.label)))
+                .map((status) => DropdownMenuItem(
+                    value: status,
+                    child: Text(s.assemblyLabel(status))))
                 .toList(),
             onChanged: (v) => _update(
               context,
@@ -230,18 +229,18 @@ class _SaleDetailBody extends StatelessWidget {
         _ComponentsCard(sale: sale, onUpdate: _update),
         const SizedBox(height: 16),
         _SectionCard(
-          title: 'Payment',
+          title: s.sectionPayment,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(sale.payment.method.label),
+                  Text(s.paymentMethodLabel(sale.payment.method)),
                   _StatusChip(
                     label: sale.payment.status == PaymentStatus.paid
-                        ? 'Paid'
-                        : 'Unpaid',
+                        ? s.paid
+                        : s.unpaid,
                     color: sale.payment.status == PaymentStatus.paid
                         ? Colors.green
                         : Colors.orange,
@@ -252,14 +251,13 @@ class _SaleDetailBody extends StatelessWidget {
               SwitchListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Mark as paid'),
+                title: Text(s.markAsPaidLabel),
                 value: sale.payment.status == PaymentStatus.paid,
                 onChanged: (v) => _update(
                   context,
                   sale.copyWith(
                     payment: sale.payment.copyWith(
-                      status:
-                          v ? PaymentStatus.paid : PaymentStatus.unpaid,
+                      status: v ? PaymentStatus.paid : PaymentStatus.unpaid,
                     ),
                   ),
                 ),
@@ -270,8 +268,8 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: sale.shipment.type == DeliveryType.pickup
-              ? 'Ready by date'
-              : 'Scheduled delivery',
+              ? s.readyBy
+              : s.scheduledLabel,
           child: _ScheduledDateField(
             date: sale.scheduledDate,
             onChanged: (date) => _update(
@@ -282,7 +280,7 @@ class _SaleDetailBody extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _SectionCard(
-          title: 'Delivery',
+          title: s.sectionDelivery,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -290,10 +288,10 @@ class _SaleDetailBody extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(sale.shipment.type == DeliveryType.shipping
-                      ? 'Shipping'
-                      : 'In-person pickup'),
+                      ? s.shipping
+                      : s.inPersonPickup),
                   _StatusChip(
-                    label: sale.shipment.status.label,
+                    label: s.shipmentStatusLabel(sale.shipment.status),
                     color: sale.shipment.status == ShipmentStatus.delivered
                         ? Colors.green
                         : sale.shipment.status == ShipmentStatus.shipped
@@ -308,12 +306,14 @@ class _SaleDetailBody extends StatelessWidget {
                 isExpanded: true,
                 underline: const SizedBox(),
                 items: _availableStatuses(sale.shipment)
-                    .map((s) =>
-                        DropdownMenuItem(value: s, child: Text(s.label)))
+                    .map((status) => DropdownMenuItem(
+                        value: status,
+                        child: Text(s.shipmentStatusLabel(status))))
                     .toList(),
                 onChanged: (v) => _update(
                   context,
-                  sale.copyWith(shipment: sale.shipment.copyWith(status: v)),
+                  sale.copyWith(
+                      shipment: sale.shipment.copyWith(status: v)),
                 ),
               ),
               if (sale.shipment.type == DeliveryType.shipping) ...[
@@ -345,7 +345,7 @@ class _SaleDetailBody extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _SectionCard(
-          title: 'Notes',
+          title: s.sectionNotes,
           child: _NotesField(
             initialValue: sale.notes ?? '',
             onSave: (text) => _update(
@@ -398,11 +398,13 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
+
     if (!_editing && _controller.text.isEmpty) {
       return TextButton.icon(
         onPressed: () => setState(() => _editing = true),
         icon: const Icon(Icons.add),
-        label: const Text('Add CTT tracking code'),
+        label: Text(s.addCttTracking),
       );
     }
 
@@ -413,9 +415,9 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
             child: TextField(
               controller: _controller,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'CTT tracking code',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: s.cttTrackingLabel,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -437,7 +439,6 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
         const SizedBox(width: 8),
         Expanded(
           child: GestureDetector(
-            // Tap copies the code — faster for pasting into DMs or email.
             onTap: () => _copyCode(context),
             onLongPress: () => _openCttTracking(_controller.text),
             child: Text(
@@ -451,12 +452,12 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
         ),
         IconButton(
           icon: const Icon(Icons.share, size: 16),
-          tooltip: 'Share tracking info',
+          tooltip: s.shareTracking,
           onPressed: _shareTracking,
         ),
         IconButton(
           icon: const Icon(Icons.open_in_new, size: 16),
-          tooltip: 'Open on CTT website',
+          tooltip: s.openOnCtt,
           onPressed: () => _openCttTracking(_controller.text),
         ),
         IconButton(
@@ -475,9 +476,9 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
     await Clipboard.setData(ClipboardData(text: _controller.text));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tracking code copied'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.s.trackingCopied),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -529,12 +530,13 @@ class _ScheduledDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final dateFormat = DateFormat('EEE, dd MMM yyyy');
     if (date == null) {
       return TextButton.icon(
         onPressed: () => _pick(context),
         icon: const Icon(Icons.event),
-        label: const Text('Set scheduled date'),
+        label: Text(s.setScheduledDate),
       );
     }
     return Row(
@@ -544,11 +546,11 @@ class _ScheduledDateField extends StatelessWidget {
         Expanded(child: Text(dateFormat.format(date!))),
         TextButton(
           onPressed: () => _pick(context),
-          child: const Text('Change'),
+          child: Text(s.change),
         ),
         TextButton(
           onPressed: () => onChanged(null),
-          child: const Text('Clear'),
+          child: Text(s.clear),
         ),
       ],
     );
@@ -646,9 +648,10 @@ class _ComponentsCardState extends State<_ComponentsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final sale = widget.sale;
     return _SectionCard(
-      title: 'Components',
+      title: s.sectionComponents,
       child: Column(
         children: [
           ...sale.components.map((c) => Dismissible(
@@ -681,7 +684,8 @@ class _ComponentsCardState extends State<_ComponentsCard> {
                 child: CheckboxListTile(
                   dense: true,
                   title: Text(c.name),
-                  subtitle: Text(c.isAvailable ? 'Have it' : 'Need to buy'),
+                  subtitle:
+                      Text(c.isAvailable ? s.haveIt : s.needToBuy),
                   value: c.isAvailable,
                   onChanged: (_) {
                     final toggled = !c.isAvailable;
@@ -696,7 +700,8 @@ class _ComponentsCardState extends State<_ComponentsCard> {
                     if (toggled &&
                         allAvailable &&
                         (sale.assemblyStatus == AssemblyStatus.notStarted ||
-                            sale.assemblyStatus == AssemblyStatus.inProgress)) {
+                            sale.assemblyStatus ==
+                                AssemblyStatus.inProgress)) {
                       newStatus = AssemblyStatus.ready;
                     } else if (!toggled &&
                         sale.assemblyStatus == AssemblyStatus.ready) {
@@ -718,9 +723,9 @@ class _ComponentsCardState extends State<_ComponentsCard> {
                 child: TextField(
                   controller: _controller,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    hintText: 'Add component...',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: s.addComponentHint,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   onSubmitted: (_) => _add(),
@@ -788,7 +793,8 @@ class _InfoRow extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? color;
 
-  const _InfoRow({required this.icon, required this.text, this.onTap, this.color});
+  const _InfoRow(
+      {required this.icon, required this.text, this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -796,7 +802,9 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: color ?? Theme.of(context).colorScheme.primary),
+          Icon(icon,
+              size: 16,
+              color: color ?? Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
           if (onTap != null)
@@ -807,7 +815,8 @@ class _InfoRow extends StatelessWidget {
       ),
     );
     if (onTap == null) return row;
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(4), child: row);
+    return InkWell(
+        onTap: onTap, borderRadius: BorderRadius.circular(4), child: row);
   }
 }
 
@@ -839,11 +848,12 @@ class _NotesFieldState extends State<_NotesField> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     if (!_editing && _controller.text.isEmpty) {
       return TextButton.icon(
         onPressed: () => setState(() => _editing = true),
         icon: const Icon(Icons.add),
-        label: const Text('Add notes'),
+        label: Text(s.addNotes),
       );
     }
 
@@ -855,9 +865,9 @@ class _NotesFieldState extends State<_NotesField> {
             controller: _controller,
             autofocus: true,
             maxLines: null,
-            decoration: const InputDecoration(
-              hintText: 'e.g. Gift wrap requested, specific colour...',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: s.notesHintDetail,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
           ),
@@ -870,7 +880,7 @@ class _NotesFieldState extends State<_NotesField> {
                   _controller.text = widget.initialValue;
                   setState(() => _editing = false);
                 },
-                child: const Text('Cancel'),
+                child: Text(s.cancel),
               ),
               const SizedBox(width: 8),
               FilledButton(
@@ -878,7 +888,7 @@ class _NotesFieldState extends State<_NotesField> {
                   widget.onSave(_controller.text.trim());
                   setState(() => _editing = false);
                 },
-                child: const Text('Save'),
+                child: Text(s.save),
               ),
             ],
           ),

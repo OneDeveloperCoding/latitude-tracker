@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../buyers/screens/buyer_form_screen.dart';
@@ -44,12 +45,13 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Buyer')),
+      appBar: AppBar(title: Text(s.selectBuyer)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createAndPickBuyer,
         icon: const Icon(Icons.person_add),
-        label: const Text('New Buyer'),
+        label: Text(s.newBuyer),
       ),
       body: Column(
         children: [
@@ -58,10 +60,10 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
             child: TextField(
               controller: _searchController,
               autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Search buyers...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: s.searchBuyers,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (v) => setState(() => _searchQuery = v),
@@ -76,9 +78,7 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
                 }
                 final buyers = _filtered(snapshot.data ?? []);
                 if (buyers.isEmpty) {
-                  return const Center(
-                    child: Text('No buyers found. Tap + to add one.'),
-                  );
+                  return Center(child: Text(s.noBuyersFound));
                 }
                 return ListView.builder(
                   itemCount: buyers.length,
