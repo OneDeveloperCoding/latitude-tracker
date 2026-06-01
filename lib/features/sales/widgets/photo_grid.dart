@@ -8,11 +8,20 @@ class PhotoGrid extends StatefulWidget {
   final List<String> photoUrls;
   final ValueChanged<List<String>> onChanged;
 
+  /// Called with the URL when a new photo finishes uploading.
+  final ValueChanged<String>? onPhotoAdded;
+
+  /// Called with the URL when the user confirms removing a photo.
+  /// Parent is responsible for deleting from storage when appropriate.
+  final ValueChanged<String>? onPhotoRemoved;
+
   const PhotoGrid({
     super.key,
     required this.saleId,
     required this.photoUrls,
     required this.onChanged,
+    this.onPhotoAdded,
+    this.onPhotoRemoved,
   });
 
   @override
@@ -21,17 +30,17 @@ class PhotoGrid extends StatefulWidget {
 
 class _PhotoGridState extends State<PhotoGrid> {
   final _service = PhotoService();
-  final Set<int> _uploading = {};
+  int _uploadingCount = 0;
 
   Future<void> _addPhoto(ImageSource source) async {
-    final index = widget.photoUrls.length;
-    setState(() => _uploading.add(index));
+    setState(() => _uploadingCount++);
     try {
       final url = await _service.pickAndUpload(
         saleId: widget.saleId,
         source: source,
       );
       if (url != null) {
+        widget.onPhotoAdded?.call(url);
         widget.onChanged([...widget.photoUrls, url]);
       }
     } catch (e) {
@@ -41,15 +50,15 @@ class _PhotoGridState extends State<PhotoGrid> {
         );
       }
     } finally {
-      if (mounted) setState(() => _uploading.remove(index));
+      if (mounted) setState(() => _uploadingCount--);
     }
   }
 
-  Future<void> _deletePhoto(int index) async {
+  Future<void> _removePhoto(int index) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete photo?'),
+        title: const Text('Remove photo?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -57,14 +66,15 @@ class _PhotoGridState extends State<PhotoGrid> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const Text('Remove'),
           ),
         ],
       ),
     );
     if (confirmed != true) return;
 
-    await _service.deletePhoto(widget.saleId, widget.photoUrls[index]);
+    final url = widget.photoUrls[index];
+    widget.onPhotoRemoved?.call(url);
     final updated = [...widget.photoUrls]..removeAt(index);
     widget.onChanged(updated);
   }
@@ -126,14 +136,13 @@ class _PhotoGridState extends State<PhotoGrid> {
                     url: entry.value,
                     isUploading: false,
                     onTap: () => _viewPhoto(context, entry.key),
-                    onDelete: () => _deletePhoto(entry.key),
+                    onDelete: () => _removePhoto(entry.key),
                   ),
                 ),
-            if (_uploading.isNotEmpty)
-              ...List.generate(
-                _uploading.length,
-                (_) => const _PhotoTile(isUploading: true),
-              ),
+            ...List.generate(
+              _uploadingCount,
+              (_) => const _PhotoTile(isUploading: true),
+            ),
             _AddPhotoTile(onTap: _showSourcePicker),
           ],
         ),
@@ -166,8 +175,8 @@ class _PhotoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 90,
-      height: 90,
+      width: 96,
+      height: 96,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Stack(
@@ -199,18 +208,24 @@ class _PhotoTile extends StatelessWidget {
               ),
             if (onDelete != null && !isUploading)
               Positioned(
-                top: 2,
-                right: 2,
+                top: 0,
+                right: 0,
                 child: GestureDetector(
                   onTap: onDelete,
                   child: Container(
+                    width: 32,
+                    height: 32,
                     decoration: const BoxDecoration(
                       color: Colors.black54,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                      ),
                     ),
-                    padding: const EdgeInsets.all(2),
-                    child: const Icon(Icons.close,
-                        size: 14, color: Colors.white),
+                    child: const Icon(
+                      Icons.close,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -231,8 +246,8 @@ class _AddPhotoTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 90,
-        height: 90,
+        width: 96,
+        height: 96,
         decoration: BoxDecoration(
           border: Border.all(
             color: Theme.of(context).colorScheme.outline,
@@ -308,7 +323,8 @@ class _PhotoViewerState extends State<_PhotoViewer> {
               loadingBuilder: (_, child, progress) => progress == null
                   ? child
                   : const Center(
-                      child: CircularProgressIndicator(color: Colors.white)),
+                      child:
+                          CircularProgressIndicator(color: Colors.white)),
             ),
           ),
         ),

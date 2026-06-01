@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/sale.dart';
+import '../services/photo_service.dart';
 
 class SaleRepository {
   final _firestore = FirebaseFirestore.instance;
@@ -28,5 +29,8 @@ class SaleRepository {
   Future<void> updateSale(Sale sale) =>
       _salesRef.doc(sale.id).update(sale.toFirestore());
 
-  Future<void> deleteSale(String id) => _salesRef.doc(id).delete();
+  Future<void> deleteSale(String id) async {
+    await PhotoService().deleteAllPhotos(id);
+    await _salesRef.doc(id).delete();
+  }
 }

@@ -7,6 +7,7 @@ import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+import '../services/photo_service.dart';
 import '../widgets/buyer_picker_screen.dart';
 import '../widgets/photo_grid.dart';
 
@@ -42,6 +43,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   late List<ComponentItem> _components;
   late List<String> _photoUrls;
   late final String _saleId;
+  late final List<String> _originalPhotoUrls;
+  final List<String> _uploadedInSession = [];
+  final List<String> _pendingDeletions = [];
+  final _photoService = PhotoService();
   DateTime? _scheduledDate;
   bool _isLoading = false;
 
@@ -66,6 +71,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _requiresNif = sale?.requiresNif ?? false;
     _components = List.from(sale?.components ?? []);
     _photoUrls = List.from(sale?.photoUrls ?? []);
+    _originalPhotoUrls = List.from(sale?.photoUrls ?? []);
     _scheduledDate = sale?.scheduledDate;
     _saleId = sale?.id ??
         FirebaseFirestore.instance.collection('_').doc().id;
@@ -146,6 +152,23 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   String? _nullIfEmpty(String value) =>
       value.trim().isEmpty ? null : value.trim();
 
+  /// On cancel: delete photos uploaded in this session that were never saved.
+  Future<void> _cleanupOrphans() async {
+    final toDelete = _isEditing
+        ? _uploadedInSession
+            .where((url) => !_photoUrls.contains(url))
+            .toList()
+        : List<String>.from(_photoUrls);
+    for (final url in toDelete) {
+      await _photoService.deletePhoto(_saleId, url);
+    }
+  }
+
+  Future<void> _cancel() async {
+    await _cleanupOrphans();
+    if (mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBuyer == null) {
@@ -169,6 +192,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ? _nullIfEmpty(_postalCodeController.text)
             : null,
       );
+
+      for (final url in _pendingDeletions) {
+        await _photoService.deletePhoto(_saleId, url);
+      }
 
       if (_isEditing) {
         final updated = widget.sale!.copyWith(
@@ -218,9 +245,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Sale' : 'New Sale'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _cancel,
+        ),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -279,6 +315,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               saleId: _saleId,
               photoUrls: _photoUrls,
               onChanged: (urls) => setState(() => _photoUrls = urls),
+              onPhotoAdded: (url) => _uploadedInSession.add(url),
+              onPhotoRemoved: (url) {
+                if (_originalPhotoUrls.contains(url)) {
+                  _pendingDeletions.add(url);
+                } else {
+                  // Uploaded in this session and immediately removed — delete now
+                  _photoService.deletePhoto(_saleId, url);
+                  _uploadedInSession.remove(url);
+                }
+              },
             ),
             const SizedBox(height: 24),
             _SectionTitle('Components needed'),
@@ -456,7 +502,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
