@@ -6,6 +6,7 @@ import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+import '../widgets/photo_grid.dart';
 import 'new_sale_screen.dart';
 
 class SaleDetailScreen extends StatelessWidget {
@@ -71,6 +72,18 @@ class _SaleDetailBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (sale.photoUrls.isNotEmpty) ...[
+          _SectionCard(
+            title: 'Photos',
+            child: PhotoGrid(
+              saleId: sale.id,
+              photoUrls: sale.photoUrls,
+              onChanged: (urls) =>
+                  _update(context, sale.copyWith(photoUrls: urls)),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         _InfoCard(children: [
           _InfoRow(
             icon: Icons.calendar_today,

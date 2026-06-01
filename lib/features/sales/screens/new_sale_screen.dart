@@ -8,6 +8,7 @@ import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../widgets/buyer_picker_screen.dart';
+import '../widgets/photo_grid.dart';
 
 class NewSaleScreen extends StatefulWidget {
   final Sale? sale;
@@ -39,6 +40,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   late DeliveryType _deliveryType;
   late bool _requiresNif;
   late List<ComponentItem> _components;
+  late List<String> _photoUrls;
+  late final String _saleId;
   DateTime? _scheduledDate;
   bool _isLoading = false;
 
@@ -62,7 +65,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
     _requiresNif = sale?.requiresNif ?? false;
     _components = List.from(sale?.components ?? []);
+    _photoUrls = List.from(sale?.photoUrls ?? []);
     _scheduledDate = sale?.scheduledDate;
+    _saleId = sale?.id ??
+        FirebaseFirestore.instance.collection('_').doc().id;
 
     if (_isEditing) _loadBuyerForEdit();
   }
@@ -171,6 +177,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               _priceController.text.trim().replaceAll(',', '.')),
           assemblyStatus: _assemblyStatus,
           components: _components,
+          photoUrls: _photoUrls,
           payment: SalePayment(
               status: _paymentStatus, method: _paymentMethod),
           shipment: shipment,
@@ -180,10 +187,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         await _saleRepository.updateSale(updated);
       } else {
         final sale = Sale(
-          id: FirebaseFirestore.instance.collection('_').doc().id,
+          id: _saleId,
           buyerId: _selectedBuyer!.id,
           buyerName: _selectedBuyer!.name,
           itemDescription: _itemDescController.text.trim(),
+          photoUrls: _photoUrls,
           price: double.parse(
               _priceController.text.trim().replaceAll(',', '.')),
           assemblyStatus: _assemblyStatus,
@@ -264,6 +272,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                       DropdownMenuItem(value: s, child: Text(s.label)))
                   .toList(),
               onChanged: (v) => setState(() => _assemblyStatus = v!),
+            ),
+            const SizedBox(height: 16),
+            _SectionTitle('Photos'),
+            PhotoGrid(
+              saleId: _saleId,
+              photoUrls: _photoUrls,
+              onChanged: (urls) => setState(() => _photoUrls = urls),
             ),
             const SizedBox(height: 24),
             _SectionTitle('Components needed'),

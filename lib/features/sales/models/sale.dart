@@ -139,7 +139,7 @@ class Sale {
   final String buyerId;
   final String buyerName;
   final String itemDescription;
-  final String? photoUrl;
+  final List<String> photoUrls;
   final double price;
   final AssemblyStatus assemblyStatus;
   final List<ComponentItem> components;
@@ -154,7 +154,7 @@ class Sale {
     required this.buyerId,
     required this.buyerName,
     required this.itemDescription,
-    this.photoUrl,
+    this.photoUrls = const [],
     required this.price,
     required this.assemblyStatus,
     required this.components,
@@ -172,7 +172,7 @@ class Sale {
       buyerId: data['buyerId'] as String,
       buyerName: data['buyerName'] as String,
       itemDescription: data['itemDescription'] as String,
-      photoUrl: data['photoUrl'] as String?,
+      photoUrls: List<String>.from(data['photoUrls'] as List? ?? []),
       price: (data['price'] as num).toDouble(),
       assemblyStatus:
           AssemblyStatus.values.byName(data['assemblyStatus'] as String),
@@ -193,7 +193,7 @@ class Sale {
         'buyerId': buyerId,
         'buyerName': buyerName,
         'itemDescription': itemDescription,
-        'photoUrl': photoUrl,
+        'photoUrls': photoUrls,
         'price': price,
         'assemblyStatus': assemblyStatus.name,
         'components': components.map((c) => c.toMap()).toList(),
@@ -208,7 +208,7 @@ class Sale {
   // scheduledDate uses a sentinel to distinguish "clear to null" from "not provided"
   Sale copyWith({
     String? itemDescription,
-    String? photoUrl,
+    List<String>? photoUrls,
     double? price,
     AssemblyStatus? assemblyStatus,
     List<ComponentItem>? components,
@@ -222,7 +222,7 @@ class Sale {
         buyerId: buyerId,
         buyerName: buyerName,
         itemDescription: itemDescription ?? this.itemDescription,
-        photoUrl: photoUrl ?? this.photoUrl,
+        photoUrls: photoUrls ?? this.photoUrls,
         price: price ?? this.price,
         assemblyStatus: assemblyStatus ?? this.assemblyStatus,
         components: components ?? this.components,
