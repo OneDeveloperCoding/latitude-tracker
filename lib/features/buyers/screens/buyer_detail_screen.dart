@@ -198,19 +198,13 @@ class _BuyerSalesSection extends StatefulWidget {
 }
 
 class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
-  late final Future<List<Sale>> _salesFuture;
+  final _saleRepo = SaleRepository();
   DateTime? _filterMonth;
 
   @override
-  void initState() {
-    super.initState();
-    _salesFuture = SaleRepository().getSalesForBuyer(widget.buyerId);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Sale>>(
-      future: _salesFuture,
+    return StreamBuilder<List<Sale>>(
+      stream: _saleRepo.watchSalesForBuyer(widget.buyerId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(
@@ -219,8 +213,7 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
           );
         }
 
-        final allSales = List<Sale>.from(snapshot.data!)
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final allSales = snapshot.data!;
 
         if (allSales.isEmpty) {
           return Text(

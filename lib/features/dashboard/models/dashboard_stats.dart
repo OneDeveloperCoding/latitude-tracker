@@ -53,7 +53,8 @@ class DashboardStats {
           .where((s) => SaleFilter.assemblyNotReady.test(s) && active(s))
           .length,
       nifRequiredCount: period
-          .where((s) => SaleFilter.nifRequired.test(s) && active(s))
+          .where((s) =>
+              SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone)
           .length,
       overdueCount: period
           .where((s) => SaleFilter.overdue.test(s, now: now))

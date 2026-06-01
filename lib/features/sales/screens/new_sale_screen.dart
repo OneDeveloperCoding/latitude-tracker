@@ -14,8 +14,9 @@ import '../widgets/photo_grid.dart';
 
 class NewSaleScreen extends StatefulWidget {
   final Sale? sale;
+  final bool isDuplicate;
 
-  const NewSaleScreen({super.key, this.sale});
+  const NewSaleScreen({super.key, this.sale, this.isDuplicate = false});
 
   @override
   State<NewSaleScreen> createState() => _NewSaleScreenState();
@@ -53,34 +54,37 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   DateTime? _scheduledDate;
   bool _isLoading = false;
 
-  bool get _isEditing => widget.sale != null;
+  bool get _isEditing => widget.sale != null && !widget.isDuplicate;
 
   @override
   void initState() {
     super.initState();
     final sale = widget.sale;
+    final dup = widget.isDuplicate;
     _itemDescController =
         TextEditingController(text: sale?.itemDescription ?? '');
-    _notesController = TextEditingController(text: sale?.notes ?? '');
+    _notesController = TextEditingController(text: dup ? '' : (sale?.notes ?? ''));
     _priceController = TextEditingController(
         text: sale != null ? sale.price.toStringAsFixed(2) : '');
-    _trackingCodeController =
-        TextEditingController(text: sale?.shipment.trackingCode ?? '');
+    _trackingCodeController = TextEditingController(text: dup ? '' : (sale?.shipment.trackingCode ?? ''));
     _postalCodeController =
         TextEditingController(text: sale?.shipment.postalCode ?? '');
-    _assemblyStatus = sale?.assemblyStatus ?? AssemblyStatus.notStarted;
+    _assemblyStatus = dup ? AssemblyStatus.notStarted : (sale?.assemblyStatus ?? AssemblyStatus.notStarted);
     _paymentMethod = sale?.payment.method ?? PaymentMethod.mbWay;
-    _paymentStatus = sale?.payment.status ?? PaymentStatus.unpaid;
+    _paymentStatus = dup ? PaymentStatus.unpaid : (sale?.payment.status ?? PaymentStatus.unpaid);
     _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
     _requiresNif = sale?.requiresNif ?? false;
-    _components = List.from(sale?.components ?? []);
-    _photoUrls = List.from(sale?.photoUrls ?? []);
-    _originalPhotoUrls = List.from(sale?.photoUrls ?? []);
-    _scheduledDate = sale?.scheduledDate;
-    _saleId = sale?.id ??
-        FirebaseFirestore.instance.collection('_').doc().id;
+    _components = dup
+        ? (sale?.components.map((c) => c.copyWith(isAvailable: false)).toList() ?? [])
+        : List.from(sale?.components ?? []);
+    _photoUrls = dup ? [] : List.from(sale?.photoUrls ?? []);
+    _originalPhotoUrls = dup ? [] : List.from(sale?.photoUrls ?? []);
+    _scheduledDate = dup ? null : sale?.scheduledDate;
+    _saleId = _isEditing
+        ? sale!.id
+        : FirebaseFirestore.instance.collection('_').doc().id;
 
-    if (_isEditing) _loadBuyerForEdit();
+    if (widget.sale != null) _loadBuyerForEdit();
   }
 
   Future<void> _loadBuyerForEdit() async {
@@ -270,7 +274,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       },
       child: Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Sale' : 'New Sale'),
+        title: Text(_isEditing ? 'Edit Sale' : widget.isDuplicate ? 'Duplicate Sale' : 'New Sale'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _cancel,
@@ -532,6 +536,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             const SizedBox(height: 16),
             _ScheduledDatePicker(
               date: _scheduledDate,
+              isPickup: _deliveryType == DeliveryType.pickup,
               onChanged: (date) => setState(() => _scheduledDate = date),
             ),
             const SizedBox(height: 24),
@@ -555,16 +560,30 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
 class _ScheduledDatePicker extends StatelessWidget {
   final DateTime? date;
+  final bool isPickup;
   final ValueChanged<DateTime?> onChanged;
 
-  const _ScheduledDatePicker({required this.date, required this.onChanged});
+  const _ScheduledDatePicker({
+    required this.date,
+    required this.isPickup,
+    required this.onChanged,
+  });
 
   Future<void> _pick(BuildContext context) async {
+    final first = DateTime(DateTime.now().year - 5);
+    final last = DateTime(DateTime.now().year + 2, 12, 31);
+    final initial = date == null
+        ? DateTime.now()
+        : date!.isBefore(first)
+            ? first
+            : date!.isAfter(last)
+                ? last
+                : date!;
     final picked = await showDatePicker(
       context: context,
-      initialDate: date ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
     );
     if (picked != null) onChanged(picked);
   }
@@ -572,23 +591,24 @@ class _ScheduledDatePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('EEE, dd MMM yyyy');
+    final hasDate = date != null;
+    final label = hasDate
+        ? '${isPickup ? 'Ready by' : 'Scheduled'}: ${dateFormat.format(date!)}'
+        : isPickup
+            ? 'No ready-by date'
+            : 'No scheduled date';
     return Row(
       children: [
         const Icon(Icons.event, size: 18),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            date != null
-                ? 'Scheduled: ${dateFormat.format(date!)}'
-                : 'No scheduled date',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
         ),
         TextButton(
           onPressed: () => _pick(context),
-          child: Text(date != null ? 'Change' : 'Set date'),
+          child: Text(hasDate ? 'Change' : 'Set date'),
         ),
-        if (date != null)
+        if (hasDate)
           TextButton(
             onPressed: () => onChanged(null),
             child: const Text('Clear'),
