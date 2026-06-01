@@ -243,6 +243,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         );
       }
       return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         itemCount: ranked.length,
         itemBuilder: (context, index) => _RankedBuyerTile(
           stats: ranked[index],
@@ -266,6 +267,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
@@ -355,25 +357,60 @@ class _BuyerTile extends StatelessWidget {
         ? DateFormat('MMM yyyy').format(lastPurchase)
         : '—';
 
-    return ListTile(
-      leading: CircleAvatar(child: Text(buyer.name[0].toUpperCase())),
-      title: Text(buyer.name),
-      subtitle: subtitle != null ? Text(subtitle) : null,
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(dateLabel, style: Theme.of(context).textTheme.bodySmall),
-          if (stats.saleCount > 0)
-            Text(
-              '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-        ],
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              CircleAvatar(child: Text(buyer.name[0].toUpperCase())),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      buyer.name,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(dateLabel,
+                      style: Theme.of(context).textTheme.bodySmall),
+                  if (stats.saleCount > 0)
+                    Text(
+                      '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-      onTap: onTap,
     );
   }
 }
@@ -421,43 +458,84 @@ class _RankedBuyerTile extends StatelessWidget {
         '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
     };
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: rankColor,
-        child: Text(
-          '$rank',
-          style: TextStyle(
-            color: rank <= 3 ? Colors.white : Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: rankColor,
+                child: Text(
+                  '$rank',
+                  style: TextStyle(
+                    color: rank <= 3
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      buyer.name,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    if (buyer.instagramHandle != null)
+                      Text(
+                        '@${buyer.instagramHandle}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      )
+                    else if (buyer.phone != null)
+                      Text(
+                        buyer.phone!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    primaryValue,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    secondaryValue,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
-      title: Text(buyer.name),
-      subtitle: buyer.instagramHandle != null
-          ? Text('@${buyer.instagramHandle}')
-          : buyer.phone != null
-              ? Text(buyer.phone!)
-              : null,
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            primaryValue,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          Text(
-            secondaryValue,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-        ],
-      ),
-      onTap: onTap,
     );
   }
 }

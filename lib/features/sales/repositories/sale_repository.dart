@@ -57,6 +57,12 @@ class SaleRepository {
     await batch.commit();
   }
 
+  Stream<List<Sale>> watchSalesForBuyer(String buyerId) => _salesRef
+      .where('buyerId', isEqualTo: buyerId)
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snap) => snap.docs.map(Sale.fromFirestore).toList());
+
   Future<List<Sale>> getSalesForBuyer(String buyerId) async {
     final snap =
         await _salesRef.where('buyerId', isEqualTo: buyerId).get();
