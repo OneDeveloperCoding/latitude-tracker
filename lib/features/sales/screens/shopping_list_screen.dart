@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+import 'sale_detail_screen.dart';
 
 enum _Urgency { overdue, thisWeek, none }
 
@@ -154,7 +155,12 @@ class _SaleMaterialsCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
-      child: Container(
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+        ),
+        child: Container(
         decoration: accent != null
             ? BoxDecoration(
                 border: Border(left: BorderSide(color: accent, width: 4)))
@@ -208,6 +214,7 @@ class _SaleMaterialsCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
