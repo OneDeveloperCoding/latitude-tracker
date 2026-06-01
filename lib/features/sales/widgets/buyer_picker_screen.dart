@@ -49,6 +49,7 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(s.selectBuyer)),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: _createAndPickBuyer,
         icon: const Icon(Icons.person_add),
         label: Text(s.newBuyer),

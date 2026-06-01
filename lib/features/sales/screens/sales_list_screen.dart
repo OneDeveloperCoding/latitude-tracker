@@ -164,6 +164,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const NewSaleScreen()),
