@@ -604,8 +604,13 @@ class _AddressDisplayState extends State<_AddressDisplay> {
         }
         return _InfoRow(
           icon: Icons.location_on,
-          text:
-              '${address.street}, ${address.postalCode} ${address.city}, ${address.country}',
+          text: [
+            if (address.street.isNotEmpty) address.street,
+            if (address.houseNumber.isNotEmpty) address.houseNumber,
+            if (address.fraction != null) address.fraction!,
+            '${address.postalCode} ${address.city}',
+            address.country,
+          ].join(', '),
         );
       },
     );

@@ -60,7 +60,15 @@ class _MainNavState extends State<MainNav> {
         builder: (context, demoActive, child) => Column(
           children: [
             if (demoActive) _DemoBanner(),
-            Expanded(child: child!),
+            Expanded(
+              child: demoActive
+                  ? MediaQuery.removePadding(
+                      context: context,
+                      removeTop: true,
+                      child: child!,
+                    )
+                  : child!,
+            ),
           ],
         ),
         child: IndexedStack(index: _currentIndex, children: _screens),

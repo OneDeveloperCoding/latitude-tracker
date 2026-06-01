@@ -49,14 +49,34 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   _SortMode _sortMode = _SortMode.alphabetical;
   _RankingMetric _rankingMetric = _RankingMetric.totalSpent;
 
+  // Computed once per store update, not on every build.
+  var _statsCache = <String, _BuyerWithStats>{};
+
   @override
   void initState() {
     super.initState();
     BuyersStore.state.addListener(_onStoreChanged);
     SalesStore.state.addListener(_onStoreChanged);
+    _rebuildCache();
   }
 
-  void _onStoreChanged() => setState(() {});
+  void _rebuildCache() {
+    final allSales = SalesStore.current ?? [];
+    _statsCache = {
+      for (final buyer in BuyersStore.current ?? [])
+        buyer.id: _BuyerWithStats(
+          buyer: buyer,
+          stats: BuyerStats.compute(
+            allSales.where((s) => s.buyerId == buyer.id).toList(),
+          ),
+        ),
+    };
+  }
+
+  void _onStoreChanged() {
+    _rebuildCache();
+    setState(() {});
+  }
 
   @override
   void dispose() {
@@ -66,14 +86,9 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     super.dispose();
   }
 
-  _BuyerWithStats _statsFor(Buyer buyer) {
-    final allSales = SalesStore.current ?? [];
-    final buyerSales = allSales.where((s) => s.buyerId == buyer.id).toList();
-    return _BuyerWithStats(
-      buyer: buyer,
-      stats: BuyerStats.compute(buyerSales),
-    );
-  }
+  _BuyerWithStats _statsFor(Buyer buyer) =>
+      _statsCache[buyer.id] ??
+      _BuyerWithStats(buyer: buyer, stats: BuyerStats.compute([]));
 
   List<Buyer> _applySearch(List<Buyer> buyers) {
     if (_searchQuery.isEmpty) return buyers;

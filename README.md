@@ -9,7 +9,7 @@ Private Android app for tracking sales, buyers, shipments, and payments for a ha
   - Firestore (eur3 — Europe multi-region)
   - Storage (europe-west1)
   - Auth (email/password, single account)
-- Key packages: `flutter_map` + `latlong2` (heat map), `image_picker` (photos), `share_plus` + `file_picker` (archive export/import), `shared_preferences` (language preference), `flutter_localizations` (PT/EN Material widget translations), `intl` (date formatting locale)
+- Key packages: `flutter_map` + `latlong2` (heat map), `image_picker` (photos), `share_plus` + `file_picker` (archive export/import), `shared_preferences` (language preference + postal code cache), `flutter_localizations` (PT/EN Material widget translations), `intl` (date formatting locale), `firebase_crashlytics` (crash reporting), `http` (postal code lookup)
 
 ## Local setup
 
@@ -67,6 +67,12 @@ Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 | `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
 | `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping + rate-limited Nominatim geocoding; `_MapView` is a pure rendering widget |
 | `features/sales/services/photo_service.dart` | All Firebase Storage operations; swap storage backend here only |
+| `features/sales/services/sale_urgency.dart` | `SaleUrgency.levelOf()` / `reasonsFor()` / `daysUntilScheduled()` — single authoritative urgency source used by sales list, shopping list, and sale filter |
+| `features/sales/services/sale_grouper.dart` | `SaleGrouper.byWeek(sales)` — timeline grouping logic extracted from the sales list; pure function, testable in isolation |
+| `core/store/sales_store.dart` + `buyers_store.dart` | Singleton shared streams — initialized once in `MainNav`, all screens subscribe via `ValueListenableBuilder<StoreState<T>>` instead of opening their own Firestore listeners |
+| `core/store/store_state.dart` | `StoreState<T>` sealed class (`StoreLoading` / `StoreLoaded` / `StoreError`) — replaces null-as-loading convention |
+| `core/services/postal_code_service.dart` | `PostalCodeService.lookup(postalCode)` — GeoAPI.pt client with 180-day `shared_preferences` cache; returns `PostalCodeResult(street, city)` for PT postal codes |
+| `features/buyers/widgets/address_form_fields.dart` | `AddressFormFields` — reusable address form widget used by both buyer creation and address editing; handles postal code lookup, city auto-fill, and all structured address fields |
 
 ### Language
 
@@ -77,6 +83,28 @@ All UI strings live in `lib/core/l10n/app_strings.dart` (`AppStrings.pt` / `AppS
 ### Demo mode
 
 Accessible from the login screen without credentials. Seeded with 7 hand-crafted active sales (covering all UI states) and 248 generated historical sales across 18 months, using a fixed `Random(42)` seed for deterministic output. A tutorial bottom sheet auto-displays on first entry and can be re-opened via the **?** button in the demo banner.
+
+### Shared data stores
+
+`SalesStore` and `BuyersStore` are singleton `ValueNotifier`s initialized once in `MainNav.initState()` and disposed in `MainNav.dispose()`. Every screen that needs sales or buyers data subscribes via `ValueListenableBuilder<StoreState<List<T>>>` instead of opening its own Firestore stream. This keeps exactly one active WebSocket connection per collection regardless of how many screens are mounted.
+
+State is typed via the `StoreState<T>` sealed class — `StoreLoading`, `StoreLoaded(data)`, `StoreError(error)` — so loading and error states are distinct and exhaustive.
+
+### Buyer address auto-fill
+
+`BuyerAddress` stores structured fields: label, country, postal code, city, street, house number, fraction (optional), and delivery notes (optional).
+
+For Portuguese addresses, entering a full `XXXX-XXX` postal code triggers a lookup via [GeoAPI.pt](https://geoapi.pt) which returns the street name and locality. Results are cached locally in `shared_preferences` for 180 days so repeated entries for the same postal code are instant and offline. City always overwrites from the API result; street only fills if the user hasn't typed one yet. For non-Portuguese addresses all fields are free text.
+
+The `AddressFormFields` widget is shared between the quick-add during buyer creation and the standalone address edit screen — no duplication.
+
+### App icon
+
+Icons are generated via `flutter_launcher_icons` from `assets/icon/icon.png` (1024×1024 PNG). To regenerate after changing the source image:
+
+```bash
+dart run flutter_launcher_icons
+```
 
 ### Sale card progress path
 
