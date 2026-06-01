@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/sales/models/sale.dart';
 import '../../features/sales/models/sale_filter.dart';
+import '../../features/sales/services/sale_urgency.dart';
 import 'locale_settings.dart';
 
 class AppStrings {
@@ -741,6 +742,13 @@ class AppStrings {
       _pt ? 'Erro: $error' : 'Error: $error';
 
   // Maps English timeline keys (used for ordering) to translated display labels.
+  String urgencyReasonLabel(UrgencyReasonType type) => switch (type) {
+        UrgencyReasonType.waitingForMaterials => urgencyWaitingForMaterials,
+        UrgencyReasonType.assemblyNotReady => urgencyAssemblyNotReady,
+        UrgencyReasonType.paymentPending => urgencyPaymentPending,
+        UrgencyReasonType.notYetShipped => urgencyNotYetShipped,
+      };
+
   String timelineLabel(String key) {
     if (!_pt) return key;
     return switch (key) {

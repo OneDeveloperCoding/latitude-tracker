@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import '../../sales/models/sale.dart';
+import '../../sales/repositories/sale_repository.dart';
 import '../demo_data.dart';
 
-class InMemorySaleRepository {
+class InMemorySaleRepository implements SaleRepository {
   final _sales = <Sale>[];
   final _controller = StreamController<List<Sale>>.broadcast();
 
@@ -24,18 +25,20 @@ class InMemorySaleRepository {
   List<Sale> get _sorted =>
       List.from(_sales)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+  @override
   Stream<List<Sale>> watchSales() async* {
     yield _sorted;
-    yield* _controller.stream
-        .map((_) => _sorted);
+    yield* _controller.stream.map((_) => _sorted);
   }
 
+  @override
   Stream<Sale?> watchSale(String id) async* {
     yield _sales.where((s) => s.id == id).firstOrNull;
     yield* _controller.stream
         .map((_) => _sales.where((s) => s.id == id).firstOrNull);
   }
 
+  @override
   Stream<List<Sale>> watchSalesForBuyer(String buyerId) async* {
     yield _salesForBuyer(buyerId);
     yield* _controller.stream.map((_) => _salesForBuyer(buyerId));
@@ -45,17 +48,21 @@ class InMemorySaleRepository {
       _sales.where((s) => s.buyerId == buyerId).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+  @override
   Future<List<Sale>> getSalesForBuyer(String buyerId) async =>
       _salesForBuyer(buyerId);
 
+  @override
   Future<List<Sale>> getSalesForYear(int year) async =>
       _sales.where((s) => s.createdAt.year == year).toList();
 
+  @override
   Future<void> createSale(Sale sale) async {
     _sales.add(sale);
     _emit();
   }
 
+  @override
   Future<void> updateSale(Sale sale) async {
     final idx = _sales.indexWhere((s) => s.id == sale.id);
     if (idx != -1) {
@@ -64,11 +71,13 @@ class InMemorySaleRepository {
     }
   }
 
+  @override
   Future<void> deleteSale(String id) async {
     _sales.removeWhere((s) => s.id == id);
     _emit();
   }
 
+  @override
   Future<void> deleteAllSalesForYear(int year,
       {bool deletePhotos = false}) async {
     _sales.removeWhere((s) => s.createdAt.year == year);

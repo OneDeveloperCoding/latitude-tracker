@@ -4,10 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
 import '../../heat_map/services/heat_map_service.dart';
 import '../models/sale.dart';
 import '../models/sale_filter.dart';
-import '../repositories/sale_repository.dart';
+import '../services/sale_grouper.dart';
+import '../services/sale_urgency.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
@@ -43,7 +46,6 @@ enum _ViewMode { list, timeline, map }
 enum _SortOrder { newestFirst, oldestFirst, priceHigh, priceLow }
 
 class _SalesListScreenState extends State<SalesListScreen> {
-  final _repository = SaleRepository();
   late SaleFilter _filter;
   _ViewMode _viewMode = _ViewMode.timeline;
   _SortOrder _sortOrder = _SortOrder.newestFirst;
@@ -201,17 +203,13 @@ class _SalesListScreenState extends State<SalesListScreen> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<Sale>>(
-              stream: _repository.watchSales(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: ValueListenableBuilder<StoreState<List<Sale>>>(
+              valueListenable: SalesStore.state,
+              builder: (context, storeState, _) {
+                if (storeState is! StoreLoaded<List<Sale>>) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasError) {
-                  return Center(
-                      child: Text(s.errorMsg(snapshot.error!)));
-                }
-                var sales = _applyFilter(snapshot.data ?? []);
+                var sales = _applyFilter(storeState.data);
                 sales = _applySearch(sales);
                 sales = _applySort(sales);
                 if (_viewMode != _ViewMode.map && sales.isEmpty) {
@@ -516,61 +514,10 @@ class _TimelineView extends StatelessWidget {
 
   const _TimelineView({required this.sales});
 
-  Map<String, List<Sale>> _groupByWeek(List<Sale> sales) {
-    final now = DateTime.now();
-    // Keys are always English — used for ordering logic.
-    const order = ['Overdue', 'This week', 'Next week', 'Later'];
-    final Map<String, List<Sale>> groups = {};
-
-    for (final sale in sales) {
-      final label = _weekKey(sale, now);
-      groups.putIfAbsent(label, () => []).add(sale);
-    }
-
-    final sorted = <String, List<Sale>>{};
-    for (final key in order) {
-      if (groups.containsKey(key)) sorted[key] = groups[key]!;
-    }
-    for (final key in groups.keys) {
-      if (!order.contains(key)) sorted[key] = groups[key]!;
-    }
-    return sorted;
-  }
-
-  String _weekKey(Sale sale, DateTime now) {
-    final relevantDate = sale.scheduledDate ?? sale.createdAt;
-    final startOfThisWeek =
-        DateTime(now.year, now.month, now.day)
-            .subtract(Duration(days: now.weekday - 1));
-    final startOfNextWeek =
-        startOfThisWeek.add(const Duration(days: 7));
-    final endOfNextWeek = startOfNextWeek.add(const Duration(days: 7));
-
-    if (sale.scheduledDate != null &&
-        sale.scheduledDate!.isBefore(startOfThisWeek) &&
-        sale.shipment.status != ShipmentStatus.delivered) {
-      return 'Overdue';
-    }
-    if (relevantDate.isAfter(
-            startOfThisWeek.subtract(const Duration(seconds: 1))) &&
-        relevantDate.isBefore(startOfNextWeek)) {
-      return 'This week';
-    }
-    if (relevantDate.isAfter(
-            startOfNextWeek.subtract(const Duration(seconds: 1))) &&
-        relevantDate.isBefore(endOfNextWeek)) {
-      return 'Next week';
-    }
-    if (relevantDate.isAfter(endOfNextWeek)) {
-      return 'Later';
-    }
-    return DateFormat('MMMM yyyy').format(relevantDate);
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final groups = _groupByWeek(sales);
+    final groups = SaleGrouper.byWeek(sales);
     final keys = groups.keys.toList();
 
     return ListView.builder(
@@ -604,78 +551,15 @@ class _TimelineView extends StatelessWidget {
 }
 
 // Returns blocker reasons for the ⚠️ badge. Empty list = no badge.
-typedef _UrgencyReason = ({String label, IconData icon, Color color});
-
-List<_UrgencyReason> _urgencyReasons(Sale sale, AppStrings s) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
-  final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
-
-  if (sale.scheduledDate == null) return [];
-  if (sale.shipment.status == ShipmentStatus.delivered) return [];
-
-  final isOverdue = sale.scheduledDate!.isBefore(startOfThisWeek);
-  final isThisWeek =
-      !isOverdue && sale.scheduledDate!.isBefore(startOfNextWeek);
-  if (!isOverdue && !isThisWeek) return [];
-
-  final reasons = <_UrgencyReason>[];
-  if (sale.assemblyStatus == AssemblyStatus.waitingForMaterials) {
-    reasons.add((
-      label: s.urgencyWaitingForMaterials,
-      icon: Icons.shopping_bag_outlined,
-      color: Colors.amber[700]!,
-    ));
-  } else if (sale.assemblyStatus != AssemblyStatus.ready) {
-    reasons.add((
-      label: s.urgencyAssemblyNotReady,
-      icon: Icons.construction,
-      color: Colors.amber[700]!,
-    ));
-  }
-  if (sale.payment.status == PaymentStatus.unpaid) {
-    reasons.add((
-      label: s.urgencyPaymentPending,
-      icon: Icons.credit_card_off,
-      color: Colors.orange,
-    ));
-  }
-  if (isOverdue && sale.shipment.status == ShipmentStatus.pending) {
-    reasons.add((
-      label: s.urgencyNotYetShipped,
-      icon: Icons.schedule,
-      color: Colors.red,
-    ));
-  }
-  return reasons;
-}
-
-int? _daysUntilScheduled(Sale sale) {
-  if (sale.scheduledDate == null) return null;
-  final today = DateTime.now();
-  final todayDate = DateTime(today.year, today.month, today.day);
-  final scheduled = DateTime(
-    sale.scheduledDate!.year,
-    sale.scheduledDate!.month,
-    sale.scheduledDate!.day,
-  );
-  return scheduled.difference(todayDate).inDays;
-}
 
 class _SaleCard extends StatelessWidget {
   final Sale sale;
 
   const _SaleCard({required this.sale});
 
-  bool _isOverdue() {
-    final days = _daysUntilScheduled(sale);
-    return days != null && days < 0;
-  }
-
   Color? _accentColor(BuildContext context) {
-    if (_urgencyReasons(sale, context.s).isEmpty) return null;
-    return _isOverdue()
+    if (SaleUrgency.reasonsFor(sale).isEmpty) return null;
+    return SaleUrgency.levelOf(sale) == UrgencyLevel.overdue
         ? Theme.of(context).colorScheme.error
         : Colors.amber[700]!;
   }
@@ -786,10 +670,9 @@ class _AttentionBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final nifPaid =
         sale.requiresNif && sale.payment.status == PaymentStatus.paid;
-    final reasons = _urgencyReasons(sale, s);
+    final reasons = SaleUrgency.reasonsFor(sale);
 
     if (!nifPaid && reasons.isEmpty) return const SizedBox.shrink();
 
@@ -844,7 +727,7 @@ class _ScheduledDateLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final days = _daysUntilScheduled(sale)!;
+    final days = SaleUrgency.daysUntilScheduled(sale)!;
     final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
 
     final Color color;
@@ -914,7 +797,7 @@ void _showNifDetail(BuildContext context, bool atSubmissionDone) {
 }
 
 void _showUrgencyDetail(
-    BuildContext context, List<_UrgencyReason> reasons) {
+    BuildContext context, List<UrgencyReason> reasons) {
   final s = context.s;
   showModalBottomSheet(
     context: context,
@@ -934,7 +817,7 @@ void _showUrgencyDetail(
                 children: [
                   Icon(r.icon, size: 20, color: r.color),
                   const SizedBox(width: 12),
-                  Text(r.label,
+                  Text(s.urgencyReasonLabel(r.type),
                       style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),

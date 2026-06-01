@@ -1,14 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
+import '../../../core/store/buyers_store.dart';
+import '../../../core/store/sales_store.dart';
 import '../models/buyer.dart';
 import '../models/buyer_stats.dart';
-import '../repositories/buyer_repository.dart';
 import 'buyer_detail_screen.dart';
 import 'buyer_form_screen.dart';
 
@@ -44,15 +41,8 @@ class BuyersListScreen extends StatefulWidget {
 }
 
 class _BuyersListScreenState extends State<BuyersListScreen> {
-  final _buyerRepo = BuyerRepository();
-  final _saleRepo = SaleRepository();
-
-  late StreamSubscription<List<Buyer>> _buyersSub;
-  late StreamSubscription<List<Sale>> _salesSub;
-
-  List<Buyer> _buyers = [];
-  List<Sale> _sales = [];
-  bool _loading = true;
+  bool get _loading =>
+      BuyersStore.current == null || SalesStore.current == null;
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -62,27 +52,23 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   @override
   void initState() {
     super.initState();
-    _buyersSub = _buyerRepo.watchBuyers().listen((buyers) {
-      setState(() {
-        _buyers = buyers;
-        _loading = false;
-      });
-    });
-    _salesSub = _saleRepo.watchSales().listen((sales) {
-      setState(() => _sales = sales);
-    });
+    BuyersStore.state.addListener(_onStoreChanged);
+    SalesStore.state.addListener(_onStoreChanged);
   }
+
+  void _onStoreChanged() => setState(() {});
 
   @override
   void dispose() {
-    _buyersSub.cancel();
-    _salesSub.cancel();
+    BuyersStore.state.removeListener(_onStoreChanged);
+    SalesStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   _BuyerWithStats _statsFor(Buyer buyer) {
-    final buyerSales = _sales.where((s) => s.buyerId == buyer.id).toList();
+    final allSales = SalesStore.current ?? [];
+    final buyerSales = allSales.where((s) => s.buyerId == buyer.id).toList();
     return _BuyerWithStats(
       buyer: buyer,
       stats: BuyerStats.compute(buyerSales),
@@ -101,12 +87,12 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   List<Object> _buildAlphabeticalItems() {
-    return _applySearch(_buyers).map(_statsFor).toList();
+    return _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
   }
 
   List<Object> _buildGroupedItems() {
     final s = context.s;
-    final stats = _applySearch(_buyers).map(_statsFor).toList();
+    final stats = _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
     final withPurchase = stats.where((s) => s.lastPurchaseAt != null).toList()
       ..sort((a, b) => b.lastPurchaseAt!.compareTo(a.lastPurchaseAt!));
     final noPurchase = stats.where((s) => s.lastPurchaseAt == null).toList()
@@ -131,7 +117,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   List<_BuyerWithStats> _buildRankedItems() {
-    return (_applySearch(_buyers).map(_statsFor).toList()
+    return (_applySearch(BuyersStore.current ?? []).map(_statsFor).toList()
           ..sort((a, b) =>
               b.metricValue(_rankingMetric)
                   .compareTo(a.metricValue(_rankingMetric))))

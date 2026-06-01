@@ -246,6 +246,31 @@ class Sale {
             scheduledDate == _unset ? this.scheduledDate : scheduledDate as DateTime?,
         notes: notes == _unset ? this.notes : notes as String?,
       );
+
+  // Derives AssemblyStatus from components + current status.
+  // waitingForMaterials is never auto-changed — the user controls it manually.
+  static AssemblyStatus deriveAssemblyStatus(
+    List<ComponentItem> components,
+    AssemblyStatus current,
+  ) {
+    if (current == AssemblyStatus.waitingForMaterials) return current;
+    final allAvailable =
+        components.isNotEmpty && components.every((c) => c.isAvailable);
+    if (allAvailable &&
+        (current == AssemblyStatus.notStarted ||
+            current == AssemblyStatus.inProgress)) {
+      return AssemblyStatus.ready;
+    }
+    if (!allAvailable && current == AssemblyStatus.ready) {
+      return AssemblyStatus.inProgress;
+    }
+    return current;
+  }
+
+  Sale withUpdatedComponents(List<ComponentItem> updated) => copyWith(
+        components: updated,
+        assemblyStatus: deriveAssemblyStatus(updated, assemblyStatus),
+      );
 }
 
 const _unset = Object();
