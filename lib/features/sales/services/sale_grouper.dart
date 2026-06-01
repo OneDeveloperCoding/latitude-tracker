@@ -13,10 +13,18 @@ class SaleGrouper {
 
   static Map<String, List<Sale>> byWeek(List<Sale> sales) {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
+    final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
+    final endOfNextWeek = startOfNextWeek.add(const Duration(days: 7));
     final Map<String, List<Sale>> groups = {};
 
     for (final sale in sales) {
-      groups.putIfAbsent(_weekKey(sale, now), () => []).add(sale);
+      groups
+          .putIfAbsent(
+              _weekKey(sale, startOfThisWeek, startOfNextWeek, endOfNextWeek),
+              () => [])
+          .add(sale);
     }
 
     final sorted = <String, List<Sale>>{};
@@ -29,11 +37,8 @@ class SaleGrouper {
     return sorted;
   }
 
-  static String _weekKey(Sale sale, DateTime now) {
-    final today = DateTime(now.year, now.month, now.day);
-    final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
-    final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
-    final endOfNextWeek = startOfNextWeek.add(const Duration(days: 7));
+  static String _weekKey(Sale sale, DateTime startOfThisWeek,
+      DateTime startOfNextWeek, DateTime endOfNextWeek) {
     final relevantDate = sale.scheduledDate ?? sale.createdAt;
 
     if (sale.scheduledDate != null &&

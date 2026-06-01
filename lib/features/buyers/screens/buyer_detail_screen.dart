@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sale_detail_screen.dart';
@@ -201,97 +202,115 @@ class _BuyerSalesSection extends StatefulWidget {
 }
 
 class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
-  final _saleRepo = SaleRepository();
   DateTime? _filterMonth;
+  List<Sale>? _sales;
+  BuyerStats? _stats;
+  List<DateTime> _months = [];
+
+  @override
+  void initState() {
+    super.initState();
+    SalesStore.state.addListener(_onSalesChanged);
+    _onSalesChanged();
+  }
+
+  void _onSalesChanged() {
+    final all = SalesStore.current;
+    final sales = all
+        ?.where((s) => s.buyerId == widget.buyerId)
+        .toList()
+      ?..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    setState(() {
+      _sales = sales;
+      _stats = sales != null ? BuyerStats.compute(sales) : null;
+      _months = sales == null
+          ? []
+          : ({
+              for (final s in sales)
+                DateTime(s.createdAt.year, s.createdAt.month)
+            }.toList()
+                ..sort((a, b) => b.compareTo(a)));
+    });
+  }
+
+  @override
+  void dispose() {
+    SalesStore.state.removeListener(_onSalesChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return StreamBuilder<List<Sale>>(
-      stream: _saleRepo.watchSalesForBuyer(widget.buyerId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Text(s.errorLoadingSalesMsg(snapshot.error!),
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.error));
-        }
-        if (!snapshot.hasData) {
-          return const SizedBox(
-            height: 48,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
 
-        final allSales = snapshot.data!;
+    if (_sales == null) {
+      return const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        if (allSales.isEmpty) {
-          return Text(
-            s.noPurchasesYet,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          );
-        }
+    final allSales = _sales!;
 
-        final months = ({
-          for (final sale in allSales)
-            DateTime(sale.createdAt.year, sale.createdAt.month)
-        }.toList()
-              ..sort((a, b) => b.compareTo(a)));
-
-        final filtered = _filterMonth == null
-            ? allSales
-            : allSales
-                .where((sale) =>
-                    sale.createdAt.year == _filterMonth!.year &&
-                    sale.createdAt.month == _filterMonth!.month)
-                .toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PurchaseSummary(sales: allSales),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  FilterChip(
-                    label: Text(s.all),
-                    selected: _filterMonth == null,
-                    onSelected: (_) => setState(() => _filterMonth = null),
-                  ),
-                  ...months.map((month) => Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: FilterChip(
-                          label: Text(DateFormat('MMM yyyy').format(month)),
-                          selected: _filterMonth == month,
-                          onSelected: (_) =>
-                              setState(() => _filterMonth = month),
-                        ),
-                      )),
-                ],
-              ),
+    if (allSales.isEmpty) {
+      return Text(
+        s.noPurchasesYet,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 8),
-            ...filtered.map((sale) => _SaleTile(sale: sale)),
-          ],
-        );
-      },
+      );
+    }
+
+    final filtered = _filterMonth == null
+        ? allSales
+        : allSales
+            .where((sale) =>
+                sale.createdAt.year == _filterMonth!.year &&
+                sale.createdAt.month == _filterMonth!.month)
+            .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _PurchaseSummary(stats: _stats!),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              FilterChip(
+                label: Text(s.all),
+                selected: _filterMonth == null,
+                onSelected: (_) => setState(() => _filterMonth = null),
+              ),
+              ..._months.map((month) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: FilterChip(
+                      label: Text(DateFormat('MMM yyyy').format(month)),
+                      selected: _filterMonth == month,
+                      onSelected: (_) =>
+                          setState(() => _filterMonth = month),
+                    ),
+                  )),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...filtered.map((sale) => _SaleTile(sale: sale)),
+      ],
     );
   }
 }
 
 class _PurchaseSummary extends StatelessWidget {
-  final List<Sale> sales;
+  final BuyerStats stats;
 
-  const _PurchaseSummary({required this.sales});
+  const _PurchaseSummary({required this.stats});
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
-    final stats = BuyerStats.compute(sales);
 
     return Card(
       child: Padding(

@@ -20,20 +20,18 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
   final _saleRepo = SaleRepository();
 
   List<Sale> _sales = [];
+  Map<String, Buyer> _buyersById = {};
 
   bool get _loading =>
       SalesStore.current == null || BuyersStore.current == null;
-
-  Map<String, Buyer> get _buyersById => {
-        for (final b in BuyersStore.current ?? []) b.id: b
-      };
 
   @override
   void initState() {
     super.initState();
     SalesStore.state.addListener(_onSalesChanged);
-    BuyersStore.state.addListener(_onStoreChanged);
+    BuyersStore.state.addListener(_onBuyersChanged);
     _onSalesChanged();
+    _onBuyersChanged();
   }
 
   void _onSalesChanged() {
@@ -47,12 +45,16 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
     setState(() => _sales = filtered);
   }
 
-  void _onStoreChanged() => setState(() {});
+  void _onBuyersChanged() {
+    setState(() {
+      _buyersById = {for (final b in BuyersStore.current ?? []) b.id: b};
+    });
+  }
 
   @override
   void dispose() {
     SalesStore.state.removeListener(_onSalesChanged);
-    BuyersStore.state.removeListener(_onStoreChanged);
+    BuyersStore.state.removeListener(_onBuyersChanged);
     super.dispose();
   }
 

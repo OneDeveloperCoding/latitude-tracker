@@ -31,8 +31,8 @@ class ShoppingListScreen extends StatelessWidget {
                   s.shipment.status != ShipmentStatus.delivered &&
                   s.components.any((c) => !c.isAvailable))
               .toList()
-            ..sort((a, b) => _urgencyOrder[SaleUrgency.levelOf(a)]!
-                .compareTo(_urgencyOrder[SaleUrgency.levelOf(b)]!));
+            ..sort((a, b) => _urgencyOrder[a.urgencyLevel()]!
+                .compareTo(_urgencyOrder[b.urgencyLevel()]!));
 
           if (openSales.isEmpty) {
             return Center(
@@ -53,7 +53,7 @@ class ShoppingListScreen extends StatelessWidget {
               .expand((s) => s.components.where((c) => !c.isAvailable))
               .length;
           final urgentCount =
-              openSales.where((s) => SaleUrgency.levelOf(s) != UrgencyLevel.none).length;
+              openSales.where((s) => s.urgencyLevel() != UrgencyLevel.none).length;
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -67,7 +67,7 @@ class ShoppingListScreen extends StatelessWidget {
               const SizedBox(height: 16),
               ...openSales.map((sale) => _SaleMaterialsCard(
                     sale: sale,
-                    urgency: SaleUrgency.levelOf(sale),
+                    urgency: sale.urgencyLevel(),
                   )),
             ],
           );

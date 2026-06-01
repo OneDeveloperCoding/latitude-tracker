@@ -27,38 +27,44 @@ class DashboardStats {
     DateTime start,
     DateTime end,
   ) {
-    final period = all
-        .where((s) => !s.createdAt.isBefore(start) && s.createdAt.isBefore(end))
-        .toList();
-
     final now = DateTime.now();
 
     // Action counts exclude already-delivered sales — those need no further action.
     bool active(Sale s) => s.shipment.status != ShipmentStatus.delivered;
 
+    double paidRevenue = 0;
+    double unpaidRevenue = 0;
+    int paidCount = 0;
+    int unpaidCount = 0;
+    int pendingShipmentCount = 0;
+    int assemblyNotReadyCount = 0;
+    int nifRequiredCount = 0;
+    int overdueCount = 0;
+
+    for (final s in all) {
+      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
+      if (s.payment.status == PaymentStatus.paid) {
+        paidRevenue += s.price;
+        paidCount++;
+      } else if (s.payment.status == PaymentStatus.unpaid) {
+        unpaidRevenue += s.price;
+        unpaidCount++;
+      }
+      if (SaleFilter.pendingShipment.test(s)) pendingShipmentCount++;
+      if (SaleFilter.assemblyNotReady.test(s) && active(s)) assemblyNotReadyCount++;
+      if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) nifRequiredCount++;
+      if (SaleFilter.overdue.test(s, now: now)) overdueCount++;
+    }
+
     return DashboardStats(
-      paidRevenue: period
-          .where((s) => s.payment.status == PaymentStatus.paid)
-          .fold(0.0, (sum, s) => sum + s.price),
-      unpaidRevenue: period
-          .where((s) => s.payment.status == PaymentStatus.unpaid)
-          .fold(0.0, (sum, s) => sum + s.price),
-      paidCount:
-          period.where((s) => s.payment.status == PaymentStatus.paid).length,
-      unpaidCount:
-          period.where((s) => s.payment.status == PaymentStatus.unpaid).length,
-      pendingShipmentCount:
-          period.where((s) => SaleFilter.pendingShipment.test(s)).length,
-      assemblyNotReadyCount: period
-          .where((s) => SaleFilter.assemblyNotReady.test(s) && active(s))
-          .length,
-      nifRequiredCount: period
-          .where((s) =>
-              SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone)
-          .length,
-      overdueCount: period
-          .where((s) => SaleFilter.overdue.test(s, now: now))
-          .length,
+      paidRevenue: paidRevenue,
+      unpaidRevenue: unpaidRevenue,
+      paidCount: paidCount,
+      unpaidCount: unpaidCount,
+      pendingShipmentCount: pendingShipmentCount,
+      assemblyNotReadyCount: assemblyNotReadyCount,
+      nifRequiredCount: nifRequiredCount,
+      overdueCount: overdueCount,
     );
   }
 }

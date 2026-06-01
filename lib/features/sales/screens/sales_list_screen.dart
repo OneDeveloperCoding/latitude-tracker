@@ -5,7 +5,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
 import '../../heat_map/services/heat_map_service.dart';
 import '../models/sale.dart';
 import '../models/sale_filter.dart';
@@ -54,24 +53,46 @@ class _SalesListScreenState extends State<SalesListScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // Cached once per store/filter/sort/search change — not on every build().
+  List<Sale> _filteredSales = [];
+  Map<String, List<Sale>> _groupedSales = {};
+
+  bool get _loading => SalesStore.current == null;
+
   @override
   void initState() {
     super.initState();
     _filter = widget.initialFilter;
+    SalesStore.state.addListener(_onStoreChanged);
+    _rebuildCache();
+  }
+
+  void _onStoreChanged() {
+    _rebuildCache();
+    setState(() {});
+  }
+
+  void _rebuildCache() {
+    var sales = _applyFilter(SalesStore.current ?? []);
+    sales = _applySearch(sales);
+    sales = _applySort(sales);
+    _filteredSales = sales;
+    _groupedSales = SaleGrouper.byWeek(sales);
   }
 
   @override
   void dispose() {
+    SalesStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   void _stopSearch() {
-    setState(() {
-      _isSearching = false;
-      _searchQuery = '';
-      _searchController.clear();
-    });
+    _isSearching = false;
+    _searchQuery = '';
+    _searchController.clear();
+    _rebuildCache();
+    setState(() {});
   }
 
   List<Sale> _applyFilter(List<Sale> sales) =>
@@ -130,7 +151,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   hintText: s.searchSales,
                   border: InputBorder.none,
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v),
+                onChanged: (v) {
+                _searchQuery = v;
+                _rebuildCache();
+                setState(() {});
+              },
               ),
             )
           : AppBar(
@@ -185,7 +210,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       child: FilterChip(
                         label: Text(s.filterLabel(f)),
                         selected: _filter == f,
-                        onSelected: (_) => setState(() => _filter = f),
+                        onSelected: (_) {
+                          _filter = f;
+                          _rebuildCache();
+                          setState(() {});
+                        },
                       ),
                     )),
                 if (_kSecondaryFilters.contains(_filter))
@@ -194,34 +223,31 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     selected: true,
                     showCheckmark: false,
                     deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () =>
-                        setState(() => _filter = SaleFilter.all),
-                    onSelected: (_) =>
-                        setState(() => _filter = SaleFilter.all),
+                    onDeleted: () {
+                      _filter = SaleFilter.all;
+                      _rebuildCache();
+                      setState(() {});
+                    },
+                    onSelected: (_) {
+                      _filter = SaleFilter.all;
+                      _rebuildCache();
+                      setState(() {});
+                    },
                   ),
               ],
             ),
           ),
           Expanded(
-            child: ValueListenableBuilder<StoreState<List<Sale>>>(
-              valueListenable: SalesStore.state,
-              builder: (context, storeState, _) {
-                if (storeState is! StoreLoaded<List<Sale>>) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                var sales = _applyFilter(storeState.data);
-                sales = _applySearch(sales);
-                sales = _applySort(sales);
-                if (_viewMode != _ViewMode.map && sales.isEmpty) {
-                  return Center(child: Text(s.noSalesFound));
-                }
-                return switch (_viewMode) {
-                  _ViewMode.list => _ListView(sales: sales),
-                  _ViewMode.timeline => _TimelineView(sales: sales),
-                  _ViewMode.map => _MapView(sales: sales),
-                };
-              },
-            ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _viewMode != _ViewMode.map && _filteredSales.isEmpty
+                    ? Center(child: Text(s.noSalesFound))
+                    : switch (_viewMode) {
+                        _ViewMode.list => _ListView(sales: _filteredSales),
+                        _ViewMode.timeline =>
+                          _TimelineView(groups: _groupedSales),
+                        _ViewMode.map => _MapView(sales: _filteredSales),
+                      },
           ),
         ],
       ),
@@ -251,7 +277,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           ? const Icon(Icons.check)
                           : const SizedBox(width: 24),
                       onTap: () {
-                        setState(() => _filter = f);
+                        _filter = f;
+                        _rebuildCache();
+                        setState(() {});
                         Navigator.pop(sheetContext);
                       },
                     )),
@@ -268,7 +296,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           ? const Icon(Icons.check)
                           : const SizedBox(width: 24),
                       onTap: () {
-                        setState(() => _sortOrder = order);
+                        _sortOrder = order;
+                        _rebuildCache();
+                        setState(() {});
                         setSheetState(() {});
                       },
                     )),
@@ -510,14 +540,13 @@ class _ListView extends StatelessWidget {
 }
 
 class _TimelineView extends StatelessWidget {
-  final List<Sale> sales;
+  final Map<String, List<Sale>> groups;
 
-  const _TimelineView({required this.sales});
+  const _TimelineView({required this.groups});
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final groups = SaleGrouper.byWeek(sales);
     final keys = groups.keys.toList();
 
     return ListView.builder(
@@ -557,18 +586,16 @@ class _SaleCard extends StatelessWidget {
 
   const _SaleCard({required this.sale});
 
-  Color? _accentColor(BuildContext context) {
-    if (SaleUrgency.reasonsFor(sale).isEmpty) return null;
-    return SaleUrgency.levelOf(sale) == UrgencyLevel.overdue
-        ? Theme.of(context).colorScheme.error
-        : Colors.amber[700]!;
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
-    final accentColor = _accentColor(context);
+    final reasons = sale.urgencyReasons();
+    final accentColor = reasons.isEmpty
+        ? null
+        : sale.urgencyLevel() == UrgencyLevel.overdue
+            ? Theme.of(context).colorScheme.error
+            : Colors.amber[700]!;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -623,7 +650,7 @@ class _SaleCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  _AttentionBadges(sale: sale),
+                  _AttentionBadges(sale: sale, reasons: reasons),
                 ],
               ),
               Row(
@@ -665,14 +692,14 @@ class _SaleCard extends StatelessWidget {
 
 class _AttentionBadges extends StatelessWidget {
   final Sale sale;
+  final List<UrgencyReason> reasons;
 
-  const _AttentionBadges({required this.sale});
+  const _AttentionBadges({required this.sale, required this.reasons});
 
   @override
   Widget build(BuildContext context) {
     final nifPaid =
         sale.requiresNif && sale.payment.status == PaymentStatus.paid;
-    final reasons = SaleUrgency.reasonsFor(sale);
 
     if (!nifPaid && reasons.isEmpty) return const SizedBox.shrink();
 
@@ -727,7 +754,7 @@ class _ScheduledDateLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final days = SaleUrgency.daysUntilScheduled(sale)!;
+    final days = sale.daysUntilScheduled()!;
     final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
 
     final Color color;
