@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 
+import '../../heat_map/services/geocoding_service.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import 'new_sale_screen.dart';
@@ -44,10 +47,12 @@ class SalesListScreen extends StatefulWidget {
   State<SalesListScreen> createState() => _SalesListScreenState();
 }
 
+enum _ViewMode { list, timeline, map }
+
 class _SalesListScreenState extends State<SalesListScreen> {
   final _repository = SaleRepository();
   late SaleFilter _filter;
-  bool _timelineView = false;
+  _ViewMode _viewMode = _ViewMode.list;
 
   @override
   void initState() {
@@ -91,10 +96,18 @@ class _SalesListScreenState extends State<SalesListScreen> {
       appBar: AppBar(
         title: const Text('Sales'),
         actions: [
-          IconButton(
-            icon: Icon(_timelineView ? Icons.list : Icons.calendar_view_week),
-            tooltip: _timelineView ? 'List view' : 'Timeline view',
-            onPressed: () => setState(() => _timelineView = !_timelineView),
+          PopupMenuButton<_ViewMode>(
+            icon: Icon(switch (_viewMode) {
+              _ViewMode.list => Icons.list,
+              _ViewMode.timeline => Icons.calendar_view_week,
+              _ViewMode.map => Icons.map,
+            }),
+            onSelected: (mode) => setState(() => _viewMode = mode),
+            itemBuilder: (_) => [
+              _viewMenuItem(_ViewMode.list, Icons.list, 'List'),
+              _viewMenuItem(_ViewMode.timeline, Icons.calendar_view_week, 'Timeline'),
+              _viewMenuItem(_ViewMode.map, Icons.map, 'Map'),
+            ],
           ),
         ],
       ),
@@ -135,12 +148,14 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 final sales = _applyFilter(snapshot.data ?? []);
-                if (sales.isEmpty) {
+                if (_viewMode != _ViewMode.map && sales.isEmpty) {
                   return const Center(child: Text('No sales found.'));
                 }
-                return _timelineView
-                    ? _TimelineView(sales: sales)
-                    : _ListView(sales: sales);
+                return switch (_viewMode) {
+                  _ViewMode.list => _ListView(sales: sales),
+                  _ViewMode.timeline => _TimelineView(sales: sales),
+                  _ViewMode.map => _MapView(sales: sales),
+                };
               },
             ),
           ),
@@ -148,7 +163,255 @@ class _SalesListScreenState extends State<SalesListScreen> {
       ),
     );
   }
+
+  PopupMenuItem<_ViewMode> _viewMenuItem(
+      _ViewMode mode, IconData icon, String label) {
+    return PopupMenuItem(
+      value: mode,
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 12),
+          Text(label),
+          if (_viewMode == mode) ...[
+            const Spacer(),
+            const Icon(Icons.check, size: 16),
+          ],
+        ],
+      ),
+    );
+  }
 }
+
+// ── Map view ──────────────────────────────────────────────────────────────────
+
+class _PostalCodePoint {
+  final String postalCode;
+  final LatLng position;
+  final int count;
+
+  const _PostalCodePoint({
+    required this.postalCode,
+    required this.position,
+    required this.count,
+  });
+}
+
+class _MapView extends StatefulWidget {
+  final List<Sale> sales;
+
+  const _MapView({required this.sales});
+
+  @override
+  State<_MapView> createState() => _MapViewState();
+}
+
+class _MapViewState extends State<_MapView> {
+  List<_PostalCodePoint> _points = [];
+  bool _loading = true;
+  String _status = 'Locating postal codes...';
+
+  @override
+  void initState() {
+    super.initState();
+    _geocode(widget.sales);
+  }
+
+  @override
+  void didUpdateWidget(_MapView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldCodes = _postalCodes(oldWidget.sales);
+    final newCodes = _postalCodes(widget.sales);
+    if (!oldCodes.containsAll(newCodes) || !newCodes.containsAll(oldCodes)) {
+      _geocode(widget.sales);
+    }
+  }
+
+  Map<String, int> _extractPostalCounts(List<Sale> sales) {
+    final counts = <String, int>{};
+    for (final sale in sales) {
+      final code = sale.shipment.postalCode;
+      if (sale.shipment.type == DeliveryType.shipping &&
+          code != null &&
+          code.isNotEmpty) {
+        counts[code] = (counts[code] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  Set<String> _postalCodes(List<Sale> sales) =>
+      _extractPostalCounts(sales).keys.toSet();
+
+  Future<void> _geocode(List<Sale> sales) async {
+    setState(() {
+      _loading = true;
+      _status = 'Locating postal codes...';
+    });
+
+    final counts = _extractPostalCounts(sales);
+    final points = <_PostalCodePoint>[];
+    var done = 0;
+
+    for (final entry in counts.entries) {
+      if (!mounted) return;
+      setState(() =>
+          _status = 'Locating ${entry.key} ($done/${counts.length})...');
+
+      final latLng = await GeocodingService.geocode(entry.key);
+      if (latLng != null) {
+        points.add(_PostalCodePoint(
+          postalCode: entry.key,
+          position: latLng,
+          count: entry.value,
+        ));
+      }
+
+      done++;
+      // Nominatim requires max 1 request/second
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    if (mounted) {
+      setState(() {
+        _points = points;
+        _loading = false;
+      });
+    }
+  }
+
+  double _markerSize(int count) =>
+      (32 + (count - 1) * 8).clamp(32, 80).toDouble();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        FlutterMap(
+          options: const MapOptions(
+            initialCenter: LatLng(39.5, -8.0),
+            initialZoom: 6.5,
+            minZoom: 5,
+            maxZoom: 14,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.latitude.tracker',
+            ),
+            MarkerLayer(
+              markers: _points
+                  .map((p) => Marker(
+                        point: p.position,
+                        width: _markerSize(p.count),
+                        height: _markerSize(p.count),
+                        child: GestureDetector(
+                          onTap: () => ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(
+                            content: Text(
+                                '${p.postalCode} — ${p.count} sale${p.count == 1 ? '' : 's'}'),
+                            duration: const Duration(seconds: 2),
+                          )),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withAlpha(160),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color:
+                                    Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${p.count}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ),
+        if (_loading)
+          Container(
+            color: Colors.black54,
+            child: Center(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(_status, textAlign: TextAlign.center),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (!_loading && _points.isEmpty)
+          Center(
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_off,
+                        size: 48,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant),
+                    const SizedBox(height: 8),
+                    const Text('No shipped sales with postal codes.'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        if (!_loading && _points.isNotEmpty)
+          Positioned(
+            bottom: 16,
+            left: 16,
+            child: Card(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_points.length} postal code${_points.length == 1 ? '' : 's'}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    Text(
+                      '${_points.fold(0, (s, p) => s + p.count)} shipped sale${_points.fold(0, (s, p) => s + p.count) == 1 ? '' : 's'}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── List view ─────────────────────────────────────────────────────────────────
 
 class _ListView extends StatelessWidget {
   final List<Sale> sales;
