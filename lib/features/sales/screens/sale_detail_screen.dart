@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../buyers/models/buyer_address.dart';
@@ -29,7 +31,7 @@ class SaleDetailScreen extends StatelessWidget {
           appBar: AppBar(
             title: Text(sale?.buyerName ?? 'Sale'),
             actions: [
-              if (sale != null)
+              if (sale != null) ...[
                 IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () => Navigator.push(
@@ -39,6 +41,23 @@ class SaleDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.copy_outlined),
+                  tooltip: 'Duplicate sale',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          NewSaleScreen(sale: sale, isDuplicate: true),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Delete sale',
+                  onPressed: () => _confirmDelete(context, sale, repository),
+                ),
+              ],
             ],
           ),
           body: sale == null
@@ -47,6 +66,69 @@ class SaleDetailScreen extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+Future<void> _confirmDelete(
+    BuildContext context, Sale sale, SaleRepository repository) async {
+  final shipped = sale.shipment.status == ShipmentStatus.shipped ||
+      sale.shipment.status == ShipmentStatus.delivered;
+  final paid = sale.payment.status == PaymentStatus.paid;
+
+  final String title;
+  final String message;
+
+  if (shipped) {
+    title = 'Delete shipped sale?';
+    message =
+        'This sale has already been ${sale.shipment.status == ShipmentStatus.delivered ? 'delivered' : 'shipped'}. '
+        'Deleting it removes all records — including shipping history'
+        '${sale.atSubmissionDone ? ', AT submission status' : ''}${sale.photoUrls.isNotEmpty ? ', and ${sale.photoUrls.length} photo${sale.photoUrls.length == 1 ? '' : 's'}' : ''}. '
+        'This cannot be undone.';
+  } else if (paid) {
+    title = 'Delete paid sale?';
+    message =
+        'This sale has a recorded payment of €${sale.price.toStringAsFixed(2)}. '
+        'Deleting it will remove all financial records for this transaction'
+        '${sale.photoUrls.isNotEmpty ? ', along with ${sale.photoUrls.length} photo${sale.photoUrls.length == 1 ? '' : 's'}' : ''}. '
+        'This cannot be undone.';
+  } else {
+    title = 'Delete sale?';
+    message =
+        'This sale will be permanently removed'
+        '${sale.photoUrls.isNotEmpty ? ', along with ${sale.photoUrls.length} photo${sale.photoUrls.length == 1 ? '' : 's'}' : ''}. '
+        'This cannot be undone.';
+  }
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true || !context.mounted) return;
+
+  try {
+    await repository.deleteSale(sale.id);
+    if (context.mounted) Navigator.of(context).pop();
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error deleting sale: $e')));
+    }
   }
 }
 
@@ -143,31 +225,8 @@ class _SaleDetailBody extends StatelessWidget {
             ),
           ),
         ),
-        if (sale.components.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          _SectionCard(
-            title: 'Components',
-            child: Column(
-              children: sale.components.map((c) {
-                return CheckboxListTile(
-                  dense: true,
-                  title: Text(c.name),
-                  subtitle:
-                      Text(c.isAvailable ? 'Have it' : 'Need to buy'),
-                  value: c.isAvailable,
-                  onChanged: (_) {
-                    final updated = sale.components
-                        .map((item) => item.id == c.id
-                            ? item.copyWith(isAvailable: !item.isAvailable)
-                            : item)
-                        .toList();
-                    _update(context, sale.copyWith(components: updated));
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-        ],
+        const SizedBox(height: 16),
+        _ComponentsCard(sale: sale, onUpdate: _update),
         const SizedBox(height: 16),
         _SectionCard(
           title: 'Payment',
@@ -208,9 +267,10 @@ class _SaleDetailBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const SizedBox(height: 16),
         _SectionCard(
-          title: 'Scheduled delivery',
+          title: sale.shipment.type == DeliveryType.pickup
+              ? 'Ready by date'
+              : 'Scheduled delivery',
           child: _ScheduledDateField(
             date: sale.scheduledDate,
             onChanged: (date) => _update(
@@ -389,6 +449,11 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
           ),
         ),
         IconButton(
+          icon: const Icon(Icons.share, size: 16),
+          tooltip: 'Share tracking info',
+          onPressed: _shareTracking,
+        ),
+        IconButton(
           icon: const Icon(Icons.open_in_new, size: 16),
           tooltip: 'Open on CTT website',
           onPressed: () => _openCttTracking(_controller.text),
@@ -400,6 +465,10 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
       ],
     );
   }
+
+  Uri _cttUri(String code) => Uri.parse(
+        'https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?codObjeto=$code',
+      );
 
   Future<void> _copyCode(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: _controller.text));
@@ -413,10 +482,19 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
     }
   }
 
-  Future<void> _openCttTracking(String code) async {
-    final uri = Uri.parse(
-      'https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?codObjeto=$code',
+  Future<void> _shareTracking() async {
+    final code = _controller.text;
+    final url = _cttUri(code);
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Olá! O teu envio tem o código de rastreamento $code.'
+            ' Podes acompanhar aqui: $url',
+      ),
     );
+  }
+
+  Future<void> _openCttTracking(String code) async {
+    final uri = _cttUri(code);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -430,11 +508,20 @@ class _ScheduledDateField extends StatelessWidget {
   const _ScheduledDateField({required this.date, required this.onChanged});
 
   Future<void> _pick(BuildContext context) async {
+    final first = DateTime(DateTime.now().year - 5);
+    final last = DateTime(DateTime.now().year + 2, 12, 31);
+    final initial = date == null
+        ? DateTime.now()
+        : date!.isBefore(first)
+            ? first
+            : date!.isAfter(last)
+                ? last
+                : date!;
     final picked = await showDatePicker(
       context: context,
-      initialDate: date ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
     );
     if (picked != null) onChanged(picked);
   }
@@ -467,7 +554,7 @@ class _ScheduledDateField extends StatelessWidget {
   }
 }
 
-class _AddressDisplay extends StatelessWidget {
+class _AddressDisplay extends StatefulWidget {
   final String buyerId;
   final String addressId;
   final String? postalCode;
@@ -479,16 +566,37 @@ class _AddressDisplay extends StatelessWidget {
   });
 
   @override
+  State<_AddressDisplay> createState() => _AddressDisplayState();
+}
+
+class _AddressDisplayState extends State<_AddressDisplay> {
+  late Stream<List<BuyerAddress>> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = BuyerRepository().watchAddresses(widget.buyerId);
+  }
+
+  @override
+  void didUpdateWidget(_AddressDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.buyerId != widget.buyerId) {
+      _stream = BuyerRepository().watchAddresses(widget.buyerId);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<BuyerAddress>>(
-      stream: BuyerRepository().watchAddresses(buyerId),
+      stream: _stream,
       builder: (context, snapshot) {
         final address = snapshot.data
-            ?.where((a) => a.id == addressId)
+            ?.where((a) => a.id == widget.addressId)
             .firstOrNull;
         if (address == null) {
-          return postalCode != null
-              ? _InfoRow(icon: Icons.location_on, text: postalCode!)
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
               : const SizedBox.shrink();
         }
         return _InfoRow(
@@ -497,6 +605,135 @@ class _AddressDisplay extends StatelessWidget {
               '${address.street}, ${address.postalCode} ${address.city}, ${address.country}',
         );
       },
+    );
+  }
+}
+
+class _ComponentsCard extends StatefulWidget {
+  final Sale sale;
+  final void Function(BuildContext, Sale) onUpdate;
+
+  const _ComponentsCard({required this.sale, required this.onUpdate});
+
+  @override
+  State<_ComponentsCard> createState() => _ComponentsCardState();
+}
+
+class _ComponentsCardState extends State<_ComponentsCard> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _add() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) return;
+    final updated = [
+      ...widget.sale.components,
+      ComponentItem(
+        id: FirebaseFirestore.instance.collection('_').doc().id,
+        name: name,
+        isAvailable: false,
+      ),
+    ];
+    widget.onUpdate(context, widget.sale.copyWith(components: updated));
+    setState(() => _controller.clear());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sale = widget.sale;
+    return _SectionCard(
+      title: 'Components',
+      child: Column(
+        children: [
+          ...sale.components.map((c) => Dismissible(
+                key: ValueKey(c.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  color: Theme.of(context).colorScheme.error,
+                  child: const Icon(Icons.delete_outline, color: Colors.white),
+                ),
+                onDismissed: (_) {
+                  final updatedComponents = sale.components
+                      .where((item) => item.id != c.id)
+                      .toList();
+                  AssemblyStatus newStatus = sale.assemblyStatus;
+                  if (updatedComponents.isNotEmpty &&
+                      updatedComponents.every((item) => item.isAvailable) &&
+                      (sale.assemblyStatus == AssemblyStatus.notStarted ||
+                          sale.assemblyStatus == AssemblyStatus.inProgress)) {
+                    newStatus = AssemblyStatus.ready;
+                  }
+                  widget.onUpdate(
+                    context,
+                    sale.copyWith(
+                        components: updatedComponents,
+                        assemblyStatus: newStatus),
+                  );
+                },
+                child: CheckboxListTile(
+                  dense: true,
+                  title: Text(c.name),
+                  subtitle: Text(c.isAvailable ? 'Have it' : 'Need to buy'),
+                  value: c.isAvailable,
+                  onChanged: (_) {
+                    final toggled = !c.isAvailable;
+                    final updatedComponents = sale.components
+                        .map((item) => item.id == c.id
+                            ? item.copyWith(isAvailable: toggled)
+                            : item)
+                        .toList();
+                    final allAvailable =
+                        updatedComponents.every((item) => item.isAvailable);
+                    AssemblyStatus newStatus = sale.assemblyStatus;
+                    if (toggled &&
+                        allAvailable &&
+                        (sale.assemblyStatus == AssemblyStatus.notStarted ||
+                            sale.assemblyStatus == AssemblyStatus.inProgress)) {
+                      newStatus = AssemblyStatus.ready;
+                    } else if (!toggled &&
+                        sale.assemblyStatus == AssemblyStatus.ready) {
+                      newStatus = AssemblyStatus.inProgress;
+                    }
+                    widget.onUpdate(
+                      context,
+                      sale.copyWith(
+                          components: updatedComponents,
+                          assemblyStatus: newStatus),
+                    );
+                  },
+                ),
+              )),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText: 'Add component...',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => _add(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: _add,
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

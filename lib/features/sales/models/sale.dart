@@ -207,11 +207,11 @@ class Sale {
         'payment': payment.toMap(),
         'shipment': shipment.toMap(),
         'requiresNif': requiresNif,
-        if (atSubmissionDone) 'atSubmissionDone': true,
+        'atSubmissionDone': atSubmissionDone,
         'createdAt': Timestamp.fromDate(createdAt),
         'scheduledDate':
             scheduledDate != null ? Timestamp.fromDate(scheduledDate!) : null,
-        if (notes != null) 'notes': notes!,
+        'notes': notes,
       };
 
   // Nullable fields use a sentinel to distinguish "clear to null" from "not provided".
