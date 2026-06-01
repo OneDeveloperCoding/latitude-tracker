@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
@@ -55,12 +56,11 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('NIF receipts pending'),
-      ),
+      appBar: AppBar(title: Text(s.nifPendingTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _sales.isEmpty
@@ -72,7 +72,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                           size: 48,
                           color: Theme.of(context).colorScheme.primary),
                       const SizedBox(height: 12),
-                      const Text('No pending NIF receipts.'),
+                      Text(s.noPendingNif),
                     ],
                   ),
                 )
@@ -86,7 +86,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                       final filed =
                           _sales.where((s) => s.atSubmissionDone).length;
                       return Text(
-                        '$pending pending · $filed filed',
+                        s.nPending(pending, filed),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
@@ -157,8 +157,8 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                                             .onSurfaceVariant,
                                   ),
                                   tooltip: filed
-                                      ? 'Mark as pending'
-                                      : 'Mark as filed',
+                                      ? s.markAsPending
+                                      : s.markAsFiled,
                                   onPressed: () => _saleRepo.updateSale(
                                     sale.copyWith(
                                         atSubmissionDone: !filed),
@@ -184,6 +184,7 @@ class _NifRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final hasNif = nif != null && nif!.isNotEmpty;
     return Row(
       children: [
@@ -196,7 +197,7 @@ class _NifRow extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          hasNif ? nif! : 'No NIF on file',
+          hasNif ? nif! : s.noNifOnFile,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: hasNif
                     ? Theme.of(context).colorScheme.primary

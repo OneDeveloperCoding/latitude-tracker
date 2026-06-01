@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../models/buyer.dart';
@@ -15,22 +16,12 @@ enum _SortMode { alphabetical, lastPurchase, ranking }
 
 enum _RankingMetric { totalSpent, frequency, averageOrder, unpaidBalance }
 
-extension _RankingMetricLabel on _RankingMetric {
-  String get label => switch (this) {
-        _RankingMetric.totalSpent => 'Total spent',
-        _RankingMetric.frequency => 'Most orders',
-        _RankingMetric.averageOrder => 'Avg order',
-        _RankingMetric.unpaidBalance => 'Unpaid',
-      };
-}
-
 class _BuyerWithStats {
   final Buyer buyer;
   final BuyerStats stats;
 
   const _BuyerWithStats({required this.buyer, required this.stats});
 
-  // Proxy getters so tile widgets don't need to know about the stats nesting.
   DateTime? get lastPurchaseAt => stats.lastPurchaseAt;
   int get saleCount => stats.saleCount;
   double get totalPaid => stats.totalPaid;
@@ -114,6 +105,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   List<Object> _buildGroupedItems() {
+    final s = context.s;
     final stats = _applySearch(_buyers).map(_statsFor).toList();
     final withPurchase = stats.where((s) => s.lastPurchaseAt != null).toList()
       ..sort((a, b) => b.lastPurchaseAt!.compareTo(a.lastPurchaseAt!));
@@ -121,9 +113,9 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
       ..sort((a, b) => a.buyer.name.compareTo(b.buyer.name));
 
     final groups = <String, List<_BuyerWithStats>>{};
-    for (final s in withPurchase) {
-      final label = DateFormat('MMMM yyyy').format(s.lastPurchaseAt!);
-      groups.putIfAbsent(label, () => []).add(s);
+    for (final stat in withPurchase) {
+      final label = DateFormat('MMMM yyyy').format(stat.lastPurchaseAt!);
+      groups.putIfAbsent(label, () => []).add(stat);
     }
 
     final items = <Object>[];
@@ -132,7 +124,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
       items.addAll(entry.value);
     }
     if (noPurchase.isNotEmpty) {
-      items.add('Never purchased');
+      items.add(s.neverPurchased);
       items.addAll(noPurchase);
     }
     return items;
@@ -154,6 +146,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   void _showSortMenu() async {
+    final s = context.s;
     final selected = await showModalBottomSheet<_SortMode>(
       context: context,
       builder: (_) => SafeArea(
@@ -162,19 +155,21 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.sort_by_alpha),
-              title: const Text('Alphabetical'),
+              title: Text(s.alphabetical),
               selected: _sortMode == _SortMode.alphabetical,
-              onTap: () => Navigator.pop(context, _SortMode.alphabetical),
+              onTap: () =>
+                  Navigator.pop(context, _SortMode.alphabetical),
             ),
             ListTile(
               leading: const Icon(Icons.calendar_month),
-              title: const Text('Group by last purchase'),
+              title: Text(s.groupByLastPurchase),
               selected: _sortMode == _SortMode.lastPurchase,
-              onTap: () => Navigator.pop(context, _SortMode.lastPurchase),
+              onTap: () =>
+                  Navigator.pop(context, _SortMode.lastPurchase),
             ),
             ListTile(
               leading: const Icon(Icons.emoji_events),
-              title: const Text('Buyer ranking'),
+              title: Text(s.buyerRanking),
               selected: _sortMode == _SortMode.ranking,
               onTap: () => Navigator.pop(context, _SortMode.ranking),
             ),
@@ -185,15 +180,26 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     if (selected != null) setState(() => _sortMode = selected);
   }
 
+  String _metricLabel(_RankingMetric metric) {
+    final s = context.s;
+    return switch (metric) {
+      _RankingMetric.totalSpent => s.totalSpentMetric,
+      _RankingMetric.frequency => s.mostOrdersMetric,
+      _RankingMetric.averageOrder => s.avgOrderMetric,
+      _RankingMetric.unpaidBalance => s.unpaidBalanceMetric,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buyers'),
+        title: Text(s.buyers),
         actions: [
           IconButton(
             icon: const Icon(Icons.tune),
-            tooltip: 'Change view',
+            tooltip: s.changeView,
             onPressed: _showSortMenu,
           ),
         ],
@@ -211,19 +217,21 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Search buyers...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: s.searchBuyers,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
             ),
           ),
-          if (_sortMode == _SortMode.ranking) _RankingMetricBar(
-            selected: _rankingMetric,
-            onSelected: (m) => setState(() => _rankingMetric = m),
-          ),
+          if (_sortMode == _SortMode.ranking)
+            _RankingMetricBar(
+              selected: _rankingMetric,
+              metricLabel: _metricLabel,
+              onSelected: (m) => setState(() => _rankingMetric = m),
+            ),
           Expanded(child: _buildBody()),
         ],
       ),
@@ -231,16 +239,13 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   Widget _buildBody() {
+    final s = context.s;
     if (_loading) return const Center(child: CircularProgressIndicator());
 
     if (_sortMode == _SortMode.ranking) {
       final ranked = _buildRankedItems();
       if (ranked.isEmpty) {
-        return Center(
-          child: Text(_searchQuery.isEmpty
-              ? 'No buyers yet. Tap + to add one.'
-              : 'No buyers match "$_searchQuery".'),
-        );
+        return Center(child: Text(s.noBuyersYet(_searchQuery)));
       }
       return ListView.builder(
         padding: EdgeInsets.fromLTRB(
@@ -260,11 +265,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         : _buildGroupedItems();
 
     if (items.isEmpty) {
-      return Center(
-        child: Text(_searchQuery.isEmpty
-            ? 'No buyers yet. Tap + to add one.'
-            : 'No buyers match "$_searchQuery".'),
-      );
+      return Center(child: Text(s.noBuyersYet(_searchQuery)));
     }
 
     return ListView.builder(
@@ -287,9 +288,14 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
 class _RankingMetricBar extends StatelessWidget {
   final _RankingMetric selected;
+  final String Function(_RankingMetric) metricLabel;
   final ValueChanged<_RankingMetric> onSelected;
 
-  const _RankingMetricBar({required this.selected, required this.onSelected});
+  const _RankingMetricBar({
+    required this.selected,
+    required this.metricLabel,
+    required this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +307,7 @@ class _RankingMetricBar extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(metric.label),
+              label: Text(metricLabel(metric)),
               selected: selected == metric,
               onSelected: (_) => onSelected(metric),
             ),
@@ -345,6 +351,7 @@ class _BuyerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final buyer = stats.buyer;
     final lastPurchase = stats.lastPurchaseAt;
 
@@ -400,7 +407,7 @@ class _BuyerTile extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall),
                   if (stats.saleCount > 0)
                     Text(
-                      '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
+                      s.nSales(stats.saleCount),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -432,6 +439,7 @@ class _RankedBuyerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final buyer = stats.buyer;
 
@@ -440,24 +448,6 @@ class _RankedBuyerTile extends StatelessWidget {
       2 => const Color(0xFFC0C0C0),
       3 => const Color(0xFFCD7F32),
       _ => Theme.of(context).colorScheme.surfaceContainerHighest,
-    };
-
-    final String primaryValue = switch (metric) {
-      _RankingMetric.totalSpent => currency.format(stats.totalPaid),
-      _RankingMetric.frequency =>
-        '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
-      _RankingMetric.averageOrder => currency.format(stats.averageOrderValue),
-      _RankingMetric.unpaidBalance => currency.format(stats.unpaidBalance),
-    };
-
-    final String secondaryValue = switch (metric) {
-      _RankingMetric.totalSpent =>
-        '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
-      _RankingMetric.frequency => currency.format(stats.totalPaid),
-      _RankingMetric.averageOrder =>
-        '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
-      _RankingMetric.unpaidBalance =>
-        '${stats.saleCount} sale${stats.saleCount == 1 ? '' : 's'}',
     };
 
     return Card(
@@ -518,14 +508,14 @@ class _RankedBuyerTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    primaryValue,
+                    _primaryValue(currency, s),
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    secondaryValue,
+                    _secondaryValue(currency, s),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
@@ -540,4 +530,18 @@ class _RankedBuyerTile extends StatelessWidget {
       ),
     );
   }
+
+  String _primaryValue(NumberFormat currency, AppStrings s) => switch (metric) {
+        _RankingMetric.totalSpent => currency.format(stats.totalPaid),
+        _RankingMetric.frequency => s.nSales(stats.saleCount),
+        _RankingMetric.averageOrder => currency.format(stats.averageOrderValue),
+        _RankingMetric.unpaidBalance => currency.format(stats.unpaidBalance),
+      };
+
+  String _secondaryValue(NumberFormat currency, AppStrings s) => switch (metric) {
+        _RankingMetric.totalSpent => s.nSales(stats.saleCount),
+        _RankingMetric.frequency => currency.format(stats.totalPaid),
+        _RankingMetric.averageOrder => s.nSales(stats.saleCount),
+        _RankingMetric.unpaidBalance => s.nSales(stats.saleCount),
+      };
 }

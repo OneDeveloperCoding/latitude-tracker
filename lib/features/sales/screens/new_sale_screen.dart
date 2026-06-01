@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/models/buyer_stats.dart';
@@ -63,19 +64,27 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final dup = widget.isDuplicate;
     _itemDescController =
         TextEditingController(text: sale?.itemDescription ?? '');
-    _notesController = TextEditingController(text: dup ? '' : (sale?.notes ?? ''));
+    _notesController =
+        TextEditingController(text: dup ? '' : (sale?.notes ?? ''));
     _priceController = TextEditingController(
         text: sale != null ? sale.price.toStringAsFixed(2) : '');
-    _trackingCodeController = TextEditingController(text: dup ? '' : (sale?.shipment.trackingCode ?? ''));
+    _trackingCodeController = TextEditingController(
+        text: dup ? '' : (sale?.shipment.trackingCode ?? ''));
     _postalCodeController =
         TextEditingController(text: sale?.shipment.postalCode ?? '');
-    _assemblyStatus = dup ? AssemblyStatus.notStarted : (sale?.assemblyStatus ?? AssemblyStatus.notStarted);
+    _assemblyStatus = dup
+        ? AssemblyStatus.notStarted
+        : (sale?.assemblyStatus ?? AssemblyStatus.notStarted);
     _paymentMethod = sale?.payment.method ?? PaymentMethod.mbWay;
-    _paymentStatus = dup ? PaymentStatus.unpaid : (sale?.payment.status ?? PaymentStatus.unpaid);
+    _paymentStatus =
+        dup ? PaymentStatus.unpaid : (sale?.payment.status ?? PaymentStatus.unpaid);
     _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
     _requiresNif = sale?.requiresNif ?? false;
     _components = dup
-        ? (sale?.components.map((c) => c.copyWith(isAvailable: false)).toList() ?? [])
+        ? (sale?.components
+                .map((c) => c.copyWith(isAvailable: false))
+                .toList() ??
+            [])
         : List.from(sale?.components ?? []);
     _photoUrls = dup ? [] : List.from(sale?.photoUrls ?? []);
     _originalPhotoUrls = dup ? [] : List.from(sale?.photoUrls ?? []);
@@ -170,7 +179,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   String? _nullIfEmpty(String value) =>
       value.trim().isEmpty ? null : value.trim();
 
-  /// On cancel: delete photos uploaded in this session that were never saved.
   Future<void> _cleanupOrphans() async {
     final toDelete = _isEditing
         ? _uploadedInSession
@@ -188,10 +196,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   }
 
   Future<void> _save() async {
+    final s = context.s;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBuyer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a buyer')),
+        SnackBar(content: Text(s.buyerRequired)),
       );
       return;
     }
@@ -257,8 +266,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error saving sale: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(s.errorSavingSaleMsg(e))));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -267,295 +276,309 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _cancel();
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Sale' : widget.isDuplicate ? 'Duplicate Sale' : 'New Sale'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _cancel,
-        ),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _save,
-            child: _isLoading
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save'),
+        appBar: AppBar(
+          title: Text(_isEditing
+              ? s.editSale
+              : widget.isDuplicate
+                  ? s.duplicateSale
+                  : s.newSale),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _cancel,
           ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-              16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
-          children: [
-            _SectionTitle('Buyer'),
-            _BuyerSelector(
-              buyer: _selectedBuyer,
-              isEditing: _isEditing,
-              onTap: _pickBuyer,
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : _save,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(s.save),
             ),
-            if (_selectedBuyerStats != null &&
-                _selectedBuyerStats!.saleCount > 0) ...[
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  '${_selectedBuyerStats!.saleCount} previous sale${_selectedBuyerStats!.saleCount == 1 ? '' : 's'}'
-                  '${_selectedBuyerStats!.lastPurchaseAt != null ? ' · last: ${DateFormat('MMM yyyy').format(_selectedBuyerStats!.lastPurchaseAt!)}' : ''}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                ),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+            children: [
+              _SectionTitle(s.sectionBuyer),
+              _BuyerSelector(
+                buyer: _selectedBuyer,
+                label: s.buyerLabel,
+                placeholder: s.tapToSelectBuyer,
+                isEditing: _isEditing,
+                onTap: _pickBuyer,
               ),
-            ],
-            const SizedBox(height: 24),
-            _SectionTitle('Item'),
-            TextFormField(
-              controller: _itemDescController,
-              textCapitalization: TextCapitalization.sentences,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description *',
-                hintText: 'e.g. Silver necklace with blue beads',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Description is required'
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<AssemblyStatus>(
-              value: _assemblyStatus,
-              decoration: const InputDecoration(
-                labelText: 'Assembly status',
-                border: OutlineInputBorder(),
-              ),
-              items: AssemblyStatus.values
-                  .map((s) =>
-                      DropdownMenuItem(value: s, child: Text(s.label)))
-                  .toList(),
-              onChanged: (v) => setState(() => _assemblyStatus = v!),
-            ),
-            const SizedBox(height: 16),
-            _SectionTitle('Photos'),
-            PhotoGrid(
-              saleId: _saleId,
-              photoUrls: _photoUrls,
-              onChanged: (urls) => setState(() => _photoUrls = urls),
-              onPhotoAdded: (url) => _uploadedInSession.add(url),
-              onPhotoRemoved: (url) {
-                if (_originalPhotoUrls.contains(url)) {
-                  _pendingDeletions.add(url);
-                } else {
-                  // Uploaded in this session and immediately removed — delete now
-                  _photoService.deletePhoto(_saleId, url);
-                  _uploadedInSession.remove(url);
-                }
-              },
-            ),
-            const SizedBox(height: 24),
-            _SectionTitle('Components needed'),
-            ..._components.asMap().entries.map(
-                  (entry) => CheckboxListTile(
-                    title: Text(entry.value.name),
-                    subtitle: Text(
-                        entry.value.isAvailable ? 'Have it' : 'Need to buy'),
-                    value: entry.value.isAvailable,
-                    onChanged: (_) => _toggleComponent(entry.key),
-                    secondary: IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => _removeComponent(entry.key),
+              if (_selectedBuyerStats != null &&
+                  _selectedBuyerStats!.saleCount > 0) ...[
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    s.previousSales(
+                      _selectedBuyerStats!.saleCount,
+                      _selectedBuyerStats!.lastPurchaseAt != null
+                          ? DateFormat('MMM yyyy')
+                              .format(_selectedBuyerStats!.lastPurchaseAt!)
+                          : '',
                     ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
-                ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _newComponentController,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      hintText: 'Add component...',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) => _addComponent(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _addComponent,
-                  icon: const Icon(Icons.add),
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
-            _SectionTitle('Payment'),
-            TextFormField(
-              controller: _priceController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Price (€) *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Price is required';
-                final parsed =
-                    double.tryParse(v.trim().replaceAll(',', '.'));
-                if (parsed == null || parsed <= 0) {
-                  return 'Enter a valid price';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<PaymentMethod>(
-              value: _paymentMethod,
-              decoration: const InputDecoration(
-                labelText: 'Payment method',
-                border: OutlineInputBorder(),
-              ),
-              items: PaymentMethod.values
-                  .map((m) => DropdownMenuItem(
-                      value: m, child: Text(m.label)))
-                  .toList(),
-              onChanged: (v) => setState(() => _paymentMethod = v!),
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('Paid'),
-              value: _paymentStatus == PaymentStatus.paid,
-              onChanged: (v) => setState(() => _paymentStatus =
-                  v ? PaymentStatus.paid : PaymentStatus.unpaid),
-            ),
-            SwitchListTile(
-              title: const Text('Requires NIF receipt'),
-              value: _requiresNif,
-              onChanged: (v) => setState(() => _requiresNif = v),
-            ),
-            const SizedBox(height: 24),
-            _SectionTitle('Delivery'),
-            SegmentedButton<DeliveryType>(
-              segments: const [
-                ButtonSegment(
-                    value: DeliveryType.shipping,
-                    icon: Icon(Icons.local_shipping),
-                    label: Text('Shipping')),
-                ButtonSegment(
-                    value: DeliveryType.pickup,
-                    icon: Icon(Icons.store),
-                    label: Text('Pickup')),
-              ],
-              selected: {_deliveryType},
-              onSelectionChanged: (v) =>
-                  setState(() => _deliveryType = v.first),
-            ),
-            if (_deliveryType == DeliveryType.shipping) ...[
-              const SizedBox(height: 16),
-              if (_buyerAddresses.isNotEmpty) ...[
-                DropdownButtonFormField<BuyerAddress>(
-                  value: _selectedAddress,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Ship to address',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: _buyerAddresses
-                      .map((a) => DropdownMenuItem(
-                            value: a,
-                            child: Text(
-                              '${a.label} — ${a.street}, ${a.city}',
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ))
-                      .toList(),
-                  onChanged: (a) => setState(() {
-                    _selectedAddress = a;
-                    if (a != null) {
-                      _postalCodeController.text = a.postalCode;
-                    }
-                  }),
-                ),
-                if (_selectedAddress != null) ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      '${_selectedAddress!.street}, ${_selectedAddress!.postalCode} ${_selectedAddress!.city}, ${_selectedAddress!.country}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-              ],
+              const SizedBox(height: 24),
+              _SectionTitle(s.sectionItem),
               TextFormField(
-                controller: _postalCodeController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Postal code *',
-                  hintText: '0000-000',
-                  border: OutlineInputBorder(),
+                controller: _itemDescController,
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: s.descriptionLabel,
+                  hintText: s.descriptionHint,
+                  border: const OutlineInputBorder(),
                 ),
-                validator: _deliveryType == DeliveryType.shipping
-                    ? (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Postal code is required';
-                        }
-                        final isPortugal =
-                            (_selectedAddress?.country ?? 'Portugal') ==
-                                'Portugal';
-                        if (isPortugal &&
-                            !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
-                          return 'Format: 0000-000';
-                        }
-                        return null;
-                      }
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? s.descriptionRequired
                     : null,
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<AssemblyStatus>(
+                value: _assemblyStatus,
+                decoration: InputDecoration(
+                  labelText: s.assemblyStatusLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                items: AssemblyStatus.values
+                    .map((status) => DropdownMenuItem(
+                        value: status,
+                        child: Text(s.assemblyLabel(status))))
+                    .toList(),
+                onChanged: (v) => setState(() => _assemblyStatus = v!),
+              ),
+              const SizedBox(height: 16),
+              _SectionTitle(s.sectionPhotos),
+              PhotoGrid(
+                saleId: _saleId,
+                photoUrls: _photoUrls,
+                onChanged: (urls) => setState(() => _photoUrls = urls),
+                onPhotoAdded: (url) => _uploadedInSession.add(url),
+                onPhotoRemoved: (url) {
+                  if (_originalPhotoUrls.contains(url)) {
+                    _pendingDeletions.add(url);
+                  } else {
+                    _photoService.deletePhoto(_saleId, url);
+                    _uploadedInSession.remove(url);
+                  }
+                },
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(s.sectionComponents),
+              ..._components.asMap().entries.map(
+                    (entry) => CheckboxListTile(
+                      title: Text(entry.value.name),
+                      subtitle: Text(entry.value.isAvailable
+                          ? s.haveIt
+                          : s.needToBuy),
+                      value: entry.value.isAvailable,
+                      onChanged: (_) => _toggleComponent(entry.key),
+                      secondary: IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () => _removeComponent(entry.key),
+                      ),
+                    ),
+                  ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _newComponentController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: s.addComponentHint,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _addComponent(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _addComponent,
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(s.sectionPayment),
               TextFormField(
-                controller: _trackingCodeController,
-                decoration: const InputDecoration(
-                  labelText: 'CTT tracking code',
-                  hintText: 'Fill in after dropping off at CTT',
-                  border: OutlineInputBorder(),
+                controller: _priceController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: s.priceLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return s.priceRequired;
+                  final parsed =
+                      double.tryParse(v.trim().replaceAll(',', '.'));
+                  if (parsed == null || parsed <= 0) return s.invalidPrice;
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<PaymentMethod>(
+                value: _paymentMethod,
+                decoration: InputDecoration(
+                  labelText: s.paymentMethodDropdownLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                items: PaymentMethod.values
+                    .map((m) => DropdownMenuItem(
+                        value: m,
+                        child: Text(s.paymentMethodLabel(m))))
+                    .toList(),
+                onChanged: (v) => setState(() => _paymentMethod = v!),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: Text(s.paid),
+                value: _paymentStatus == PaymentStatus.paid,
+                onChanged: (v) => setState(() => _paymentStatus =
+                    v ? PaymentStatus.paid : PaymentStatus.unpaid),
+              ),
+              SwitchListTile(
+                title: Text(s.requiresNifLabel),
+                value: _requiresNif,
+                onChanged: (v) => setState(() => _requiresNif = v),
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(s.sectionDelivery),
+              SegmentedButton<DeliveryType>(
+                segments: [
+                  ButtonSegment(
+                      value: DeliveryType.shipping,
+                      icon: const Icon(Icons.local_shipping),
+                      label: Text(s.shipping)),
+                  ButtonSegment(
+                      value: DeliveryType.pickup,
+                      icon: const Icon(Icons.store),
+                      label: Text(s.pickup)),
+                ],
+                selected: {_deliveryType},
+                onSelectionChanged: (v) =>
+                    setState(() => _deliveryType = v.first),
+              ),
+              if (_deliveryType == DeliveryType.shipping) ...[
+                const SizedBox(height: 16),
+                if (_buyerAddresses.isNotEmpty) ...[
+                  DropdownButtonFormField<BuyerAddress>(
+                    value: _selectedAddress,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: s.shipToAddressLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: _buyerAddresses
+                        .map((a) => DropdownMenuItem(
+                              value: a,
+                              child: Text(
+                                '${a.label} — ${a.street}, ${a.city}',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (a) => setState(() {
+                      _selectedAddress = a;
+                      if (a != null) {
+                        _postalCodeController.text = a.postalCode;
+                      }
+                    }),
+                  ),
+                  if (_selectedAddress != null) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '${_selectedAddress!.street}, ${_selectedAddress!.postalCode} ${_selectedAddress!.city}, ${_selectedAddress!.country}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
+                TextFormField(
+                  controller: _postalCodeController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: s.postalCodeLabel,
+                    hintText: s.postalCodeHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: _deliveryType == DeliveryType.shipping
+                      ? (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return s.postalCodeRequired;
+                          }
+                          final isPortugal =
+                              (_selectedAddress?.country ?? 'Portugal') ==
+                                  'Portugal';
+                          if (isPortugal &&
+                              !RegExp(r'^\d{4}-\d{3}$')
+                                  .hasMatch(v.trim())) {
+                            return 'Format: 0000-000';
+                          }
+                          return null;
+                        }
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _trackingCodeController,
+                  decoration: InputDecoration(
+                    labelText: s.cttTrackingLabel,
+                    hintText: s.cttTrackingHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              _ScheduledDatePicker(
+                date: _scheduledDate,
+                isPickup: _deliveryType == DeliveryType.pickup,
+                onChanged: (date) => setState(() => _scheduledDate = date),
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(s.sectionNotes),
+              TextFormField(
+                controller: _notesController,
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: s.notesHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
-            const SizedBox(height: 16),
-            _ScheduledDatePicker(
-              date: _scheduledDate,
-              isPickup: _deliveryType == DeliveryType.pickup,
-              onChanged: (date) => setState(() => _scheduledDate = date),
-            ),
-            const SizedBox(height: 24),
-            _SectionTitle('Notes'),
-            TextFormField(
-              controller: _notesController,
-              textCapitalization: TextCapitalization.sentences,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'Gift wrap, colour preference, special instructions...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -591,13 +614,14 @@ class _ScheduledDatePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final dateFormat = DateFormat('EEE, dd MMM yyyy');
     final hasDate = date != null;
     final label = hasDate
-        ? '${isPickup ? 'Ready by' : 'Scheduled'}: ${dateFormat.format(date!)}'
+        ? '${isPickup ? s.readyBy : s.scheduledLabel}: ${dateFormat.format(date!)}'
         : isPickup
-            ? 'No ready-by date'
-            : 'No scheduled date';
+            ? s.noReadyByDate
+            : s.noScheduledDate;
     return Row(
       children: [
         const Icon(Icons.event, size: 18),
@@ -607,12 +631,12 @@ class _ScheduledDatePicker extends StatelessWidget {
         ),
         TextButton(
           onPressed: () => _pick(context),
-          child: Text(hasDate ? 'Change' : 'Set date'),
+          child: Text(hasDate ? s.change : s.setDate),
         ),
         if (hasDate)
           TextButton(
             onPressed: () => onChanged(null),
-            child: const Text('Clear'),
+            child: Text(s.clear),
           ),
       ],
     );
@@ -640,11 +664,15 @@ class _SectionTitle extends StatelessWidget {
 
 class _BuyerSelector extends StatelessWidget {
   final Buyer? buyer;
+  final String label;
+  final String placeholder;
   final bool isEditing;
   final VoidCallback onTap;
 
   const _BuyerSelector({
     required this.buyer,
+    required this.label,
+    required this.placeholder,
     required this.isEditing,
     required this.onTap,
   });
@@ -656,14 +684,14 @@ class _BuyerSelector extends StatelessWidget {
       borderRadius: BorderRadius.circular(4),
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Buyer *',
+          labelText: label,
           border: const OutlineInputBorder(),
           suffixIcon: isEditing
               ? null
               : const Icon(Icons.arrow_forward_ios, size: 16),
         ),
         child: Text(
-          buyer?.name ?? 'Tap to select a buyer',
+          buyer?.name ?? placeholder,
           style: buyer == null
               ? TextStyle(color: Theme.of(context).hintColor)
               : null,

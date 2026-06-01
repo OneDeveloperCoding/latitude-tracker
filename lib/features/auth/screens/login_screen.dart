@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../demo/demo_mode.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -46,15 +47,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  String _messageFor(String code) => switch (code) {
-        'user-not-found' || 'wrong-password' || 'invalid-credential' =>
-          'Invalid email or password.',
-        'network-request-failed' => 'No internet connection.',
-        _ => 'Something went wrong. Please try again.',
-      };
+  String _messageFor(String code) {
+    final s = context.s;
+    return switch (code) {
+      'user-not-found' || 'wrong-password' || 'invalid-credential' =>
+        s.errInvalidCredentials,
+      'network-request-failed' => s.errNoInternet,
+      _ => s.errGeneric,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -81,14 +86,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: s.email,
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      border: const OutlineInputBorder(),
                     ),
-                    validator: (value) => (value == null || value.trim().isEmpty)
-                        ? 'Enter your email'
-                        : null,
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                            ? s.email
+                            : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -97,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _signIn(),
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: s.password,
                       prefixIcon: const Icon(Icons.lock_outlined),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
@@ -112,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     validator: (value) =>
-                        (value == null || value.isEmpty) ? 'Enter your password' : null,
+                        (value == null || value.isEmpty) ? s.password : null,
                   ),
                   if (_errorMessage != null) ...[
                     const SizedBox(height: 16),
@@ -133,13 +139,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Sign in'),
+                          : Text(s.signIn),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () => DemoMode.enter(),
-                    child: const Text('Try demo'),
+                    child: Text(s.tryDemo),
                   ),
                 ],
               ),

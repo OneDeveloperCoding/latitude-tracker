@@ -6,6 +6,7 @@ import '../../features/demo/demo_mode.dart';
 import '../../features/demo/demo_tutorial_sheet.dart';
 import '../../features/sales/screens/sales_list_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../l10n/app_strings.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -46,6 +47,7 @@ class _MainNavState extends State<MainNav> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       body: ValueListenableBuilder<bool>(
         valueListenable: DemoMode.active,
@@ -60,11 +62,15 @@ class _MainNavState extends State<MainNav> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.sell), label: 'Sales'),
-          NavigationDestination(icon: Icon(Icons.people), label: 'Buyers'),
-          NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
+        destinations: [
+          NavigationDestination(
+              icon: const Icon(Icons.dashboard), label: s.navDashboard),
+          NavigationDestination(
+              icon: const Icon(Icons.sell), label: s.navSales),
+          NavigationDestination(
+              icon: const Icon(Icons.people), label: s.navBuyers),
+          NavigationDestination(
+              icon: const Icon(Icons.settings), label: s.navSettings),
         ],
       ),
     );
@@ -74,6 +80,7 @@ class _MainNavState extends State<MainNav> {
 class _DemoBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final onContainer = Theme.of(context).colorScheme.onPrimaryContainer;
 
     return Material(
@@ -88,7 +95,7 @@ class _DemoBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Demo mode — changes are not saved',
+                  s.demoBanner,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: onContainer,
                       ),
@@ -98,7 +105,7 @@ class _DemoBanner extends StatelessWidget {
                 icon: Icon(Icons.help_outline, size: 18, color: onContainer),
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                tooltip: 'Tour',
+                tooltip: s.demoTourTitle,
                 onPressed: () => DemoTutorialSheet.show(context),
               ),
               TextButton(
@@ -108,7 +115,7 @@ class _DemoBanner extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
-                child: const Text('Exit demo'),
+                child: Text(s.exitDemo),
               ),
             ],
           ),

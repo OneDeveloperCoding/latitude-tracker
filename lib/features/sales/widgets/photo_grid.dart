@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../demo/demo_mode.dart';
 import '../services/photo_service.dart';
 
@@ -56,18 +57,19 @@ class _PhotoGridState extends State<PhotoGrid> {
   }
 
   Future<void> _removePhoto(int index) async {
+    final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Remove photo?'),
+        title: Text(s.removePhotoTitle),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
+            child: Text(s.removePhoto),
           ),
         ],
       ),
@@ -81,6 +83,7 @@ class _PhotoGridState extends State<PhotoGrid> {
   }
 
   void _showSourcePicker() {
+    final s = context.s;
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -89,7 +92,7 @@ class _PhotoGridState extends State<PhotoGrid> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take photo'),
+              title: Text(s.takePhoto),
               onTap: () {
                 Navigator.pop(context);
                 _addPhoto(ImageSource.camera);
@@ -97,7 +100,7 @@ class _PhotoGridState extends State<PhotoGrid> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: Text(s.chooseFromGallery),
               onTap: () {
                 Navigator.pop(context);
                 _addPhoto(ImageSource.gallery);
@@ -314,7 +317,7 @@ class _AddPhotoTile extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 4),
             Text(
-              'Add photo',
+              context.s.addPhoto,
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.primary,
