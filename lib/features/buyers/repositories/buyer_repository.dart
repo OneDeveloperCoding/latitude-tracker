@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../demo/demo_mode.dart';
 import '../models/buyer.dart';
 import '../models/buyer_address.dart';
 
@@ -16,33 +17,51 @@ class BuyerRepository {
   CollectionReference<Map<String, dynamic>> _addressesRef(String buyerId) =>
       _buyersRef.doc(buyerId).collection('addresses');
 
-  Future<List<Buyer>> getAllBuyers() async {
-    final snap = await _buyersRef.orderBy('name').get();
-    return snap.docs.map(Buyer.fromFirestore).toList();
+  Future<List<Buyer>> getAllBuyers() {
+    if (DemoMode.active.value) return DemoMode.buyerRepo.getAllBuyers();
+    return _buyersRef
+        .orderBy('name')
+        .get()
+        .then((snap) => snap.docs.map(Buyer.fromFirestore).toList());
   }
 
-  Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId) async {
-    final snap = await _addressesRef(buyerId).get();
-    return snap.docs.map(BuyerAddress.fromFirestore).toList();
+  Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId) {
+    if (DemoMode.active.value) {
+      return DemoMode.buyerRepo.getAllAddressesForBuyer(buyerId);
+    }
+    return _addressesRef(buyerId)
+        .get()
+        .then((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
   }
 
-  Stream<List<Buyer>> watchBuyers() => _buyersRef
-      .orderBy('name')
-      .snapshots()
-      .map((snap) => snap.docs.map(Buyer.fromFirestore).toList());
-
-  Future<Buyer?> getBuyer(String id) async {
-    final doc = await _buyersRef.doc(id).get();
-    return doc.exists ? Buyer.fromFirestore(doc) : null;
+  Stream<List<Buyer>> watchBuyers() {
+    if (DemoMode.active.value) return DemoMode.buyerRepo.watchBuyers();
+    return _buyersRef
+        .orderBy('name')
+        .snapshots()
+        .map((snap) => snap.docs.map(Buyer.fromFirestore).toList());
   }
 
-  Future<void> createBuyer(Buyer buyer) =>
-      _buyersRef.doc(buyer.id).set(buyer.toFirestore());
+  Future<Buyer?> getBuyer(String id) {
+    if (DemoMode.active.value) return DemoMode.buyerRepo.getBuyer(id);
+    return _buyersRef
+        .doc(id)
+        .get()
+        .then((doc) => doc.exists ? Buyer.fromFirestore(doc) : null);
+  }
 
-  Future<void> updateBuyer(Buyer buyer) =>
-      _buyersRef.doc(buyer.id).update(buyer.toFirestore());
+  Future<void> createBuyer(Buyer buyer) {
+    if (DemoMode.active.value) return DemoMode.buyerRepo.createBuyer(buyer);
+    return _buyersRef.doc(buyer.id).set(buyer.toFirestore());
+  }
+
+  Future<void> updateBuyer(Buyer buyer) {
+    if (DemoMode.active.value) return DemoMode.buyerRepo.updateBuyer(buyer);
+    return _buyersRef.doc(buyer.id).update(buyer.toFirestore());
+  }
 
   Future<void> deleteBuyer(String id) async {
+    if (DemoMode.active.value) return DemoMode.buyerRepo.deleteBuyer(id);
     final addresses = await _addressesRef(id).get();
     final batch = _firestore.batch();
     for (final doc in addresses.docs) {
@@ -52,13 +71,20 @@ class BuyerRepository {
     await batch.commit();
   }
 
-  Stream<List<BuyerAddress>> watchAddresses(String buyerId) =>
-      _addressesRef(buyerId)
-          .orderBy('label')
-          .snapshots()
-          .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+  Stream<List<BuyerAddress>> watchAddresses(String buyerId) {
+    if (DemoMode.active.value) {
+      return DemoMode.buyerRepo.watchAddresses(buyerId);
+    }
+    return _addressesRef(buyerId)
+        .orderBy('label')
+        .snapshots()
+        .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+  }
 
   Future<void> createAddress(String buyerId, BuyerAddress address) async {
+    if (DemoMode.active.value) {
+      return DemoMode.buyerRepo.createAddress(buyerId, address);
+    }
     final batch = _firestore.batch();
     if (address.isDefault) {
       await _clearDefaultAddress(buyerId, batch);
@@ -68,6 +94,9 @@ class BuyerRepository {
   }
 
   Future<void> updateAddress(String buyerId, BuyerAddress address) async {
+    if (DemoMode.active.value) {
+      return DemoMode.buyerRepo.updateAddress(buyerId, address);
+    }
     final batch = _firestore.batch();
     if (address.isDefault) {
       await _clearDefaultAddress(buyerId, batch, excludeId: address.id);
@@ -79,8 +108,12 @@ class BuyerRepository {
     await batch.commit();
   }
 
-  Future<void> deleteAddress(String buyerId, String addressId) =>
-      _addressesRef(buyerId).doc(addressId).delete();
+  Future<void> deleteAddress(String buyerId, String addressId) {
+    if (DemoMode.active.value) {
+      return DemoMode.buyerRepo.deleteAddress(buyerId, addressId);
+    }
+    return _addressesRef(buyerId).doc(addressId).delete();
+  }
 
   Future<void> _clearDefaultAddress(
     String buyerId,

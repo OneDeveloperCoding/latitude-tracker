@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../demo/demo_mode.dart';
 import '../services/photo_service.dart';
 
 class PhotoGrid extends StatefulWidget {
@@ -143,7 +144,8 @@ class _PhotoGridState extends State<PhotoGrid> {
               _uploadingCount,
               (_) => const _PhotoTile(isUploading: true),
             ),
-            _AddPhotoTile(onTap: _showSourcePicker),
+            if (!DemoMode.active.value)
+              _AddPhotoTile(onTap: _showSourcePicker),
           ],
         ),
         if (photos.isNotEmpty)
@@ -186,6 +188,11 @@ class _PhotoTile extends StatelessWidget {
               Container(
                 color: Colors.grey[200],
                 child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (url!.startsWith('demo://'))
+              GestureDetector(
+                onTap: onTap,
+                child: _DemoPhotoPlaceholder(url: url!),
               )
             else
               GestureDetector(
@@ -231,6 +238,51 @@ class _PhotoTile extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DemoPhotoPlaceholder extends StatelessWidget {
+  final String url;
+  final bool large;
+
+  const _DemoPhotoPlaceholder({required this.url, this.large = false});
+
+  static const _palettes = [
+    [Color(0xFFE1BEE7), Color(0xFFF8BBD9)], // purple/pink
+    [Color(0xFFB2EBF2), Color(0xFFB3E5FC)], // teal/blue
+    [Color(0xFFFFE0B2), Color(0xFFFFF9C4)], // amber/yellow
+    [Color(0xFFC8E6C9), Color(0xFFB2DFDB)], // green/teal
+  ];
+
+  static const _icons = [
+    Icons.diamond_outlined,
+    Icons.auto_awesome,
+    Icons.shopping_bag_outlined,
+    Icons.favorite_outline,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final match = RegExp(r'\d+$').firstMatch(url);
+    final idx = ((match != null ? int.parse(match.group(0)!) : 1) - 1) %
+        _palettes.length;
+    final size = large ? 200.0 : 96.0;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _palettes[idx],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: large ? null : BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Icon(_icons[idx],
+            size: large ? 64 : 32, color: Colors.white70),
       ),
     );
   }
@@ -315,19 +367,24 @@ class _PhotoViewerState extends State<_PhotoViewer> {
         controller: _pageController,
         itemCount: widget.urls.length,
         onPageChanged: (i) => setState(() => _current = i),
-        itemBuilder: (_, index) => InteractiveViewer(
-          child: Center(
-            child: Image.network(
-              widget.urls[index],
-              fit: BoxFit.contain,
-              loadingBuilder: (_, child, progress) => progress == null
-                  ? child
-                  : const Center(
-                      child:
-                          CircularProgressIndicator(color: Colors.white)),
+        itemBuilder: (_, index) {
+          final url = widget.urls[index];
+          if (url.startsWith('demo://')) {
+            return Center(child: _DemoPhotoPlaceholder(url: url, large: true));
+          }
+          return InteractiveViewer(
+            child: Center(
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : const Center(
+                        child: CircularProgressIndicator(color: Colors.white)),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
