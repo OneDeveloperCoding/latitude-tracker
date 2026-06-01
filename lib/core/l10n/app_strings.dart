@@ -240,6 +240,21 @@ class AppStrings {
   final String defaultAddressLabel;
   final String defaultAddressSubtitle;
   final String errSavingAddress;
+  final String addressLabelField;
+  final String addressLabelHint;
+  final String addressLabelRequired;
+  final String addressCountry;
+  final String addressCity;
+  final String addressCityRequired;
+  final String addressStreet;
+  final String addressStreetRequired;
+  final String addressHouseNumber;
+  final String addressHouseNumberHint;
+  final String addressHouseNumberRequired;
+  final String addressFraction;
+  final String addressFractionHint;
+  final String addressNotes;
+  final String addressNotesHint;
 
   // ── Buyer picker ─────────────────────────────────────────────────────────
   final String selectBuyer;
@@ -476,6 +491,21 @@ class AppStrings {
     required this.defaultAddressLabel,
     required this.defaultAddressSubtitle,
     required this.errSavingAddress,
+    required this.addressLabelField,
+    required this.addressLabelHint,
+    required this.addressLabelRequired,
+    required this.addressCountry,
+    required this.addressCity,
+    required this.addressCityRequired,
+    required this.addressStreet,
+    required this.addressStreetRequired,
+    required this.addressHouseNumber,
+    required this.addressHouseNumberHint,
+    required this.addressHouseNumberRequired,
+    required this.addressFraction,
+    required this.addressFractionHint,
+    required this.addressNotes,
+    required this.addressNotesHint,
     required this.selectBuyer,
     required this.noBuyersFound,
     required this.account,
@@ -975,6 +1005,21 @@ class AppStrings {
     defaultAddressLabel: 'Default address',
     defaultAddressSubtitle: 'Pre-filled when creating a new sale',
     errSavingAddress: 'Error saving address',
+    addressLabelField: 'Label *',
+    addressLabelHint: 'e.g. Home, Work',
+    addressLabelRequired: 'Label is required',
+    addressCountry: 'Country',
+    addressCity: 'City *',
+    addressCityRequired: 'City is required',
+    addressStreet: 'Street *',
+    addressStreetRequired: 'Street is required',
+    addressHouseNumber: 'House number *',
+    addressHouseNumberHint: 'e.g. 12, 12A, S/N',
+    addressHouseNumberRequired: 'House number is required',
+    addressFraction: 'Apartment / fraction',
+    addressFractionHint: 'e.g. 2º Dto, R/C, Loja',
+    addressNotes: 'Delivery notes',
+    addressNotesHint: 'e.g. Intercom code 4521, leave with concierge',
     selectBuyer: 'Select Buyer',
     noBuyersFound: 'No buyers found. Tap + to add one.',
     account: 'Account',
@@ -1217,6 +1262,21 @@ class AppStrings {
     defaultAddressSubtitle:
         'Preenchida automaticamente na criação de uma venda',
     errSavingAddress: 'Erro ao guardar morada',
+    addressLabelField: 'Etiqueta *',
+    addressLabelHint: 'ex. Casa, Trabalho',
+    addressLabelRequired: 'Etiqueta é obrigatória',
+    addressCountry: 'País',
+    addressCity: 'Cidade *',
+    addressCityRequired: 'Cidade é obrigatória',
+    addressStreet: 'Rua *',
+    addressStreetRequired: 'Rua é obrigatória',
+    addressHouseNumber: 'Número *',
+    addressHouseNumberHint: 'ex. 12, 12A, S/N',
+    addressHouseNumberRequired: 'Número é obrigatório',
+    addressFraction: 'Fração / andar',
+    addressFractionHint: 'ex. 2º Dto, R/C, Loja',
+    addressNotes: 'Notas de entrega',
+    addressNotesHint: 'ex. Código do intercomunicador 4521, deixar com o porteiro',
     selectBuyer: 'Selecionar Comprador',
     noBuyersFound: 'Sem compradores. Toque em + para adicionar.',
     account: 'Conta',

@@ -19,6 +19,7 @@ class BuyersStore {
           : null;
 
   static void init() {
+    if (_sub != null) return;
     state.value = const StoreLoading();
     _sub = BuyerRepository().watchBuyers().listen(
       (buyers) => state.value = StoreLoaded(buyers),

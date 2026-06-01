@@ -13,7 +13,7 @@ A person who purchases Items, identified by name and optionally an Instagram han
 _Avoid_: Customer, client, user
 
 **BuyerAddress**:
-A named shipping address belonging to a Buyer (e.g. "Home", "Work"). A Buyer may have multiple BuyerAddresses; one may be marked as default.
+A named shipping address belonging to a Buyer (e.g. "Home", "Work"). Fields: label, country (default: Portugal), postal code, city, street name, house number, and optional fraction (e.g. "2º Dto", "R/C"). For Portuguese addresses, entering the postal code auto-fills city and street via GeoAPI.pt (180-day local device cache). A Buyer may have multiple BuyerAddresses; one may be marked as default.
 _Avoid_: Delivery address, shipping address (as a standalone concept)
 
 **NIF**:

@@ -34,7 +34,24 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
   @override
   void initState() {
     super.initState();
+    SalesStore.state.addListener(_onSalesChanged);
     _load();
+  }
+
+  void _onSalesChanged() {
+    if (_loading) return;
+    final newCodes = _extractPostalCodes(SalesStore.current ?? []).keys.toSet();
+    final currentCodes = _points.map((p) => p.postalCode).toSet();
+    if (newCodes.length != currentCodes.length ||
+        !newCodes.containsAll(currentCodes)) {
+      _load();
+    }
+  }
+
+  @override
+  void dispose() {
+    SalesStore.state.removeListener(_onSalesChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
