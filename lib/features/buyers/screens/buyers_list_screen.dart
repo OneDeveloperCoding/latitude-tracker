@@ -205,6 +205,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const BuyerFormScreen()),
