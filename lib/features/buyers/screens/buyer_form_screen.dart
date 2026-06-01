@@ -5,6 +5,19 @@ import '../models/buyer.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
 
+const _kCountries = [
+  'Portugal',
+  'Spain',
+  'France',
+  'Germany',
+  'United Kingdom',
+  'Netherlands',
+  'Belgium',
+  'Italy',
+  'Switzerland',
+  'Other',
+];
+
 class BuyerFormScreen extends StatefulWidget {
   final Buyer? buyer;
 
@@ -29,7 +42,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   final _streetController = TextEditingController();
   final _cityController = TextEditingController();
   final _postalCodeController = TextEditingController();
-  final _countryController = TextEditingController(text: 'Portugal');
+  String _quickAddressCountry = 'Portugal';
 
   bool _isLoading = false;
 
@@ -55,7 +68,6 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
     _streetController.dispose();
     _cityController.dispose();
     _postalCodeController.dispose();
-    _countryController.dispose();
     super.dispose();
   }
 
@@ -102,9 +114,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
             street: _streetController.text.trim(),
             city: _cityController.text.trim(),
             postalCode: _postalCodeController.text.trim(),
-            country: _countryController.text.trim().isEmpty
-                ? 'Portugal'
-                : _countryController.text.trim(),
+            country: _quickAddressCountry,
             isDefault: true,
           );
           await _repository.createAddress(buyer.id, address);
@@ -247,11 +257,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                     if (v == null || v.trim().isEmpty) {
                       return 'Postal code is required';
                     }
-                    final isPortugal = _countryController.text
-                            .trim()
-                            .toLowerCase() ==
-                        'portugal';
-                    if (isPortugal &&
+                    if (_quickAddressCountry == 'Portugal' &&
                         !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
                       return 'Format: 0000-000';
                     }
@@ -259,14 +265,17 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _countryController,
-                  textCapitalization: TextCapitalization.words,
+                DropdownButtonFormField<String>(
+                  value: _quickAddressCountry,
                   decoration: const InputDecoration(
                     labelText: 'Country',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() {}),
+                  items: _kCountries
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (v) =>
+                      setState(() => _quickAddressCountry = v!),
                 ),
               ],
             ],
