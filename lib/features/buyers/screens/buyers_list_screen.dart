@@ -49,18 +49,24 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   _SortMode _sortMode = _SortMode.alphabetical;
   _RankingMetric _rankingMetric = _RankingMetric.totalSpent;
 
-  // Computed once per store update, not on every build.
+  // Stats cache: rebuilt only when stores change (O(n×m) work).
   var _statsCache = <String, _BuyerWithStats>{};
+
+  // View caches: rebuilt when stats, search query, sort mode, or metric change.
+  List<Object> _alphabeticalCache = [];
+  List<Object> _groupedCache = [];
+  List<_BuyerWithStats> _rankedCache = [];
 
   @override
   void initState() {
     super.initState();
     BuyersStore.state.addListener(_onStoreChanged);
     SalesStore.state.addListener(_onStoreChanged);
-    _rebuildCache();
+    _rebuildStats();
+    // Views require context.s — deferred to first build via _rebuildViews().
   }
 
-  void _rebuildCache() {
+  void _rebuildStats() {
     final allSales = SalesStore.current ?? [];
     _statsCache = {
       for (final buyer in BuyersStore.current ?? [])
@@ -73,8 +79,20 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     };
   }
 
+  void _rebuildViews() {
+    _alphabeticalCache =
+        _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
+    _groupedCache = _computeGroupedItems();
+    _rankedCache = _applySearch(BuyersStore.current ?? [])
+        .map(_statsFor)
+        .toList()
+      ..sort((a, b) =>
+          b.metricValue(_rankingMetric).compareTo(a.metricValue(_rankingMetric)));
+  }
+
   void _onStoreChanged() {
-    _rebuildCache();
+    _rebuildStats();
+    _rebuildViews();
     setState(() {});
   }
 
@@ -101,12 +119,8 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         .toList();
   }
 
-  List<Object> _buildAlphabeticalItems() {
-    return _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
-  }
-
-  List<Object> _buildGroupedItems() {
-    final s = context.s;
+  List<Object> _computeGroupedItems() {
+    final neverPurchasedLabel = context.s.neverPurchased;
     final stats = _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
     final withPurchase = stats.where((s) => s.lastPurchaseAt != null).toList()
       ..sort((a, b) => b.lastPurchaseAt!.compareTo(a.lastPurchaseAt!));
@@ -125,18 +139,10 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
       items.addAll(entry.value);
     }
     if (noPurchase.isNotEmpty) {
-      items.add(s.neverPurchased);
+      items.add(neverPurchasedLabel);
       items.addAll(noPurchase);
     }
     return items;
-  }
-
-  List<_BuyerWithStats> _buildRankedItems() {
-    return (_applySearch(BuyersStore.current ?? []).map(_statsFor).toList()
-          ..sort((a, b) =>
-              b.metricValue(_rankingMetric)
-                  .compareTo(a.metricValue(_rankingMetric))))
-        .toList();
   }
 
   void _openBuyer(Buyer buyer) {
@@ -178,7 +184,11 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         ),
       ),
     );
-    if (selected != null) setState(() => _sortMode = selected);
+    if (selected != null) {
+      _sortMode = selected;
+      _rebuildViews();
+      setState(() {});
+    }
   }
 
   String _metricLabel(_RankingMetric metric) {
@@ -225,14 +235,22 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
-              onChanged: (value) => setState(() => _searchQuery = value),
+              onChanged: (value) {
+                _searchQuery = value;
+                _rebuildViews();
+                setState(() {});
+              },
             ),
           ),
           if (_sortMode == _SortMode.ranking)
             _RankingMetricBar(
               selected: _rankingMetric,
               metricLabel: _metricLabel,
-              onSelected: (m) => setState(() => _rankingMetric = m),
+              onSelected: (m) {
+                _rankingMetric = m;
+                _rebuildViews();
+                setState(() {});
+              },
             ),
           Expanded(child: _buildBody()),
         ],
@@ -244,27 +262,32 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     final s = context.s;
     if (_loading) return const Center(child: CircularProgressIndicator());
 
+    // Populate view caches on first build (initState has no context).
+    if (_alphabeticalCache.isEmpty && _groupedCache.isEmpty &&
+        _rankedCache.isEmpty && (BuyersStore.current?.isNotEmpty ?? false)) {
+      _rebuildViews();
+    }
+
     if (_sortMode == _SortMode.ranking) {
-      final ranked = _buildRankedItems();
-      if (ranked.isEmpty) {
+      if (_rankedCache.isEmpty) {
         return Center(child: Text(s.noBuyersYet(_searchQuery)));
       }
       return ListView.builder(
         padding: EdgeInsets.fromLTRB(
             12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
-        itemCount: ranked.length,
+        itemCount: _rankedCache.length,
         itemBuilder: (context, index) => _RankedBuyerTile(
-          stats: ranked[index],
+          stats: _rankedCache[index],
           rank: index + 1,
           metric: _rankingMetric,
-          onTap: () => _openBuyer(ranked[index].buyer),
+          onTap: () => _openBuyer(_rankedCache[index].buyer),
         ),
       );
     }
 
     final items = _sortMode == _SortMode.alphabetical
-        ? _buildAlphabeticalItems()
-        : _buildGroupedItems();
+        ? _alphabeticalCache
+        : _groupedCache;
 
     if (items.isEmpty) {
       return Center(child: Text(s.noBuyersYet(_searchQuery)));
