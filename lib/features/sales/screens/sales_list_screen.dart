@@ -6,7 +6,7 @@ import '../repositories/sale_repository.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
-enum _SaleFilter {
+enum SaleFilter {
   all,
   unpaid,
   nifRequired,
@@ -17,21 +17,26 @@ enum _SaleFilter {
   assemblyNotReady,
 }
 
-extension _SaleFilterLabel on _SaleFilter {
+extension SaleFilterLabel on SaleFilter {
   String get label => switch (this) {
-        _SaleFilter.all => 'All',
-        _SaleFilter.unpaid => 'Unpaid',
-        _SaleFilter.nifRequired => 'NIF required',
-        _SaleFilter.scheduled => 'Scheduled',
-        _SaleFilter.pendingShipment => 'Pending shipment',
-        _SaleFilter.shipped => 'Shipped',
-        _SaleFilter.pickup => 'Pickup',
-        _SaleFilter.assemblyNotReady => 'Assembly not ready',
+        SaleFilter.all => 'All',
+        SaleFilter.unpaid => 'Unpaid',
+        SaleFilter.nifRequired => 'NIF required',
+        SaleFilter.scheduled => 'Scheduled',
+        SaleFilter.pendingShipment => 'Pending shipment',
+        SaleFilter.shipped => 'Shipped',
+        SaleFilter.pickup => 'Pickup',
+        SaleFilter.assemblyNotReady => 'Assembly not ready',
       };
 }
 
 class SalesListScreen extends StatefulWidget {
-  const SalesListScreen({super.key});
+  final SaleFilter initialFilter;
+
+  const SalesListScreen({
+    super.key,
+    this.initialFilter = SaleFilter.all,
+  });
 
   @override
   State<SalesListScreen> createState() => _SalesListScreenState();
@@ -39,29 +44,35 @@ class SalesListScreen extends StatefulWidget {
 
 class _SalesListScreenState extends State<SalesListScreen> {
   final _repository = SaleRepository();
-  _SaleFilter _filter = _SaleFilter.all;
+  late SaleFilter _filter;
   bool _timelineView = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _filter = widget.initialFilter;
+  }
+
   List<Sale> _applyFilter(List<Sale> sales) => switch (_filter) {
-        _SaleFilter.all => sales,
-        _SaleFilter.unpaid =>
+        SaleFilter.all => sales,
+        SaleFilter.unpaid =>
           sales.where((s) => s.payment.status == PaymentStatus.unpaid).toList(),
-        _SaleFilter.nifRequired =>
+        SaleFilter.nifRequired =>
           sales.where((s) => s.requiresNif).toList(),
-        _SaleFilter.scheduled =>
+        SaleFilter.scheduled =>
           sales.where((s) => s.scheduledDate != null).toList(),
-        _SaleFilter.pendingShipment => sales
+        SaleFilter.pendingShipment => sales
             .where((s) =>
                 s.shipment.type == DeliveryType.shipping &&
                 s.shipment.status == ShipmentStatus.pending)
             .toList(),
-        _SaleFilter.shipped => sales
+        SaleFilter.shipped => sales
             .where((s) => s.shipment.status == ShipmentStatus.shipped)
             .toList(),
-        _SaleFilter.pickup => sales
+        SaleFilter.pickup => sales
             .where((s) => s.shipment.type == DeliveryType.pickup)
             .toList(),
-        _SaleFilter.assemblyNotReady => sales
+        SaleFilter.assemblyNotReady => sales
             .where((s) => s.assemblyStatus != AssemblyStatus.ready)
             .toList(),
       };
@@ -92,7 +103,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-              children: _SaleFilter.values
+              children: SaleFilter.values
                   .map((f) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
