@@ -492,7 +492,8 @@ class _ListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.fromLTRB(
+          12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
       itemCount: sales.length,
       itemBuilder: (context, index) => _SaleCard(sale: sales[index]),
     );
@@ -563,6 +564,7 @@ class _TimelineView extends StatelessWidget {
     final keys = groups.keys.toList();
 
     return ListView.builder(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       itemCount: keys.length,
       itemBuilder: (context, index) {
         final label = keys[index];

@@ -154,7 +154,8 @@ class _SaleDetailBody extends StatelessWidget {
     final dateFormat = DateFormat('dd MMM yyyy');
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
       children: [
         if (sale.photoUrls.isNotEmpty) ...[
           _SectionCard(

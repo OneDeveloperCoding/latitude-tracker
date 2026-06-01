@@ -295,7 +295,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+              16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
           children: [
             _SectionTitle('Buyer'),
             _BuyerSelector(

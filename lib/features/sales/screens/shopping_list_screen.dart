@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+
+enum _Urgency { overdue, thisWeek, none }
+
+_Urgency _urgencyOf(Sale sale) {
+  if (sale.scheduledDate == null) return _Urgency.none;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
+  final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
+  if (sale.scheduledDate!.isBefore(startOfThisWeek)) return _Urgency.overdue;
+  if (sale.scheduledDate!.isBefore(startOfNextWeek)) return _Urgency.thisWeek;
+  return _Urgency.none;
+}
+
+const _urgencyOrder = {_Urgency.overdue: 0, _Urgency.thisWeek: 1, _Urgency.none: 2};
 
 class ShoppingListScreen extends StatelessWidget {
   const ShoppingListScreen({super.key});
@@ -22,7 +38,9 @@ class ShoppingListScreen extends StatelessWidget {
                   s.assemblyStatus != AssemblyStatus.ready &&
                   s.shipment.status != ShipmentStatus.delivered &&
                   s.components.any((c) => !c.isAvailable))
-              .toList();
+              .toList()
+            ..sort((a, b) => _urgencyOrder[_urgencyOf(a)]!
+                .compareTo(_urgencyOrder[_urgencyOf(b)]!));
 
           if (openSales.isEmpty) {
             return Center(
@@ -42,19 +60,23 @@ class ShoppingListScreen extends StatelessWidget {
           final totalNeeded = openSales
               .expand((s) => s.components.where((c) => !c.isAvailable))
               .length;
+          final urgentCount =
+              openSales.where((s) => _urgencyOf(s) != _Urgency.none).length;
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
             children: [
-              Text(
-                '$totalNeeded item${totalNeeded == 1 ? '' : 's'} needed '
-                'for ${openSales.length} open sale${openSales.length == 1 ? '' : 's'}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              _ShoppingListHeader(
+                totalNeeded: totalNeeded,
+                totalSales: openSales.length,
+                urgentCount: urgentCount,
               ),
               const SizedBox(height: 16),
-              ...openSales.map((sale) => _SaleMaterialsCard(sale: sale)),
+              ...openSales.map((sale) => _SaleMaterialsCard(
+                    sale: sale,
+                    urgency: _urgencyOf(sale),
+                  )),
             ],
           );
         },
@@ -63,18 +85,78 @@ class ShoppingListScreen extends StatelessWidget {
   }
 }
 
+class _ShoppingListHeader extends StatelessWidget {
+  final int totalNeeded;
+  final int totalSales;
+  final int urgentCount;
+
+  const _ShoppingListHeader({
+    required this.totalNeeded,
+    required this.totalSales,
+    required this.urgentCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          '$totalNeeded item${totalNeeded == 1 ? '' : 's'} across '
+          '$totalSales sale${totalSales == 1 ? '' : 's'}',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+        if (urgentCount > 0) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.error.withAlpha(30),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.error.withAlpha(100)),
+            ),
+            child: Text(
+              '$urgentCount urgent',
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _SaleMaterialsCard extends StatelessWidget {
   final Sale sale;
+  final _Urgency urgency;
 
-  const _SaleMaterialsCard({required this.sale});
+  const _SaleMaterialsCard({required this.sale, required this.urgency});
+
+  Color? _accentColor(BuildContext context) => switch (urgency) {
+        _Urgency.overdue => Theme.of(context).colorScheme.error,
+        _Urgency.thisWeek => Colors.amber[700],
+        _Urgency.none => null,
+      };
 
   @override
   Widget build(BuildContext context) {
     final needed = sale.components.where((c) => !c.isAvailable).toList();
+    final accent = _accentColor(context);
 
     return Card(
+      clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
+      child: Container(
+        decoration: accent != null
+            ? BoxDecoration(
+                border: Border(left: BorderSide(color: accent, width: 4)))
+            : null,
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,9 +166,18 @@ class _SaleMaterialsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     sale.buyerName,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (sale.scheduledDate != null) ...[
+                  const SizedBox(width: 8),
+                  _DueDateLabel(sale: sale, urgency: urgency),
+                ],
+                const SizedBox(width: 8),
                 _AssemblyBadge(status: sale.assemblyStatus),
               ],
             ),
@@ -108,8 +199,7 @@ class _SaleMaterialsCard extends StatelessWidget {
                         size: 14,
                         color: Theme.of(context).colorScheme.error),
                     const SizedBox(width: 8),
-                    Text(c.name,
-                        style: Theme.of(context).textTheme.bodyMedium),
+                    Text(c.name, style: Theme.of(context).textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -117,6 +207,47 @@ class _SaleMaterialsCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DueDateLabel extends StatelessWidget {
+  final Sale sale;
+  final _Urgency urgency;
+
+  const _DueDateLabel({required this.sale, required this.urgency});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduled = DateTime(
+      sale.scheduledDate!.year,
+      sale.scheduledDate!.month,
+      sale.scheduledDate!.day,
+    );
+    final days = scheduled.difference(today).inDays;
+
+    final Color color = switch (urgency) {
+      _Urgency.overdue => Theme.of(context).colorScheme.error,
+      _Urgency.thisWeek => Colors.amber[700]!,
+      _Urgency.none => Theme.of(context).colorScheme.onSurfaceVariant,
+    };
+
+    final String label = urgency == _Urgency.overdue
+        ? '${days.abs()}d overdue'
+        : days == 0
+            ? 'Today'
+            : days == 1
+                ? 'Tomorrow'
+                : DateFormat('dd MMM').format(sale.scheduledDate!);
+
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
     );
   }
 }
@@ -130,7 +261,8 @@ class _AssemblyBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
       AssemblyStatus.notStarted => (Colors.red, 'Not started'),
-      AssemblyStatus.waitingForMaterials => (Colors.amber[700]!, 'Waiting for materials'),
+      AssemblyStatus.waitingForMaterials =>
+        (Colors.amber[700]!, 'Waiting for materials'),
       AssemblyStatus.inProgress => (Colors.orange, 'In progress'),
       AssemblyStatus.ready => (Colors.green, 'Ready'),
     };
@@ -142,8 +274,7 @@ class _AssemblyBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withAlpha(100)),
       ),
-      child: Text(label,
-          style: TextStyle(fontSize: 10, color: color)),
+      child: Text(label, style: TextStyle(fontSize: 10, color: color)),
     );
   }
 }

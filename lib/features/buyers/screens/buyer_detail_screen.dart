@@ -100,7 +100,8 @@ class _BuyerDetailBody extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
       children: [
         _InfoSection(buyer: buyer),
         const SizedBox(height: 24),
@@ -206,6 +207,11 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
     return StreamBuilder<List<Sale>>(
       stream: _saleRepo.watchSalesForBuyer(widget.buyerId),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Error loading sales: ${snapshot.error}',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error));
+        }
         if (!snapshot.hasData) {
           return const SizedBox(
             height: 48,
