@@ -1,0 +1,264 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/postal_code_service.dart';
+import '../models/buyer_address.dart';
+
+const kAddressCountries = [
+  'Portugal',
+  'Spain',
+  'France',
+  'Germany',
+  'United Kingdom',
+  'Netherlands',
+  'Belgium',
+  'Italy',
+  'Switzerland',
+  'Other',
+];
+
+final _ptPostalCodeRegex = RegExp(r'^\d{4}-\d{3}$');
+
+class AddressFormFields extends StatefulWidget {
+  final BuyerAddress? initial;
+  final bool showIsDefault;
+
+  const AddressFormFields({
+    super.key,
+    this.initial,
+    this.showIsDefault = false,
+  });
+
+  @override
+  State<AddressFormFields> createState() => AddressFormFieldsState();
+}
+
+class AddressFormFieldsState extends State<AddressFormFields> {
+  late final TextEditingController _labelController;
+  late final TextEditingController _postalCodeController;
+  late final TextEditingController _cityController;
+  late final TextEditingController _streetController;
+  late final TextEditingController _houseNumberController;
+  late final TextEditingController _fractionController;
+  late final TextEditingController _notesController;
+  late String _country;
+  late bool _isDefault;
+
+  bool _isLookingUp = false;
+  String? _lastLookedUp;
+
+  bool get isFilled =>
+      _postalCodeController.text.trim().isNotEmpty &&
+      _cityController.text.trim().isNotEmpty &&
+      _streetController.text.trim().isNotEmpty &&
+      _houseNumberController.text.trim().isNotEmpty;
+
+  BuyerAddress buildAddress(String id) => BuyerAddress(
+        id: id,
+        label: _labelController.text.trim().isEmpty
+            ? 'Home'
+            : _labelController.text.trim(),
+        street: _streetController.text.trim(),
+        houseNumber: _houseNumberController.text.trim(),
+        fraction: _fractionController.text.trim().isEmpty
+            ? null
+            : _fractionController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        city: _cityController.text.trim(),
+        postalCode: _postalCodeController.text.trim(),
+        country: _country,
+        isDefault: _isDefault,
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    final a = widget.initial;
+    _labelController = TextEditingController(text: a?.label ?? 'Home');
+    _postalCodeController = TextEditingController(text: a?.postalCode);
+    _cityController = TextEditingController(text: a?.city);
+    _streetController = TextEditingController(text: a?.street);
+    _houseNumberController = TextEditingController(text: a?.houseNumber);
+    _fractionController = TextEditingController(text: a?.fraction);
+    _notesController = TextEditingController(text: a?.notes);
+    final saved = a?.country ?? 'Portugal';
+    _country = kAddressCountries.contains(saved) ? saved : 'Other';
+    _isDefault = a?.isDefault ?? false;
+    _lastLookedUp = a?.postalCode;
+    _postalCodeController.addListener(_onPostalCodeChanged);
+  }
+
+  @override
+  void dispose() {
+    _postalCodeController.removeListener(_onPostalCodeChanged);
+    _labelController.dispose();
+    _postalCodeController.dispose();
+    _cityController.dispose();
+    _streetController.dispose();
+    _houseNumberController.dispose();
+    _fractionController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  void _onPostalCodeChanged() {
+    if (_country != 'Portugal') return;
+    final code = _postalCodeController.text.trim();
+    if (!_ptPostalCodeRegex.hasMatch(code)) return;
+    if (code == _lastLookedUp) return;
+    _lookup(code);
+  }
+
+  Future<void> _lookup(String postalCode) async {
+    if (!mounted) return;
+    setState(() {
+      _isLookingUp = true;
+      _lastLookedUp = postalCode;
+    });
+
+    final result = await PostalCodeService.lookup(postalCode);
+    if (!mounted) return;
+    setState(() => _isLookingUp = false);
+    // User may have changed country while the request was in-flight.
+    if (_country != 'Portugal' || result == null) return;
+
+    // Always update city — postal code → locality is deterministic.
+    if (result.city.isNotEmpty) _cityController.text = result.city;
+    // Only suggest street if the user hasn't typed one yet.
+    if (_streetController.text.trim().isEmpty && result.street.isNotEmpty) {
+      _streetController.text = result.street;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return Column(
+      children: [
+        TextFormField(
+          controller: _labelController,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: s.addressLabelField,
+            hintText: s.addressLabelHint,
+            border: const OutlineInputBorder(),
+          ),
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? s.addressLabelRequired : null,
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _country,
+          decoration: InputDecoration(
+            labelText: s.addressCountry,
+            border: const OutlineInputBorder(),
+          ),
+          items: kAddressCountries
+              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+              .toList(),
+          onChanged: (v) => setState(() {
+            _country = v!;
+            // Allow re-lookup if user switches back to Portugal.
+            _lastLookedUp = null;
+          }),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _postalCodeController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: s.postalCodeLabel,
+            hintText: s.postalCodeHint,
+            border: const OutlineInputBorder(),
+            suffixIcon: _isLookingUp
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : null,
+          ),
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return s.postalCodeRequired;
+            if (_country == 'Portugal' &&
+                !_ptPostalCodeRegex.hasMatch(v.trim())) {
+              return 'Format: 0000-000';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _cityController,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: s.addressCity,
+            border: const OutlineInputBorder(),
+          ),
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? s.addressCityRequired : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _streetController,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: s.addressStreet,
+            border: const OutlineInputBorder(),
+          ),
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? s.addressStreetRequired : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _houseNumberController,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(
+            labelText: s.addressHouseNumber,
+            hintText: s.addressHouseNumberHint,
+            border: const OutlineInputBorder(),
+          ),
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? s.addressHouseNumberRequired
+              : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _fractionController,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: s.addressFraction,
+            hintText: s.addressFractionHint,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _notesController,
+          textCapitalization: TextCapitalization.sentences,
+          maxLines: 2,
+          decoration: InputDecoration(
+            labelText: s.addressNotes,
+            hintText: s.addressNotesHint,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        if (widget.showIsDefault) ...[
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(s.defaultAddressLabel),
+            subtitle: Text(s.defaultAddressSubtitle),
+            value: _isDefault,
+            onChanged: (v) => setState(() => _isDefault = v),
+          ),
+        ],
+      ],
+    );
+  }
+}

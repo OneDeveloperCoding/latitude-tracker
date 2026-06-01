@@ -4,19 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
-
-const _kCountries = [
-  'Portugal',
-  'Spain',
-  'France',
-  'Germany',
-  'United Kingdom',
-  'Netherlands',
-  'Belgium',
-  'Italy',
-  'Switzerland',
-  'Other',
-];
+import '../widgets/address_form_fields.dart';
 
 class BuyerAddressFormScreen extends StatefulWidget {
   final String buyerId;
@@ -34,40 +22,12 @@ class BuyerAddressFormScreen extends StatefulWidget {
 
 class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _addressFormKey = GlobalKey<AddressFormFieldsState>();
   final _repository = BuyerRepository();
-
-  late final TextEditingController _labelController;
-  late final TextEditingController _streetController;
-  late final TextEditingController _cityController;
-  late final TextEditingController _postalCodeController;
-  late String _country;
-  late bool _isDefault;
 
   bool _isLoading = false;
 
   bool get _isEditing => widget.address != null;
-
-  @override
-  void initState() {
-    super.initState();
-    _labelController = TextEditingController(text: widget.address?.label);
-    _streetController = TextEditingController(text: widget.address?.street);
-    _cityController = TextEditingController(text: widget.address?.city);
-    _postalCodeController =
-        TextEditingController(text: widget.address?.postalCode);
-    final saved = widget.address?.country ?? 'Portugal';
-    _country = _kCountries.contains(saved) ? saved : 'Other';
-    _isDefault = widget.address?.isDefault ?? false;
-  }
-
-  @override
-  void dispose() {
-    _labelController.dispose();
-    _streetController.dispose();
-    _cityController.dispose();
-    _postalCodeController.dispose();
-    super.dispose();
-  }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -75,26 +35,13 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final addressState = _addressFormKey.currentState!;
       if (_isEditing) {
-        final updated = widget.address!.copyWith(
-          label: _labelController.text.trim(),
-          street: _streetController.text.trim(),
-          city: _cityController.text.trim(),
-          postalCode: _postalCodeController.text.trim(),
-          country: _country,
-          isDefault: _isDefault,
-        );
+        final updated = addressState.buildAddress(widget.address!.id);
         await _repository.updateAddress(widget.buyerId, updated);
       } else {
-        final address = BuyerAddress(
-          id: FirebaseFirestore.instance.collection('_').doc().id,
-          label: _labelController.text.trim(),
-          street: _streetController.text.trim(),
-          city: _cityController.text.trim(),
-          postalCode: _postalCodeController.text.trim(),
-          country: _country,
-          isDefault: _isDefault,
-        );
+        final id = FirebaseFirestore.instance.collection('_').doc().id;
+        final address = addressState.buildAddress(id);
         await _repository.createAddress(widget.buyerId, address);
       }
       if (mounted) Navigator.pop(context);
@@ -133,78 +80,12 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
-              controller: _labelController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Label *',
-                hintText: 'e.g. Home, Work',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Label is required' : null,
+            AddressFormFields(
+              key: _addressFormKey,
+              initial: widget.address,
+              showIsDefault: true,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _streetController,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Street *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Street is required' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _cityController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'City *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'City is required' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _postalCodeController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: s.postalCodeLabel,
-                hintText: s.postalCodeHint,
-                border: const OutlineInputBorder(),
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return s.postalCodeRequired;
-                }
-                if (_country == 'Portugal' &&
-                    !RegExp(r'^\d{4}-\d{3}$').hasMatch(v.trim())) {
-                  return 'Format: 0000-000';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _country,
-              decoration: const InputDecoration(
-                labelText: 'Country *',
-                border: OutlineInputBorder(),
-              ),
-              items: _kCountries
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (v) => setState(() => _country = v!),
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: Text(s.defaultAddressLabel),
-              subtitle: Text(s.defaultAddressSubtitle),
-              value: _isDefault,
-              onChanged: (value) => setState(() => _isDefault = value),
-            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),

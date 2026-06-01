@@ -68,7 +68,8 @@ class DemoData {
           const BuyerAddress(
             id: 'demo-addr-1',
             label: 'Home',
-            street: 'Rua das Flores 45',
+            street: 'Rua das Flores',
+            houseNumber: '45',
             city: 'Lisboa',
             postalCode: '1200-190',
             isDefault: true,
@@ -78,7 +79,8 @@ class DemoData {
           const BuyerAddress(
             id: 'demo-addr-2',
             label: 'Home',
-            street: 'Av. da República 78',
+            street: 'Av. da República',
+            houseNumber: '78',
             city: 'Porto',
             postalCode: '4050-234',
             isDefault: true,
@@ -88,7 +90,8 @@ class DemoData {
           const BuyerAddress(
             id: 'demo-addr-6',
             label: 'Home',
-            street: 'Rua do Comércio 12',
+            street: 'Rua do Comércio',
+            houseNumber: '12',
             city: 'Braga',
             postalCode: '4700-220',
             isDefault: true,

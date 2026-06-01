@@ -19,6 +19,7 @@ class SalesStore {
           : null;
 
   static void init() {
+    if (_sub != null) return;
     state.value = const StoreLoading();
     _sub = SaleRepository().watchSales().listen(
       (sales) => state.value = StoreLoaded(sales),
