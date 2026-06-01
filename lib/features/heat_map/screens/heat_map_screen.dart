@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
 import '../services/geocoding_service.dart';
 
 class _PostalCodePoint {
@@ -45,7 +45,7 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
     });
 
     try {
-      final sales = await SaleRepository().watchSales().first;
+      final sales = SalesStore.current ?? [];
       final postalCodes = _extractPostalCodes(sales);
 
       if (postalCodes.isEmpty) {

@@ -664,55 +664,23 @@ class _ComponentsCardState extends State<_ComponentsCard> {
                   child: const Icon(Icons.delete_outline, color: Colors.white),
                 ),
                 onDismissed: (_) {
-                  final updatedComponents = sale.components
+                  final updated = sale.components
                       .where((item) => item.id != c.id)
                       .toList();
-                  AssemblyStatus newStatus = sale.assemblyStatus;
-                  if (updatedComponents.isNotEmpty &&
-                      updatedComponents.every((item) => item.isAvailable) &&
-                      (sale.assemblyStatus == AssemblyStatus.notStarted ||
-                          sale.assemblyStatus == AssemblyStatus.inProgress)) {
-                    newStatus = AssemblyStatus.ready;
-                  }
-                  widget.onUpdate(
-                    context,
-                    sale.copyWith(
-                        components: updatedComponents,
-                        assemblyStatus: newStatus),
-                  );
+                  widget.onUpdate(context, sale.withUpdatedComponents(updated));
                 },
                 child: CheckboxListTile(
                   dense: true,
                   title: Text(c.name),
-                  subtitle:
-                      Text(c.isAvailable ? s.haveIt : s.needToBuy),
+                  subtitle: Text(c.isAvailable ? s.haveIt : s.needToBuy),
                   value: c.isAvailable,
                   onChanged: (_) {
-                    final toggled = !c.isAvailable;
-                    final updatedComponents = sale.components
+                    final updated = sale.components
                         .map((item) => item.id == c.id
-                            ? item.copyWith(isAvailable: toggled)
+                            ? item.copyWith(isAvailable: !c.isAvailable)
                             : item)
                         .toList();
-                    final allAvailable =
-                        updatedComponents.every((item) => item.isAvailable);
-                    AssemblyStatus newStatus = sale.assemblyStatus;
-                    if (toggled &&
-                        allAvailable &&
-                        (sale.assemblyStatus == AssemblyStatus.notStarted ||
-                            sale.assemblyStatus ==
-                                AssemblyStatus.inProgress)) {
-                      newStatus = AssemblyStatus.ready;
-                    } else if (!toggled &&
-                        sale.assemblyStatus == AssemblyStatus.ready) {
-                      newStatus = AssemblyStatus.inProgress;
-                    }
-                    widget.onUpdate(
-                      context,
-                      sale.copyWith(
-                          components: updatedComponents,
-                          assemblyStatus: newStatus),
-                    );
+                    widget.onUpdate(context, sale.withUpdatedComponents(updated));
                   },
                 ),
               )),

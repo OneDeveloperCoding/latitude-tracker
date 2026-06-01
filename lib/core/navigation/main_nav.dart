@@ -7,6 +7,8 @@ import '../../features/demo/demo_tutorial_sheet.dart';
 import '../../features/sales/screens/sales_list_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../l10n/app_strings.dart';
+import '../store/buyers_store.dart';
+import '../store/sales_store.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -28,12 +30,16 @@ class _MainNavState extends State<MainNav> {
   @override
   void initState() {
     super.initState();
+    SalesStore.init();
+    BuyersStore.init();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
   }
 
   @override
   void dispose() {
     DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
+    SalesStore.dispose();
+    BuyersStore.dispose();
     super.dispose();
   }
 

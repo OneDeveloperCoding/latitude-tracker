@@ -2,24 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
 import '../models/sale.dart';
-import '../repositories/sale_repository.dart';
+import '../services/sale_urgency.dart';
 import 'sale_detail_screen.dart';
 
-enum _Urgency { overdue, thisWeek, none }
-
-_Urgency _urgencyOf(Sale sale) {
-  if (sale.scheduledDate == null) return _Urgency.none;
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
-  final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
-  if (sale.scheduledDate!.isBefore(startOfThisWeek)) return _Urgency.overdue;
-  if (sale.scheduledDate!.isBefore(startOfNextWeek)) return _Urgency.thisWeek;
-  return _Urgency.none;
-}
-
-const _urgencyOrder = {_Urgency.overdue: 0, _Urgency.thisWeek: 1, _Urgency.none: 2};
+const _urgencyOrder = {UrgencyLevel.overdue: 0, UrgencyLevel.thisWeek: 1, UrgencyLevel.none: 2};
 
 class ShoppingListScreen extends StatelessWidget {
   const ShoppingListScreen({super.key});
@@ -29,21 +18,21 @@ class ShoppingListScreen extends StatelessWidget {
     final s = context.s;
     return Scaffold(
       appBar: AppBar(title: Text(s.shoppingList)),
-      body: StreamBuilder<List<Sale>>(
-        stream: SaleRepository().watchSales(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: ValueListenableBuilder<StoreState<List<Sale>>>(
+        valueListenable: SalesStore.state,
+        builder: (context, storeState, _) {
+          if (storeState is! StoreLoaded<List<Sale>>) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final openSales = (snapshot.data ?? [])
+          final openSales = storeState.data
               .where((s) =>
                   s.assemblyStatus != AssemblyStatus.ready &&
                   s.shipment.status != ShipmentStatus.delivered &&
                   s.components.any((c) => !c.isAvailable))
               .toList()
-            ..sort((a, b) => _urgencyOrder[_urgencyOf(a)]!
-                .compareTo(_urgencyOrder[_urgencyOf(b)]!));
+            ..sort((a, b) => _urgencyOrder[SaleUrgency.levelOf(a)]!
+                .compareTo(_urgencyOrder[SaleUrgency.levelOf(b)]!));
 
           if (openSales.isEmpty) {
             return Center(
@@ -64,7 +53,7 @@ class ShoppingListScreen extends StatelessWidget {
               .expand((s) => s.components.where((c) => !c.isAvailable))
               .length;
           final urgentCount =
-              openSales.where((s) => _urgencyOf(s) != _Urgency.none).length;
+              openSales.where((s) => SaleUrgency.levelOf(s) != UrgencyLevel.none).length;
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -78,7 +67,7 @@ class ShoppingListScreen extends StatelessWidget {
               const SizedBox(height: 16),
               ...openSales.map((sale) => _SaleMaterialsCard(
                     sale: sale,
-                    urgency: _urgencyOf(sale),
+                    urgency: SaleUrgency.levelOf(sale),
                   )),
             ],
           );
@@ -137,14 +126,14 @@ class _ShoppingListHeader extends StatelessWidget {
 
 class _SaleMaterialsCard extends StatelessWidget {
   final Sale sale;
-  final _Urgency urgency;
+  final UrgencyLevel urgency;
 
   const _SaleMaterialsCard({required this.sale, required this.urgency});
 
   Color? _accentColor(BuildContext context) => switch (urgency) {
-        _Urgency.overdue => Theme.of(context).colorScheme.error,
-        _Urgency.thisWeek => Colors.amber[700],
-        _Urgency.none => null,
+        UrgencyLevel.overdue => Theme.of(context).colorScheme.error,
+        UrgencyLevel.thisWeek => Colors.amber[700],
+        UrgencyLevel.none => null,
       };
 
   @override
@@ -222,7 +211,7 @@ class _SaleMaterialsCard extends StatelessWidget {
 
 class _DueDateLabel extends StatelessWidget {
   final Sale sale;
-  final _Urgency urgency;
+  final UrgencyLevel urgency;
 
   const _DueDateLabel({required this.sale, required this.urgency});
 
@@ -239,12 +228,12 @@ class _DueDateLabel extends StatelessWidget {
     final days = scheduled.difference(today).inDays;
 
     final Color color = switch (urgency) {
-      _Urgency.overdue => Theme.of(context).colorScheme.error,
-      _Urgency.thisWeek => Colors.amber[700]!,
-      _Urgency.none => Theme.of(context).colorScheme.onSurfaceVariant,
+      UrgencyLevel.overdue => Theme.of(context).colorScheme.error,
+      UrgencyLevel.thisWeek => Colors.amber[700]!,
+      UrgencyLevel.none => Theme.of(context).colorScheme.onSurfaceVariant,
     };
 
-    final String label = urgency == _Urgency.overdue
+    final String label = urgency == UrgencyLevel.overdue
         ? s.daysOverdue(days.abs())
         : days == 0
             ? s.today

@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/buyers_store.dart';
+import '../../../core/store/sales_store.dart';
 import '../../buyers/models/buyer.dart';
-import '../../buyers/repositories/buyer_repository.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import 'sale_detail_screen.dart';
@@ -19,38 +18,41 @@ class NifPendingScreen extends StatefulWidget {
 
 class _NifPendingScreenState extends State<NifPendingScreen> {
   final _saleRepo = SaleRepository();
-  final _buyerRepo = BuyerRepository();
-
-  late StreamSubscription<List<Sale>> _salesSub;
-  late StreamSubscription<List<Buyer>> _buyersSub;
 
   List<Sale> _sales = [];
-  Map<String, Buyer> _buyersById = {};
-  bool _loading = true;
+
+  bool get _loading =>
+      SalesStore.current == null || BuyersStore.current == null;
+
+  Map<String, Buyer> get _buyersById => {
+        for (final b in BuyersStore.current ?? []) b.id: b
+      };
 
   @override
   void initState() {
     super.initState();
-    _salesSub = _saleRepo.watchSales().listen((sales) {
-      final filtered = sales.where((s) => s.requiresNif).toList()
-        ..sort((a, b) {
-          if (a.atSubmissionDone == b.atSubmissionDone) return 0;
-          return a.atSubmissionDone ? 1 : -1;
-        });
-      setState(() {
-        _sales = filtered;
-        _loading = false;
-      });
-    });
-    _buyersSub = _buyerRepo.watchBuyers().listen((buyers) {
-      setState(() => _buyersById = {for (final b in buyers) b.id: b});
-    });
+    SalesStore.state.addListener(_onSalesChanged);
+    BuyersStore.state.addListener(_onStoreChanged);
+    _onSalesChanged();
   }
+
+  void _onSalesChanged() {
+    final all = SalesStore.current;
+    if (all == null) return;
+    final filtered = all.where((s) => s.requiresNif).toList()
+      ..sort((a, b) {
+        if (a.atSubmissionDone == b.atSubmissionDone) return 0;
+        return a.atSubmissionDone ? 1 : -1;
+      });
+    setState(() => _sales = filtered);
+  }
+
+  void _onStoreChanged() => setState(() {});
 
   @override
   void dispose() {
-    _salesSub.cancel();
-    _buyersSub.cancel();
+    SalesStore.state.removeListener(_onSalesChanged);
+    BuyersStore.state.removeListener(_onStoreChanged);
     super.dispose();
   }
 

@@ -1,11 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sale_detail_screen.dart';
 import 'buyer_detail_screen.dart';
 
@@ -30,44 +28,47 @@ class _UnpaidBalancesGroup {
 }
 
 class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
-  final _saleRepo = SaleRepository();
-  late StreamSubscription<List<Sale>> _salesSub;
   List<_UnpaidBalancesGroup> _groups = [];
   double _grandTotal = 0;
-  bool _loading = true;
+
+  bool get _loading => SalesStore.current == null;
 
   @override
   void initState() {
     super.initState();
-    _salesSub = _saleRepo.watchSales().listen((sales) {
-      final unpaid =
-          sales.where((s) => s.payment.status == PaymentStatus.unpaid).toList();
+    SalesStore.state.addListener(_onSalesChanged);
+    _onSalesChanged();
+  }
 
-      final Map<String, List<Sale>> bySeller = {};
-      for (final sale in unpaid) {
-        bySeller.putIfAbsent(sale.buyerId, () => []).add(sale);
-      }
+  void _onSalesChanged() {
+    final all = SalesStore.current;
+    if (all == null) return;
+    final unpaid =
+        all.where((s) => s.payment.status == PaymentStatus.unpaid).toList();
 
-      final groups = bySeller.entries
-          .map((e) => _UnpaidBalancesGroup(
-                buyerId: e.key,
-                buyerName: e.value.first.buyerName,
-                unpaidSales: e.value,
-              ))
-          .toList()
-        ..sort((a, b) => b.totalOwed.compareTo(a.totalOwed));
+    final Map<String, List<Sale>> bySeller = {};
+    for (final sale in unpaid) {
+      bySeller.putIfAbsent(sale.buyerId, () => []).add(sale);
+    }
 
-      setState(() {
-        _groups = groups;
-        _grandTotal = groups.fold(0.0, (sum, g) => sum + g.totalOwed);
-        _loading = false;
-      });
+    final groups = bySeller.entries
+        .map((e) => _UnpaidBalancesGroup(
+              buyerId: e.key,
+              buyerName: e.value.first.buyerName,
+              unpaidSales: e.value,
+            ))
+        .toList()
+      ..sort((a, b) => b.totalOwed.compareTo(a.totalOwed));
+
+    setState(() {
+      _groups = groups;
+      _grandTotal = groups.fold(0.0, (sum, g) => sum + g.totalOwed);
     });
   }
 
   @override
   void dispose() {
-    _salesSub.cancel();
+    SalesStore.state.removeListener(_onSalesChanged);
     super.dispose();
   }
 
