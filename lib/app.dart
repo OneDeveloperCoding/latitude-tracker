@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/l10n/locale_settings.dart';
 import 'core/navigation/main_nav.dart';
@@ -18,6 +19,11 @@ class LatitudeTrackerApp extends StatelessWidget {
         title: 'Latitude Tracker',
         theme: AppTheme.light(),
         locale: locale,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         supportedLocales: const [Locale('pt'), Locale('en')],
         home: ValueListenableBuilder<bool>(
           valueListenable: DemoMode.active,
