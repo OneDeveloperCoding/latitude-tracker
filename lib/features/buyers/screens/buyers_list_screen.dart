@@ -243,7 +243,8 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         );
       }
       return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.fromLTRB(
+            12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
         itemCount: ranked.length,
         itemBuilder: (context, index) => _RankedBuyerTile(
           stats: ranked[index],
@@ -267,7 +268,8 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.fromLTRB(
+            12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];

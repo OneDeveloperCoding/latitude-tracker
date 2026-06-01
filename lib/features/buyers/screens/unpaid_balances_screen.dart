@@ -94,7 +94,8 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
                   ),
                 )
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                      16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
                   children: [
                     Card(
                       color: Theme.of(context).colorScheme.errorContainer,

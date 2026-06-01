@@ -35,6 +35,7 @@ class PhotoService {
   }
 
   Future<void> deletePhoto(String saleId, String photoUrl) async {
+    if (photoUrl.startsWith('demo://')) return;
     try {
       await _storage.refFromURL(photoUrl).delete();
     } catch (_) {
@@ -43,6 +44,7 @@ class PhotoService {
   }
 
   Future<void> deleteAllPhotos(String saleId) async {
+    if (_auth.currentUser == null) return;
     try {
       final listResult =
           await _storage.ref('users/$_userId/sales/$saleId/photos').listAll();

@@ -77,7 +77,8 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                   ),
                 )
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                      16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
                   children: [
                     Builder(builder: (context) {
                       final pending =
