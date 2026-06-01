@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
+import '../../buyers/screens/buyer_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../widgets/photo_grid.dart';
@@ -85,6 +86,16 @@ class _SaleDetailBody extends StatelessWidget {
           const SizedBox(height: 16),
         ],
         _InfoCard(children: [
+          _InfoRow(
+            icon: Icons.person,
+            text: sale.buyerName,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BuyerDetailScreen(buyerId: sale.buyerId),
+              ),
+            ),
+          ),
           _InfoRow(
             icon: Icons.calendar_today,
             text: dateFormat.format(sale.createdAt),
@@ -490,21 +501,28 @@ class _InfoCard extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
+  final VoidCallback? onTap;
 
-  const _InfoRow({required this.icon, required this.text});
+  const _InfoRow({required this.icon, required this.text, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
+          if (onTap != null)
+            Icon(Icons.chevron_right,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
         ],
       ),
     );
+    if (onTap == null) return row;
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(4), child: row);
   }
 }
 

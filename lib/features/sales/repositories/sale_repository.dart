@@ -39,11 +39,28 @@ class SaleRepository {
     return snap.docs.map(Sale.fromFirestore).toList();
   }
 
-  Future<void> deleteAllSalesForYear(int year) async {
+  // By default keeps photos in Storage so archive JSON URLs stay valid.
+  // Pass deletePhotos: true for a full wipe (e.g. reset).
+  Future<void> deleteAllSalesForYear(int year,
+      {bool deletePhotos = false}) async {
     final sales = await getSalesForYear(year);
-    for (final sale in sales) {
-      await deleteSale(sale.id);
+    if (sales.isEmpty) return;
+    if (deletePhotos) {
+      for (final sale in sales) {
+        await PhotoService().deleteAllPhotos(sale.id);
+      }
     }
+    final batch = _firestore.batch();
+    for (final sale in sales) {
+      batch.delete(_salesRef.doc(sale.id));
+    }
+    await batch.commit();
+  }
+
+  Future<List<Sale>> getSalesForBuyer(String buyerId) async {
+    final snap =
+        await _salesRef.where('buyerId', isEqualTo: buyerId).get();
+    return snap.docs.map(Sale.fromFirestore).toList();
   }
 
   Future<void> deleteSale(String id) async {

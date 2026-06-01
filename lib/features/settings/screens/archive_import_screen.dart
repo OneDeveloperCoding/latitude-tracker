@@ -10,20 +10,21 @@ class ArchiveImportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final year = archive['year'] as int?;
     final exportedAt = archive['exportedAt'] as String?;
-    final sales = (archive['sales'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final buyers = (archive['buyers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final sales =
+        (archive['sales'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final buyers =
+        (archive['buyers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
     final totalRevenue = sales.fold<double>(
       0,
       (sum, s) => sum + ((s['price'] as num?)?.toDouble() ?? 0),
     );
-
     final paidCount = sales
-        .where((s) =>
-            (s['payment'] as Map?)?['status'] == 'paid')
+        .where((s) => (s['payment'] as Map?)?['status'] == 'paid')
         .length;
 
-    final currencyFormat = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
+    final currencyFormat =
+        NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final dateFormat = DateFormat('dd MMM yyyy HH:mm');
 
     return Scaffold(
@@ -51,11 +52,12 @@ class ArchiveImportScreen extends StatelessWidget {
                   if (exportedAt != null)
                     Text(
                       'Exported ${dateFormat.format(DateTime.parse(exportedAt))}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
                     ),
                 ],
               ),
@@ -100,8 +102,7 @@ class _StatRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: Theme.of(context).textTheme.bodyMedium),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
           Text(value,
               style: Theme.of(context)
                   .textTheme
@@ -121,34 +122,80 @@ class _ArchivedSaleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final price = (sale['price'] as num?)?.toDouble() ?? 0;
-    final isPaid =
-        (sale['payment'] as Map?)?['status'] == 'paid';
+    final isPaid = (sale['payment'] as Map?)?['status'] == 'paid';
+    final photoUrls =
+        (sale['photoUrls'] as List?)?.cast<String>() ?? [];
+
     final createdAt = sale['createdAt'];
     String dateStr = '';
-    if (createdAt is Map && createdAt['_seconds'] != null) {
+    if (createdAt is String) {
+      dateStr = DateFormat('dd MMM yyyy').format(DateTime.parse(createdAt));
+    } else if (createdAt is Map && createdAt['_seconds'] != null) {
       final dt = DateTime.fromMillisecondsSinceEpoch(
           (createdAt['_seconds'] as int) * 1000);
       dateStr = DateFormat('dd MMM yyyy').format(dt);
     }
 
-    return ListTile(
-      title: Text(sale['buyerName'] as String? ?? 'Unknown'),
-      subtitle: Text(sale['itemDescription'] as String? ?? ''),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('€${price.toStringAsFixed(2)}'),
-          Text(
-            isPaid ? 'Paid' : 'Unpaid',
-            style: TextStyle(
-              fontSize: 11,
-              color: isPaid ? Colors.green : Colors.orange,
+          ListTile(
+            title: Text(sale['buyerName'] as String? ?? 'Unknown'),
+            subtitle: Text(sale['itemDescription'] as String? ?? ''),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('€${price.toStringAsFixed(2)}'),
+                Text(
+                  isPaid ? 'Paid' : 'Unpaid',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isPaid ? Colors.green : Colors.orange,
+                  ),
+                ),
+                if (dateStr.isNotEmpty)
+                  Text(dateStr,
+                      style: Theme.of(context).textTheme.labelSmall),
+              ],
             ),
           ),
-          if (dateStr.isNotEmpty)
-            Text(dateStr,
-                style: Theme.of(context).textTheme.labelSmall),
+          if (photoUrls.isNotEmpty)
+            SizedBox(
+              height: 80,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                itemCount: photoUrls.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(width: 8),
+                itemBuilder: (_, i) => ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    photoUrls[i],
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      width: 64,
+                      height: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
