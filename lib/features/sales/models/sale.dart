@@ -1,5 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Seed categories shown by default in the category picker.
+// The user can add their own free-text categories on top of these.
+const kDefaultCategories = ['necklace', 'earring', 'tote bag', 'hat'];
+
 enum PaymentMethod { mbWay, cash, sumup, bankTransfer }
 
 enum PaymentStatus { paid, unpaid }
@@ -140,6 +144,7 @@ class Sale {
   final String buyerId;
   final String buyerName;
   final String itemDescription;
+  final String category;
   final List<String> photoUrls;
   final double price;
   final AssemblyStatus assemblyStatus;
@@ -157,6 +162,7 @@ class Sale {
     required this.buyerId,
     required this.buyerName,
     required this.itemDescription,
+    required this.category,
     this.photoUrls = const [],
     required this.price,
     required this.assemblyStatus,
@@ -177,6 +183,7 @@ class Sale {
       buyerId: data['buyerId'] as String,
       buyerName: data['buyerName'] as String,
       itemDescription: data['itemDescription'] as String,
+      category: data['category'] as String? ?? kDefaultCategories.first,
       photoUrls: List<String>.from(data['photoUrls'] as List? ?? []),
       price: (data['price'] as num).toDouble(),
       assemblyStatus:
@@ -200,6 +207,7 @@ class Sale {
         'buyerId': buyerId,
         'buyerName': buyerName,
         'itemDescription': itemDescription,
+        'category': category,
         'photoUrls': photoUrls,
         'price': price,
         'assemblyStatus': assemblyStatus.name,
@@ -217,6 +225,7 @@ class Sale {
   // Nullable fields use a sentinel to distinguish "clear to null" from "not provided".
   Sale copyWith({
     String? itemDescription,
+    String? category,
     List<String>? photoUrls,
     double? price,
     AssemblyStatus? assemblyStatus,
@@ -233,6 +242,7 @@ class Sale {
         buyerId: buyerId,
         buyerName: buyerName,
         itemDescription: itemDescription ?? this.itemDescription,
+        category: category ?? this.category,
         photoUrls: photoUrls ?? this.photoUrls,
         price: price ?? this.price,
         assemblyStatus: assemblyStatus ?? this.assemblyStatus,

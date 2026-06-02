@@ -6,6 +6,8 @@ class Buyer {
   final String? instagramHandle;
   final String? phone;
   final String? nif;
+  final List<String> tags;
+  final String? notes;
   final DateTime createdAt;
 
   const Buyer({
@@ -14,6 +16,8 @@ class Buyer {
     this.instagramHandle,
     this.phone,
     this.nif,
+    this.tags = const [],
+    this.notes,
     required this.createdAt,
   });
 
@@ -25,6 +29,8 @@ class Buyer {
       instagramHandle: data['instagramHandle'] as String?,
       phone: data['phone'] as String?,
       nif: data['nif'] as String?,
+      tags: List<String>.from(data['tags'] as List? ?? []),
+      notes: data['notes'] as String?,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -34,6 +40,8 @@ class Buyer {
         'instagramHandle': instagramHandle,
         'phone': phone,
         'nif': nif,
+        'tags': tags,
+        'notes': notes,
         'createdAt': Timestamp.fromDate(createdAt),
       };
 
@@ -42,6 +50,8 @@ class Buyer {
     String? instagramHandle,
     String? phone,
     String? nif,
+    List<String>? tags,
+    Object? notes = _unset,
   }) =>
       Buyer(
         id: id,
@@ -49,6 +59,10 @@ class Buyer {
         instagramHandle: instagramHandle ?? this.instagramHandle,
         phone: phone ?? this.phone,
         nif: nif ?? this.nif,
+        tags: tags ?? this.tags,
+        notes: notes == _unset ? this.notes : notes as String?,
         createdAt: createdAt,
       );
 }
+
+const _unset = Object();

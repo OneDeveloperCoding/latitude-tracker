@@ -9,7 +9,7 @@ A transaction where one or more Items are sold to a Buyer at an agreed price. Re
 _Avoid_: Order, purchase, transaction
 
 **Buyer**:
-A person who purchases Items, identified by name and optionally an Instagram handle, phone number, and NIF. A Buyer persists across multiple Sales.
+A person who purchases Items, identified by name and optionally an Instagram handle, phone number, and NIF. A Buyer may have free-text tags (e.g. "instagram", "in-person", "vip") and a freeform notes field for seller observations. A Buyer persists across multiple Sales.
 _Avoid_: Customer, client, user
 
 **BuyerAddress**:
@@ -23,6 +23,10 @@ _Avoid_: Tax number, fiscal number
 **Item**:
 A unique, one-of-a-kind physical product (e.g. necklace, earring, tote bag, hat). Not tracked as inventory. Each Item in a Sale has an AssemblyStatus and a ComponentChecklist.
 _Avoid_: Product, SKU, stock
+
+**ItemCategory**:
+A free-text string on a Sale that classifies its Item's product type. Seeded with four defaults (necklace, earring, tote bag, hat); the seller can add custom categories which are auto-discovered from existing Sales and offered in the picker. Not an enum — new categories are added by typing them. Used for filtering in the Sales list and for analytics breakdowns.
+_Avoid_: Product type, product category (implies a separate catalogue entity)
 
 **AssemblyStatus**:
 The production state of an Item within a Sale: `not_started`, `waiting_for_materials`, `in_progress`, or `ready`. `waiting_for_materials` means the seller knows components must be purchased before work can start — typically used for event orders taken before materials are sourced. Determines whether the Item can be shipped.
