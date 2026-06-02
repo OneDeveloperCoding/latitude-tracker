@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
@@ -546,9 +547,29 @@ class _InfoSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (buyer.instagramHandle != null)
-              _InfoRow(
+              InkWell(
+                onTap: () async {
+                  final url = Uri.parse(
+                      'https://instagram.com/${buyer.instagramHandle}');
+                  try {
+                    final launched = await launchUrl(url,
+                        mode: LaunchMode.externalApplication);
+                    if (!launched && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(context.s.couldNotOpenInstagram)));
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(context.s.couldNotOpenInstagram)));
+                    }
+                  }
+                },
+                child: _InfoRow(
                   icon: Icons.alternate_email,
-                  text: '@${buyer.instagramHandle}'),
+                  text: '@${buyer.instagramHandle}',
+                ),
+              ),
             if (buyer.phone != null)
               _InfoRow(icon: Icons.phone, text: buyer.phone!),
             if (buyer.nif != null)
