@@ -223,6 +223,7 @@ class AppStrings {
   final String lastPurchaseLabel;
   final String deleteAddressTitle;
   final String noContactDetails;
+  final String couldNotOpenInstagram;
   final String defaultChip;
   final String all;
   final String allPaid;
@@ -481,6 +482,7 @@ class AppStrings {
     required this.lastPurchaseLabel,
     required this.deleteAddressTitle,
     required this.noContactDetails,
+    required this.couldNotOpenInstagram,
     required this.defaultChip,
     required this.all,
     required this.allPaid,
@@ -1001,6 +1003,7 @@ class AppStrings {
     lastPurchaseLabel: 'Last purchase',
     deleteAddressTitle: 'Delete address?',
     noContactDetails: 'No contact details saved.',
+    couldNotOpenInstagram: 'Could not open Instagram',
     defaultChip: 'Default',
     all: 'All',
     allPaid: 'All paid up!',
@@ -1261,6 +1264,7 @@ class AppStrings {
     lastPurchaseLabel: 'Última compra',
     deleteAddressTitle: 'Eliminar morada?',
     noContactDetails: 'Sem dados de contacto guardados.',
+    couldNotOpenInstagram: 'Não foi possível abrir o Instagram',
     defaultChip: 'Padrão',
     all: 'Todos',
     allPaid: 'Tudo pago!',
