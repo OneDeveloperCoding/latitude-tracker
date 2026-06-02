@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
+import '../../demo/demo_mode.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
 import 'archive_import_screen.dart';
@@ -18,6 +19,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final isDemo = DemoMode.active.value;
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -29,12 +31,12 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.person),
             title: Text(s.signedInAs),
-            subtitle: Text(user?.email ?? ''),
+            subtitle: Text(isDemo ? s.demoUser : (user?.email ?? '')),
           ),
           ListTile(
             leading: const Icon(Icons.logout),
             title: Text(s.signOut),
-            onTap: () => _confirmSignOut(context),
+            onTap: () => isDemo ? DemoMode.exit() : _confirmSignOut(context),
           ),
           const Divider(),
           _SectionHeader(s.archive),
