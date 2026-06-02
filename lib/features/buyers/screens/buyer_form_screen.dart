@@ -126,42 +126,42 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
             TextFormField(
               controller: _nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Name *',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: '${s.buyerNameLabel} *',
+                border: const OutlineInputBorder(),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  (v == null || v.trim().isEmpty) ? s.buyerNameRequired : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _instagramController,
-              decoration: const InputDecoration(
-                labelText: 'Instagram handle',
+              decoration: InputDecoration(
+                labelText: s.instagramHandleLabel,
                 prefixText: '@',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone number',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: s.phoneNumberLabel,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _nifController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'NIF',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: s.nifLabel,
+                border: const OutlineInputBorder(),
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return null;
-                if (v.trim().length != 9) return 'NIF must be 9 digits';
+                if (v.trim().length != 9) return s.nifInvalid;
                 return null;
               },
             ),

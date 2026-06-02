@@ -56,7 +56,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
   BuyerAddress buildAddress(String id) => BuyerAddress(
         id: id,
         label: _labelController.text.trim().isEmpty
-            ? 'Home'
+            ? context.s.addressDefaultLabel
             : _labelController.text.trim(),
         street: _streetController.text.trim(),
         houseNumber: _houseNumberController.text.trim(),
@@ -76,7 +76,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
   void initState() {
     super.initState();
     final a = widget.initial;
-    _labelController = TextEditingController(text: a?.label ?? 'Home');
+    _labelController = TextEditingController(text: a?.label);
     _postalCodeController = TextEditingController(text: a?.postalCode);
     _cityController = TextEditingController(text: a?.city);
     _streetController = TextEditingController(text: a?.street);
@@ -164,7 +164,10 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             border: const OutlineInputBorder(),
           ),
           items: kAddressCountries
-              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+              .map((c) => DropdownMenuItem(
+                    value: c,
+                    child: Text(s.countryDisplayNames[c] ?? c),
+                  ))
               .toList(),
           onChanged: (v) => setState(() {
             _country = v!;
@@ -195,7 +198,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             if (v == null || v.trim().isEmpty) return s.postalCodeRequired;
             if (_country == 'Portugal' &&
                 !_ptPostalCodeRegex.hasMatch(v.trim())) {
-              return 'Format: 0000-000';
+              return s.postalCodeInvalidFormat;
             }
             return null;
           },

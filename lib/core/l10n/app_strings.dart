@@ -14,6 +14,7 @@ class AppStrings {
   final String delete;
   final String edit;
   final String add;
+  final String copy;
   final String change;
   final String clear;
   final String setDate;
@@ -222,6 +223,7 @@ class AppStrings {
   final String unpaidBalanceLabel;
   final String averageOrderLabel;
   final String lastPurchaseLabel;
+  final String addressCopied;
   final String deleteAddressTitle;
   final String noContactDetails;
   final String couldNotOpenInstagram;
@@ -234,6 +236,12 @@ class AppStrings {
   // ── Buyer form ───────────────────────────────────────────────────────────
   final String newBuyer;
   final String editBuyer;
+  final String buyerNameLabel;
+  final String buyerNameRequired;
+  final String instagramHandleLabel;
+  final String phoneNumberLabel;
+  final String nifLabel;
+  final String nifInvalid;
   final String addShippingAddress;
   final String addShippingAddressSubtitle;
   final String errSavingBuyer;
@@ -247,7 +255,10 @@ class AppStrings {
   final String addressLabelField;
   final String addressLabelHint;
   final String addressLabelRequired;
+  final String addressDefaultLabel;
   final String addressCountry;
+  final Map<String, String> countryDisplayNames;
+  final String postalCodeInvalidFormat;
   final String addressCity;
   final String addressCityRequired;
   final String selectStreet;
@@ -302,6 +313,7 @@ class AppStrings {
     required this.delete,
     required this.edit,
     required this.add,
+    required this.copy,
     required this.change,
     required this.clear,
     required this.setDate,
@@ -482,6 +494,7 @@ class AppStrings {
     required this.unpaidBalanceLabel,
     required this.averageOrderLabel,
     required this.lastPurchaseLabel,
+    required this.addressCopied,
     required this.deleteAddressTitle,
     required this.noContactDetails,
     required this.couldNotOpenInstagram,
@@ -492,6 +505,12 @@ class AppStrings {
     required this.errorLoadingSales,
     required this.newBuyer,
     required this.editBuyer,
+    required this.buyerNameLabel,
+    required this.buyerNameRequired,
+    required this.instagramHandleLabel,
+    required this.phoneNumberLabel,
+    required this.nifLabel,
+    required this.nifInvalid,
     required this.addShippingAddress,
     required this.addShippingAddressSubtitle,
     required this.errSavingBuyer,
@@ -503,7 +522,10 @@ class AppStrings {
     required this.addressLabelField,
     required this.addressLabelHint,
     required this.addressLabelRequired,
+    required this.addressDefaultLabel,
     required this.addressCountry,
+    required this.countryDisplayNames,
+    required this.postalCodeInvalidFormat,
     required this.addressCity,
     required this.addressCityRequired,
     required this.selectStreet,
@@ -815,6 +837,7 @@ class AppStrings {
     delete: 'Delete',
     edit: 'Edit',
     add: 'Add',
+    copy: 'Copy',
     change: 'Change',
     clear: 'Clear',
     setDate: 'Set date',
@@ -1004,6 +1027,7 @@ class AppStrings {
     unpaidBalanceLabel: 'Unpaid balance',
     averageOrderLabel: 'Average order',
     lastPurchaseLabel: 'Last purchase',
+    addressCopied: 'Address copied',
     deleteAddressTitle: 'Delete address?',
     noContactDetails: 'No contact details saved.',
     couldNotOpenInstagram: 'Could not open Instagram',
@@ -1014,6 +1038,12 @@ class AppStrings {
     errorLoadingSales: 'Error loading sales',
     newBuyer: 'New Buyer',
     editBuyer: 'Edit Buyer',
+    buyerNameLabel: 'Name',
+    buyerNameRequired: 'Name is required',
+    instagramHandleLabel: 'Instagram handle',
+    phoneNumberLabel: 'Phone number',
+    nifLabel: 'NIF',
+    nifInvalid: 'NIF must be 9 digits',
     addShippingAddress: 'Add shipping address',
     addShippingAddressSubtitle: 'Optional — can be added later',
     errSavingBuyer: 'Error saving buyer',
@@ -1025,7 +1055,21 @@ class AppStrings {
     addressLabelField: 'Label *',
     addressLabelHint: 'e.g. Home, Work',
     addressLabelRequired: 'Label is required',
+    addressDefaultLabel: 'Home',
     addressCountry: 'Country',
+    countryDisplayNames: {
+      'Portugal': 'Portugal',
+      'Spain': 'Spain',
+      'France': 'France',
+      'Germany': 'Germany',
+      'United Kingdom': 'United Kingdom',
+      'Netherlands': 'Netherlands',
+      'Belgium': 'Belgium',
+      'Italy': 'Italy',
+      'Switzerland': 'Switzerland',
+      'Other': 'Other',
+    },
+    postalCodeInvalidFormat: 'Format: 0000-000',
     selectStreet: 'Select street',
     addressCity: 'Locality *',
     addressCityRequired: 'Locality is required',
@@ -1077,6 +1121,7 @@ class AppStrings {
     delete: 'Eliminar',
     edit: 'Editar',
     add: 'Adicionar',
+    copy: 'Copiar',
     change: 'Alterar',
     clear: 'Limpar',
     setDate: 'Definir data',
@@ -1266,6 +1311,7 @@ class AppStrings {
     unpaidBalanceLabel: 'Saldo em falta',
     averageOrderLabel: 'Valor médio',
     lastPurchaseLabel: 'Última compra',
+    addressCopied: 'Morada copiada',
     deleteAddressTitle: 'Eliminar morada?',
     noContactDetails: 'Sem dados de contacto guardados.',
     couldNotOpenInstagram: 'Não foi possível abrir o Instagram',
@@ -1276,6 +1322,12 @@ class AppStrings {
     errorLoadingSales: 'Erro ao carregar vendas',
     newBuyer: 'Novo Comprador',
     editBuyer: 'Editar Comprador',
+    buyerNameLabel: 'Nome',
+    buyerNameRequired: 'Nome é obrigatório',
+    instagramHandleLabel: 'Instagram',
+    phoneNumberLabel: 'Telefone',
+    nifLabel: 'NIF',
+    nifInvalid: 'O NIF deve ter 9 dígitos',
     addShippingAddress: 'Adicionar morada de envio',
     addShippingAddressSubtitle: 'Opcional — pode ser adicionado mais tarde',
     errSavingBuyer: 'Erro ao guardar comprador',
@@ -1288,7 +1340,21 @@ class AppStrings {
     addressLabelField: 'Etiqueta *',
     addressLabelHint: 'ex. Casa, Trabalho',
     addressLabelRequired: 'Etiqueta é obrigatória',
+    addressDefaultLabel: 'Casa',
     addressCountry: 'País',
+    countryDisplayNames: {
+      'Portugal': 'Portugal',
+      'Spain': 'Espanha',
+      'France': 'França',
+      'Germany': 'Alemanha',
+      'United Kingdom': 'Reino Unido',
+      'Netherlands': 'Países Baixos',
+      'Belgium': 'Bélgica',
+      'Italy': 'Itália',
+      'Switzerland': 'Suíça',
+      'Other': 'Outro',
+    },
+    postalCodeInvalidFormat: 'Formato: 0000-000',
     selectStreet: 'Selecionar rua',
     addressCity: 'Localidade *',
     addressCityRequired: 'Localidade é obrigatória',
