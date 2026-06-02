@@ -14,8 +14,15 @@ class BuyerPickerScreen extends StatefulWidget {
 
 class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
   final _repository = BuyerRepository();
+  late final Stream<List<Buyer>> _stream;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = _repository.watchBuyers();
+  }
 
   @override
   void dispose() {
@@ -72,7 +79,7 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Buyer>>(
-              stream: _repository.watchBuyers(),
+              stream: _stream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

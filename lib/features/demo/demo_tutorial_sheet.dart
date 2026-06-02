@@ -30,6 +30,7 @@ class DemoTutorialSheet extends StatelessWidget {
       _Tip(icon: Icons.people_outlined, color: const Color(0xFFF57C00), title: s.tipBuyersTitle, body: s.tipBuyersBody),
       _Tip(icon: Icons.shopping_cart_outlined, color: const Color(0xFFD32F2F), title: s.tipShoppingTitle, body: s.tipShoppingBody),
       _Tip(icon: Icons.receipt_long_outlined, color: const Color(0xFF7B1FA2), title: s.tipNifTitle, body: s.tipNifBody),
+      _Tip(icon: Icons.map_outlined, color: const Color(0xFF0288D1), title: s.tipMapTitle, body: s.tipMapBody),
     ];
 
     return DraggableScrollableSheet(

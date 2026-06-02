@@ -4,17 +4,17 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PostalCodeResult {
-  final String street;
+  final List<String> streets;
   final String city;
 
-  const PostalCodeResult({required this.street, required this.city});
+  const PostalCodeResult({required this.streets, required this.city});
 }
 
 class PostalCodeService {
   PostalCodeService._();
 
   static const _ttlDays = 180;
-  static const _cachePrefix = 'postal_cache_';
+  static const _cachePrefix = 'postal_cache_v2_';
   static SharedPreferences? _prefs;
 
   static Future<SharedPreferences> _getPrefs() async =>
@@ -42,7 +42,7 @@ class PostalCodeService {
     }
 
     return PostalCodeResult(
-      street: map['street'] as String,
+      streets: (map['streets'] as List<dynamic>).cast<String>(),
       city: map['city'] as String,
     );
   }
@@ -52,7 +52,7 @@ class PostalCodeService {
     await prefs.setString(
       '$_cachePrefix$postalCode',
       jsonEncode({
-        'street': result.street,
+        'streets': result.streets,
         'city': result.city,
         'cachedAt': DateTime.now().millisecondsSinceEpoch,
       }),
@@ -66,14 +66,22 @@ class PostalCodeService {
       if (response.statusCode != 200) return null;
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final street = (data['Artéria'] as String? ?? '').trim();
+
+      final parts = (data['partes'] as List<dynamic>? ?? []);
+      final streets = parts
+          .map((p) =>
+              ((p as Map<String, dynamic>)['Artéria'] as String? ?? '').trim())
+          .where((s) => s.isNotEmpty)
+          .toSet()
+          .toList();
+
       final city = ((data['Localidade'] as String?)?.trim().isNotEmpty == true
               ? data['Localidade'] as String
               : data['Concelho'] as String? ?? '')
           .trim();
 
       if (city.isEmpty) return null;
-      return PostalCodeResult(street: street, city: city);
+      return PostalCodeResult(streets: streets, city: city);
     } catch (_) {
       return null;
     }

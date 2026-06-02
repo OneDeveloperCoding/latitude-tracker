@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../demo/demo_mode.dart';
@@ -40,6 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      // Notify the OS autofill service that sign-in succeeded so it can
+      // offer to save these credentials.
+      TextInput.finishAutofillContext();
     } on FirebaseAuthException catch (e) {
       setState(() => _errorMessage = _messageFor(e.code));
     } finally {
@@ -68,7 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(32),
-            child: Form(
+            child: AutofillGroup(
+              child: Form(
               key: _formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -86,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
                     decoration: InputDecoration(
                       labelText: s.email,
                       prefixIcon: const Icon(Icons.email_outlined),
@@ -101,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
                     textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.password],
                     onFieldSubmitted: (_) => _signIn(),
                     decoration: InputDecoration(
                       labelText: s.password,
@@ -149,6 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),

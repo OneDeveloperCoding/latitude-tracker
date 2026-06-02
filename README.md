@@ -16,7 +16,7 @@ Private Android app for tracking sales, buyers, shipments, and payments for a ha
 Requires `direnv` — `FLUTTER_ROOT`, `ANDROID_HOME`, and `PATH` are activated automatically on `cd` via `.envrc`.
 
 ```bash
-cd ~/deving/latitude-tracker
+cd ~/deving/projects/latitude-tracker
 flutter pub get
 flutter run
 ```
@@ -51,6 +51,32 @@ Remote: `git@github-latitude:OneDeveloperCoding/latitude-tracker.git`
 SSH key: `~/.ssh/id_ed25519_latitude` (mapped via `~/.ssh/config`)
 Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 
+### Branching
+
+- `main` is always release-ready — only moves forward via feature/fix branch merges
+- Branch naming: `feat/<short-description>` or `fix/<short-description>` (e.g. `feat/firebase-analytics`, `fix/nif-badge-crash`)
+- Tag `main` when the accumulated changes are worth a release (see [Releases](#releases))
+
+### Commit message convention
+
+All commits follow [Conventional Commits](https://www.conventionalcommits.org):
+
+```
+<type>: <short description>
+```
+
+| Type | When to use |
+|---|---|
+| `feat` | new feature or user-visible behaviour |
+| `fix` | bug fix |
+| `perf` | performance improvement |
+| `refactor` | code restructure with no behaviour change |
+| `docs` | documentation or changelog only |
+| `chore` | tooling, dependencies, config |
+| `ci` | CI/CD workflow changes |
+
+Examples: `feat: add heat map view`, `fix: nif badge crash on empty buyer`, `docs: update CHANGELOG for v1.1.0`
+
 ## Architecture notes
 
 - Feature-based folder structure under `lib/features/`
@@ -67,11 +93,11 @@ Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 | `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
 | `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping + rate-limited Nominatim geocoding; `_MapView` is a pure rendering widget |
 | `features/sales/services/photo_service.dart` | All Firebase Storage operations; swap storage backend here only |
-| `features/sales/services/sale_urgency.dart` | `SaleUrgency.levelOf()` / `reasonsFor()` / `daysUntilScheduled()` — single authoritative urgency source used by sales list, shopping list, and sale filter |
+| `features/sales/services/sale_urgency.dart` | `extension SaleUrgency on Sale` — `urgencyLevel()` / `urgencyReasons()` / `daysUntilScheduled()` — single authoritative urgency source used by sales list, shopping list, and sale filter |
 | `features/sales/services/sale_grouper.dart` | `SaleGrouper.byWeek(sales)` — timeline grouping logic extracted from the sales list; pure function, testable in isolation |
 | `core/store/sales_store.dart` + `buyers_store.dart` | Singleton shared streams — initialized once in `MainNav`, all screens subscribe via `ValueListenableBuilder<StoreState<T>>` instead of opening their own Firestore listeners |
 | `core/store/store_state.dart` | `StoreState<T>` sealed class (`StoreLoading` / `StoreLoaded` / `StoreError`) — replaces null-as-loading convention |
-| `core/services/postal_code_service.dart` | `PostalCodeService.lookup(postalCode)` — GeoAPI.pt client with 180-day `shared_preferences` cache; returns `PostalCodeResult(street, city)` for PT postal codes |
+| `core/services/postal_code_service.dart` | `PostalCodeService.lookup(postalCode)` — GeoAPI.pt client with 180-day `shared_preferences` cache; returns `PostalCodeResult(streets: List<String>, city)`; single match auto-fills, multiple matches show a picker sheet |
 | `features/buyers/widgets/address_form_fields.dart` | `AddressFormFields` — reusable address form widget used by both buyer creation and address editing; handles postal code lookup, city auto-fill, and all structured address fields |
 
 ### Language
@@ -108,7 +134,7 @@ dart run flutter_launcher_icons
 
 ### Sale card progress path
 
-Each sale card in the list shows a three-node path: **Assembly → Payment → Shipment**. Nodes are icon + colour per state; connectors turn green as steps complete. Long-press the path bar to open a legend. The path is implemented in `_SaleProgressPath` / `_PathNode` inside `sales_list_screen.dart` — no external widget file needed at this scale.
+Each sale card in the list shows a three-node path: **Assembly → Payment → Shipment**. Nodes are icon + colour per state; connectors turn green as steps complete. Tap the **ℹ** button in the sales list AppBar to open a legend explaining all icons and colours. The path is implemented in `_SaleProgressPath` / `_PathNode` inside `sales_list_screen.dart` — no external widget file needed at this scale.
 
 Urgency signals on each card:
 - **Left accent bar** — red (overdue + blocker) or amber (this week + blocker); drawn via `BoxDecoration(border: Border(left: ...))` to avoid layout issues inside `ListView`
@@ -123,6 +149,23 @@ Urgency signals on each card:
 | `atSubmissionDone` | `bool` | Omitted from Firestore when `false`; existing documents deserialise correctly via `?? false` |
 | `notes` | `String?` | Omitted from Firestore when null |
 | `scheduledDate` | `DateTime?` | Used for timeline grouping and urgency thresholds |
+
+### Tests
+
+Unit tests live in `test/` mirroring the `lib/` feature structure. Run with:
+
+```bash
+flutter test --no-pub
+```
+
+Tests are also run automatically in CI on every tag push — the APK build is blocked if any test fails.
+
+| File | Coverage |
+|------|----------|
+| `test/features/sales/sale_urgency_test.dart` | `SaleUrgency` — urgency level week boundaries, blocker reasons, days-until-scheduled |
+| `test/features/sales/sale_filter_test.dart` | All 9 `SaleFilter` variants including date-sensitive overdue boundary |
+| `test/features/sales/sale_model_test.dart` | `Sale.deriveAssemblyStatus` — component auto-ready logic |
+| `test/features/buyers/buyer_stats_test.dart` | `BuyerStats.compute` — totals, average order value, last purchase |
 
 ### Screens added since initial build
 

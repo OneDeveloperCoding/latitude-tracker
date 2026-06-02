@@ -188,6 +188,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     _viewMenuItem(_ViewMode.map, Icons.map, s.viewMap),
                   ],
                 ),
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  tooltip: s.legendTitle,
+                  onPressed: () => _showPathLegend(context, s),
+                ),
               ],
             ),
       floatingActionButton: FloatingActionButton(
@@ -588,7 +593,6 @@ class _SaleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
     final reasons = sale.urgencyReasons();
     final accentColor = reasons.isEmpty
@@ -671,16 +675,13 @@ class _SaleCard extends StatelessWidget {
                     _ScheduledDateLabel(sale: sale),
                 ],
               ),
-              GestureDetector(
-                onTap: () => _showPathLegend(context, s),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    const Divider(height: 1),
-                    const SizedBox(height: 8),
-                    _SaleProgressPath(sale: sale),
-                  ],
-                ),
+              Column(
+                children: [
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  _SaleProgressPath(sale: sale),
+                ],
               ),
             ],
           ),
