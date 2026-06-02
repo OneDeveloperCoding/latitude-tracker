@@ -90,6 +90,9 @@ class AppStrings {
   final String priceHighToLow;
   final String priceLowToHigh;
   final String noShippedSalesWithPostalCode;
+  final String clearAllFilters;
+  final String year;
+  final String buyer;
 
   // ── Progress path / legend ───────────────────────────────────────────────
   final String legendTitle;
@@ -192,8 +195,6 @@ class AppStrings {
   final String nifAtSection;
 
   // ── Sales list ────────────────────────────────────────────────────────────
-  final String viewList;
-  final String viewTimeline;
   final String viewMap;
   final String locatingPostalCodes;
   final String timelineOverdue;
@@ -382,6 +383,10 @@ class AppStrings {
     required this.priceHighToLow,
     required this.priceLowToHigh,
     required this.noShippedSalesWithPostalCode,
+    required this.clearAllFilters,
+    required this.year,
+    required this.buyer,
+
     required this.legendTitle,
     required this.nifSheetTitle,
     required this.nifSheetBody,
@@ -472,8 +477,6 @@ class AppStrings {
     required this.atFiledWithAt,
     required this.atFiledWithAtBody,
     required this.nifAtSection,
-    required this.viewList,
-    required this.viewTimeline,
     required this.viewMap,
     required this.locatingPostalCodes,
     required this.timelineOverdue,
@@ -912,13 +915,16 @@ class AppStrings {
     searchSales: 'Search buyer or item...',
     noSalesFound: 'No sales found.',
     filterSort: 'Filter & sort',
-    moreFilters: 'More filters',
+    moreFilters: 'Filters',
     sortBy: 'Sort by',
     newestFirst: 'Newest first',
     oldestFirst: 'Oldest first',
     priceHighToLow: 'Price: high to low',
     priceLowToHigh: 'Price: low to high',
     noShippedSalesWithPostalCode: 'No shipped sales with postal codes.',
+    clearAllFilters: 'Clear all',
+    year: 'Year',
+    buyer: 'Buyer',
     legendTitle: 'Sale progress',
     nifSheetTitle: 'NIF receipt required',
     nifSheetBody:
@@ -1010,8 +1016,6 @@ class AppStrings {
     atFiledWithAt: 'Filed with AT',
     atFiledWithAtBody: 'This receipt has been filed with AT.',
     nifAtSection: 'NIF / AT',
-    viewList: 'List',
-    viewTimeline: 'Timeline',
     viewMap: 'Map',
     locatingPostalCodes: 'Locating postal codes...',
     timelineOverdue: 'Overdue',
@@ -1201,13 +1205,16 @@ class AppStrings {
     searchSales: 'Pesquisar comprador ou artigo...',
     noSalesFound: 'Sem vendas encontradas.',
     filterSort: 'Filtrar e ordenar',
-    moreFilters: 'Mais filtros',
+    moreFilters: 'Filtros',
     sortBy: 'Ordenar por',
     newestFirst: 'Mais recentes',
     oldestFirst: 'Mais antigas',
     priceHighToLow: 'Preço: decrescente',
     priceLowToHigh: 'Preço: crescente',
     noShippedSalesWithPostalCode: 'Sem vendas enviadas com código postal.',
+    clearAllFilters: 'Limpar tudo',
+    year: 'Ano',
+    buyer: 'Comprador',
     legendTitle: 'Progresso da venda',
     nifSheetTitle: 'Recibo NIF necessário',
     nifSheetBody:
@@ -1299,8 +1306,6 @@ class AppStrings {
     atFiledWithAt: 'Submetido na AT',
     atFiledWithAtBody: 'Este recibo foi submetido na AT.',
     nifAtSection: 'NIF / AT',
-    viewList: 'Lista',
-    viewTimeline: 'Cronologia',
     viewMap: 'Mapa',
     locatingPostalCodes: 'A localizar códigos postais...',
     timelineOverdue: 'Em atraso',

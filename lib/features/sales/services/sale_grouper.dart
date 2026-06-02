@@ -11,6 +11,24 @@ class SaleGrouper {
 
   static const _fixedOrder = ['Overdue', 'This week', 'Next week', 'Later'];
 
+  /// Groups by [Sale.createdAt] month — used in historical (year-scoped) mode
+  /// where scheduled-date buckets would be misleading.
+  static Map<String, List<Sale>> byCreatedMonth(List<Sale> sales) {
+    final groups = <String, List<Sale>>{};
+    for (final sale in sales) {
+      final key = DateFormat('MMMM yyyy').format(sale.createdAt);
+      groups.putIfAbsent(key, () => []).add(sale);
+    }
+    final keys = groups.keys.toList()
+      ..sort((a, b) {
+        // Parse back to DateTime for a reliable sort (newest first).
+        final da = DateFormat('MMMM yyyy').parse(a);
+        final db = DateFormat('MMMM yyyy').parse(b);
+        return db.compareTo(da);
+      });
+    return {for (final k in keys) k: groups[k]!};
+  }
+
   static Map<String, List<Sale>> byWeek(List<Sale> sales) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

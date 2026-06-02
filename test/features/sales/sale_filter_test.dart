@@ -190,4 +190,128 @@ void main() {
       });
     });
   });
+
+  group('testSaleFilters', () {
+    test('empty filter set passes all sales', () {
+      expect(testSaleFilters(makeSale(), {}), isTrue);
+    });
+
+    test('single filter matches when test passes', () {
+      expect(
+        testSaleFilters(
+          makeSale(payment: PaymentStatus.unpaid),
+          {SaleFilter.unpaid},
+        ),
+        isTrue,
+      );
+    });
+
+    test('single filter rejects when test fails', () {
+      expect(
+        testSaleFilters(
+          makeSale(payment: PaymentStatus.paid),
+          {SaleFilter.unpaid},
+        ),
+        isFalse,
+      );
+    });
+
+    test('AND logic — both filters must pass', () {
+      final sale = makeSale(
+        payment: PaymentStatus.unpaid,
+        requiresNif: true,
+      );
+      expect(
+        testSaleFilters(sale, {SaleFilter.unpaid, SaleFilter.nifRequired}),
+        isTrue,
+      );
+    });
+
+    test('AND logic — fails when only one filter passes', () {
+      final sale = makeSale(
+        payment: PaymentStatus.paid,
+        requiresNif: true,
+      );
+      expect(
+        testSaleFilters(sale, {SaleFilter.unpaid, SaleFilter.nifRequired}),
+        isFalse,
+      );
+    });
+
+    group('dateFrom', () {
+      test('passes when sale is on dateFrom', () {
+        final sale = makeSale(createdAt: DateTime(2026, 6, 1));
+        expect(
+          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6, 1)),
+          isTrue,
+        );
+      });
+
+      test('passes when sale is after dateFrom', () {
+        final sale = makeSale(createdAt: DateTime(2026, 6, 10));
+        expect(
+          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6, 1)),
+          isTrue,
+        );
+      });
+
+      test('fails when sale is before dateFrom', () {
+        final sale = makeSale(createdAt: DateTime(2026, 5, 31));
+        expect(
+          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6, 1)),
+          isFalse,
+        );
+      });
+    });
+
+    group('dateTo', () {
+      test('passes when sale is on dateTo', () {
+        final sale = makeSale(createdAt: DateTime(2026, 6, 30));
+        expect(
+          testSaleFilters(sale, {}, dateTo: DateTime(2026, 6, 30)),
+          isTrue,
+        );
+      });
+
+      test('fails when sale is after dateTo', () {
+        final sale = makeSale(createdAt: DateTime(2026, 7, 1));
+        expect(
+          testSaleFilters(sale, {}, dateTo: DateTime(2026, 6, 30)),
+          isFalse,
+        );
+      });
+    });
+
+    test('date range + filter — AND of both constraints', () {
+      final sale = makeSale(
+        payment: PaymentStatus.unpaid,
+        createdAt: DateTime(2026, 6, 15),
+      );
+      expect(
+        testSaleFilters(
+          sale,
+          {SaleFilter.unpaid},
+          dateFrom: DateTime(2026, 6, 1),
+          dateTo: DateTime(2026, 6, 30),
+        ),
+        isTrue,
+      );
+    });
+
+    test('date range + filter — fails when sale is outside range', () {
+      final sale = makeSale(
+        payment: PaymentStatus.unpaid,
+        createdAt: DateTime(2026, 7, 1),
+      );
+      expect(
+        testSaleFilters(
+          sale,
+          {SaleFilter.unpaid},
+          dateFrom: DateTime(2026, 6, 1),
+          dateTo: DateTime(2026, 6, 30),
+        ),
+        isFalse,
+      );
+    });
+  });
 }
