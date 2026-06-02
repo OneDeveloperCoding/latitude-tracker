@@ -74,6 +74,10 @@ class AppStrings {
   final String assemblyNotReady;
   final String nifRequired;
   final String overdue;
+  final String dashboardTrends;
+  final String dashboardGroupMoney;
+  final String dashboardGroupLogistics;
+  final String dashboardGroupCompliance;
 
   // ── Sales list ───────────────────────────────────────────────────────────
   final String searchSales;
@@ -364,6 +368,10 @@ class AppStrings {
     required this.assemblyNotReady,
     required this.nifRequired,
     required this.overdue,
+    required this.dashboardTrends,
+    required this.dashboardGroupMoney,
+    required this.dashboardGroupLogistics,
+    required this.dashboardGroupCompliance,
     required this.searchSales,
     required this.noSalesFound,
     required this.filterSort,
@@ -897,6 +905,10 @@ class AppStrings {
     assemblyNotReady: 'Needs materials',
     nifRequired: 'NIF required',
     overdue: 'Overdue',
+    dashboardTrends: 'Trends',
+    dashboardGroupMoney: 'Money',
+    dashboardGroupLogistics: 'Logistics',
+    dashboardGroupCompliance: 'Compliance',
     searchSales: 'Search buyer or item...',
     noSalesFound: 'No sales found.',
     filterSort: 'Filter & sort',
@@ -1182,6 +1194,10 @@ class AppStrings {
     assemblyNotReady: 'Faltam materiais',
     nifRequired: 'NIF em falta',
     overdue: 'Em atraso',
+    dashboardTrends: 'Tendências',
+    dashboardGroupMoney: 'Finanças',
+    dashboardGroupLogistics: 'Logística',
+    dashboardGroupCompliance: 'Documentação',
     searchSales: 'Pesquisar comprador ou artigo...',
     noSalesFound: 'Sem vendas encontradas.',
     filterSort: 'Filtrar e ordenar',
