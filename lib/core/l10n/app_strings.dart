@@ -550,8 +550,10 @@ class AppStrings {
         _orderSingular = orderSingular,
         _orderPlural = orderPlural;
 
-  static AppStrings of(BuildContext context) =>
-      LocaleSettings.locale.value.languageCode == 'pt' ? pt : en;
+  static AppStrings of(BuildContext context) {
+    final code = AppLocaleScope.of(context).languageCode;
+    return code == 'pt' ? pt : en;
+  }
 
   // ── Plural helpers ────────────────────────────────────────────────────────
 
