@@ -596,7 +596,7 @@ class AppStrings {
           SaleFilter.pendingShipment => 'Envio pendente',
           SaleFilter.shipped => 'Enviado',
           SaleFilter.pickup => 'Levantamento',
-          SaleFilter.assemblyNotReady => 'Montagem não pronta',
+          SaleFilter.assemblyNotReady => 'Faltam materiais',
           SaleFilter.overdue => 'Em atraso',
         }
       : switch (f) {
@@ -607,7 +607,7 @@ class AppStrings {
           SaleFilter.pendingShipment => 'Pending shipment',
           SaleFilter.shipped => 'Shipped',
           SaleFilter.pickup => 'Pickup',
-          SaleFilter.assemblyNotReady => 'Assembly not ready',
+          SaleFilter.assemblyNotReady => 'Needs materials',
           SaleFilter.overdue => 'Overdue',
         };
 
@@ -866,7 +866,7 @@ class AppStrings {
     tooltipWeek: 'Week',
     unpaid: 'Unpaid',
     pendingShipment: 'Pending shipment',
-    assemblyNotReady: 'Assembly not ready',
+    assemblyNotReady: 'Needs materials',
     nifRequired: 'NIF required',
     overdue: 'Overdue',
     searchSales: 'Search buyer or item...',
@@ -1127,7 +1127,7 @@ class AppStrings {
     tooltipWeek: 'Semana',
     unpaid: 'Por pagar',
     pendingShipment: 'Envio pendente',
-    assemblyNotReady: 'Montagem não pronta',
+    assemblyNotReady: 'Faltam materiais',
     nifRequired: 'NIF em falta',
     overdue: 'Em atraso',
     searchSales: 'Pesquisar comprador ou artigo...',
