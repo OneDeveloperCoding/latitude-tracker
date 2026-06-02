@@ -11,6 +11,7 @@ import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../services/photo_service.dart';
 import '../widgets/buyer_picker_screen.dart';
+import '../widgets/category_picker.dart';
 import '../widgets/photo_grid.dart';
 
 class NewSaleScreen extends StatefulWidget {
@@ -40,6 +41,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   late final TextEditingController _postalCodeController;
   final TextEditingController _newComponentController = TextEditingController();
 
+  late String? _category;
   late AssemblyStatus _assemblyStatus;
   late PaymentMethod _paymentMethod;
   late PaymentStatus _paymentStatus;
@@ -72,6 +74,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         text: dup ? '' : (sale?.shipment.trackingCode ?? ''));
     _postalCodeController =
         TextEditingController(text: sale?.shipment.postalCode ?? '');
+    _category = sale?.category;
     _assemblyStatus = dup
         ? AssemblyStatus.notStarted
         : (sale?.assemblyStatus ?? AssemblyStatus.notStarted);
@@ -214,6 +217,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       );
       return;
     }
+    if (_category == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.categoryRequired)),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final shipment = SaleShipment(
@@ -239,6 +248,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (_isEditing) {
         final updated = widget.sale!.copyWith(
           itemDescription: _itemDescController.text.trim(),
+          category: _category,
           price: double.parse(
               _priceController.text.trim().replaceAll(',', '.')),
           assemblyStatus: _assemblyStatus,
@@ -258,6 +268,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           buyerId: _selectedBuyer!.id,
           buyerName: _selectedBuyer!.name,
           itemDescription: _itemDescController.text.trim(),
+          category: _category!,
           photoUrls: _photoUrls,
           price: double.parse(
               _priceController.text.trim().replaceAll(',', '.')),
@@ -363,6 +374,30 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 validator: (v) => (v == null || v.trim().isEmpty)
                     ? s.descriptionRequired
                     : null,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () async {
+                  final picked = await showCategoryPicker(
+                    context,
+                    current: _category,
+                  );
+                  if (picked != null) setState(() => _category = picked);
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: s.categoryLabel,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.arrow_forward_ios, size: 16),
+                  ),
+                  child: Text(
+                    _category ?? '',
+                    style: _category == null
+                        ? TextStyle(color: Theme.of(context).hintColor)
+                        : null,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AssemblyStatus>(

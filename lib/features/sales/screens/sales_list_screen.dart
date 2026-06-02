@@ -29,6 +29,7 @@ enum _SortOrder { newestFirst, oldestFirst, priceHigh, priceLow }
 
 class _SalesListScreenState extends State<SalesListScreen> {
   Set<SaleFilter> _activeFilters = {};
+  Set<String> _categoryFilters = {};
   int? _selectedYear;
   int? _selectedMonth;
   Buyer? _buyerFilter;
@@ -48,6 +49,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
   // Sort is excluded — it has its own badge on the sort button.
   int get _activeFilterCount =>
       _activeFilters.length +
+      _categoryFilters.length +
       (_selectedYear != null ? 1 : 0) +
       (_buyerFilter != null ? 1 : 0);
 
@@ -139,6 +141,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
     if (_buyerFilter != null) {
       result =
           result.where((s) => s.buyerId == _buyerFilter!.id).toList();
+    }
+
+    if (_categoryFilters.isNotEmpty) {
+      result =
+          result.where((s) => _categoryFilters.contains(s.category)).toList();
     }
 
     if (_activeFilters.isNotEmpty) {
@@ -327,6 +334,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
           void clearAll() {
             _activeFilters = {};
+            _categoryFilters = {};
             _selectedYear = null;
             _selectedMonth = null;
             _buyerFilter = null;
@@ -337,6 +345,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
           }
 
           final hasAnyActive = _activeFilters.isNotEmpty ||
+              _categoryFilters.isNotEmpty ||
               _selectedYear != null ||
               _buyerFilter != null;
 
@@ -455,6 +464,41 @@ class _SalesListScreenState extends State<SalesListScreen> {
                         ),
                       ],
                     ],
+                    // ── Category ───────────────────────────────────────────
+                    const Divider(height: 24),
+                    _SheetSectionLabel(s.categoryFilterHeader.toUpperCase()),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Builder(
+                        builder: (_) {
+                          final allCats = (SalesStore.current ?? [])
+                              .map((s) => s.category)
+                              .toSet()
+                              .toList()
+                            ..sort();
+                          return Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: allCats
+                                .map((cat) => FilterChip(
+                                      label: Text(cat),
+                                      selected:
+                                          _categoryFilters.contains(cat),
+                                      onSelected: (on) {
+                                        _categoryFilters = on
+                                            ? {..._categoryFilters, cat}
+                                            : ({..._categoryFilters}
+                                              ..remove(cat));
+                                        _rebuildCache();
+                                        setState(() {});
+                                        setSheetState(() {});
+                                      },
+                                    ))
+                                .toList(),
+                          );
+                        },
+                      ),
+                    ),
                     // ── Buyer ──────────────────────────────────────────────
                     const Divider(height: 24),
                     _SheetSectionLabel(s.buyer.toUpperCase()),
@@ -546,6 +590,29 @@ class _SheetSectionLabel extends StatelessWidget {
     );
   }
 }
+class _CategoryChip extends StatelessWidget {
+  final String category;
+  const _CategoryChip({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        category,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSecondaryContainer,
+            ),
+      ),
+    );
+  }
+}
+
 class _TimelineView extends StatelessWidget {
   final Map<String, List<Sale>> groups;
 
@@ -657,6 +724,12 @@ class _SaleCard extends StatelessWidget {
                     ),
                   ),
                   _AttentionBadges(sale: sale, reasons: reasons),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  _CategoryChip(category: sale.category),
                 ],
               ),
               Row(

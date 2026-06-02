@@ -199,6 +199,10 @@ class _SaleDetailBody extends StatelessWidget {
             text: sale.itemDescription,
           ),
           _InfoRow(
+            icon: Icons.label_outline,
+            text: sale.category,
+          ),
+          _InfoRow(
             icon: Icons.euro,
             text: '€${sale.price.toStringAsFixed(2)}',
           ),

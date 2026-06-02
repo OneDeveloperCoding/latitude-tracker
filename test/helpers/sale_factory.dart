@@ -9,12 +9,14 @@ Sale makeSale({
   double price = 50.0,
   bool requiresNif = false,
   DateTime? createdAt,
+  String category = 'necklace',
 }) =>
     Sale(
       id: 'test',
       buyerId: 'b1',
       buyerName: 'Test Buyer',
       itemDescription: 'Test Item',
+      category: category,
       price: price,
       assemblyStatus: assembly,
       components: const [],

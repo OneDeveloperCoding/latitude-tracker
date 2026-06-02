@@ -118,6 +118,12 @@ class AppStrings {
   final String markAsPending;
   final String noNifOnFile;
 
+  // ── Category picker ──────────────────────────────────────────────────────
+  final String categoryLabel;
+  final String categoryRequired;
+  final String searchOrAddCategory;
+  final String categoryFilterHeader;
+
   // ── Sale form ────────────────────────────────────────────────────────────
   final String newSale;
   final String editSale;
@@ -239,6 +245,12 @@ class AppStrings {
   final String allPaid;
   final String totalOutstanding;
   final String errorLoadingSales;
+
+  // ── Buyer tags & notes ───────────────────────────────────────────────────
+  final String tagsLabel;
+  final String addTagHint;
+  final String buyerTagsFilterHeader;
+  final String buyerNotesHint;
 
   // ── Buyer form ───────────────────────────────────────────────────────────
   final String newBuyer;
@@ -407,6 +419,14 @@ class AppStrings {
     required this.markAsFiled,
     required this.markAsPending,
     required this.noNifOnFile,
+    required this.categoryLabel,
+    required this.categoryRequired,
+    required this.searchOrAddCategory,
+    required this.categoryFilterHeader,
+    required this.tagsLabel,
+    required this.addTagHint,
+    required this.buyerTagsFilterHeader,
+    required this.buyerNotesHint,
     required this.newSale,
     required this.editSale,
     required this.duplicateSale,
@@ -845,6 +865,9 @@ class AppStrings {
       ? '$n código${n == 1 ? '' : 's'} postal${n == 1 ? '' : 'is'}'
       : '$n postal code${n == 1 ? '' : 's'}';
 
+  String addCategoryLabel(String query) =>
+      _pt ? 'Adicionar "$query"' : 'Add "$query"';
+
   // ─────────────────────────────────────────────────────────────────────────
 
   static const en = AppStrings._(
@@ -948,6 +971,14 @@ class AppStrings {
     markAsFiled: 'Mark as filed',
     markAsPending: 'Mark as pending',
     noNifOnFile: 'No NIF on file',
+    categoryLabel: 'Category *',
+    categoryRequired: 'Category is required',
+    searchOrAddCategory: 'Search or add a category...',
+    categoryFilterHeader: 'Category',
+    tagsLabel: 'Tags',
+    addTagHint: 'Add a tag...',
+    buyerTagsFilterHeader: 'Tags',
+    buyerNotesHint: 'Notes about this buyer...',
     newSale: 'New Sale',
     editSale: 'Edit Sale',
     duplicateSale: 'Duplicate Sale',
@@ -1240,6 +1271,14 @@ class AppStrings {
     markAsFiled: 'Marcar como submetido',
     markAsPending: 'Marcar como pendente',
     noNifOnFile: 'Sem NIF registado',
+    categoryLabel: 'Categoria *',
+    categoryRequired: 'Categoria é obrigatória',
+    searchOrAddCategory: 'Pesquisar ou adicionar categoria...',
+    categoryFilterHeader: 'Categoria',
+    tagsLabel: 'Etiquetas',
+    addTagHint: 'Adicionar etiqueta...',
+    buyerTagsFilterHeader: 'Etiquetas',
+    buyerNotesHint: 'Notas sobre este comprador...',
     newSale: 'Nova Venda',
     editSale: 'Editar Venda',
     duplicateSale: 'Duplicar Venda',

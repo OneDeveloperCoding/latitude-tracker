@@ -123,6 +123,25 @@ class _BuyerDetailBody extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: _InfoSection(buyer: buyer),
         ),
+        if (buyer.tags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: buyer.tags
+                  .map((tag) => Chip(
+                        label: Text(tag),
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                      ))
+                  .toList(),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: _BuyerNotesSection(buyer: buyer, buyerRepo: buyerRepo),
+        ),
         TabBar(
           tabs: [
             Tab(text: context.s.purchaseHistory),
@@ -593,6 +612,129 @@ class _InfoSection extends StatelessWidget {
                 buyer.phone == null &&
                 buyer.nif == null)
               Text(s.noContactDetails),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BuyerNotesSection extends StatefulWidget {
+  final Buyer buyer;
+  final BuyerRepository buyerRepo;
+
+  const _BuyerNotesSection({required this.buyer, required this.buyerRepo});
+
+  @override
+  State<_BuyerNotesSection> createState() => _BuyerNotesSectionState();
+}
+
+class _BuyerNotesSectionState extends State<_BuyerNotesSection> {
+  late final TextEditingController _controller;
+  bool _editing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        TextEditingController(text: widget.buyer.notes ?? '');
+  }
+
+  @override
+  void didUpdateWidget(_BuyerNotesSection old) {
+    super.didUpdateWidget(old);
+    if (!_editing && old.buyer.notes != widget.buyer.notes) {
+      _controller.text = widget.buyer.notes ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final text = _controller.text.trim();
+    await widget.buyerRepo
+        .updateBuyer(widget.buyer.copyWith(notes: text.isEmpty ? null : text));
+    if (mounted) setState(() => _editing = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+
+    if (!_editing && _controller.text.isEmpty) {
+      return TextButton.icon(
+        onPressed: () => setState(() => _editing = true),
+        icon: const Icon(Icons.add),
+        label: Text(s.addNotes),
+      );
+    }
+
+    if (_editing) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: s.buyerNotesHint,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () {
+                  _controller.text = widget.buyer.notes ?? '';
+                  setState(() => _editing = false);
+                },
+                child: Text(s.cancel),
+              ),
+              TextButton(
+                onPressed: _save,
+                child: Text(s.save),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return InkWell(
+      onTap: () => setState(() => _editing = true),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.notes,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _controller.text,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+            Icon(
+              Icons.edit_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ],
         ),
       ),

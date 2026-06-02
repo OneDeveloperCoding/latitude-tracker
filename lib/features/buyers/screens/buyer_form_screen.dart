@@ -24,7 +24,10 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   late final TextEditingController _instagramController;
   late final TextEditingController _phoneController;
   late final TextEditingController _nifController;
+  late final TextEditingController _notesController;
+  late final TextEditingController _tagInputController;
 
+  late List<String> _tags;
   bool _addAddress = false;
   bool _isLoading = false;
 
@@ -38,6 +41,9 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
         TextEditingController(text: widget.buyer?.instagramHandle);
     _phoneController = TextEditingController(text: widget.buyer?.phone);
     _nifController = TextEditingController(text: widget.buyer?.nif);
+    _notesController = TextEditingController(text: widget.buyer?.notes ?? '');
+    _tagInputController = TextEditingController();
+    _tags = List<String>.from(widget.buyer?.tags ?? []);
   }
 
   @override
@@ -46,7 +52,18 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
     _instagramController.dispose();
     _phoneController.dispose();
     _nifController.dispose();
+    _notesController.dispose();
+    _tagInputController.dispose();
     super.dispose();
+  }
+
+  void _addTag() {
+    final tag = _tagInputController.text.trim();
+    if (tag.isEmpty || _tags.contains(tag)) return;
+    setState(() {
+      _tags.add(tag);
+      _tagInputController.clear();
+    });
   }
 
   String? _nullIfEmpty(String value) =>
@@ -58,12 +75,15 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final notesValue = _nullIfEmpty(_notesController.text);
       if (_isEditing) {
         final updated = widget.buyer!.copyWith(
           name: _nameController.text.trim(),
           instagramHandle: _nullIfEmpty(_instagramController.text),
           phone: _nullIfEmpty(_phoneController.text),
           nif: _nullIfEmpty(_nifController.text),
+          tags: _tags,
+          notes: notesValue,
         );
         await _repository.updateBuyer(updated);
         if (mounted) Navigator.pop(context);
@@ -74,6 +94,8 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
           instagramHandle: _nullIfEmpty(_instagramController.text),
           phone: _nullIfEmpty(_phoneController.text),
           nif: _nullIfEmpty(_nifController.text),
+          tags: _tags,
+          notes: notesValue,
           createdAt: DateTime.now(),
         );
         await _repository.createBuyer(buyer);
@@ -164,6 +186,67 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                 if (v.trim().length != 9) return s.nifInvalid;
                 return null;
               },
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                s.tagsLabel,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ),
+            if (_tags.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _tags
+                      .map(
+                        (tag) => Chip(
+                          label: Text(tag),
+                          onDeleted: () =>
+                              setState(() => _tags.remove(tag)),
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _tagInputController,
+                    textCapitalization: TextCapitalization.none,
+                    decoration: InputDecoration(
+                      hintText: s.addTagHint,
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => _addTag(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: _addTag,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _notesController,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: s.buyerNotesHint,
+                border: const OutlineInputBorder(),
+              ),
             ),
             if (!_isEditing) ...[
               const SizedBox(height: 24),
