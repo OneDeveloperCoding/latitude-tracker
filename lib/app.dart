@@ -15,34 +15,37 @@ class LatitudeTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Locale>(
       valueListenable: LocaleSettings.locale,
-      builder: (context, locale, _) => MaterialApp(
-        title: 'Latitude Tracker',
-        theme: AppTheme.light(),
+      builder: (context, locale, _) => AppLocaleScope(
         locale: locale,
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('pt'), Locale('en')],
-        home: ValueListenableBuilder<bool>(
-          valueListenable: DemoMode.active,
-          builder: (context, demoActive, _) {
-            if (demoActive) return const MainNav();
-            return StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.authStateChanges(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                return snapshot.hasData
-                    ? const MainNav()
-                    : const LoginScreen();
-              },
-            );
-          },
+        child: MaterialApp(
+          title: 'Latitude Tracker',
+          theme: AppTheme.light(),
+          locale: locale,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('pt'), Locale('en')],
+          home: ValueListenableBuilder<bool>(
+            valueListenable: DemoMode.active,
+            builder: (context, demoActive, _) {
+              if (demoActive) return const MainNav();
+              return StreamBuilder<User?>(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return snapshot.hasData
+                      ? const MainNav()
+                      : const LoginScreen();
+                },
+              );
+            },
+          ),
         ),
       ),
     );

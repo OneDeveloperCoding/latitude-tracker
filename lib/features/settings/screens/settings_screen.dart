@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/l10n/app_strings.dart';
-import '../../../core/l10n/locale_settings.dart';
+import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
 import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
 import 'archive_import_screen.dart';
@@ -244,7 +244,7 @@ class _LanguageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final currentCode = LocaleSettings.locale.value.languageCode;
+    final currentCode = AppLocaleScope.of(context).languageCode;
 
     return ListTile(
       leading: const Icon(Icons.language),
