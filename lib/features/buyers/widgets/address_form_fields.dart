@@ -46,6 +46,8 @@ class AddressFormFieldsState extends State<AddressFormFields> {
 
   bool _isLookingUp = false;
   String? _lastLookedUp;
+  bool _cityAutoFilled = false;
+  bool _streetAutoFilled = false;
 
   bool get isFilled =>
       _postalCodeController.text.trim().isNotEmpty &&
@@ -106,9 +108,24 @@ class AddressFormFieldsState extends State<AddressFormFields> {
   void _onPostalCodeChanged() {
     if (_country != 'Portugal') return;
     final code = _postalCodeController.text.trim();
-    if (!_ptPostalCodeRegex.hasMatch(code)) return;
+    if (!_ptPostalCodeRegex.hasMatch(code)) {
+      _clearAutoFilledFields();
+      return;
+    }
     if (code == _lastLookedUp) return;
     _lookup(code);
+  }
+
+  void _clearAutoFilledFields() {
+    if (_cityAutoFilled) {
+      _cityController.clear();
+      _cityAutoFilled = false;
+    }
+    if (_streetAutoFilled) {
+      _streetController.clear();
+      _streetAutoFilled = false;
+    }
+    _lastLookedUp = null;
   }
 
   Future<void> _lookup(String postalCode) async {
@@ -121,14 +138,25 @@ class AddressFormFieldsState extends State<AddressFormFields> {
     final result = await PostalCodeService.lookup(postalCode);
     if (!mounted) return;
     setState(() => _isLookingUp = false);
-    // User may have changed country while the request was in-flight.
-    if (_country != 'Portugal' || result == null) return;
+    // Country changed while request was in-flight — ignore result silently.
+    if (_country != 'Portugal') return;
 
-    if (result.city.isNotEmpty) _cityController.text = result.city;
+    if (result == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.postalCodeNoResults)),
+      );
+      return;
+    }
+
+    if (result.city.isNotEmpty) {
+      _cityController.text = result.city;
+      _cityAutoFilled = true;
+    }
 
     if (result.streets.length == 1) {
       if (_streetController.text.trim().isEmpty) {
         _streetController.text = result.streets.first;
+        _streetAutoFilled = true;
       }
     } else if (result.streets.length > 1) {
       final chosen = await showModalBottomSheet<String>(
@@ -136,7 +164,10 @@ class AddressFormFieldsState extends State<AddressFormFields> {
         builder: (_) => _StreetPickerSheet(streets: result.streets),
       );
       if (!mounted) return;
-      if (chosen != null) _streetController.text = chosen;
+      if (chosen != null) {
+        _streetController.text = chosen;
+        _streetAutoFilled = true;
+      }
     }
   }
 

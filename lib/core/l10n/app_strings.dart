@@ -259,6 +259,7 @@ class AppStrings {
   final String addressCountry;
   final Map<String, String> countryDisplayNames;
   final String postalCodeInvalidFormat;
+  final String postalCodeNoResults;
   final String addressCity;
   final String addressCityRequired;
   final String selectStreet;
@@ -526,6 +527,7 @@ class AppStrings {
     required this.addressCountry,
     required this.countryDisplayNames,
     required this.postalCodeInvalidFormat,
+    required this.postalCodeNoResults,
     required this.addressCity,
     required this.addressCityRequired,
     required this.selectStreet,
@@ -1070,6 +1072,7 @@ class AppStrings {
       'Other': 'Other',
     },
     postalCodeInvalidFormat: 'Format: 0000-000',
+    postalCodeNoResults: 'No results found for this postal code',
     selectStreet: 'Select street',
     addressCity: 'Locality *',
     addressCityRequired: 'Locality is required',
@@ -1355,6 +1358,7 @@ class AppStrings {
       'Other': 'Outro',
     },
     postalCodeInvalidFormat: 'Formato: 0000-000',
+    postalCodeNoResults: 'Nenhum resultado para este código postal',
     selectStreet: 'Selecionar rua',
     addressCity: 'Localidade *',
     addressCityRequired: 'Localidade é obrigatória',
