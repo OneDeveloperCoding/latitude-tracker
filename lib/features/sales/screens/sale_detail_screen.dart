@@ -14,17 +14,30 @@ import '../repositories/sale_repository.dart';
 import '../widgets/photo_grid.dart';
 import 'new_sale_screen.dart';
 
-class SaleDetailScreen extends StatelessWidget {
+class SaleDetailScreen extends StatefulWidget {
   final String saleId;
 
   const SaleDetailScreen({super.key, required this.saleId});
 
   @override
-  Widget build(BuildContext context) {
-    final repository = SaleRepository();
+  State<SaleDetailScreen> createState() => _SaleDetailScreenState();
+}
 
+class _SaleDetailScreenState extends State<SaleDetailScreen> {
+  late final SaleRepository _repository;
+  late final Stream<Sale?> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = SaleRepository();
+    _stream = _repository.watchSale(widget.saleId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return StreamBuilder<Sale?>(
-      stream: repository.watchSale(saleId),
+      stream: _stream,
       builder: (context, snapshot) {
         final sale = snapshot.data;
 
@@ -57,14 +70,14 @@ class SaleDetailScreen extends StatelessWidget {
                   icon: const Icon(Icons.delete_outline),
                   tooltip: context.s.deleteSaleTooltip,
                   onPressed: () =>
-                      _confirmDelete(context, sale, repository),
+                      _confirmDelete(context, sale, _repository),
                 ),
               ],
             ],
           ),
           body: sale == null
               ? const Center(child: CircularProgressIndicator())
-              : _SaleDetailBody(sale: sale, repository: repository),
+              : _SaleDetailBody(sale: sale, repository: _repository),
         );
       },
     );
