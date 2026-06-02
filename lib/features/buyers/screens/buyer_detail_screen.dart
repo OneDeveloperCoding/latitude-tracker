@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -228,6 +229,7 @@ class _AddressesTab extends StatelessWidget {
             ),
             child: _AddressesList(
               buyerId: buyer.id,
+              buyerName: buyer.name,
               buyerRepo: buyerRepo,
               onEdit: (a) => Navigator.push(
                 context,
@@ -464,12 +466,14 @@ class _SaleTile extends StatelessWidget {
 
 class _AddressesList extends StatefulWidget {
   final String buyerId;
+  final String buyerName;
   final BuyerRepository buyerRepo;
   final void Function(BuyerAddress) onEdit;
   final void Function(BuyerAddress) onDelete;
 
   const _AddressesList({
     required this.buyerId,
+    required this.buyerName,
     required this.buyerRepo,
     required this.onEdit,
     required this.onDelete,
@@ -493,6 +497,16 @@ class _AddressesListState extends State<_AddressesList> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.buyerId != widget.buyerId) {
       _stream = widget.buyerRepo.watchAddresses(widget.buyerId);
+    }
+  }
+
+  Future<void> _copyAddress(BuildContext context, BuyerAddress address) async {
+    final text = address.formattedAddress(widget.buyerName);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.addressCopied)),
+      );
     }
   }
 
@@ -522,6 +536,7 @@ class _AddressesListState extends State<_AddressesList> {
                     address: a,
                     onEdit: () => widget.onEdit(a),
                     onDelete: () => widget.onDelete(a),
+                    onCopy: () => _copyAddress(context, a),
                   ))
               .toList(),
         );
@@ -612,11 +627,13 @@ class _AddressTile extends StatelessWidget {
   final BuyerAddress address;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onCopy;
 
   const _AddressTile({
     required this.address,
     required this.onEdit,
     required this.onDelete,
+    required this.onCopy,
   });
 
   @override
@@ -645,10 +662,12 @@ class _AddressTile extends StatelessWidget {
         isThreeLine: true,
         trailing: PopupMenuButton(
           itemBuilder: (_) => [
+            PopupMenuItem(value: 'copy', child: Text(s.copy)),
             PopupMenuItem(value: 'edit', child: Text(s.edit)),
             PopupMenuItem(value: 'delete', child: Text(s.delete)),
           ],
           onSelected: (value) {
+            if (value == 'copy') onCopy();
             if (value == 'edit') onEdit();
             if (value == 'delete') onDelete();
           },

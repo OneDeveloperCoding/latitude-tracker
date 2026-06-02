@@ -53,6 +53,18 @@ class BuyerAddress {
         'isDefault': isDefault,
       };
 
+  String formattedAddress(String buyerName) {
+    final streetLine = [street, houseNumber, if (fraction?.isNotEmpty == true) fraction!]
+        .join(', ');
+    final postalLine = '$postalCode $city';
+    return [
+      buyerName,
+      streetLine,
+      postalLine,
+      if (country.toLowerCase() != 'portugal') country,
+    ].join('\n');
+  }
+
   BuyerAddress copyWith({
     String? label,
     String? street,
