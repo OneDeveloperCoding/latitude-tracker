@@ -196,6 +196,8 @@ class AppStrings {
 
   // ── Sales list ────────────────────────────────────────────────────────────
   final String viewMap;
+  final String salesHeatMapTitle;
+  final String allYears;
   final String locatingPostalCodes;
   final String timelineOverdue;
   final String timelineThisWeek;
@@ -478,6 +480,8 @@ class AppStrings {
     required this.atFiledWithAtBody,
     required this.nifAtSection,
     required this.viewMap,
+    required this.salesHeatMapTitle,
+    required this.allYears,
     required this.locatingPostalCodes,
     required this.timelineOverdue,
     required this.timelineThisWeek,
@@ -1017,6 +1021,8 @@ class AppStrings {
     atFiledWithAtBody: 'This receipt has been filed with AT.',
     nifAtSection: 'NIF / AT',
     viewMap: 'Map',
+    salesHeatMapTitle: 'Sales Heat Map',
+    allYears: 'All',
     locatingPostalCodes: 'Locating postal codes...',
     timelineOverdue: 'Overdue',
     timelineThisWeek: 'This week',
@@ -1307,6 +1313,8 @@ class AppStrings {
     atFiledWithAtBody: 'Este recibo foi submetido na AT.',
     nifAtSection: 'NIF / AT',
     viewMap: 'Mapa',
+    salesHeatMapTitle: 'Mapa de Calor de Vendas',
+    allYears: 'Todos',
     locatingPostalCodes: 'A localizar códigos postais...',
     timelineOverdue: 'Em atraso',
     timelineThisWeek: 'Esta semana',

@@ -4,11 +4,14 @@ import '../../features/buyers/screens/buyers_list_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/demo/demo_mode.dart';
 import '../../features/demo/demo_tutorial_sheet.dart';
+import '../../features/heat_map/services/geocoding_service.dart';
+import '../../features/heat_map/services/heat_map_service.dart';
 import '../../features/sales/screens/sales_list_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../l10n/app_strings.dart';
 import '../store/buyers_store.dart';
 import '../store/sales_store.dart';
+import '../store/store_state.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -33,14 +36,29 @@ class _MainNavState extends State<MainNav> {
     SalesStore.init();
     BuyersStore.init();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
+    SalesStore.state.addListener(_onSalesStoreChanged);
   }
 
   @override
   void dispose() {
     DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
+    SalesStore.state.removeListener(_onSalesStoreChanged);
     SalesStore.dispose();
     BuyersStore.dispose();
     super.dispose();
+  }
+
+  // Geocode heat map prefixes in the background whenever the sales list
+  // changes. Already-cached prefixes return immediately from memory, so
+  // re-runs on incremental updates are cheap. Only genuinely new CP4 prefixes
+  // (new shipped sales) trigger a Nominatim request.
+  void _onSalesStoreChanged() {
+    final state = SalesStore.state.value;
+    if (state is! StoreLoaded<List>) return;
+    final sales = SalesStore.current;
+    if (sales == null || sales.isEmpty) return;
+    final prefixes = HeatMapService.postalCounts(sales).keys;
+    GeocodingService.warmUp(prefixes);
   }
 
   void _onPendingTutorial() {

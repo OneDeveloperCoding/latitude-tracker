@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../buyers/models/buyer.dart';
-import '../../heat_map/services/heat_map_service.dart';
+import '../../heat_map/screens/heat_map_screen.dart';
 import '../models/sale.dart';
 import '../models/sale_filter.dart';
 import '../services/sale_grouper.dart';
@@ -34,7 +32,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
   int? _selectedYear;
   int? _selectedMonth;
   Buyer? _buyerFilter;
-  bool _showMap = false;
   _SortOrder _sortOrder = _SortOrder.newestFirst;
 
   bool _isSearching = false;
@@ -257,9 +254,13 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(_showMap ? Icons.map : Icons.map_outlined),
+                  icon: const Icon(Icons.map_outlined),
                   tooltip: s.viewMap,
-                  onPressed: () => setState(() => _showMap = !_showMap),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const HeatMapScreen()),
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.info_outline),
@@ -278,11 +279,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _showMap
-              ? _MapView(sales: _filteredSales)
-              : _filteredSales.isEmpty
-                  ? Center(child: Text(context.s.noSalesFound))
-                  : _TimelineView(groups: _groupedSales),
+          : _filteredSales.isEmpty
+              ? Center(child: Text(context.s.noSalesFound))
+              : _TimelineView(groups: _groupedSales),
     );
   }
 
@@ -522,7 +521,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
           );
         },
       ),
-    ).whenComplete(buyerSearchController.dispose);
+    );
   }
 
 }
@@ -547,198 +546,6 @@ class _SheetSectionLabel extends StatelessWidget {
     );
   }
 }
-
-// ── Map view ──────────────────────────────────────────────────────────────────
-
-class _MapView extends StatefulWidget {
-  final List<Sale> sales;
-
-  const _MapView({required this.sales});
-
-  @override
-  State<_MapView> createState() => _MapViewState();
-}
-
-class _MapViewState extends State<_MapView> {
-  List<HeatMapPoint> _points = [];
-  bool _loading = true;
-  String _status = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _status = context.s.locatingPostalCodes;
-    _load(widget.sales);
-  }
-
-  @override
-  void didUpdateWidget(_MapView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final oldCodes =
-        HeatMapService.postalCounts(oldWidget.sales).keys.toSet();
-    final newCodes = HeatMapService.postalCounts(widget.sales).keys.toSet();
-    if (!oldCodes.containsAll(newCodes) ||
-        !newCodes.containsAll(oldCodes)) {
-      _load(widget.sales);
-    }
-  }
-
-  Future<void> _load(List<Sale> sales) async {
-    final s = context.s;
-    setState(() {
-      _loading = true;
-      _status = s.locatingPostalCodes;
-    });
-
-    final points = await HeatMapService.buildPoints(
-      sales,
-      onProgress: (status, done, total) {
-        if (mounted) setState(() => _status = '$status ($done/$total)...');
-      },
-    );
-
-    if (mounted) {
-      setState(() {
-        _points = points;
-        _loading = false;
-      });
-    }
-  }
-
-  double _markerSize(int count) =>
-      (32 + (count - 1) * 8).clamp(32, 80).toDouble();
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    return Stack(
-      children: [
-        FlutterMap(
-          options: const MapOptions(
-            initialCenter: LatLng(39.5, -8.0),
-            initialZoom: 6.5,
-            minZoom: 5,
-            maxZoom: 14,
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.latitude.tracker',
-            ),
-            MarkerLayer(
-              markers: _points
-                  .map((p) => Marker(
-                        point: p.position,
-                        width: _markerSize(p.count),
-                        height: _markerSize(p.count),
-                        child: GestureDetector(
-                          onTap: () =>
-                              ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  '${p.postalCode} — ${s.nSales(p.count)}'),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withAlpha(160),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color:
-                                    Theme.of(context).colorScheme.primary,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${p.count}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ],
-        ),
-        if (_loading)
-          Container(
-            color: Colors.black54,
-            child: Center(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(_status, textAlign: TextAlign.center),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        if (!_loading && _points.isEmpty)
-          Center(
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.location_off,
-                        size: 48,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant),
-                    const SizedBox(height: 8),
-                    Text(s.noShippedSalesWithPostalCode),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        if (!_loading && _points.isNotEmpty)
-          Positioned(
-            bottom: 16,
-            left: 16,
-            child: Card(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      s.nPostalCodes(_points.length),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                    Text(
-                      s.nSales(_points.fold(0, (sum, p) => sum + p.count)),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 class _TimelineView extends StatelessWidget {
   final Map<String, List<Sale>> groups;
 
