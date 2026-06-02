@@ -313,7 +313,7 @@ class _ActionGrid extends StatelessWidget {
               initialFilter: SaleFilter.pendingShipment),
         ),
         _ActionRow(
-          icon: Icons.build,
+          icon: Icons.shopping_cart,
           label: s.assemblyNotReady,
           count: stats.assemblyNotReadyCount,
           color: Colors.purple,
