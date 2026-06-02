@@ -39,6 +39,7 @@ class AppStrings {
   // ── Demo ─────────────────────────────────────────────────────────────────
   final String demoBanner;
   final String exitDemo;
+  final String demoUser;
   final String demoTourTitle;
   final String gotIt;
 
@@ -320,6 +321,7 @@ class AppStrings {
     required this.signOutConfirm,
     required this.demoBanner,
     required this.exitDemo,
+    required this.demoUser,
     required this.demoTourTitle,
     required this.gotIt,
     required this.tipDashboardTitle,
@@ -832,6 +834,7 @@ class AppStrings {
     signOutConfirm: 'Sign out?',
     demoBanner: 'Demo mode — changes are not saved',
     exitDemo: 'Exit demo',
+    demoUser: 'Demo user',
     demoTourTitle: 'Demo tour',
     gotIt: 'Got it',
     tipDashboardTitle: 'Dashboard',
@@ -1093,6 +1096,7 @@ class AppStrings {
     signOutConfirm: 'Terminar sessão?',
     demoBanner: 'Modo de demonstração — as alterações não são guardadas',
     exitDemo: 'Sair',
+    demoUser: 'Utilizador de demonstração',
     demoTourTitle: 'Tour de demonstração',
     gotIt: 'Percebi',
     tipDashboardTitle: 'Painel',
