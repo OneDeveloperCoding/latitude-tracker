@@ -5,11 +5,13 @@ import 'geocoding_service.dart';
 
 class HeatMapPoint {
   final String postalCode;
+  final String locality;
   final LatLng position;
   final int count;
 
   const HeatMapPoint({
     required this.postalCode,
+    required this.locality,
     required this.position,
     required this.count,
   });
@@ -31,7 +33,8 @@ class HeatMapService {
     return counts;
   }
 
-  // Geocodes each unique locality prefix at max 1 req/sec (Nominatim limit).
+  // Geocodes each unique locality prefix. Rate limiting and caching are
+  // handled by [GeocodingService] — cached prefixes return immediately.
   // [onProgress] receives a human-readable status string and progress counts.
   static Future<List<HeatMapPoint>> buildPoints(
     List<Sale> sales, {
@@ -44,18 +47,17 @@ class HeatMapService {
     for (final entry in counts.entries) {
       onProgress?.call('Locating ${entry.key}', done, counts.length);
 
-      final latLng = await GeocodingService.geocode(entry.key);
-      if (latLng != null) {
+      final result = await GeocodingService.geocode(entry.key);
+      if (result != null) {
         points.add(HeatMapPoint(
           postalCode: entry.key,
-          position: latLng,
+          locality: result.locality,
+          position: result.latLng,
           count: entry.value,
         ));
       }
 
       done++;
-      // Nominatim requires max 1 request/second
-      await Future.delayed(const Duration(seconds: 1));
     }
 
     return points;
