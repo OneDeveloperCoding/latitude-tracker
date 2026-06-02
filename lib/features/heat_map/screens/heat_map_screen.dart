@@ -2,21 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
-import '../services/geocoding_service.dart';
-
-class _PostalCodePoint {
-  final String postalCode;
-  final LatLng position;
-  final int count;
-
-  const _PostalCodePoint({
-    required this.postalCode,
-    required this.position,
-    required this.count,
-  });
-}
+import '../services/heat_map_service.dart';
 
 class HeatMapScreen extends StatefulWidget {
   const HeatMapScreen({super.key});
@@ -26,129 +15,124 @@ class HeatMapScreen extends StatefulWidget {
 }
 
 class _HeatMapScreenState extends State<HeatMapScreen> {
-  List<_PostalCodePoint> _points = [];
+  List<HeatMapPoint> _points = [];
   bool _loading = true;
-  String _status = 'Loading sales...';
-  String? _error;
+  String _status = '';
+
+  // Available years derived from shipped sales with postal codes.
+  List<int> _years = [];
+  // null = all years
+  int? _selectedYear;
+
+  // Created once so the tile cache singleton isn't re-instantiated on rebuild.
+  late final NetworkTileProvider _tileProvider;
 
   @override
   void initState() {
     super.initState();
-    SalesStore.state.addListener(_onSalesChanged);
-    _load();
-  }
-
-  void _onSalesChanged() {
-    if (_loading) return;
-    final newCodes = _extractPostalCodes(SalesStore.current ?? []).keys.toSet();
-    final currentCodes = _points.map((p) => p.postalCode).toSet();
-    if (newCodes.length != currentCodes.length ||
-        !newCodes.containsAll(currentCodes)) {
-      _load();
-    }
+    _tileProvider = NetworkTileProvider(
+      cachingProvider: BuiltInMapCachingProvider.getOrCreateInstance(
+        maxCacheSize: 50 * 1024 * 1024, // 50 MB — plenty for Portugal
+      ),
+    );
+    SalesStore.state.addListener(_onStoreChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _rebuild();
+    });
   }
 
   @override
   void dispose() {
-    SalesStore.state.removeListener(_onSalesChanged);
+    SalesStore.state.removeListener(_onStoreChanged);
     super.dispose();
   }
 
-  Future<void> _load() async {
+  void _onStoreChanged() {
+    if (mounted) _rebuild();
+  }
+
+  void _rebuild() {
+    final all = _shippedSalesWithPostalCode(SalesStore.current ?? []);
+    final years = all
+        .map((s) => s.createdAt.year)
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    // If the selected year no longer exists in the data, reset to all.
+    final year =
+        (_selectedYear != null && years.contains(_selectedYear))
+            ? _selectedYear
+            : null;
+
     setState(() {
-      _loading = true;
-      _status = 'Loading sales...';
-      _error = null;
+      _years = years;
+      _selectedYear = year;
     });
 
-    try {
-      final sales = SalesStore.current ?? [];
-      final postalCodes = _extractPostalCodes(sales);
+    _load(all, year);
+  }
 
-      if (postalCodes.isEmpty) {
-        setState(() => _loading = false);
-        return;
-      }
+  Future<void> _load(List<Sale> sales, int? year) async {
+    final filtered =
+        year == null ? sales : sales.where((s) => s.createdAt.year == year).toList();
 
-      final points = <_PostalCodePoint>[];
-      var resolved = 0;
+    setState(() {
+      _loading = true;
+      _status = context.s.locatingPostalCodes;
+    });
 
-      for (final entry in postalCodes.entries) {
-        if (!mounted) return;
-        setState(() =>
-            _status = 'Locating ${entry.key} ($resolved/${postalCodes.length})...');
+    final points = await HeatMapService.buildPoints(
+      filtered,
+      onProgress: (status, done, total) {
+        if (mounted) setState(() => _status = '$status ($done/$total)...');
+      },
+    );
 
-        final latLng = await GeocodingService.geocode(entry.key);
-        if (latLng != null) {
-          points.add(_PostalCodePoint(
-            postalCode: entry.key,
-            position: latLng,
-            count: entry.value,
-          ));
-        }
-
-        resolved++;
-        // Nominatim rate limit: 1 request/second
-        await Future.delayed(const Duration(seconds: 1));
-      }
-
-      if (mounted) {
-        setState(() {
-          _points = points;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _loading = false;
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _points = points;
+        _loading = false;
+      });
     }
   }
 
-  // Counts shipped sales by postal code (ignores pickups and sales without a code).
-  Map<String, int> _extractPostalCodes(List<Sale> sales) {
-    final counts = <String, int>{};
-    for (final sale in sales) {
-      final code = sale.shipment.postalCode;
-      if (sale.shipment.type == DeliveryType.shipping && code != null && code.isNotEmpty) {
-        counts[code] = (counts[code] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }
-
-  double _markerSize(int count) {
-    // 32px base, +8px per additional sale, capped at 80px
-    return (32 + (count - 1) * 8).clamp(32, 80).toDouble();
-  }
-
-  void _showPointInfo(BuildContext context, _PostalCodePoint point) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${point.postalCode} — ${point.count} sale${point.count == 1 ? '' : 's'}',
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+  void _selectYear(int? year) {
+    if (year == _selectedYear) return;
+    setState(() => _selectedYear = year);
+    _load(
+      _shippedSalesWithPostalCode(SalesStore.current ?? []),
+      year,
     );
   }
 
+  List<Sale> _shippedSalesWithPostalCode(List<Sale> sales) => sales
+      .where((s) =>
+          s.shipment.type == DeliveryType.shipping &&
+          s.shipment.postalCode != null &&
+          s.shipment.postalCode!.isNotEmpty)
+      .toList();
+
+  double _markerSize(int count) =>
+      (32 + (count - 1) * 8).clamp(32, 80).toDouble();
+
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales Heat Map'),
-        actions: [
-          if (!_loading)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Refresh',
-              onPressed: _load,
-            ),
-        ],
+        title: Text(s.salesHeatMapTitle),
+        bottom: _years.isEmpty
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: _YearFilterBar(
+                  years: _years,
+                  selected: _selectedYear,
+                  allLabel: s.allYears,
+                  onSelected: _selectYear,
+                ),
+              ),
       ),
       body: Stack(
         children: [
@@ -161,9 +145,12 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.latitude.tracker',
+                tileProvider: _tileProvider,
+                keepBuffer: 3,
+                panBuffer: 2,
+                tileDisplay: const TileDisplay.instantaneous(),
               ),
               MarkerLayer(
                 markers: _points
@@ -172,7 +159,15 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
                           width: _markerSize(p.count),
                           height: _markerSize(p.count),
                           child: GestureDetector(
-                            onTap: () => _showPointInfo(context, p),
+                            onTap: () =>
+                                ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${p.locality} (${p.postalCode}) — ${s.nSales(p.count)}',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            ),
                             child: _MapMarker(
                               count: p.count,
                               size: _markerSize(p.count),
@@ -184,16 +179,56 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
             ],
           ),
           if (_loading) _LoadingOverlay(status: _status),
-          if (!_loading && _points.isEmpty && _error == null)
-            const _EmptyOverlay(),
-          if (_error != null) _ErrorOverlay(message: _error!, onRetry: _load),
+          if (!_loading && _points.isEmpty) _EmptyOverlay(s: s),
           if (!_loading && _points.isNotEmpty)
             Positioned(
               bottom: 16,
               left: 16,
-              child: _Legend(points: _points),
+              child: _Legend(points: _points, s: s),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _YearFilterBar extends StatelessWidget {
+  final List<int> years;
+  final int? selected;
+  final String allLabel;
+  final void Function(int?) onSelected;
+
+  const _YearFilterBar({
+    required this.years,
+    required this.selected,
+    required this.allLabel,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        children: [
+          _chip(context, label: allLabel, value: null),
+          ...years.map((y) => _chip(context, label: '$y', value: y)),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(BuildContext context, {required String label, required int? value}) {
+    final isSelected = value == selected;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (_) => onSelected(isSelected ? null : value),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }
@@ -261,7 +296,9 @@ class _LoadingOverlay extends StatelessWidget {
 }
 
 class _EmptyOverlay extends StatelessWidget {
-  const _EmptyOverlay();
+  final AppStrings s;
+
+  const _EmptyOverlay({required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -276,39 +313,7 @@ class _EmptyOverlay extends StatelessWidget {
                   size: 48,
                   color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(height: 8),
-              const Text('No shipped sales with postal codes yet.'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorOverlay extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorOverlay({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.wifi_off, size: 48, color: Colors.orange),
-              const SizedBox(height: 8),
-              const Text('Could not load map data.'),
-              const SizedBox(height: 4),
-              Text(message,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: onRetry, child: const Text('Retry')),
+              Text(s.noShippedSalesWithPostalCode),
             ],
           ),
         ),
@@ -318,15 +323,14 @@ class _ErrorOverlay extends StatelessWidget {
 }
 
 class _Legend extends StatelessWidget {
-  final List<_PostalCodePoint> points;
+  final List<HeatMapPoint> points;
+  final AppStrings s;
 
-  const _Legend({required this.points});
+  const _Legend({required this.points, required this.s});
 
   @override
   Widget build(BuildContext context) {
     final total = points.fold(0, (sum, p) => sum + p.count);
-    final resolved = points.length;
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -334,9 +338,9 @@ class _Legend extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$resolved postal code${resolved == 1 ? '' : 's'}',
+            Text(s.nPostalCodes(points.length),
                 style: Theme.of(context).textTheme.labelSmall),
-            Text('$total shipped sale${total == 1 ? '' : 's'}',
+            Text(s.nSales(total),
                 style: Theme.of(context).textTheme.labelSmall),
           ],
         ),
