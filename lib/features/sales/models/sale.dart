@@ -2,7 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Seed categories shown by default in the category picker.
 // The user can add their own free-text categories on top of these.
-const kDefaultCategories = ['necklace', 'earring', 'tote bag', 'hat'];
+const kDefaultCategories = [
+  'Colares',
+  'Brincos',
+  'Chapéus',
+  'Pins',
+  'Pregadeiras',
+  'Tote Bags',
+  'Crachás',
+  'Stickers',
+];
 
 enum PaymentMethod { mbWay, cash, sumup, bankTransfer }
 
