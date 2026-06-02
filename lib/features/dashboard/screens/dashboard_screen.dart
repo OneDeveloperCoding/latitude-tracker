@@ -328,7 +328,7 @@ class _ActionGrid extends StatelessWidget {
           label: s.overdue,
           count: stats.overdueCount,
           color: Colors.red,
-          destination: const SalesListScreen(initialFilter: SaleFilter.overdue),
+          destination: const SalesListScreen(initialFilters: {SaleFilter.overdue}),
         ),
         const SizedBox(height: 8),
         _ActionGroupHeader(label: s.dashboardGroupLogistics),
@@ -338,7 +338,7 @@ class _ActionGrid extends StatelessWidget {
           count: stats.pendingShipmentCount,
           color: Colors.blue,
           destination: const SalesListScreen(
-              initialFilter: SaleFilter.pendingShipment),
+              initialFilters: {SaleFilter.pendingShipment}),
         ),
         _ActionRow(
           icon: Icons.shopping_cart,

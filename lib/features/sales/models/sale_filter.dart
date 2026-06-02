@@ -1,5 +1,31 @@
 import 'sale.dart';
 
+/// Returns true if [sale] passes every filter in [filters] AND the optional
+/// date range. AND logic — the sale must match all active filters.
+/// An empty [filters] set means no filter constraint.
+/// [dateFrom]/[dateTo] are inclusive date-only boundaries (time part ignored).
+bool testSaleFilters(
+  Sale sale,
+  Set<SaleFilter> filters, {
+  DateTime? dateFrom,
+  DateTime? dateTo,
+  DateTime? now,
+}) {
+  if (dateFrom != null) {
+    final d = sale.createdAt;
+    final day = DateTime(d.year, d.month, d.day);
+    if (day.isBefore(dateFrom)) return false;
+  }
+  if (dateTo != null) {
+    final d = sale.createdAt;
+    final day = DateTime(d.year, d.month, d.day);
+    if (day.isAfter(dateTo)) return false;
+  }
+  if (filters.isEmpty) return true;
+  final today = now ?? DateTime.now();
+  return filters.every((f) => f.test(sale, now: today));
+}
+
 enum SaleFilter {
   all,
   unpaid,
