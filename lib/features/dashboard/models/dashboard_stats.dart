@@ -17,6 +17,9 @@ class DashboardStats {
   final int nifRequiredCount;
   final int overdueCount;
 
+  int get totalCount => paidCount + unpaidCount;
+  double get avgOrderValue => paidCount > 0 ? paidRevenue / paidCount : 0;
+
   const DashboardStats({
     required this.paidRevenue,
     required this.unpaidRevenue,
