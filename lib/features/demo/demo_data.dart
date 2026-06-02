@@ -25,6 +25,8 @@ class DemoData {
           name: 'Ana Ferreira',
           instagramHandle: 'ana.handcraft',
           nif: '213456789',
+          tags: const ['instagram', 'vip'],
+          notes: 'Prefers silver. Always pays promptly.',
           createdAt: _ago(540),
         ),
         Buyer(
@@ -32,12 +34,15 @@ class DemoData {
           name: 'Mariana Costa',
           instagramHandle: 'mari_acessorios',
           phone: '916234567',
+          tags: const ['instagram', 'regular'],
           createdAt: _ago(500),
         ),
         Buyer(
           id: 'demo-buyer-3',
           name: 'João Rodrigues',
           phone: '923456789',
+          tags: const ['in-person'],
+          notes: 'Met at Feira de Janeiro 2024.',
           createdAt: _ago(480),
         ),
         Buyer(
@@ -45,6 +50,7 @@ class DemoData {
           name: 'Sofia Lopes',
           instagramHandle: 'sofia_style',
           nif: '267891234',
+          tags: const ['instagram'],
           createdAt: _ago(460),
         ),
         Buyer(
@@ -114,6 +120,7 @@ class DemoData {
           buyerId: 'demo-buyer-1',
           buyerName: 'Ana Ferreira',
           itemDescription: 'Silver necklace with natural pearls',
+          category: 'necklace',
           price: 45.00,
           assemblyStatus: AssemblyStatus.inProgress,
           components: [
@@ -145,6 +152,7 @@ class DemoData {
           buyerId: 'demo-buyer-2',
           buyerName: 'Mariana Costa',
           itemDescription: 'Azulejo pattern linen tote bag',
+          category: 'tote bag',
           price: 35.00,
           assemblyStatus: AssemblyStatus.notStarted,
           components: [
@@ -177,6 +185,7 @@ class DemoData {
           buyerId: 'demo-buyer-3',
           buyerName: 'João Rodrigues',
           itemDescription: 'Custom wooden bead necklace',
+          category: 'necklace',
           price: 28.00,
           assemblyStatus: AssemblyStatus.waitingForMaterials,
           components: [
@@ -214,6 +223,7 @@ class DemoData {
           buyerId: 'demo-buyer-4',
           buyerName: 'Sofia Lopes',
           itemDescription: 'Macramé bracelet with semi-precious stones',
+          category: 'bracelet',
           price: 22.50,
           assemblyStatus: AssemblyStatus.inProgress,
           components: [
@@ -246,6 +256,7 @@ class DemoData {
           buyerId: 'demo-buyer-2',
           buyerName: 'Mariana Costa',
           itemDescription: 'Engraved vegan leather coin purse',
+          category: 'accessories',
           price: 18.00,
           assemblyStatus: AssemblyStatus.ready,
           components: [],
@@ -271,6 +282,7 @@ class DemoData {
           buyerId: 'demo-buyer-1',
           buyerName: 'Ana Ferreira',
           itemDescription: 'Ocean blue resin drop earrings',
+          category: 'earring',
           price: 24.00,
           assemblyStatus: AssemblyStatus.ready,
           components: [
@@ -306,6 +318,7 @@ class DemoData {
           buyerId: 'demo-buyer-3',
           buyerName: 'João Rodrigues',
           itemDescription: 'Gold hoop earrings 40mm',
+          category: 'earring',
           price: 16.00,
           assemblyStatus: AssemblyStatus.notStarted,
           components: [],
@@ -328,157 +341,157 @@ class DemoData {
   // Fixed seed (42) ensures identical data on every demo entry.
   // Monthly weights model seasonal demand: quiet Aug, busy Dec/pre-Easter.
 
-  // (description, component names, min price, max price)
-  static final _templates = <(String, List<String>, double, double)>[
+  // (description, component names, min price, max price, category)
+  static final _templates = <(String, List<String>, double, double, String)>[
     (
       'Silver ring with moonstone',
       ['Sterling silver band', 'Moonstone cabochon 6mm', 'Ring mandrel'],
-      28.0, 48.0
+      28.0, 48.0, 'accessories'
     ),
     (
       'Resin drop earrings',
       ['UV resin 30ml', 'Mica pigment set', 'Gold earring hooks'],
-      18.0, 32.0
+      18.0, 32.0, 'earring'
     ),
     (
       'Macramé bracelet',
       ['2mm cotton cord natural', 'Seed beads mix', 'Gold lobster clasp'],
-      20.0, 35.0
+      20.0, 35.0, 'bracelet'
     ),
     (
       'Linen tote bag',
       ['Natural linen fabric 50×40cm', 'Leather handles pair', 'Cotton lining'],
-      32.0, 52.0
+      32.0, 52.0, 'tote bag'
     ),
     (
       'Ceramic ring dish',
       ['Air-dry clay 200g', 'Acrylic paint set', 'Gloss varnish'],
-      20.0, 35.0
+      20.0, 35.0, 'accessories'
     ),
     (
       'Polymer clay stud earrings',
       ['Polymer clay white 50g', 'Stainless steel earring posts', 'Liquid glaze'],
-      14.0, 24.0
+      14.0, 24.0, 'earring'
     ),
     (
       'Pressed flower resin pendant',
       ['UV resin 15ml', 'Dried wildflowers', 'Gold-fill bail', '45cm chain'],
-      24.0, 40.0
+      24.0, 40.0, 'necklace'
     ),
     (
       'Friendship bracelet set of 3',
       ['DMC embroidery floss assorted'],
-      10.0, 18.0
+      10.0, 18.0, 'bracelet'
     ),
     (
       'Soy candle in amber jar',
       ['Soy wax 200g', 'Fragrance oil', 'Cotton wick', 'Amber glass jar'],
-      15.0, 28.0
+      15.0, 28.0, 'accessories'
     ),
     (
       'Wire-wrapped crystal pendant',
       ['Copper wire 0.8mm', 'Clear quartz point', '45cm copper chain'],
-      22.0, 38.0
+      22.0, 38.0, 'necklace'
     ),
     (
       'Embroidered canvas pouch',
       ['Canvas fabric', 'Metal zipper 20cm', 'Embroidery floss set'],
-      22.0, 36.0
+      22.0, 36.0, 'accessories'
     ),
     (
       'Tassel earrings',
       ['Size 11 seed beads', 'Gold earring hooks', 'Nylon beading thread'],
-      16.0, 28.0
+      16.0, 28.0, 'earring'
     ),
     (
       'Macramé wall hanging',
       ['5mm cotton rope 10m', 'Wooden dowel 40cm', 'Hanging cord'],
-      42.0, 68.0
+      42.0, 68.0, 'accessories'
     ),
     (
       'Gold-fill hoop earrings',
       ['14k gold-fill wire 20 gauge', 'Ring mandrel'],
-      18.0, 32.0
+      18.0, 32.0, 'earring'
     ),
     (
       'Dried herb bookmark',
       ['Laminating pouches', 'Dried lavender and rosemary', 'Satin ribbon'],
-      10.0, 16.0
+      10.0, 16.0, 'accessories'
     ),
     (
       'Labradorite pendant necklace',
       ['Labradorite cabochon', 'Silver wire 0.6mm', '45cm silver chain'],
-      38.0, 58.0
+      38.0, 58.0, 'necklace'
     ),
     (
       'Driftwood and shell mobile',
       ['Driftwood branch 40cm', 'Assorted seashells', 'Jute twine'],
-      45.0, 72.0
+      45.0, 72.0, 'accessories'
     ),
     (
       'Crystal beaded anklet',
       ['3mm crystal beads mix', 'Elastic stretch cord', 'Gold lobster clasp'],
-      14.0, 24.0
+      14.0, 24.0, 'bracelet'
     ),
     (
       'Drawstring cotton bag',
       ['Cotton muslin fabric', 'Natural drawstring cord', 'Iron-on label'],
-      18.0, 30.0
+      18.0, 30.0, 'tote bag'
     ),
     (
       'Hammered copper cuff',
       ['Copper sheet 1mm', 'Sandpaper assorted', 'Liver of sulfur patina'],
-      26.0, 42.0
+      26.0, 42.0, 'accessories'
     ),
     (
       'Silk scrunchie set of 2',
       ['Silk charmeuse fabric', 'Elastic 1cm wide', 'Thread to match'],
-      14.0, 22.0
+      14.0, 22.0, 'accessories'
     ),
     (
       'Hand-painted silk scarf',
       ['Silk habotai 90×90cm', 'Silk painting dyes', 'Gutta resist'],
-      42.0, 68.0
+      42.0, 68.0, 'accessories'
     ),
     (
       'Natural wood bead necklace',
       ['8mm wood beads assorted', 'Waxed linen cord', 'Toggle clasp'],
-      22.0, 38.0
+      22.0, 38.0, 'necklace'
     ),
     (
       'Charm bracelet',
       ['Gold-fill cable chain', 'Gold jump rings', 'Assorted charms set'],
-      28.0, 45.0
+      28.0, 45.0, 'bracelet'
     ),
     (
       'Vegan leather coin purse',
       ['Vegan leather 20×15cm', 'Metal zipper 15cm', 'Cotton lining'],
-      16.0, 28.0
+      16.0, 28.0, 'accessories'
     ),
     (
       'Clay hair clip set of 3',
       ['Polymer clay mixed colours', 'Alligator clip bases', 'Strong glue'],
-      14.0, 22.0
+      14.0, 22.0, 'accessories'
     ),
     (
       'Terracotta hoop earrings',
       ['Air-dry clay 100g', 'Acrylic paints', 'Gold earring findings'],
-      16.0, 28.0
+      16.0, 28.0, 'earring'
     ),
     (
       'Embroidered fabric keychain',
       ['Canvas fabric circle', 'Embroidery floss set', 'Split keyring'],
-      10.0, 16.0
+      10.0, 16.0, 'accessories'
     ),
     (
       'Cotton rope plant hanger',
       ['5mm cotton rope 5m', 'Wooden ring 10cm', 'Scissors'],
-      30.0, 50.0
+      30.0, 50.0, 'accessories'
     ),
     (
       'Glitter resin ring',
       ['UV resin 10ml', 'Holographic glitter', 'Adjustable ring blank'],
-      18.0, 30.0
+      18.0, 30.0, 'accessories'
     ),
   ];
 
@@ -573,6 +586,7 @@ class DemoData {
           buyerId: buyer.$1,
           buyerName: buyer.$2,
           itemDescription: template.$1,
+          category: template.$5,
           price: price,
           assemblyStatus: AssemblyStatus.ready,
           components: components,
