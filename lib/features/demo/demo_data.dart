@@ -120,7 +120,7 @@ class DemoData {
           buyerId: 'demo-buyer-1',
           buyerName: 'Ana Ferreira',
           itemDescription: 'Silver necklace with natural pearls',
-          category: 'necklace',
+          category: 'Colares',
           price: 45.00,
           assemblyStatus: AssemblyStatus.inProgress,
           components: [
@@ -152,7 +152,7 @@ class DemoData {
           buyerId: 'demo-buyer-2',
           buyerName: 'Mariana Costa',
           itemDescription: 'Azulejo pattern linen tote bag',
-          category: 'tote bag',
+          category: 'Tote Bags',
           price: 35.00,
           assemblyStatus: AssemblyStatus.notStarted,
           components: [
@@ -185,7 +185,7 @@ class DemoData {
           buyerId: 'demo-buyer-3',
           buyerName: 'João Rodrigues',
           itemDescription: 'Custom wooden bead necklace',
-          category: 'necklace',
+          category: 'Colares',
           price: 28.00,
           assemblyStatus: AssemblyStatus.waitingForMaterials,
           components: [
@@ -223,7 +223,7 @@ class DemoData {
           buyerId: 'demo-buyer-4',
           buyerName: 'Sofia Lopes',
           itemDescription: 'Macramé bracelet with semi-precious stones',
-          category: 'bracelet',
+          category: 'Pins',
           price: 22.50,
           assemblyStatus: AssemblyStatus.inProgress,
           components: [
@@ -256,7 +256,7 @@ class DemoData {
           buyerId: 'demo-buyer-2',
           buyerName: 'Mariana Costa',
           itemDescription: 'Engraved vegan leather coin purse',
-          category: 'accessories',
+          category: 'Crachás',
           price: 18.00,
           assemblyStatus: AssemblyStatus.ready,
           components: [],
@@ -282,7 +282,7 @@ class DemoData {
           buyerId: 'demo-buyer-1',
           buyerName: 'Ana Ferreira',
           itemDescription: 'Ocean blue resin drop earrings',
-          category: 'earring',
+          category: 'Brincos',
           price: 24.00,
           assemblyStatus: AssemblyStatus.ready,
           components: [
@@ -318,7 +318,7 @@ class DemoData {
           buyerId: 'demo-buyer-3',
           buyerName: 'João Rodrigues',
           itemDescription: 'Gold hoop earrings 40mm',
-          category: 'earring',
+          category: 'Brincos',
           price: 16.00,
           assemblyStatus: AssemblyStatus.notStarted,
           components: [],
@@ -346,152 +346,152 @@ class DemoData {
     (
       'Silver ring with moonstone',
       ['Sterling silver band', 'Moonstone cabochon 6mm', 'Ring mandrel'],
-      28.0, 48.0, 'accessories'
+      28.0, 48.0, 'Crachás'
     ),
     (
       'Resin drop earrings',
       ['UV resin 30ml', 'Mica pigment set', 'Gold earring hooks'],
-      18.0, 32.0, 'earring'
+      18.0, 32.0, 'Brincos'
     ),
     (
       'Macramé bracelet',
       ['2mm cotton cord natural', 'Seed beads mix', 'Gold lobster clasp'],
-      20.0, 35.0, 'bracelet'
+      20.0, 35.0, 'Pins'
     ),
     (
       'Linen tote bag',
       ['Natural linen fabric 50×40cm', 'Leather handles pair', 'Cotton lining'],
-      32.0, 52.0, 'tote bag'
+      32.0, 52.0, 'Tote Bags'
     ),
     (
       'Ceramic ring dish',
       ['Air-dry clay 200g', 'Acrylic paint set', 'Gloss varnish'],
-      20.0, 35.0, 'accessories'
+      20.0, 35.0, 'Crachás'
     ),
     (
       'Polymer clay stud earrings',
       ['Polymer clay white 50g', 'Stainless steel earring posts', 'Liquid glaze'],
-      14.0, 24.0, 'earring'
+      14.0, 24.0, 'Brincos'
     ),
     (
       'Pressed flower resin pendant',
       ['UV resin 15ml', 'Dried wildflowers', 'Gold-fill bail', '45cm chain'],
-      24.0, 40.0, 'necklace'
+      24.0, 40.0, 'Colares'
     ),
     (
       'Friendship bracelet set of 3',
       ['DMC embroidery floss assorted'],
-      10.0, 18.0, 'bracelet'
+      10.0, 18.0, 'Pins'
     ),
     (
       'Soy candle in amber jar',
       ['Soy wax 200g', 'Fragrance oil', 'Cotton wick', 'Amber glass jar'],
-      15.0, 28.0, 'accessories'
+      15.0, 28.0, 'Crachás'
     ),
     (
       'Wire-wrapped crystal pendant',
       ['Copper wire 0.8mm', 'Clear quartz point', '45cm copper chain'],
-      22.0, 38.0, 'necklace'
+      22.0, 38.0, 'Colares'
     ),
     (
       'Embroidered canvas pouch',
       ['Canvas fabric', 'Metal zipper 20cm', 'Embroidery floss set'],
-      22.0, 36.0, 'accessories'
+      22.0, 36.0, 'Crachás'
     ),
     (
       'Tassel earrings',
       ['Size 11 seed beads', 'Gold earring hooks', 'Nylon beading thread'],
-      16.0, 28.0, 'earring'
+      16.0, 28.0, 'Brincos'
     ),
     (
       'Macramé wall hanging',
       ['5mm cotton rope 10m', 'Wooden dowel 40cm', 'Hanging cord'],
-      42.0, 68.0, 'accessories'
+      42.0, 68.0, 'Crachás'
     ),
     (
       'Gold-fill hoop earrings',
       ['14k gold-fill wire 20 gauge', 'Ring mandrel'],
-      18.0, 32.0, 'earring'
+      18.0, 32.0, 'Brincos'
     ),
     (
       'Dried herb bookmark',
       ['Laminating pouches', 'Dried lavender and rosemary', 'Satin ribbon'],
-      10.0, 16.0, 'accessories'
+      10.0, 16.0, 'Crachás'
     ),
     (
       'Labradorite pendant necklace',
       ['Labradorite cabochon', 'Silver wire 0.6mm', '45cm silver chain'],
-      38.0, 58.0, 'necklace'
+      38.0, 58.0, 'Colares'
     ),
     (
       'Driftwood and shell mobile',
       ['Driftwood branch 40cm', 'Assorted seashells', 'Jute twine'],
-      45.0, 72.0, 'accessories'
+      45.0, 72.0, 'Crachás'
     ),
     (
       'Crystal beaded anklet',
       ['3mm crystal beads mix', 'Elastic stretch cord', 'Gold lobster clasp'],
-      14.0, 24.0, 'bracelet'
+      14.0, 24.0, 'Pins'
     ),
     (
       'Drawstring cotton bag',
       ['Cotton muslin fabric', 'Natural drawstring cord', 'Iron-on label'],
-      18.0, 30.0, 'tote bag'
+      18.0, 30.0, 'Tote Bags'
     ),
     (
       'Hammered copper cuff',
       ['Copper sheet 1mm', 'Sandpaper assorted', 'Liver of sulfur patina'],
-      26.0, 42.0, 'accessories'
+      26.0, 42.0, 'Crachás'
     ),
     (
       'Silk scrunchie set of 2',
       ['Silk charmeuse fabric', 'Elastic 1cm wide', 'Thread to match'],
-      14.0, 22.0, 'accessories'
+      14.0, 22.0, 'Crachás'
     ),
     (
       'Hand-painted silk scarf',
       ['Silk habotai 90×90cm', 'Silk painting dyes', 'Gutta resist'],
-      42.0, 68.0, 'accessories'
+      42.0, 68.0, 'Crachás'
     ),
     (
       'Natural wood bead necklace',
       ['8mm wood beads assorted', 'Waxed linen cord', 'Toggle clasp'],
-      22.0, 38.0, 'necklace'
+      22.0, 38.0, 'Colares'
     ),
     (
       'Charm bracelet',
       ['Gold-fill cable chain', 'Gold jump rings', 'Assorted charms set'],
-      28.0, 45.0, 'bracelet'
+      28.0, 45.0, 'Pins'
     ),
     (
       'Vegan leather coin purse',
       ['Vegan leather 20×15cm', 'Metal zipper 15cm', 'Cotton lining'],
-      16.0, 28.0, 'accessories'
+      16.0, 28.0, 'Crachás'
     ),
     (
       'Clay hair clip set of 3',
       ['Polymer clay mixed colours', 'Alligator clip bases', 'Strong glue'],
-      14.0, 22.0, 'accessories'
+      14.0, 22.0, 'Crachás'
     ),
     (
       'Terracotta hoop earrings',
       ['Air-dry clay 100g', 'Acrylic paints', 'Gold earring findings'],
-      16.0, 28.0, 'earring'
+      16.0, 28.0, 'Brincos'
     ),
     (
       'Embroidered fabric keychain',
       ['Canvas fabric circle', 'Embroidery floss set', 'Split keyring'],
-      10.0, 16.0, 'accessories'
+      10.0, 16.0, 'Crachás'
     ),
     (
       'Cotton rope plant hanger',
       ['5mm cotton rope 5m', 'Wooden ring 10cm', 'Scissors'],
-      30.0, 50.0, 'accessories'
+      30.0, 50.0, 'Crachás'
     ),
     (
       'Glitter resin ring',
       ['UV resin 10ml', 'Holographic glitter', 'Adjustable ring blank'],
-      18.0, 30.0, 'accessories'
+      18.0, 30.0, 'Crachás'
     ),
   ];
 
