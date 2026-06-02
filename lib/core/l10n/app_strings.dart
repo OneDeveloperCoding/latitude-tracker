@@ -57,6 +57,8 @@ class AppStrings {
   final String tipShoppingBody;
   final String tipNifTitle;
   final String tipNifBody;
+  final String tipMapTitle;
+  final String tipMapBody;
 
   // ── Dashboard ────────────────────────────────────────────────────────────
   final String dashboard;
@@ -246,6 +248,7 @@ class AppStrings {
   final String addressCountry;
   final String addressCity;
   final String addressCityRequired;
+  final String selectStreet;
   final String addressStreet;
   final String addressStreetRequired;
   final String addressHouseNumber;
@@ -332,6 +335,8 @@ class AppStrings {
     required this.tipShoppingBody,
     required this.tipNifTitle,
     required this.tipNifBody,
+    required this.tipMapTitle,
+    required this.tipMapBody,
     required this.dashboard,
     required this.actionNeeded,
     required this.pending,
@@ -497,6 +502,7 @@ class AppStrings {
     required this.addressCountry,
     required this.addressCity,
     required this.addressCityRequired,
+    required this.selectStreet,
     required this.addressStreet,
     required this.addressStreetRequired,
     required this.addressHouseNumber,
@@ -829,7 +835,7 @@ class AppStrings {
         'Your month at a glance — total sales, revenue, and pending actions. Warning cards at the top surface unpaid orders and NIF receipts that need filing.',
     tipSalesTitle: 'Sales list',
     tipSalesBody:
-        'All your orders, newest first. Each card shows a progress path — assembly → payment → shipping. Tap the path bar for a legend explaining each stage.',
+        'All your orders, newest first. Each card shows a progress path — assembly → payment → shipping. Tap the path bar for a legend. Cards with an approaching or overdue due date show a coloured left bar; tap the purple receipt or orange blocker icon for details.',
     tipDetailTitle: 'Sale detail',
     tipDetailBody:
         'Tap any sale to open the full detail. From here you can edit every field, manage the materials list, add photos, record a tracking number, and duplicate or delete the order.',
@@ -845,6 +851,9 @@ class AppStrings {
     tipNifTitle: 'NIF / AT receipts',
     tipNifBody:
         'Sales that require a fiscal receipt are flagged with a purple badge. Open the NIF screen from the Dashboard to see all pending submissions in one place.',
+    tipMapTitle: 'Heat map',
+    tipMapBody:
+        'Switch to the map view in the sales list to see where your buyers are. Sales are grouped by postal code locality — tap a marker to see the count for that area.',
     dashboard: 'Dashboard',
     actionNeeded: 'Action needed',
     pending: 'Pending',
@@ -1009,8 +1018,9 @@ class AppStrings {
     addressLabelHint: 'e.g. Home, Work',
     addressLabelRequired: 'Label is required',
     addressCountry: 'Country',
-    addressCity: 'City *',
-    addressCityRequired: 'City is required',
+    selectStreet: 'Select street',
+    addressCity: 'Locality *',
+    addressCityRequired: 'Locality is required',
     addressStreet: 'Street *',
     addressStreetRequired: 'Street is required',
     addressHouseNumber: 'House number *',
@@ -1085,7 +1095,7 @@ class AppStrings {
         'O seu mês de relance — total de vendas, receita e ações pendentes. Os cartões de aviso no topo mostram encomendas por pagar e recibos NIF por submeter.',
     tipSalesTitle: 'Lista de vendas',
     tipSalesBody:
-        'Todas as suas encomendas, mais recentes primeiro. Cada cartão mostra o progresso — montagem → pagamento → envio. Toque na barra de progresso para ver a legenda.',
+        'Todas as suas encomendas, mais recentes primeiro. Cada cartão mostra o progresso — montagem → pagamento → envio. Toque na barra de progresso para ver a legenda. Cartões com data limite próxima ou em atraso mostram uma barra colorida à esquerda; toque no recibo roxo ou no ícone laranja de bloqueio para ver detalhes.',
     tipDetailTitle: 'Detalhe da venda',
     tipDetailBody:
         'Toque numa venda para abrir o detalhe completo. Aqui pode editar todos os campos, gerir a lista de materiais, adicionar fotos, registar um código de rastreio, e duplicar ou eliminar a encomenda.',
@@ -1101,6 +1111,9 @@ class AppStrings {
     tipNifTitle: 'NIF / AT',
     tipNifBody:
         'As vendas que requerem recibo fiscal são sinalizadas com um indicador roxo. Abra o ecrã NIF no Painel para ver todas as submissões pendentes num só lugar.',
+    tipMapTitle: 'Mapa de calor',
+    tipMapBody:
+        'Mude para a vista de mapa na lista de vendas para ver onde estão os seus compradores. As vendas são agrupadas por localidade — toque num marcador para ver a contagem dessa área.',
     dashboard: 'Painel',
     actionNeeded: 'Ações necessárias',
     pending: 'Pendente',
@@ -1127,7 +1140,7 @@ class AppStrings {
     nifSheetBody:
         'Pagamento recebido — submeta o recibo desta venda na AT. O NIF do comprador está disponível no seu perfil.',
     urgencySheetTitle: 'Ações necessárias',
-    urgencyWaitingForMaterials: 'Aguarda materiais',
+    urgencyWaitingForMaterials: 'A aguardar materiais',
     urgencyAssemblyNotReady: 'Montagem não pronta',
     urgencyPaymentPending: 'Pagamento pendente',
     urgencyNotYetShipped: 'Ainda não enviado',
@@ -1266,8 +1279,9 @@ class AppStrings {
     addressLabelHint: 'ex. Casa, Trabalho',
     addressLabelRequired: 'Etiqueta é obrigatória',
     addressCountry: 'País',
-    addressCity: 'Cidade *',
-    addressCityRequired: 'Cidade é obrigatória',
+    selectStreet: 'Selecionar rua',
+    addressCity: 'Localidade *',
+    addressCityRequired: 'Localidade é obrigatória',
     addressStreet: 'Rua *',
     addressStreetRequired: 'Rua é obrigatória',
     addressHouseNumber: 'Número *',

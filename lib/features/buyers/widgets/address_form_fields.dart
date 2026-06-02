@@ -124,11 +124,19 @@ class AddressFormFieldsState extends State<AddressFormFields> {
     // User may have changed country while the request was in-flight.
     if (_country != 'Portugal' || result == null) return;
 
-    // Always update city — postal code → locality is deterministic.
     if (result.city.isNotEmpty) _cityController.text = result.city;
-    // Only suggest street if the user hasn't typed one yet.
-    if (_streetController.text.trim().isEmpty && result.street.isNotEmpty) {
-      _streetController.text = result.street;
+
+    if (result.streets.length == 1) {
+      if (_streetController.text.trim().isEmpty) {
+        _streetController.text = result.streets.first;
+      }
+    } else if (result.streets.length > 1) {
+      final chosen = await showModalBottomSheet<String>(
+        context: context,
+        builder: (_) => _StreetPickerSheet(streets: result.streets),
+      );
+      if (!mounted) return;
+      if (chosen != null) _streetController.text = chosen;
     }
   }
 
@@ -259,6 +267,39 @@ class AddressFormFieldsState extends State<AddressFormFields> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _StreetPickerSheet extends StatelessWidget {
+  final List<String> streets;
+
+  const _StreetPickerSheet({required this.streets});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              context.s.selectStreet,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          const Divider(height: 1),
+          ...streets.map(
+            (street) => ListTile(
+              title: Text(street),
+              onTap: () => Navigator.pop(context, street),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }

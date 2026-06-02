@@ -13,44 +13,61 @@ import '../repositories/buyer_repository.dart';
 import 'buyer_address_form_screen.dart';
 import 'buyer_form_screen.dart';
 
-class BuyerDetailScreen extends StatelessWidget {
+class BuyerDetailScreen extends StatefulWidget {
   final String buyerId;
 
   const BuyerDetailScreen({super.key, required this.buyerId});
 
   @override
-  Widget build(BuildContext context) {
-    final buyerRepo = BuyerRepository();
+  State<BuyerDetailScreen> createState() => _BuyerDetailScreenState();
+}
 
-    return FutureBuilder<Buyer?>(
-      future: buyerRepo.getBuyer(buyerId),
-      builder: (context, snapshot) {
-        final buyer = snapshot.data;
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(buyer?.name ?? context.s.saleFallbackTitle),
-            actions: [
-              if (buyer != null) ...[
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => BuyerFormScreen(buyer: buyer)),
+class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
+  late final BuyerRepository _buyerRepo;
+  late final Future<Buyer?> _buyerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _buyerRepo = BuyerRepository();
+    _buyerFuture = _buyerRepo.getBuyer(widget.buyerId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return DefaultTabController(
+      length: 2,
+      child: FutureBuilder<Buyer?>(
+        future: _buyerFuture,
+        builder: (context, snapshot) {
+          final buyer = snapshot.data;
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(buyer?.name ?? s.saleFallbackTitle),
+              actions: [
+                if (buyer != null) ...[
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => BuyerFormScreen(buyer: buyer)),
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _confirmDelete(context, buyer),
-                ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmDelete(context, buyer),
+                  ),
+                ],
               ],
-            ],
-          ),
-          body: buyer == null
-              ? const Center(child: CircularProgressIndicator())
-              : _BuyerDetailBody(buyer: buyer, buyerRepo: buyerRepo),
-        );
-      },
+            ),
+            body: buyer == null
+                ? const Center(child: CircularProgressIndicator())
+                : _BuyerDetailBody(buyer: buyer, buyerRepo: _buyerRepo),
+          );
+        },
+      ),
     );
   }
 
@@ -84,7 +101,7 @@ class BuyerDetailScreen extends StatelessWidget {
     );
 
     if (confirmed != true || !context.mounted) return;
-    await BuyerRepository().deleteBuyer(buyer.id);
+    await _buyerRepo.deleteBuyer(buyer.id);
     if (context.mounted) Navigator.pop(context);
   }
 }
@@ -97,68 +114,30 @@ class _BuyerDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-          16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _InfoSection(buyer: buyer),
-        const SizedBox(height: 24),
-        Text(s.purchaseHistory, style: textTheme.titleMedium),
-        const SizedBox(height: 8),
-        _BuyerSalesSection(buyerId: buyer.id),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(s.addresses, style: textTheme.titleMedium),
-            TextButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      BuyerAddressFormScreen(buyerId: buyer.id),
-                ),
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(s.add),
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: _InfoSection(buyer: buyer),
+        ),
+        TabBar(
+          tabs: [
+            Tab(text: context.s.purchaseHistory),
+            Tab(text: context.s.addresses),
           ],
         ),
-        const SizedBox(height: 8),
-        StreamBuilder<List<BuyerAddress>>(
-          stream: buyerRepo.watchAddresses(buyer.id),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final addresses = snapshot.data ?? [];
-            if (addresses.isEmpty) {
-              return Text(
-                s.noAddressesSaved,
-                style: textTheme.bodyMedium
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
-              );
-            }
-            return Column(
-              children: addresses
-                  .map((a) => _AddressTile(
-                        address: a,
-                        onEdit: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BuyerAddressFormScreen(
-                                buyerId: buyer.id, address: a),
-                          ),
-                        ),
-                        onDelete: () => _deleteAddress(context, a),
-                      ))
-                  .toList(),
-            );
-          },
+        Expanded(
+          child: TabBarView(
+            children: [
+              _HistoryTab(buyerId: buyer.id),
+              _AddressesTab(
+                buyer: buyer,
+                buyerRepo: buyerRepo,
+                onDelete: (a) => _deleteAddress(context, a),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -187,6 +166,81 @@ class _BuyerDetailBody extends StatelessWidget {
     if (confirmed == true) {
       await buyerRepo.deleteAddress(buyer.id, address.id);
     }
+  }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+class _HistoryTab extends StatelessWidget {
+  final String buyerId;
+
+  const _HistoryTab({required this.buyerId});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        16, 16, 16, 16 + MediaQuery.of(context).padding.bottom,
+      ),
+      child: _BuyerSalesSection(buyerId: buyerId),
+    );
+  }
+}
+
+class _AddressesTab extends StatelessWidget {
+  final Buyer buyer;
+  final BuyerRepository buyerRepo;
+  final void Function(BuyerAddress) onDelete;
+
+  const _AddressesTab({
+    required this.buyer,
+    required this.buyerRepo,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 4, 8, 0),
+            child: TextButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BuyerAddressFormScreen(buyerId: buyer.id),
+                ),
+              ),
+              icon: const Icon(Icons.add),
+              label: Text(s.add),
+            ),
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              16, 4, 16, 16 + MediaQuery.of(context).padding.bottom,
+            ),
+            child: _AddressesList(
+              buyerId: buyer.id,
+              buyerRepo: buyerRepo,
+              onEdit: (a) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      BuyerAddressFormScreen(buyerId: buyer.id, address: a),
+                ),
+              ),
+              onDelete: onDelete,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -401,6 +455,76 @@ class _SaleTile extends StatelessWidget {
               builder: (_) => SaleDetailScreen(saleId: sale.id)),
         ),
       ),
+    );
+  }
+}
+
+// ── Addresses list ────────────────────────────────────────────────────────────
+
+class _AddressesList extends StatefulWidget {
+  final String buyerId;
+  final BuyerRepository buyerRepo;
+  final void Function(BuyerAddress) onEdit;
+  final void Function(BuyerAddress) onDelete;
+
+  const _AddressesList({
+    required this.buyerId,
+    required this.buyerRepo,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_AddressesList> createState() => _AddressesListState();
+}
+
+class _AddressesListState extends State<_AddressesList> {
+  late Stream<List<BuyerAddress>> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = widget.buyerRepo.watchAddresses(widget.buyerId);
+  }
+
+  @override
+  void didUpdateWidget(_AddressesList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.buyerId != widget.buyerId) {
+      _stream = widget.buyerRepo.watchAddresses(widget.buyerId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return StreamBuilder<List<BuyerAddress>>(
+      stream: _stream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final addresses = snapshot.data ?? [];
+        if (addresses.isEmpty) {
+          return Text(
+            s.noAddressesSaved,
+            style: textTheme.bodyMedium
+                ?.copyWith(color: colorScheme.onSurfaceVariant),
+          );
+        }
+        return Column(
+          children: addresses
+              .map((a) => _AddressTile(
+                    address: a,
+                    onEdit: () => widget.onEdit(a),
+                    onDelete: () => widget.onDelete(a),
+                  ))
+              .toList(),
+        );
+      },
     );
   }
 }

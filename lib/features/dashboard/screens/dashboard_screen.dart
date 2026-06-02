@@ -292,23 +292,19 @@ class _ActionGrid extends StatelessWidget {
     final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.4,
+    return Column(
       children: [
-        _ActionCard(
+        _ActionRow(
           icon: Icons.euro,
           label: s.unpaid,
-          count: stats.unpaidCount,
-          subtitle: currency.format(stats.unpaidRevenue),
+          count: stats.unpaidActionCount,
+          subtitle: stats.unpaidActionCount > 0
+              ? currency.format(stats.unpaidActionRevenue)
+              : null,
           color: Colors.orange,
           destination: const UnpaidBalancesScreen(),
         ),
-        _ActionCard(
+        _ActionRow(
           icon: Icons.local_shipping,
           label: s.pendingShipment,
           count: stats.pendingShipmentCount,
@@ -316,21 +312,21 @@ class _ActionGrid extends StatelessWidget {
           destination: const SalesListScreen(
               initialFilter: SaleFilter.pendingShipment),
         ),
-        _ActionCard(
+        _ActionRow(
           icon: Icons.build,
           label: s.assemblyNotReady,
           count: stats.assemblyNotReadyCount,
           color: Colors.purple,
           destination: const ShoppingListScreen(),
         ),
-        _ActionCard(
+        _ActionRow(
           icon: Icons.badge,
           label: s.nifRequired,
           count: stats.nifRequiredCount,
           color: Colors.teal,
           destination: const NifPendingScreen(),
         ),
-        _ActionCard(
+        _ActionRow(
           icon: Icons.warning_amber,
           label: s.overdue,
           count: stats.overdueCount,
@@ -343,7 +339,7 @@ class _ActionGrid extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
+class _ActionRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final int count;
@@ -351,7 +347,7 @@ class _ActionCard extends StatelessWidget {
   final Widget destination;
   final String? subtitle;
 
-  const _ActionCard({
+  const _ActionRow({
     required this.icon,
     required this.label,
     required this.count,
@@ -363,7 +359,10 @@ class _ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = count > 0;
+    final effectiveColor = isActive ? color : Colors.grey;
+
     return Card(
+      margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: isActive
@@ -373,42 +372,52 @@ class _ActionCard extends StatelessWidget {
                 )
             : null,
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
             children: [
-              Icon(icon, color: isActive ? color : Colors.grey, size: 24),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$count',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isActive ? color : Colors.grey,
-                        ),
-                  ),
-                  if (subtitle != null && isActive)
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: effectiveColor.withAlpha(30),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: effectiveColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      subtitle!,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w600,
+                      label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isActive
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Colors.grey,
                           ),
                     ),
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: isActive
-                              ? Theme.of(context).colorScheme.onSurface
-                              : Colors.grey,
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style:
+                            Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: effectiveColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                  ],
+                ),
               ),
+              Text(
+                '$count',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: effectiveColor,
+                    ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: effectiveColor, size: 18),
             ],
           ),
         ),
