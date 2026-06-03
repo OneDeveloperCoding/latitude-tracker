@@ -24,8 +24,9 @@ class SettingsScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: Text(s.navSettings)),
-      body: ListView(
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         children: [
           _SectionHeader(s.account),
@@ -87,6 +88,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

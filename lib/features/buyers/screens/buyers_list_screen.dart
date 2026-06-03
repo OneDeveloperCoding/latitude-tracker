@@ -205,16 +205,6 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   Widget build(BuildContext context) {
     final s = context.s;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(s.buyers),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            tooltip: s.changeView,
-            onPressed: _showSortMenu,
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         heroTag: null,
         onPressed: () => Navigator.push(
@@ -223,23 +213,36 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         ),
         child: const Icon(Icons.person_add),
       ),
-      body: Column(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: s.searchBuyers,
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-              onChanged: (value) {
-                _searchQuery = value;
-                _rebuildViews();
-                setState(() {});
-              },
+            padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: s.searchBuyers,
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (value) {
+                      _searchQuery = value;
+                      _rebuildViews();
+                      setState(() {});
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.tune),
+                  tooltip: s.changeView,
+                  onPressed: _showSortMenu,
+                ),
+              ],
             ),
           ),
           if (_sortMode == _SortMode.ranking)
@@ -254,6 +257,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
             ),
           Expanded(child: _buildBody()),
         ],
+      ),
       ),
     );
   }
