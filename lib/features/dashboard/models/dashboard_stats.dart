@@ -1,6 +1,8 @@
 import '../../sales/models/sale.dart';
 import '../../sales/models/sale_filter.dart';
 
+enum DashboardPeriod { yearly, monthly, weekly }
+
 class DashboardStats {
   // Period-scoped: reflect sales created within the selected period.
   final double paidRevenue;
@@ -32,6 +34,44 @@ class DashboardStats {
     required this.nifRequiredCount,
     required this.overdueCount,
   });
+
+  static List<({String category, double revenue})> computeTopCategories(
+    List<Sale> all,
+    DateTime start,
+    DateTime end, {
+    int limit = 3,
+  }) {
+    final map = <String, double>{};
+    for (final s in all) {
+      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
+      for (final item in s.items) {
+        map[item.category] = (map[item.category] ?? 0) + item.price;
+      }
+    }
+    final sorted = map.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted
+        .take(limit)
+        .map((e) => (category: e.key, revenue: e.value))
+        .toList();
+  }
+
+  static ({double revenue, int count}) computePeriodStats(
+    List<Sale> all,
+    DateTime start,
+    DateTime end,
+  ) {
+    double revenue = 0;
+    int count = 0;
+    for (final s in all) {
+      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
+      if (s.payment.status == PaymentStatus.paid) {
+        revenue += s.totalPrice;
+        count++;
+      }
+    }
+    return (revenue: revenue, count: count);
+  }
 
   factory DashboardStats.compute(
     List<Sale> all,

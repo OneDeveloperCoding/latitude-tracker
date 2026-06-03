@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/dashboard/models/dashboard_stats.dart';
 import '../../features/sales/models/sale.dart';
 import '../../features/sales/models/sale_filter.dart';
 import '../../features/sales/services/sale_urgency.dart';
@@ -78,6 +79,10 @@ class AppStrings {
   final String dashboardGroupMoney;
   final String dashboardGroupLogistics;
   final String dashboardGroupCompliance;
+  final String dashboardTopCategories;
+  final String dashboardViewTrends;
+  final String trendsTitle;
+  final String trendsNoPreviousData;
 
   // ── Sales list ───────────────────────────────────────────────────────────
   final String searchSales;
@@ -392,6 +397,10 @@ class AppStrings {
     required this.dashboardGroupMoney,
     required this.dashboardGroupLogistics,
     required this.dashboardGroupCompliance,
+    required this.dashboardTopCategories,
+    required this.dashboardViewTrends,
+    required this.trendsTitle,
+    required this.trendsNoPreviousData,
     required this.searchSales,
     required this.noSalesFound,
     required this.filterSort,
@@ -879,6 +888,19 @@ class AppStrings {
   String addCategoryLabel(String query) =>
       _pt ? 'Adicionar "$query"' : 'Add "$query"';
 
+  List<String> trendComparisonLabels(DashboardPeriod period) =>
+      switch (period) {
+        DashboardPeriod.weekly => _pt
+            ? ['Semana anterior', 'Há 4 semanas', 'Mesma semana do ano passado']
+            : ['Previous week', '4 weeks ago', 'Same week last year'],
+        DashboardPeriod.monthly => _pt
+            ? ['Mês anterior', 'Há 3 meses', 'Há 6 meses', 'Mesmo mês do ano passado']
+            : ['Previous month', '3 months ago', '6 months ago', 'Same month last year'],
+        DashboardPeriod.yearly => _pt
+            ? ['Ano anterior', 'Há 3 anos', 'Há 5 anos']
+            : ['Previous year', '3 years ago', '5 years ago'],
+      };
+
   // ─────────────────────────────────────────────────────────────────────────
 
   static const en = AppStrings._(
@@ -950,6 +972,10 @@ class AppStrings {
     dashboardGroupMoney: 'Money',
     dashboardGroupLogistics: 'Logistics',
     dashboardGroupCompliance: 'Compliance',
+    dashboardTopCategories: 'Top categories',
+    dashboardViewTrends: 'View more trends',
+    trendsTitle: 'Trends',
+    trendsNoPreviousData: 'No data for this period',
     searchSales: 'Search buyer or item...',
     noSalesFound: 'No sales found.',
     filterSort: 'Filter & sort',
@@ -1255,6 +1281,10 @@ class AppStrings {
     dashboardGroupMoney: 'Finanças',
     dashboardGroupLogistics: 'Logística',
     dashboardGroupCompliance: 'Documentação',
+    dashboardTopCategories: 'Principais categorias',
+    dashboardViewTrends: 'Ver mais tendências',
+    trendsTitle: 'Tendências',
+    trendsNoPreviousData: 'Sem dados para este período',
     searchSales: 'Pesquisar comprador ou artigo...',
     noSalesFound: 'Sem vendas encontradas.',
     filterSort: 'Filtrar e ordenar',
