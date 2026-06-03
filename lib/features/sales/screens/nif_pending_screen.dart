@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
@@ -197,7 +198,7 @@ class _NifRow extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          Icons.badge_outlined,
+          kNifIcon,
           size: 12,
           color: hasNif
               ? Theme.of(context).colorScheme.primary

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
@@ -353,7 +354,7 @@ class _ActionGrid extends StatelessWidget {
         const SizedBox(height: 8),
         _ActionGroupHeader(label: s.dashboardGroupCompliance),
         _ActionRow(
-          icon: Icons.badge,
+          icon: kNifIcon,
           label: s.nifRequired,
           count: stats.nifRequiredCount,
           color: Colors.teal,
