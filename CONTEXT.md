@@ -5,7 +5,7 @@ A private mobile app for a solo artisan seller in Portugal to track sales, payme
 ## Language
 
 **Sale**:
-A transaction where one or more Items are sold to a Buyer at an agreed price. Records payment, shipment, NIF requirement, AT submission status, components checklist, photos, and optional free-text notes (e.g. gift wrap requests, colour preferences).
+A transaction where one or more SaleItems are sold to a Buyer. The total price is derived as the sum of its SaleItems' prices. Records payment, shipment, NIF requirement, AT submission status, and optional free-text notes (e.g. gift wrap requests, colour preferences). Assembly status at the sale level is derived as the worst-case status across all SaleItems.
 _Avoid_: Order, purchase, transaction
 
 **Buyer**:
@@ -20,20 +20,20 @@ _Avoid_: Delivery address, shipping address (as a standalone concept)
 Portuguese tax identification number (Número de Identificação Fiscal). Stored optionally on a Buyer profile. Each Sale independently records whether the buyer requested a NIF receipt for that transaction — even if their profile has a NIF saved, they may opt out per sale.
 _Avoid_: Tax number, fiscal number
 
-**Item**:
-A unique, one-of-a-kind physical product (e.g. necklace, earring, tote bag, hat). Not tracked as inventory. Each Item in a Sale has an AssemblyStatus and a ComponentChecklist.
-_Avoid_: Product, SKU, stock
+**SaleItem**:
+A unique, one-of-a-kind physical product within a Sale (e.g. necklace, earring, tote bag, hat). Has its own description, ItemCategory, price, AssemblyStatus, ComponentChecklist, and photos. Not tracked as inventory — it exists only as part of a Sale. Code name: `SaleItem`.
+_Avoid_: Product, SKU, stock, Item (too generic in code)
 
 **ItemCategory**:
-A free-text string on a Sale that classifies its Item's product type. Seeded with four defaults (necklace, earring, tote bag, hat); the seller can add custom categories which are auto-discovered from existing Sales and offered in the picker. Not an enum — new categories are added by typing them. Used for filtering in the Sales list and for analytics breakdowns.
+A free-text string on a SaleItem that classifies its product type. Seeded with defaults (e.g. Colares, Brincos, Chapéus); the seller can add custom categories which are auto-discovered from existing SaleItems and offered in the picker. Not an enum — new categories are added by typing them. Used for filtering in the Sales list and for per-category revenue analytics (e.g. "€100 in Colares this month").
 _Avoid_: Product type, product category (implies a separate catalogue entity)
 
 **AssemblyStatus**:
-The production state of an Item within a Sale: `not_started`, `waiting_for_materials`, `in_progress`, or `ready`. `waiting_for_materials` means the seller knows components must be purchased before work can start — typically used for event orders taken before materials are sourced. Determines whether the Item can be shipped.
+The production state of a SaleItem: `not_started`, `waiting_for_materials`, `in_progress`, or `ready`. `waiting_for_materials` means the seller knows components must be purchased before work can start — typically used for event orders taken before materials are sourced. Determines whether the SaleItem can be shipped. The Sale-level assembly status is derived as the worst-case status across all its SaleItems (a Sale is only `ready` when every SaleItem is `ready`).
 _Avoid_: Production status, build status
 
 **ComponentChecklist**:
-A per-Sale list of materials or pieces needed to make the Item (e.g. "silver chain", "blue bead"). Each entry is marked as `have` or `need_to_buy`. Acts as a shopping list for that specific Sale.
+A per-SaleItem list of materials or pieces needed to make that item (e.g. "silver chain", "blue bead"). Each entry is marked as `have` or `need_to_buy`. Acts as a shopping list for that specific SaleItem.
 _Avoid_: Bill of materials, inventory, stock list
 
 **Payment**:
@@ -75,14 +75,15 @@ _Avoid_: Backup, dump
 ## Relationships
 
 - A **Sale** belongs to exactly one **Buyer** (stores `buyerId` + `buyerName` as a snapshot)
-- A **Sale** has one **Payment** (which may be unpaid)
+- A **Sale** has one or more **SaleItems** (minimum 1); total price is the sum of SaleItem prices
+- A **Sale** has one **Payment** (which may be unpaid); payment covers the whole Sale
 - A **Sale** records whether a NIF receipt was requested (independent of the Buyer's saved NIF)
 - A **Sale** with `requiresNif` tracks whether its **ATSubmission** is pending or completed
 - A **Sale** has one **Shipment** OR is marked as in-person pickup (no Shipment needed)
-- A **Sale** has one **ComponentChecklist** and one **AssemblyStatus** per Item
 - A **Shipment** references one **BuyerAddress** and records a postal code
-- A **Sale** may have zero or more photos (compressed to max 1200px wide, JPEG quality 85, ~200–300KB each)
 - A **Sale** may have optional free-text notes (special instructions, gift requests, colour choices)
+- A **SaleItem** has one **AssemblyStatus** and one **ComponentChecklist**
+- A **SaleItem** may have zero or more photos (compressed to max 1200px wide, JPEG quality 85, ~200–300KB each)
 - A **Buyer** may have multiple **Sales** over time
 - A **Buyer** may have multiple **BuyerAddresses**; one is marked as default
 - A **Buyer** may optionally have a saved **NIF**
@@ -121,14 +122,14 @@ These rules define exactly what is removed when each entity is deleted, and what
 
 ## Photo lifecycle
 
-Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/photos/{uuid}.jpg`.
+Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{itemId}/photos/{uuid}.jpg` — scoped per SaleItem.
 
-**Upload:** triggered from the new/edit sale screen or the sale detail photo grid. Each image is compressed by `image_picker` before upload (maxWidth: 1200px, JPEG quality: 85), producing files of roughly 200–300KB. Multiple photos per Sale are supported.
+**Upload:** triggered from the SaleItemScreen (during new/edit sale) or from the item detail view in the Sale detail screen. Each image is compressed by `image_picker` before upload (maxWidth: 1200px, JPEG quality: 85), producing files of roughly 200–300KB. Multiple photos per SaleItem are supported.
 
 **Orphan prevention:** three layers ensure no photo is ever left in Storage without a corresponding Sale:
 1. Cancel new sale → all photos uploaded in that session are deleted
 2. Cancel sale edit → only photos added in that edit session are deleted; originals are untouched
-3. Delete sale → `PhotoService.deleteAllPhotos(saleId)` lists and deletes all files under that Sale's Storage folder before the Firestore document is removed
+3. Delete sale → `PhotoService.deleteAllPhotos(saleId)` lists and deletes all files under that Sale's Storage folder (including all item subfolders) before the Firestore document is removed
 
 **Year purge exception:** when a year is purged from Settings, the Firestore documents are deleted but photos are deliberately kept. The archive JSON export includes the original `photoUrls`, so photos remain visible when the archive is re-imported into the app.
 
@@ -148,11 +149,13 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/photos/{
    - NIF required → NifPending screen
    - Pending shipment / Overdue → filtered Sales list
 
-3. **Sales list** — default view shows only **active Sales** (not yet delivered); timeline grouped Overdue → This week → Next week → Later → past months. Tune icon opens a filter/sort sheet with grouped filters (Money / Logistics / Compliance), year chips (one per year that has Sales, dynamically generated), date range picker (mutually exclusive with year chips), inline buyer search (single-select), and sort order. Selecting a year chip shows **all** Sales in that calendar year including delivered ones, overriding the active-only default. Selecting a date range does not override the default (still hides delivered). Map toggle button shows the SalesHeatMap. Each Sale shown as a card: buyer name + price top row; item description + attention badges right; creation date left + due date right; progress path spanning full card width at the bottom (tap → legend). Left accent bar: red = overdue with blockers, amber = this week with blockers. Attention badges (tap to open detail sheet): `receipt_long` purple = NIF unfiled, green = NIF filed; specific blocker icon = single urgency reason, generic ⚠️ = multiple.
+3. **Sales list** — default view shows only **active Sales** (not yet delivered); timeline grouped Overdue → This week → Next week → Later → past months. Tune icon opens a filter/sort sheet with grouped filters (Money / Logistics / Compliance), year chips (one per year that has Sales, dynamically generated), date range picker (mutually exclusive with year chips), inline buyer search (single-select), and sort order. Selecting a year chip shows **all** Sales in that calendar year including delivered ones, overriding the active-only default. Selecting a date range does not override the default (still hides delivered). Map toggle button shows the SalesHeatMap. Each Sale shown as a card: buyer name + derived total price top row; SaleItem descriptions one per line (up to 3; "and X more" tappable to a bottom sheet if more) + attention badges right; one ItemCategory chip per unique category across all SaleItems (wrapping); creation date left + due date right; progress path spanning full card width at the bottom (tap → legend). Left accent bar: red = overdue with blockers, amber = this week with blockers. Attention badges (tap to open detail sheet): `receipt_long` purple = NIF unfiled, green = NIF filed; specific blocker icon = single urgency reason, generic ⚠️ = multiple.
 
-4. **New/edit sale** — pick Buyer (inline Buyer + address creation); repeat-buyer hint shows "X previous sales · last: MMM YYYY" after selection; describe Item, photos, AssemblyStatus (including `waiting_for_materials`), ComponentChecklist, price, payment method, NIF required flag, delivery type (shipping or pickup), optional scheduled date, optional free-text Notes; orphan photo cleanup on cancel
+4. **New/edit sale** — Buyer section (inline Buyer + address creation; repeat-buyer hint shows "X previous sales · last: MMM YYYY"); SaleItems list (each item edited on a dedicated SaleItemScreen with description, ItemCategory, price, AssemblyStatus, ComponentChecklist, photos); Payment section (method, paid/unpaid, NIF required flag); Delivery section (type, address, CTT tracking code, scheduled date); Notes section. Sale total is shown as derived sum of SaleItem prices. Orphan photo cleanup on cancel.
 
-5. **Sale detail** — live stream; photo grid; assembly dropdown (includes `waiting_for_materials`); component checklist; scheduled date (set / change / clear); payment toggle; AT submission toggle (shown when `requiresNif && paid` — tap to mark filed/unfiled, green when filed); delivery card with status, address, CTT tracking code (tap → copy to clipboard, long-press → ctt.pt, open-in-new icon); Notes card (inline editable); buyer name taps to Buyer detail
+4a. **SaleItemScreen** — sub-screen pushed from the new/edit sale form for adding or editing a single SaleItem: description, ItemCategory, price, AssemblyStatus (including `waiting_for_materials`), ComponentChecklist, and photos.
+
+5. **Sale detail** — live stream; SaleItems list (description, category, price per item; tap item to see its assembly status, component checklist, and photos); derived total price; payment toggle; AT submission toggle (shown when `requiresNif && paid`); delivery card with status, address, CTT tracking code; Notes card (inline editable); buyer name taps to Buyer detail
 
 6. **Buyers list** — all Buyers, searchable; three sort modes (alphabetical, grouped by last purchase, ranking); ranking metric chips (total spent, frequency, average order, unpaid balance)
 
