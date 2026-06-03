@@ -13,8 +13,7 @@ import '../../sales/screens/nif_pending_screen.dart';
 import '../../sales/screens/sales_list_screen.dart';
 import '../../sales/screens/shopping_list_screen.dart';
 import '../models/dashboard_stats.dart';
-
-enum _ViewMode { yearly, monthly, weekly }
+import 'trends_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,7 +23,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  _ViewMode _viewMode = _ViewMode.monthly;
+  DashboardPeriod _period = DashboardPeriod.monthly;
 
   int _year = DateTime.now().year;
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
@@ -33,35 +32,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   static DateTime _mondayOf(DateTime date) =>
       date.subtract(Duration(days: date.weekday - 1));
 
-  DateTime get _periodStart => switch (_viewMode) {
-        _ViewMode.yearly => DateTime(_year),
-        _ViewMode.monthly => _month,
-        _ViewMode.weekly => _weekStart,
+  DateTime get _periodStart => switch (_period) {
+        DashboardPeriod.yearly => DateTime(_year),
+        DashboardPeriod.monthly => _month,
+        DashboardPeriod.weekly => _weekStart,
       };
 
-  DateTime get _periodEnd => switch (_viewMode) {
-        _ViewMode.yearly => DateTime(_year + 1),
-        _ViewMode.monthly => DateTime(_month.year, _month.month + 1),
-        _ViewMode.weekly => _weekStart.add(const Duration(days: 7)),
+  DateTime get _periodEnd => switch (_period) {
+        DashboardPeriod.yearly => DateTime(_year + 1),
+        DashboardPeriod.monthly => DateTime(_month.year, _month.month + 1),
+        DashboardPeriod.weekly => _weekStart.add(const Duration(days: 7)),
       };
 
   bool get _isCurrentPeriod {
     final now = DateTime.now();
-    return switch (_viewMode) {
-      _ViewMode.yearly => _year == now.year,
-      _ViewMode.monthly =>
+    return switch (_period) {
+      DashboardPeriod.yearly => _year == now.year,
+      DashboardPeriod.monthly =>
         _month.year == now.year && _month.month == now.month,
-      _ViewMode.weekly => _weekStart == _mondayOf(now),
+      DashboardPeriod.weekly => _weekStart == _mondayOf(now),
     };
   }
 
   void _previous() => setState(() {
-        switch (_viewMode) {
-          case _ViewMode.yearly:
+        switch (_period) {
+          case DashboardPeriod.yearly:
             _year--;
-          case _ViewMode.monthly:
+          case DashboardPeriod.monthly:
             _month = DateTime(_month.year, _month.month - 1);
-          case _ViewMode.weekly:
+          case DashboardPeriod.weekly:
             _weekStart = _weekStart.subtract(const Duration(days: 7));
         }
       });
@@ -69,36 +68,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _next() {
     if (_isCurrentPeriod) return;
     setState(() {
-      switch (_viewMode) {
-        case _ViewMode.yearly:
+      switch (_period) {
+        case DashboardPeriod.yearly:
           _year++;
-        case _ViewMode.monthly:
+        case DashboardPeriod.monthly:
           _month = DateTime(_month.year, _month.month + 1);
-        case _ViewMode.weekly:
+        case DashboardPeriod.weekly:
           _weekStart = _weekStart.add(const Duration(days: 7));
       }
     });
   }
 
-  String get _periodLabel => switch (_viewMode) {
-        _ViewMode.yearly => '$_year',
-        _ViewMode.monthly => DateFormat('MMMM yyyy').format(_month),
-        _ViewMode.weekly => () {
+  String get _periodLabel => switch (_period) {
+        DashboardPeriod.yearly => '$_year',
+        DashboardPeriod.monthly => DateFormat('MMMM yyyy').format(_month),
+        DashboardPeriod.weekly => () {
             final end = _weekStart.add(const Duration(days: 6));
             return '${DateFormat('d MMM').format(_weekStart)} – ${DateFormat('d MMM yyyy').format(end)}';
           }(),
       };
 
-  (DateTime, DateTime) _shiftedPeriod(int delta) => switch (_viewMode) {
-        _ViewMode.yearly => (
+  (DateTime, DateTime) _shiftedPeriod(int delta) => switch (_period) {
+        DashboardPeriod.yearly => (
             DateTime(_year + delta),
             DateTime(_year + delta + 1),
           ),
-        _ViewMode.monthly => (
+        DashboardPeriod.monthly => (
             DateTime(_month.year, _month.month + delta),
             DateTime(_month.year, _month.month + delta + 1),
           ),
-        _ViewMode.weekly => (
+        DashboardPeriod.weekly => (
             _weekStart.add(Duration(days: 7 * delta)),
             _weekStart.add(Duration(days: 7 * (delta + 1))),
           ),
@@ -125,11 +124,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const periodCount = 6;
     return List.generate(periodCount, (i) {
       final offset = i - (periodCount - 1);
-      return switch (_viewMode) {
-        _ViewMode.yearly => '\'${(_year + offset) % 100}',
-        _ViewMode.monthly =>
+      return switch (_period) {
+        DashboardPeriod.yearly => '\'${(_year + offset) % 100}',
+        DashboardPeriod.monthly =>
           DateFormat('MMM').format(DateTime(_month.year, _month.month + offset)),
-        _ViewMode.weekly =>
+        DashboardPeriod.weekly =>
           DateFormat('d/M').format(_weekStart.add(Duration(days: 7 * offset))),
       };
     });
@@ -142,26 +141,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text(s.dashboard),
         actions: [
-          SegmentedButton<_ViewMode>(
+          SegmentedButton<DashboardPeriod>(
             segments: [
               ButtonSegment(
-                value: _ViewMode.yearly,
+                value: DashboardPeriod.yearly,
                 icon: const Icon(Icons.calendar_today, size: 18),
                 tooltip: s.tooltipYear,
               ),
               ButtonSegment(
-                value: _ViewMode.monthly,
+                value: DashboardPeriod.monthly,
                 icon: const Icon(Icons.calendar_month, size: 18),
                 tooltip: s.tooltipMonth,
               ),
               ButtonSegment(
-                value: _ViewMode.weekly,
+                value: DashboardPeriod.weekly,
                 icon: const Icon(Icons.calendar_view_week, size: 18),
                 tooltip: s.tooltipWeek,
               ),
             ],
-            selected: {_viewMode},
-            onSelectionChanged: (v) => setState(() => _viewMode = v.first),
+            selected: {_period},
+            onSelectionChanged: (v) => setState(() => _period = v.first),
             style: const ButtonStyle(
               visualDensity: VisualDensity.compact,
             ),
@@ -177,8 +176,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
           final all = storeState.data;
           final stats = DashboardStats.compute(all, _periodStart, _periodEnd);
-
           final sparkline = _computeSparkline(all);
+          final topCategories = DashboardStats.computeTopCategories(
+              all, _periodStart, _periodEnd);
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -191,12 +191,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
               _RevenueCard(stats: stats, periodLabel: _periodLabel),
-              const SizedBox(height: 12),
-              _TrendsCard(
-                stats: stats,
-                sparkline: sparkline,
-                sparklineLabels: _sparklineLabels(),
-              ),
               const SizedBox(height: 24),
               Text(
                 s.actionNeeded,
@@ -206,6 +200,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
               _ActionGrid(stats: stats),
+              const SizedBox(height: 24),
+              _InsightsCard(
+                stats: stats,
+                sparkline: sparkline,
+                sparklineLabels: _sparklineLabels(),
+                topCategories: topCategories,
+              ),
+              const SizedBox(height: 8),
+              _TrendsEntryCard(period: _period),
             ],
           );
         },
@@ -468,26 +471,28 @@ class _ActionRow extends StatelessWidget {
   }
 }
 
-class _TrendsCard extends StatefulWidget {
+class _InsightsCard extends StatefulWidget {
   final DashboardStats stats;
   final List<double> sparkline;
   final List<String> sparklineLabels;
+  final List<({String category, double revenue})> topCategories;
 
-  const _TrendsCard({
+  const _InsightsCard({
     required this.stats,
     required this.sparkline,
     required this.sparklineLabels,
+    required this.topCategories,
   });
 
   @override
-  State<_TrendsCard> createState() => _TrendsCardState();
+  State<_InsightsCard> createState() => _InsightsCardState();
 }
 
-class _TrendsCardState extends State<_TrendsCard> {
+class _InsightsCardState extends State<_InsightsCard> {
   bool _showValues = false;
 
   @override
-  void didUpdateWidget(_TrendsCard old) {
+  void didUpdateWidget(_InsightsCard old) {
     super.didUpdateWidget(old);
     // Reset when sparkline data changes (period navigation or Firestore update).
     if (!_sparklineEqual(old.sparkline, widget.sparkline)) {
@@ -516,6 +521,9 @@ class _TrendsCardState extends State<_TrendsCard> {
     final hasTrend = prev > 0;
     final trendPct = hasTrend ? (current - prev) / prev * 100 : 0.0;
     final trendUp = trendPct >= 0;
+    final maxCategoryRevenue = widget.topCategories.isNotEmpty
+        ? widget.topCategories.first.revenue
+        : 0.0;
 
     return Card(
       child: Padding(
@@ -532,8 +540,7 @@ class _TrendsCardState extends State<_TrendsCard> {
                       ),
                 ),
                 const Spacer(),
-                if (hasTrend)
-                  _TrendBadge(pct: trendPct.abs(), up: trendUp),
+                if (hasTrend) _TrendBadge(pct: trendPct.abs(), up: trendUp),
               ],
             ),
             const SizedBox(height: 12),
@@ -576,13 +583,15 @@ class _TrendsCardState extends State<_TrendsCard> {
                         child: Text(
                           widget.sparklineLabels[i],
                           textAlign: TextAlign.center,
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    fontSize: 10,
-                                    color: i == widget.sparklineLabels.length - 1
-                                        ? colorScheme.primary
-                                        : colorScheme.outline,
-                                  ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                fontSize: 10,
+                                color: i == widget.sparklineLabels.length - 1
+                                    ? colorScheme.primary
+                                    : colorScheme.outline,
+                              ),
                         ),
                       ),
                     ),
@@ -614,6 +623,30 @@ class _TrendsCardState extends State<_TrendsCard> {
                 ],
               ),
             ),
+            if (widget.topCategories.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(height: 1),
+              ),
+              Text(
+                s.dashboardTopCategories.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: colorScheme.outline,
+                      letterSpacing: 0.8,
+                    ),
+              ),
+              const SizedBox(height: 10),
+              ...widget.topCategories.map((cat) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _CategoryRow(
+                      category: cat.category,
+                      fraction: maxCategoryRevenue > 0
+                          ? cat.revenue / maxCategoryRevenue
+                          : 0,
+                      revenueLabel: currency.format(cat.revenue),
+                    ),
+                  )),
+            ],
           ],
         ),
       ),
@@ -675,6 +708,108 @@ class _StatChip extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryRow extends StatelessWidget {
+  final String category;
+  final double fraction;
+  final String revenueLabel;
+
+  const _CategoryRow({
+    required this.category,
+    required this.fraction,
+    required this.revenueLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                category,
+                style: Theme.of(context).textTheme.bodySmall,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              revenueLabel,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        LayoutBuilder(
+          builder: (context, constraints) => ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              height: 6,
+              child: Stack(
+                children: [
+                  Container(
+                    color: colorScheme.outlineVariant,
+                    width: constraints.maxWidth,
+                  ),
+                  Container(
+                    color: colorScheme.primary,
+                    width: constraints.maxWidth * fraction,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TrendsEntryCard extends StatelessWidget {
+  final DashboardPeriod period;
+
+  const _TrendsEntryCard({required this.period});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => TrendsScreen(initialPeriod: period)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.insights, color: colorScheme.primary, size: 22),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  s.dashboardViewTrends,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: colorScheme.onSurface),
+                ),
+              ),
+              Icon(Icons.chevron_right, color: colorScheme.outline, size: 18),
+            ],
+          ),
+        ),
       ),
     );
   }
