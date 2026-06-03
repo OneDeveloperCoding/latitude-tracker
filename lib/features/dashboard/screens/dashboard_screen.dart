@@ -114,7 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (s.payment.status == PaymentStatus.paid &&
             !s.createdAt.isBefore(start) &&
             s.createdAt.isBefore(end)) {
-          revenue += s.price;
+          revenue += s.totalPrice;
         }
       }
       return revenue;

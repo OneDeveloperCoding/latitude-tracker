@@ -27,7 +27,9 @@ Future<String?> showCategoryPicker(
 List<String> _buildSortedCategories() {
   final counts = <String, int>{};
   for (final sale in SalesStore.current ?? []) {
-    counts[sale.category] = (counts[sale.category] ?? 0) + 1;
+    for (final item in sale.items) {
+      counts[item.category] = (counts[item.category] ?? 0) + 1;
+    }
   }
   // Seed defaults that aren't yet in use with count 0.
   for (final cat in kDefaultCategories) {

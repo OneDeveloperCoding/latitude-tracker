@@ -130,6 +130,11 @@ class AppStrings {
   final String duplicateSale;
   final String sectionBuyer;
   final String sectionItem;
+  final String sectionItems;
+  final String addItem;
+  final String editItem;
+  final String saleTotal;
+  final String atLeastOneItem;
   final String sectionPhotos;
   final String sectionComponents;
   final String sectionPayment;
@@ -432,6 +437,11 @@ class AppStrings {
     required this.duplicateSale,
     required this.sectionBuyer,
     required this.sectionItem,
+    required this.sectionItems,
+    required this.addItem,
+    required this.editItem,
+    required this.saleTotal,
+    required this.atLeastOneItem,
     required this.sectionPhotos,
     required this.sectionComponents,
     required this.sectionPayment,
@@ -630,6 +640,7 @@ class AppStrings {
       : '${nItems(items)} across ${nSales(sales)}';
 
   String nUrgent(int n) => _pt ? '$n urgente${n == 1 ? '' : 's'}' : '$n urgent';
+  String andXMore(int n) => _pt ? 'e mais $n' : 'and $n more';
 
   String nUnpaid(int n) => _pt ? '$n por pagar' : '$n unpaid';
 
@@ -984,6 +995,11 @@ class AppStrings {
     duplicateSale: 'Duplicate Sale',
     sectionBuyer: 'Buyer',
     sectionItem: 'Item',
+    sectionItems: 'Items',
+    addItem: 'Add item',
+    editItem: 'Edit item',
+    saleTotal: 'Total',
+    atLeastOneItem: 'Add at least one item',
     sectionPhotos: 'Photos',
     sectionComponents: 'Components needed',
     sectionPayment: 'Payment',
@@ -1284,6 +1300,11 @@ class AppStrings {
     duplicateSale: 'Duplicar Venda',
     sectionBuyer: 'Comprador',
     sectionItem: 'Artigo',
+    sectionItems: 'Artigos',
+    addItem: 'Adicionar artigo',
+    editItem: 'Editar artigo',
+    saleTotal: 'Total',
+    atLeastOneItem: 'Adicione pelo menos um artigo',
     sectionPhotos: 'Fotos',
     sectionComponents: 'Materiais necessários',
     sectionPayment: 'Pagamento',

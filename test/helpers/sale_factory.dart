@@ -1,5 +1,24 @@
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
+SaleItem makeSaleItem({
+  String id = 'item-1',
+  String description = 'Test Item',
+  String category = 'necklace',
+  double price = 50.0,
+  AssemblyStatus assembly = AssemblyStatus.ready,
+  List<ComponentItem> components = const [],
+  List<String> photoUrls = const [],
+}) =>
+    SaleItem(
+      id: id,
+      description: description,
+      category: category,
+      price: price,
+      assemblyStatus: assembly,
+      components: components,
+      photoUrls: photoUrls,
+    );
+
 Sale makeSale({
   AssemblyStatus assembly = AssemblyStatus.ready,
   PaymentStatus payment = PaymentStatus.paid,
@@ -10,16 +29,20 @@ Sale makeSale({
   bool requiresNif = false,
   DateTime? createdAt,
   String category = 'necklace',
+  List<SaleItem>? items,
 }) =>
     Sale(
       id: 'test',
       buyerId: 'b1',
       buyerName: 'Test Buyer',
-      itemDescription: 'Test Item',
-      category: category,
-      price: price,
-      assemblyStatus: assembly,
-      components: const [],
+      items: items ??
+          [
+            makeSaleItem(
+              assembly: assembly,
+              category: category,
+              price: price,
+            ),
+          ],
       payment: SalePayment(status: payment, method: PaymentMethod.mbWay),
       shipment: SaleShipment(type: delivery, status: shipmentStatus),
       requiresNif: requiresNif,

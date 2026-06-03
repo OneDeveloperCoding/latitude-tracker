@@ -91,6 +91,9 @@ Future<void> _confirmDelete(
       sale.shipment.status == ShipmentStatus.delivered;
   final paid = sale.payment.status == PaymentStatus.paid;
 
+  final totalPhotos =
+      sale.items.fold(0, (acc, item) => acc + item.photoUrls.length);
+
   final String title;
   final String message;
 
@@ -99,14 +102,14 @@ Future<void> _confirmDelete(
     final statusLabel = sale.shipment.status == ShipmentStatus.delivered
         ? s.delivered
         : s.shippedStatus;
-    message = s.deleteShippedSaleBody(
-        statusLabel, sale.atSubmissionDone, sale.photoUrls.length);
+    message =
+        s.deleteShippedSaleBody(statusLabel, sale.atSubmissionDone, totalPhotos);
   } else if (paid) {
     title = s.deletePaidSaleTitle;
-    message = s.deletePaidSaleBody(sale.price, sale.photoUrls.length);
+    message = s.deletePaidSaleBody(sale.totalPrice, totalPhotos);
   } else {
     title = s.deleteSaleTitle;
-    message = s.deleteSaleBody(sale.photoUrls.length);
+    message = s.deleteSaleBody(totalPhotos);
   }
 
   final confirmed = await showDialog<bool>(
@@ -158,6 +161,25 @@ class _SaleDetailBody extends StatelessWidget {
     }
   }
 
+  void _updateItem(BuildContext context, SaleItem updated) {
+    final updatedItems = sale.items
+        .map((item) => item.id == updated.id ? updated : item)
+        .toList();
+    _update(context, sale.copyWith(items: updatedItems));
+  }
+
+  void _openItemDetail(BuildContext context, SaleItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _ItemDetailSheet(
+        saleId: sale.id,
+        item: item,
+        onUpdateItem: (updated) => _updateItem(context, updated),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
@@ -167,18 +189,6 @@ class _SaleDetailBody extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
           16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
       children: [
-        if (sale.photoUrls.isNotEmpty) ...[
-          _SectionCard(
-            title: s.sectionPhotos,
-            child: PhotoGrid(
-              saleId: sale.id,
-              photoUrls: sale.photoUrls,
-              onChanged: (urls) =>
-                  _update(context, sale.copyWith(photoUrls: urls)),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
         _InfoCard(children: [
           _InfoRow(
             icon: Icons.person,
@@ -195,55 +205,22 @@ class _SaleDetailBody extends StatelessWidget {
             text: dateFormat.format(sale.createdAt),
           ),
           _InfoRow(
-            icon: Icons.description,
-            text: sale.itemDescription,
-          ),
-          _InfoRow(
-            icon: Icons.label_outline,
-            text: sale.category,
-          ),
-          _InfoRow(
             icon: Icons.euro,
-            text: '€${sale.price.toStringAsFixed(2)}',
+            text: '€${sale.totalPrice.toStringAsFixed(2)} · ${sale.items.length} ${sale.items.length == 1 ? 'item' : 'items'}',
           ),
-          if (sale.requiresNif)
-            _InfoRow(icon: Icons.badge, text: s.nifReceiptRequiredInfo),
-          if (sale.requiresNif && sale.payment.status == PaymentStatus.paid)
-            _InfoRow(
-              icon: sale.atSubmissionDone
-                  ? Icons.check_circle
-                  : Icons.check_circle_outline,
-              text: sale.atSubmissionDone
-                  ? s.atReceiptFiled
-                  : s.atReceiptPending,
-              color: sale.atSubmissionDone ? Colors.green : Colors.orange,
-              onTap: () => _update(
-                context,
-                sale.copyWith(
-                    atSubmissionDone: !sale.atSubmissionDone),
-              ),
-            ),
         ]),
         const SizedBox(height: 16),
         _SectionCard(
-          title: s.assemblyLegendHeader,
-          child: DropdownButton<AssemblyStatus>(
-            value: sale.assemblyStatus,
-            isExpanded: true,
-            underline: const SizedBox(),
-            items: AssemblyStatus.values
-                .map((status) => DropdownMenuItem(
-                    value: status,
-                    child: Text(s.assemblyLabel(status))))
-                .toList(),
-            onChanged: (v) => _update(
-              context,
-              sale.copyWith(assemblyStatus: v),
-            ),
+          title: s.sectionItems,
+          child: Column(
+            children: [
+              ...sale.items.map((item) => _ItemSummaryTile(
+                    item: item,
+                    onTap: () => _openItemDetail(context, item),
+                  )),
+            ],
           ),
         ),
-        const SizedBox(height: 16),
-        _ComponentsCard(sale: sale, onUpdate: _update),
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionPayment,
@@ -279,6 +256,43 @@ class _SaleDetailBody extends StatelessWidget {
                   ),
                 ),
               ),
+              if (sale.requiresNif) ...[
+                const Divider(height: 16),
+                _InfoRow(icon: Icons.badge, text: s.nifReceiptRequiredInfo),
+                if (sale.payment.status == PaymentStatus.paid)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      Icons.receipt_long,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      sale.atSubmissionDone
+                          ? s.atReceiptFiled
+                          : s.atReceiptPending,
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        sale.atSubmissionDone
+                            ? Icons.check_circle
+                            : Icons.check_circle_outline,
+                        color: sale.atSubmissionDone
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      tooltip: sale.atSubmissionDone
+                          ? s.markAsPending
+                          : s.markAsFiled,
+                      onPressed: () => _update(
+                        context,
+                        sale.copyWith(
+                            atSubmissionDone: !sale.atSubmissionDone),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
@@ -381,6 +395,232 @@ class _SaleDetailBody extends StatelessWidget {
       return [ShipmentStatus.pending, ShipmentStatus.delivered];
     }
     return ShipmentStatus.values;
+  }
+}
+
+class _ItemSummaryTile extends StatelessWidget {
+  final SaleItem item;
+  final VoidCallback onTap;
+
+  const _ItemSummaryTile({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final (statusColor, _) = _assemblyColor(context, item.assemblyStatus);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      onTap: onTap,
+      title: Text(
+        item.description,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(item.category),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '€${item.price.toStringAsFixed(2)}',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.circle, size: 10, color: statusColor),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, size: 18),
+        ],
+      ),
+    );
+  }
+
+  (Color, String) _assemblyColor(BuildContext context, AssemblyStatus s) =>
+      switch (s) {
+        AssemblyStatus.ready => (Colors.green, 'ready'),
+        AssemblyStatus.inProgress => (Colors.orange, 'in progress'),
+        AssemblyStatus.waitingForMaterials => (Colors.amber, 'waiting'),
+        AssemblyStatus.notStarted => (Colors.grey, 'not started'),
+      };
+}
+
+// Bottom sheet shown when tapping a SaleItem in the detail view.
+class _ItemDetailSheet extends StatefulWidget {
+  final String saleId;
+  final SaleItem item;
+  final ValueChanged<SaleItem> onUpdateItem;
+
+  const _ItemDetailSheet({
+    required this.saleId,
+    required this.item,
+    required this.onUpdateItem,
+  });
+
+  @override
+  State<_ItemDetailSheet> createState() => _ItemDetailSheetState();
+}
+
+class _ItemDetailSheetState extends State<_ItemDetailSheet> {
+  final _componentController = TextEditingController();
+
+  SaleItem get _item => widget.item;
+
+  @override
+  void dispose() {
+    _componentController.dispose();
+    super.dispose();
+  }
+
+  void _toggleComponent(ComponentItem c) {
+    final updated = _item.withUpdatedComponents(
+      _item.components
+          .map((ci) =>
+              ci.id == c.id ? ci.copyWith(isAvailable: !c.isAvailable) : ci)
+          .toList(),
+    );
+    widget.onUpdateItem(updated);
+  }
+
+  void _removeComponent(ComponentItem c) {
+    final updated = _item.withUpdatedComponents(
+      _item.components.where((ci) => ci.id != c.id).toList(),
+    );
+    widget.onUpdateItem(updated);
+  }
+
+  void _addComponent() {
+    final name = _componentController.text.trim();
+    if (name.isEmpty) return;
+    final updated = _item.withUpdatedComponents([
+      ..._item.components,
+      ComponentItem(
+        id: FirebaseFirestore.instance.collection('_').doc().id,
+        name: name,
+        isAvailable: false,
+      ),
+    ]);
+    widget.onUpdateItem(updated);
+    setState(() => _componentController.clear());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      builder: (_, scrollController) => ListView(
+        controller: scrollController,
+        padding: EdgeInsets.fromLTRB(
+            16, 8, 16, 16 + MediaQuery.of(context).padding.bottom),
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            _item.description,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${_item.category} · €${_item.price.toStringAsFixed(2)}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Text(s.assemblyStatusLabel,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  )),
+          const SizedBox(height: 8),
+          DropdownButton<AssemblyStatus>(
+            value: _item.assemblyStatus,
+            isExpanded: true,
+            underline: const SizedBox(),
+            items: AssemblyStatus.values
+                .map((st) => DropdownMenuItem(
+                    value: st, child: Text(s.assemblyLabel(st))))
+                .toList(),
+            onChanged: (v) =>
+                widget.onUpdateItem(_item.copyWith(assemblyStatus: v)),
+          ),
+          if (_item.photoUrls.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(s.sectionPhotos,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    )),
+            const SizedBox(height: 8),
+            PhotoGrid(
+              saleId: widget.saleId,
+              itemId: _item.id,
+              photoUrls: _item.photoUrls,
+              onChanged: (urls) =>
+                  widget.onUpdateItem(_item.copyWith(photoUrls: urls)),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Text(s.sectionComponents,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  )),
+          const SizedBox(height: 4),
+          ..._item.components.map((c) => Dismissible(
+                key: ValueKey(c.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  color: Theme.of(context).colorScheme.error,
+                  child: const Icon(Icons.delete_outline, color: Colors.white),
+                ),
+                onDismissed: (_) => _removeComponent(c),
+                child: CheckboxListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(c.name),
+                  subtitle:
+                      Text(c.isAvailable ? s.haveIt : s.needToBuy),
+                  value: c.isAvailable,
+                  onChanged: (_) => _toggleComponent(c),
+                ),
+              )),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _componentController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    hintText: s.addComponentHint,
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => _addComponent(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: _addComponent,
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -634,106 +874,6 @@ class _AddressDisplayState extends State<_AddressDisplay> {
   }
 }
 
-class _ComponentsCard extends StatefulWidget {
-  final Sale sale;
-  final void Function(BuildContext, Sale) onUpdate;
-
-  const _ComponentsCard({required this.sale, required this.onUpdate});
-
-  @override
-  State<_ComponentsCard> createState() => _ComponentsCardState();
-}
-
-class _ComponentsCardState extends State<_ComponentsCard> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _add() {
-    final name = _controller.text.trim();
-    if (name.isEmpty) return;
-    final updated = [
-      ...widget.sale.components,
-      ComponentItem(
-        id: FirebaseFirestore.instance.collection('_').doc().id,
-        name: name,
-        isAvailable: false,
-      ),
-    ];
-    widget.onUpdate(context, widget.sale.copyWith(components: updated));
-    setState(() => _controller.clear());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    final sale = widget.sale;
-    return _SectionCard(
-      title: s.sectionComponents,
-      child: Column(
-        children: [
-          ...sale.components.map((c) => Dismissible(
-                key: ValueKey(c.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 16),
-                  color: Theme.of(context).colorScheme.error,
-                  child: const Icon(Icons.delete_outline, color: Colors.white),
-                ),
-                onDismissed: (_) {
-                  final updated = sale.components
-                      .where((item) => item.id != c.id)
-                      .toList();
-                  widget.onUpdate(context, sale.withUpdatedComponents(updated));
-                },
-                child: CheckboxListTile(
-                  dense: true,
-                  title: Text(c.name),
-                  subtitle: Text(c.isAvailable ? s.haveIt : s.needToBuy),
-                  value: c.isAvailable,
-                  onChanged: (_) {
-                    final updated = sale.components
-                        .map((item) => item.id == c.id
-                            ? item.copyWith(isAvailable: !c.isAvailable)
-                            : item)
-                        .toList();
-                    widget.onUpdate(context, sale.withUpdatedComponents(updated));
-                  },
-                ),
-              )),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: s.addComponentHint,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onSubmitted: (_) => _add(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                onPressed: _add,
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
@@ -781,10 +921,8 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
-  final Color? color;
 
-  const _InfoRow(
-      {required this.icon, required this.text, this.onTap, this.color});
+  const _InfoRow({required this.icon, required this.text, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -794,7 +932,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           Icon(icon,
               size: 16,
-              color: color ?? Theme.of(context).colorScheme.primary),
+              color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
           if (onTap != null)

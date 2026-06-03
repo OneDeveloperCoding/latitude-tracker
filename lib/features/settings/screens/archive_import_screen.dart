@@ -100,10 +100,13 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
     final year = widget.archive['year'] as int?;
     final exportedAt = widget.archive['exportedAt'] as String?;
 
-    final totalRevenue = _sales.fold<double>(
-      0,
-      (sum, s) => sum + ((s['price'] as num?)?.toDouble() ?? 0),
-    );
+    final totalRevenue = _sales.fold<double>(0, (sum, s) {
+      final items =
+          (s['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return sum +
+          items.fold<double>(
+              0, (iSum, i) => iSum + ((i['price'] as num?)?.toDouble() ?? 0));
+    });
     final paidCount =
         _sales.where((s) => (s['payment'] as Map?)?['status'] == 'paid').length;
 
@@ -243,9 +246,13 @@ class _ArchivedSaleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final price = (sale['price'] as num?)?.toDouble() ?? 0;
+    final items = (sale['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final totalPrice = items.fold<double>(
+        0, (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0));
     final isPaid = (sale['payment'] as Map?)?['status'] == 'paid';
-    final photoUrls = (sale['photoUrls'] as List?)?.cast<String>() ?? [];
+    final allPhotoUrls = items.expand(
+        (i) => (i['photoUrls'] as List?)?.cast<String>() ?? <String>[]);
+    final photoUrls = allPhotoUrls.take(4).toList();
 
     final createdAt = sale['createdAt'];
     String dateStr = '';
@@ -264,12 +271,20 @@ class _ArchivedSaleTile extends StatelessWidget {
         children: [
           ListTile(
             title: Text(sale['buyerName'] as String? ?? 'Unknown'),
-            subtitle: Text(sale['itemDescription'] as String? ?? ''),
+            subtitle: Text(
+              items.isEmpty
+                  ? '—'
+                  : items.length == 1
+                      ? (items.first['description'] as String? ?? '—')
+                      : '${items.length} items',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('€${price.toStringAsFixed(2)}'),
+                Text('€${totalPrice.toStringAsFixed(2)}'),
                 Text(
                   isPaid ? 'Paid' : 'Unpaid',
                   style: TextStyle(

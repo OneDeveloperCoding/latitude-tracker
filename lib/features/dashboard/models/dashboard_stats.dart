@@ -56,7 +56,7 @@ class DashboardStats {
       // Global action counts — always current, period-independent.
       if (s.payment.status == PaymentStatus.unpaid) {
         unpaidActionCount++;
-        unpaidActionRevenue += s.price;
+        unpaidActionRevenue += s.totalPrice;
       }
       if (SaleFilter.pendingShipment.test(s)) pendingShipmentCount++;
       if (SaleFilter.assemblyNotReady.test(s) && active(s)) assemblyNotReadyCount++;
@@ -66,10 +66,10 @@ class DashboardStats {
       // Period-scoped revenue — only sales created within the selected window.
       if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
       if (s.payment.status == PaymentStatus.paid) {
-        paidRevenue += s.price;
+        paidRevenue += s.totalPrice;
         paidCount++;
       } else {
-        unpaidRevenue += s.price;
+        unpaidRevenue += s.totalPrice;
         unpaidCount++;
       }
     }

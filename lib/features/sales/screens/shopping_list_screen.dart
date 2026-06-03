@@ -8,7 +8,21 @@ import '../models/sale.dart';
 import '../services/sale_urgency.dart';
 import 'sale_detail_screen.dart';
 
-const _urgencyOrder = {UrgencyLevel.overdue: 0, UrgencyLevel.thisWeek: 1, UrgencyLevel.none: 2};
+const _urgencyOrder = {
+  UrgencyLevel.overdue: 0,
+  UrgencyLevel.thisWeek: 1,
+  UrgencyLevel.none: 2
+};
+
+// Flat view entry: one SaleItem with its parent Sale context.
+class _ShoppingEntry {
+  final Sale sale;
+  final SaleItem item;
+  final List<ComponentItem> needed;
+
+  _ShoppingEntry({required this.sale, required this.item})
+      : needed = item.components.where((c) => !c.isAvailable).toList();
+}
 
 class ShoppingListScreen extends StatelessWidget {
   const ShoppingListScreen({super.key});
@@ -25,16 +39,27 @@ class ShoppingListScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final openSales = storeState.data
-              .where((s) =>
-                  s.assemblyStatus != AssemblyStatus.ready &&
-                  s.shipment.status != ShipmentStatus.delivered &&
-                  s.components.any((c) => !c.isAvailable))
-              .toList()
-            ..sort((a, b) => _urgencyOrder[a.urgencyLevel()]!
-                .compareTo(_urgencyOrder[b.urgencyLevel()]!));
+          // Build flat list of SaleItems with unacquired components, from
+          // sales that are not assembled and not yet delivered.
+          final entries = <_ShoppingEntry>[];
+          for (final sale in storeState.data) {
+            if (sale.shipment.status == ShipmentStatus.delivered) continue;
+            if (sale.derivedAssemblyStatus == AssemblyStatus.ready) continue;
+            for (final item in sale.items) {
+              if (item.assemblyStatus == AssemblyStatus.ready) continue;
+              if (item.components.any((c) => !c.isAvailable)) {
+                entries.add(_ShoppingEntry(sale: sale, item: item));
+              }
+            }
+          }
 
-          if (openSales.isEmpty) {
+          entries.sort((a, b) {
+            final au = _urgencyOrder[a.sale.urgencyLevel()]!;
+            final bu = _urgencyOrder[b.sale.urgencyLevel()]!;
+            return au.compareTo(bu);
+          });
+
+          if (entries.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -49,11 +74,11 @@ class ShoppingListScreen extends StatelessWidget {
             );
           }
 
-          final totalNeeded = openSales
-              .expand((s) => s.components.where((c) => !c.isAvailable))
+          final totalNeeded =
+              entries.fold(0, (sum, e) => sum + e.needed.length);
+          final urgentCount = entries
+              .where((e) => e.sale.urgencyLevel() != UrgencyLevel.none)
               .length;
-          final urgentCount =
-              openSales.where((s) => s.urgencyLevel() != UrgencyLevel.none).length;
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -61,13 +86,13 @@ class ShoppingListScreen extends StatelessWidget {
             children: [
               _ShoppingListHeader(
                 totalNeeded: totalNeeded,
-                totalSales: openSales.length,
+                totalItems: entries.length,
                 urgentCount: urgentCount,
               ),
               const SizedBox(height: 16),
-              ...openSales.map((sale) => _SaleMaterialsCard(
-                    sale: sale,
-                    urgency: sale.urgencyLevel(),
+              ...entries.map((entry) => _ItemMaterialsCard(
+                    entry: entry,
+                    urgency: entry.sale.urgencyLevel(),
                   )),
             ],
           );
@@ -79,12 +104,12 @@ class ShoppingListScreen extends StatelessWidget {
 
 class _ShoppingListHeader extends StatelessWidget {
   final int totalNeeded;
-  final int totalSales;
+  final int totalItems;
   final int urgentCount;
 
   const _ShoppingListHeader({
     required this.totalNeeded,
-    required this.totalSales,
+    required this.totalItems,
     required this.urgentCount,
   });
 
@@ -94,7 +119,7 @@ class _ShoppingListHeader extends StatelessWidget {
     return Row(
       children: [
         Text(
-          s.itemsAcrossSales(totalNeeded, totalSales),
+          s.itemsAcrossSales(totalNeeded, totalItems),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -124,11 +149,11 @@ class _ShoppingListHeader extends StatelessWidget {
   }
 }
 
-class _SaleMaterialsCard extends StatelessWidget {
-  final Sale sale;
+class _ItemMaterialsCard extends StatelessWidget {
+  final _ShoppingEntry entry;
   final UrgencyLevel urgency;
 
-  const _SaleMaterialsCard({required this.sale, required this.urgency});
+  const _ItemMaterialsCard({required this.entry, required this.urgency});
 
   Color? _accentColor(BuildContext context) => switch (urgency) {
         UrgencyLevel.overdue => Theme.of(context).colorScheme.error,
@@ -138,8 +163,9 @@ class _SaleMaterialsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final needed = sale.components.where((c) => !c.isAvailable).toList();
     final accent = _accentColor(context);
+    final item = entry.item;
+    final sale = entry.sale;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -147,63 +173,66 @@ class _SaleMaterialsCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+          MaterialPageRoute(
+              builder: (_) => SaleDetailScreen(saleId: sale.id)),
         ),
         child: Container(
-        decoration: accent != null
-            ? BoxDecoration(
-                border: Border(left: BorderSide(color: accent, width: 4)))
-            : null,
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    sale.buyerName,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
+          decoration: accent != null
+              ? BoxDecoration(
+                  border: Border(left: BorderSide(color: accent, width: 4)))
+              : null,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      sale.buyerName,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                if (sale.scheduledDate != null) ...[
-                  const SizedBox(width: 8),
-                  _DueDateLabel(sale: sale, urgency: urgency),
-                ],
-                const SizedBox(width: 8),
-                _AssemblyBadge(status: sale.assemblyStatus),
-              ],
-            ),
-            Text(
-              sale.itemDescription,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            ...needed.map(
-              (c) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Icon(Icons.shopping_cart_outlined,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.error),
+                  if (sale.scheduledDate != null) ...[
                     const SizedBox(width: 8),
-                    Text(c.name, style: Theme.of(context).textTheme.bodyMedium),
+                    _DueDateLabel(sale: sale, urgency: urgency),
                   ],
+                  const SizedBox(width: 8),
+                  _AssemblyBadge(status: item.assemblyStatus),
+                ],
+              ),
+              Text(
+                '${item.description} · ${item.category}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              ...entry.needed.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.shopping_cart_outlined,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.error),
+                      const SizedBox(width: 8),
+                      Text(c.name,
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -262,8 +291,10 @@ class _AssemblyBadge extends StatelessWidget {
     final (color, label) = switch (status) {
       AssemblyStatus.notStarted =>
         (Colors.red, s.assemblyLabel(AssemblyStatus.notStarted)),
-      AssemblyStatus.waitingForMaterials =>
-        (Colors.amber[700]!, s.assemblyLabel(AssemblyStatus.waitingForMaterials)),
+      AssemblyStatus.waitingForMaterials => (
+          Colors.amber[700]!,
+          s.assemblyLabel(AssemblyStatus.waitingForMaterials)
+        ),
       AssemblyStatus.inProgress =>
         (Colors.orange, s.assemblyLabel(AssemblyStatus.inProgress)),
       AssemblyStatus.ready =>
