@@ -5,7 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/buyers_store.dart';
+import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../buyers/screens/buyer_detail_screen.dart';
@@ -258,40 +261,7 @@ class _SaleDetailBody extends StatelessWidget {
               ),
               if (sale.requiresNif) ...[
                 const Divider(height: 16),
-                _InfoRow(icon: Icons.badge, text: s.nifReceiptRequiredInfo),
-                if (sale.payment.status == PaymentStatus.paid)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.receipt_long,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    title: Text(
-                      sale.atSubmissionDone
-                          ? s.atReceiptFiled
-                          : s.atReceiptPending,
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(
-                        sale.atSubmissionDone
-                            ? Icons.check_circle
-                            : Icons.check_circle_outline,
-                        color: sale.atSubmissionDone
-                            ? Colors.green
-                            : Colors.orange,
-                      ),
-                      tooltip: sale.atSubmissionDone
-                          ? s.markAsPending
-                          : s.markAsFiled,
-                      onPressed: () => _update(
-                        context,
-                        sale.copyWith(
-                            atSubmissionDone: !sale.atSubmissionDone),
-                      ),
-                    ),
-                  ),
+                _NifComplianceRow(sale: sale, repository: repository),
               ],
             ],
           ),
@@ -937,6 +907,131 @@ class _InfoCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(children: children),
       ),
+    );
+  }
+}
+
+class _NifComplianceRow extends StatelessWidget {
+  final Sale sale;
+  final SaleRepository repository;
+
+  const _NifComplianceRow({required this.sale, required this.repository});
+
+  Future<void> _toggleAt(BuildContext context) async {
+    try {
+      await repository.updateSale(
+          sale.copyWith(atSubmissionDone: !sale.atSubmissionDone));
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
+      }
+    }
+  }
+
+  Future<void> _showAddNifDialog(BuildContext context, Buyer buyer) async {
+    final s = context.s;
+    final controller = TextEditingController(text: buyer.nif ?? '');
+    final formKey = GlobalKey<FormState>();
+
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(s.nifLabel),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              maxLength: 9,
+              autofocus: true,
+              decoration: InputDecoration(labelText: s.nifLabel),
+              validator: (v) =>
+                  (v == null || v.trim().length != 9) ? s.nifInvalid : null,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(s.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: Text(s.save),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !context.mounted) return;
+
+      await BuyerRepository()
+          .updateBuyer(buyer.copyWith(nif: controller.text.trim()));
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
+      }
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final isPaid = sale.payment.status == PaymentStatus.paid;
+
+    return ValueListenableBuilder(
+      valueListenable: BuyersStore.state,
+      builder: (context, _, _) {
+        final buyer = BuyersStore.current
+            ?.where((b) => b.id == sale.buyerId)
+            .firstOrNull;
+        final hasNif = buyer?.nif?.isNotEmpty == true;
+
+        final String label;
+        Widget? trailing;
+
+        if (!hasNif) {
+          label = s.noNifOnFile;
+          trailing = buyer != null
+              ? TextButton(
+                  onPressed: () => _showAddNifDialog(context, buyer),
+                  child: Text(s.addNif),
+                )
+              : null;
+        } else if (!isPaid) {
+          label = s.nifReceiptRequiredInfo;
+        } else {
+          label = sale.atSubmissionDone ? s.atReceiptFiled : s.atReceiptPending;
+          trailing = IconButton(
+            icon: Icon(
+              sale.atSubmissionDone
+                  ? Icons.check_circle
+                  : Icons.check_circle_outline,
+              color: sale.atSubmissionDone ? Colors.green : Colors.orange,
+            ),
+            tooltip:
+                sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
+            onPressed: () => _toggleAt(context),
+          );
+        }
+
+        return ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(kNifIcon,
+              size: 20, color: Theme.of(context).colorScheme.primary),
+          title: Text(label),
+          trailing: trailing,
+        );
+      },
     );
   }
 }

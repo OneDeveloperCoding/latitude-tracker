@@ -124,6 +124,7 @@ class AppStrings {
   final String markAsFiled;
   final String markAsPending;
   final String noNifOnFile;
+  final String addNif;
 
   // ── Category picker ──────────────────────────────────────────────────────
   final String categoryLabel;
@@ -448,6 +449,7 @@ class AppStrings {
     required this.markAsFiled,
     required this.markAsPending,
     required this.noNifOnFile,
+    required this.addNif,
     required this.categoryLabel,
     required this.categoryRequired,
     required this.searchOrAddCategory,
@@ -1037,6 +1039,7 @@ class AppStrings {
     markAsFiled: 'Mark as filed',
     markAsPending: 'Mark as pending',
     noNifOnFile: 'No NIF on file',
+    addNif: 'Add NIF',
     categoryLabel: 'Category *',
     categoryRequired: 'Category is required',
     searchOrAddCategory: 'Search or add a category...',
@@ -1364,6 +1367,7 @@ class AppStrings {
     markAsFiled: 'Marcar como submetido',
     markAsPending: 'Marcar como pendente',
     noNifOnFile: 'Sem NIF registado',
+    addNif: 'Adicionar NIF',
     categoryLabel: 'Categoria *',
     categoryRequired: 'Categoria é obrigatória',
     searchOrAddCategory: 'Pesquisar ou adicionar categoria...',
