@@ -7,6 +7,7 @@ import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/models/buyer_stats.dart';
 import '../../buyers/repositories/buyer_repository.dart';
+import '../../buyers/screens/buyer_address_form_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../services/photo_service.dart';
@@ -151,6 +152,29 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       _buyerAddresses = addresses;
       _selectedBuyerStats = BuyerStats.compute(buyerSales);
       _selectedAddress = defaultAddress ?? addresses.firstOrNull;
+      if (_selectedAddress != null) {
+        _postalCodeController.text = _selectedAddress!.postalCode;
+      }
+    });
+  }
+
+  Future<void> _addAddress() async {
+    if (_selectedBuyer == null) return;
+    final existingIds = {for (final a in _buyerAddresses) a.id};
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BuyerAddressFormScreen(buyerId: _selectedBuyer!.id),
+      ),
+    );
+    if (!mounted) return;
+    final addresses =
+        await _buyerRepository.watchAddresses(_selectedBuyer!.id).first;
+    final newAddress =
+        addresses.where((a) => !existingIds.contains(a.id)).firstOrNull;
+    setState(() {
+      _buyerAddresses = addresses;
+      _selectedAddress = newAddress ?? _selectedAddress ?? addresses.firstOrNull;
       if (_selectedAddress != null) {
         _postalCodeController.text = _selectedAddress!.postalCode;
       }
@@ -474,7 +498,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
+                    ],
+                    if (_selectedBuyer != null) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _addAddress,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(s.newAddress),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                     ],
                     TextFormField(
                       controller: _postalCodeController,
