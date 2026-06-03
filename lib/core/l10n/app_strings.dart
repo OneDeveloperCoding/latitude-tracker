@@ -902,6 +902,15 @@ class AppStrings {
   String errorMsg(Object error) =>
       _pt ? 'Erro: $error' : 'Error: $error';
 
+  String errorUploadingPhotoMsg(Object error) =>
+      _pt ? 'Erro ao carregar foto: $error' : 'Error uploading photo: $error';
+
+  String importFailedMsg(Object error) =>
+      _pt ? 'Falha na importação: $error' : 'Import failed: $error';
+
+  String errorDeletingBuyerMsg(Object error) =>
+      _pt ? 'Erro ao eliminar comprador: $error' : 'Error deleting buyer: $error';
+
   // Maps English timeline keys (used for ordering) to translated display labels.
   String urgencyReasonLabel(UrgencyReasonType type) => switch (type) {
         UrgencyReasonType.waitingForMaterials => urgencyWaitingForMaterials,

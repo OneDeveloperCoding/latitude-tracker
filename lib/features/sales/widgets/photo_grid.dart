@@ -51,7 +51,7 @@ class _PhotoGridState extends State<PhotoGrid> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading photo: $e')),
+          SnackBar(content: Text(context.s.errorUploadingPhotoMsg(e))),
         );
       }
     } finally {

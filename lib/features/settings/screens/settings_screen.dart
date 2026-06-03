@@ -110,7 +110,15 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true) {
-      await FirebaseAuth.instance.signOut();
+      try {
+        await FirebaseAuth.instance.signOut();
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.errGeneric)),
+          );
+        }
+      }
     }
   }
 
@@ -199,7 +207,17 @@ class SettingsScreen extends StatelessWidget {
     final path = result.files.single.path;
     if (path == null) return;
 
-    final content = await File(path).readAsString();
+    final String content;
+    try {
+      content = await File(path).readAsString();
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.invalidArchive)),
+        );
+      }
+      return;
+    }
     final archive = ArchiveService.parseArchive(content);
 
     if (!context.mounted) return;

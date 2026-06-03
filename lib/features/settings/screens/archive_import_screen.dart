@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../services/archive_service.dart';
 
 class ArchiveImportScreen extends StatefulWidget {
@@ -67,7 +68,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
       if (!mounted) return;
       setState(() => _importing = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Import failed: $e')),
+        SnackBar(content: Text(context.s.importFailedMsg(e))),
       );
     }
   }
