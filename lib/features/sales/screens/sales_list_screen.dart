@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
@@ -823,32 +824,46 @@ class _AttentionBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nifPaid =
-        sale.requiresNif && sale.payment.status == PaymentStatus.paid;
+    final buyerNif = (BuyersStore.current ?? [])
+        .where((b) => b.id == sale.buyerId)
+        .firstOrNull
+        ?.nif;
+    final buyerHasNif = buyerNif != null && buyerNif.isNotEmpty;
+    final isPaid = sale.payment.status == PaymentStatus.paid;
+
+    // Show NIF badge when NIF is missing or AT filing is actionable.
+    // Hidden only when buyer has NIF but sale is not yet paid (nothing to act on).
+    final showNifBadge =
+        sale.requiresNif && (!buyerHasNif || isPaid);
+    final nifBadgeColor = !buyerHasNif
+        ? Colors.orange
+        : sale.atSubmissionDone
+            ? Colors.green
+            : Colors.purple;
+
     final isReadyButUnpaid =
         sale.derivedAssemblyStatus == AssemblyStatus.ready &&
         sale.payment.status == PaymentStatus.unpaid &&
         sale.shipment.status != ShipmentStatus.delivered;
 
-    if (!nifPaid && !isReadyButUnpaid && reasons.isEmpty) {
+    if (!showNifBadge && !isReadyButUnpaid && reasons.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (nifPaid) ...[
+        if (showNifBadge) ...[
           const SizedBox(width: 4),
           InkWell(
-            onTap: () => _showNifDetail(context, sale.atSubmissionDone),
+            onTap: () => _showNifDetail(context, buyerHasNif, sale.atSubmissionDone),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
               padding: const EdgeInsets.all(6),
               child: Icon(
-                Icons.receipt_long,
+                kNifIcon,
                 size: 22,
-                color:
-                    sale.atSubmissionDone ? Colors.green : Colors.purple,
+                color: nifBadgeColor,
               ),
             ),
           ),
@@ -956,8 +971,27 @@ class _ScheduledDateLabel extends StatelessWidget {
   }
 }
 
-void _showNifDetail(BuildContext context, bool atSubmissionDone) {
+void _showNifDetail(
+    BuildContext context, bool buyerHasNif, bool atSubmissionDone) {
   final s = context.s;
+  final String title;
+  final String body;
+  final Color iconColor;
+
+  if (!buyerHasNif) {
+    title = s.noNifOnFile;
+    body = s.nifSheetBody;
+    iconColor = Colors.orange;
+  } else if (atSubmissionDone) {
+    title = s.atFiledWithAt;
+    body = s.atFiledWithAtBody;
+    iconColor = Colors.green;
+  } else {
+    title = s.nifSheetTitle;
+    body = s.nifSheetBody;
+    iconColor = Colors.purple;
+  }
+
   showModalBottomSheet(
     context: context,
     builder: (_) => Padding(
@@ -968,21 +1002,13 @@ void _showNifDetail(BuildContext context, bool atSubmissionDone) {
         children: [
           Row(
             children: [
-              Icon(Icons.receipt_long,
-                  color:
-                      atSubmissionDone ? Colors.green : Colors.purple),
+              Icon(kNifIcon, color: iconColor),
               const SizedBox(width: 12),
-              Text(
-                atSubmissionDone ? s.atFiledWithAt : s.nifSheetTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            atSubmissionDone ? s.atFiledWithAtBody : s.nifSheetBody,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(body, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     ),

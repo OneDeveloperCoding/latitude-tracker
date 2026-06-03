@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
@@ -596,7 +597,7 @@ class _InfoSection extends StatelessWidget {
             if (buyer.phone != null)
               _InfoRow(icon: Icons.phone, text: buyer.phone!),
             if (buyer.nif != null)
-              _InfoRow(icon: Icons.badge, text: 'NIF: ${buyer.nif}'),
+              _InfoRow(icon: kNifIcon, text: 'NIF: ${buyer.nif}'),
             if (buyer.instagramHandle == null &&
                 buyer.phone == null &&
                 buyer.nif == null)
