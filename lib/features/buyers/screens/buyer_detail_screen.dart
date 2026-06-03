@@ -104,8 +104,16 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
     );
 
     if (confirmed != true || !context.mounted) return;
-    await _buyerRepo.deleteBuyer(buyer.id);
-    if (context.mounted) Navigator.pop(context);
+    try {
+      await _buyerRepo.deleteBuyer(buyer.id);
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.errorDeletingBuyerMsg(e))),
+        );
+      }
+    }
   }
 }
 
