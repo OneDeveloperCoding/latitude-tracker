@@ -260,9 +260,13 @@ class _BuyerSalesSection extends StatefulWidget {
 }
 
 class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
-  DateTime? _filterMonth;
+  bool _showAll = false;
+  int? _selectedYear;
+  DateTime? _selectedMonth;
+
   List<Sale>? _sales;
   BuyerStats? _stats;
+  // Unique year+month combinations derived from sales, sorted descending.
   List<DateTime> _months = [];
 
   @override
@@ -297,9 +301,38 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
     super.dispose();
   }
 
+  List<Sale> _applyFilter(List<Sale> all) {
+    if (_showAll) return all;
+    if (_selectedMonth != null) {
+      return all
+          .where((s) =>
+              s.createdAt.year == _selectedMonth!.year &&
+              s.createdAt.month == _selectedMonth!.month)
+          .toList();
+    }
+    if (_selectedYear != null) {
+      return all.where((s) => s.createdAt.year == _selectedYear).toList();
+    }
+    // Default: last 3 calendar months (current month + 2 prior).
+    final now = DateTime.now();
+    final cutoff = DateTime(now.year, now.month - 2);
+    return all
+        .where((s) => !DateTime(s.createdAt.year, s.createdAt.month)
+            .isBefore(cutoff))
+        .toList();
+  }
+
+  List<int> get _years =>
+      _months.map((m) => m.year).toSet().toList()..sort((a, b) => b - a);
+
+  List<DateTime> _monthsForYear(int year) =>
+      _months.where((m) => m.year == year).toList();
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     if (_sales == null) {
       return const SizedBox(
@@ -313,46 +346,77 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
     if (allSales.isEmpty) {
       return Text(
         s.noPurchasesYet,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
       );
     }
 
-    final filtered = _filterMonth == null
-        ? allSales
-        : allSales
-            .where((sale) =>
-                sale.createdAt.year == _filterMonth!.year &&
-                sale.createdAt.month == _filterMonth!.month)
-            .toList();
+    final filtered = _applyFilter(allSales);
+    final isDefaultView = !_showAll && _selectedYear == null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PurchaseSummary(stats: _stats!),
         const SizedBox(height: 12),
+        // Year row: "All" chip + one chip per year.
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
               FilterChip(
                 label: Text(s.all),
-                selected: _filterMonth == null,
-                onSelected: (_) => setState(() => _filterMonth = null),
+                selected: _showAll,
+                onSelected: (_) => setState(() {
+                  _showAll = true;
+                  _selectedYear = null;
+                  _selectedMonth = null;
+                }),
               ),
-              ..._months.map((month) => Padding(
+              ..._years.map((year) => Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: FilterChip(
-                      label: Text(DateFormat('MMM yyyy').format(month)),
-                      selected: _filterMonth == month,
-                      onSelected: (_) =>
-                          setState(() => _filterMonth = month),
+                      label: Text('$year'),
+                      selected: !_showAll && _selectedYear == year,
+                      onSelected: (_) => setState(() {
+                        _showAll = false;
+                        _selectedYear = year;
+                        _selectedMonth = null;
+                      }),
                     ),
                   )),
             ],
           ),
         ),
+        // Month row: only visible when a year is selected.
+        if (_selectedYear != null) ...[
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _monthsForYear(_selectedYear!).map((month) {
+                final isSelected = _selectedMonth == month;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(DateFormat('MMM').format(month)),
+                    selected: isSelected,
+                    onSelected: (_) => setState(() {
+                      _selectedMonth = isSelected ? null : month;
+                    }),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+        // Scope hint shown in default view.
+        if (isDefaultView) ...[
+          const SizedBox(height: 4),
+          Text(
+            s.last3Months,
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+        ],
         const SizedBox(height: 8),
         ...filtered.map((sale) => _SaleTile(sale: sale)),
       ],
