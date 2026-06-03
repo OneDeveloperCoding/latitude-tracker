@@ -48,9 +48,9 @@ _Avoid_: Delivery, fulfillment, dispatch
 A summary screen showing revenue and action counts for a selected period (yearly / monthly / weekly). Displays paid and pending revenue, plus counts for unpaid Sales, pending Shipments, assembly-not-ready Items, NIF-required Sales, and overdue deliveries. Tapping a count navigates to the filtered Sales list.
 _Avoid_: Report, analytics, overview
 
-**TrendsScreen**:
-An analytics screen reached from the Dashboard insights card. Shows per-category revenue as a stacked bar chart across 6 periods, with a payment method breakdown and top-categories section. Supports a revenue/count metric toggle and multi-select category filtering. Period navigation adapts to the selected period type (weekly / monthly / yearly).
-_Avoid_: Analytics dashboard, reports screen
+**AnalyticsScreen**:
+An analytics screen reached from the insights icon button in the Dashboard revenue card. Shows per-category revenue as a stacked bar chart across 6 periods, with a payment method breakdown and top-categories section. Supports a revenue/count metric toggle and multi-select category filtering. Period navigation adapts to the selected period type (weekly / monthly / yearly). Formerly split across a separate InsightsCard widget and a TrendsScreen — now a single unified screen.
+_Avoid_: Analytics dashboard, reports screen, TrendsScreen (old name)
 
 **SalesHeatMap**:
 A geographic view showing the distribution of online Sales by postal code, visualised as a heat map over a map of Portugal. Sales are grouped by 4-digit locality prefix (e.g. 3000-550 and 3000-313 both map to "3000" → one marker for Coimbra). Only Portuguese postal codes are plotted; foreign addresses are excluded.
@@ -147,14 +147,13 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 1a. **Demo mode** — read-only sandbox with 255 pre-seeded sales across 18 months (7 hand-crafted active + 248 generated historical, fixed `Random(42)` seed). A tutorial bottom sheet auto-displays on first entry; re-accessible via **?** in the demo banner. Write operations (add/edit/delete) are blocked. Demo data strings are in English regardless of app language setting.
 
-2. **Dashboard** — period selector (yearly / monthly / weekly); paid + pending revenue card; five action cards (Unpaid, Pending shipment, Assembly not ready, NIF required, Overdue) — Unpaid shows count and total €; each card taps to its dedicated view:
-   - Unpaid → UnpaidBalances screen
-   - Assembly not ready → ShoppingList screen
-   - NIF required → NifPending screen
-   - Pending shipment / Overdue → filtered Sales list
-   Below the action grid: an insights card showing a sparkline and top 3 categories by revenue (horizontal proportion bars). At the bottom of the screen: a "Ver mais tendências" entry card that navigates to the TrendsScreen.
+2. **Dashboard** — scrollable 6-month chip row for period selection (monthly granularity only); paid revenue card with an insights icon button that navigates to the AnalyticsScreen. Seven action rows grouped into three labelled sections:
+   - **Money**: Unpaid (count + total €), Overdue, NIF required
+   - **Production**: Assembly not ready, Pending shipment, In transit
+   - **Planning**: Upcoming scheduled
+   Each row taps to its dedicated view (UnpaidBalances, filtered Sales list, ShoppingList, NifPending). Inactive rows (count = 0) are shown dimmed and non-tappable.
 
-2a. **TrendsScreen** — period-navigable analytics screen accessed from the Dashboard insights card. Shows a stacked bar chart of per-category revenue across 6 periods; bars dim until tapped to reveal period totals and per-category value rows. Multi-select category chips at the bottom act as legend and filter (empty = all). Metric toggle (revenue / count) affects both the headline card and all comparison rows. Separate sections for payment method breakdown (revenue share per method) and top categories with proportional bars. Period navigation is adaptive: weekly shows −1/−4/−52 week comparisons; monthly shows −1/−3/−6/−12; yearly shows −1/−3/−5.
+2a. **AnalyticsScreen** — period-navigable analytics screen accessed from the insights icon button in the Dashboard revenue card; launched with the Dashboard's current period pre-selected. Shows a stacked bar chart of per-category revenue across 6 periods; bars dim until tapped to reveal period totals and per-category value rows. Multi-select category chips at the bottom act as legend and filter (empty = all). Metric toggle (revenue / count) affects both the headline card and all comparison rows. Separate sections for payment method breakdown (revenue share per method) and top categories with proportional bars. Period navigation is adaptive: weekly shows −1/−4/−52 week comparisons; monthly shows −1/−3/−6/−12; yearly shows −1/−3/−5.
 
 3. **Sales list** — default view shows only **active Sales** (not yet delivered); timeline grouped Overdue → This week → Next week → Later → past months. Tune icon opens a filter/sort sheet with grouped filters (Money / Logistics / Compliance), year chips (one per year that has Sales, dynamically generated), date range picker (mutually exclusive with year chips), inline buyer search (single-select). Sort is a separate AppBar popup with its own badge. Selecting a year chip shows **all** Sales in that calendar year including delivered ones, overriding the active-only default; grouping switches to creation month. Selecting a date range does not override the default (still hides delivered). Map icon in AppBar navigates to the standalone SalesHeatMap screen. Each Sale shown as a card: buyer name + derived total price top row; SaleItem descriptions one per line (up to 3; "and X more" tappable to a bottom sheet if more) + attention badges right; one ItemCategory chip per unique category across all SaleItems (wrapping); creation date left + due date right; age indicator (hourglass icon — amber after 14 days open, red after 30 days, hidden for fresh or delivered sales); progress path spanning full card width at the bottom (tap → legend). Left accent bar: red = overdue with blockers, amber = this week with blockers. Attention badges (tap to open detail sheet): `receipt_long` purple = NIF unfiled (also shown in orange when no NIF on file), green = NIF filed; `price_check` = assembly ready but unpaid; specific blocker icon = single urgency reason, generic ⚠️ = multiple.
 
