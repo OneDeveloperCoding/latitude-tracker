@@ -792,6 +792,8 @@ class _SaleCard extends StatelessWidget {
                               .onSurfaceVariant,
                         ),
                   ),
+                  const SizedBox(width: 6),
+                  _AgeLabel(sale: sale),
                   const Spacer(),
                   if (sale.scheduledDate != null)
                     _ScheduledDateLabel(sale: sale),
@@ -823,8 +825,14 @@ class _AttentionBadges extends StatelessWidget {
   Widget build(BuildContext context) {
     final nifPaid =
         sale.requiresNif && sale.payment.status == PaymentStatus.paid;
+    final isReadyButUnpaid =
+        sale.derivedAssemblyStatus == AssemblyStatus.ready &&
+        sale.payment.status == PaymentStatus.unpaid &&
+        sale.shipment.status != ShipmentStatus.delivered;
 
-    if (!nifPaid && reasons.isEmpty) return const SizedBox.shrink();
+    if (!nifPaid && !isReadyButUnpaid && reasons.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -841,6 +849,21 @@ class _AttentionBadges extends StatelessWidget {
                 size: 22,
                 color:
                     sale.atSubmissionDone ? Colors.green : Colors.purple,
+              ),
+            ),
+          ),
+        ],
+        if (isReadyButUnpaid) ...[
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: () => _showReadyButUnpaidDetail(context),
+            borderRadius: BorderRadius.circular(20),
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(
+                Icons.price_check,
+                size: 22,
+                color: Colors.amber,
               ),
             ),
           ),
@@ -866,6 +889,26 @@ class _AttentionBadges extends StatelessWidget {
         ],
       ],
     );
+  }
+}
+
+class _AgeLabel extends StatelessWidget {
+  final Sale sale;
+
+  const _AgeLabel({required this.sale});
+
+  @override
+  Widget build(BuildContext context) {
+    final days = sale.daysOpen();
+    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
+
+    if (isDelivered || days < 14) return const SizedBox.shrink();
+
+    final (icon, color) = days < 30
+        ? (Icons.hourglass_top, Colors.amber[700]!)
+        : (Icons.hourglass_bottom, Theme.of(context).colorScheme.error);
+
+    return Icon(icon, size: 14, color: color);
   }
 }
 
@@ -938,6 +981,37 @@ void _showNifDetail(BuildContext context, bool atSubmissionDone) {
           const SizedBox(height: 12),
           Text(
             atSubmissionDone ? s.atFiledWithAtBody : s.nifSheetBody,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showReadyButUnpaidDetail(BuildContext context) {
+  final s = context.s;
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.price_check, color: Colors.amber),
+              const SizedBox(width: 12),
+              Text(
+                s.readyButUnpaidTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            s.readyButUnpaidBody,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
