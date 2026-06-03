@@ -462,8 +462,13 @@ class _ItemDetailSheet extends StatefulWidget {
 
 class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   final _componentController = TextEditingController();
+  late SaleItem _item;
 
-  SaleItem get _item => widget.item;
+  @override
+  void initState() {
+    super.initState();
+    _item = widget.item;
+  }
 
   @override
   void dispose() {
@@ -478,6 +483,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               ci.id == c.id ? ci.copyWith(isAvailable: !c.isAvailable) : ci)
           .toList(),
     );
+    setState(() => _item = updated);
     widget.onUpdateItem(updated);
   }
 
@@ -485,6 +491,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final updated = _item.withUpdatedComponents(
       _item.components.where((ci) => ci.id != c.id).toList(),
     );
+    setState(() => _item = updated);
     widget.onUpdateItem(updated);
   }
 
@@ -499,8 +506,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         isAvailable: false,
       ),
     ]);
+    setState(() {
+      _item = updated;
+      _componentController.clear();
+    });
     widget.onUpdateItem(updated);
-    setState(() => _componentController.clear());
   }
 
   @override
