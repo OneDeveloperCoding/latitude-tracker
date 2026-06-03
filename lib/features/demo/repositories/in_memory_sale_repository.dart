@@ -83,4 +83,10 @@ class InMemorySaleRepository implements SaleRepository {
     _sales.removeWhere((s) => s.createdAt.year == year);
     _emit();
   }
+
+  @override
+  Future<void> deleteAllSales({bool deletePhotos = false}) async {
+    _sales.clear();
+    _emit();
+  }
 }
