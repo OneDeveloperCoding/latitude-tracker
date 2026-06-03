@@ -81,6 +81,12 @@ extension SaleUrgency on Sale {
     );
     return scheduled.difference(today).inDays;
   }
+
+  int daysOpen({DateTime? now}) {
+    final today = _today(now);
+    final created = DateTime(createdAt.year, createdAt.month, createdAt.day);
+    return today.difference(created).inDays;
+  }
 }
 
 DateTime _today(DateTime? now) {

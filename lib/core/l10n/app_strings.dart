@@ -103,6 +103,8 @@ class AppStrings {
   final String legendTitle;
   final String nifSheetTitle;
   final String nifSheetBody;
+  final String readyButUnpaidTitle;
+  final String readyButUnpaidBody;
   final String urgencySheetTitle;
   final String urgencyWaitingForMaterials;
   final String urgencyAssemblyNotReady;
@@ -418,6 +420,8 @@ class AppStrings {
     required this.legendTitle,
     required this.nifSheetTitle,
     required this.nifSheetBody,
+    required this.readyButUnpaidTitle,
+    required this.readyButUnpaidBody,
     required this.urgencySheetTitle,
     required this.urgencyWaitingForMaterials,
     required this.urgencyAssemblyNotReady,
@@ -993,6 +997,9 @@ class AppStrings {
     nifSheetTitle: 'NIF receipt required',
     nifSheetBody:
         'Payment received — file this sale\'s receipt with AT. The buyer\'s NIF is available on their profile.',
+    readyButUnpaidTitle: 'Ready but unpaid',
+    readyButUnpaidBody:
+        'Everything is assembled and ready to go, but payment has not been received yet.',
     urgencySheetTitle: 'Action needed',
     urgencyWaitingForMaterials: 'Waiting for materials',
     urgencyAssemblyNotReady: 'Assembly not ready',
@@ -1302,6 +1309,9 @@ class AppStrings {
     nifSheetTitle: 'Recibo NIF necessário',
     nifSheetBody:
         'Pagamento recebido — submeta o recibo desta venda na AT. O NIF do comprador está disponível no seu perfil.',
+    readyButUnpaidTitle: 'Pronto mas não pago',
+    readyButUnpaidBody:
+        'Tudo está montado e pronto para envio, mas o pagamento ainda não foi recebido.',
     urgencySheetTitle: 'Ações necessárias',
     urgencyWaitingForMaterials: 'A aguardar materiais',
     urgencyAssemblyNotReady: 'Montagem não pronta',
