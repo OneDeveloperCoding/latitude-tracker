@@ -189,6 +189,67 @@ void main() {
         expect(SaleFilter.overdue.test(makeSale(), now: _kNow), isFalse);
       });
     });
+
+    group('upcomingScheduled', () {
+      test('passes when scheduled today and not delivered', () {
+        expect(
+          SaleFilter.upcomingScheduled.test(
+            makeSale(
+              scheduledDate: DateTime(2026, 6, 4),
+              shipmentStatus: ShipmentStatus.pending,
+            ),
+            now: _kNow,
+          ),
+          isTrue,
+        );
+      });
+
+      test('passes when scheduled in the future and not delivered', () {
+        expect(
+          SaleFilter.upcomingScheduled.test(
+            makeSale(
+              scheduledDate: DateTime(2026, 7, 1),
+              shipmentStatus: ShipmentStatus.pending,
+            ),
+            now: _kNow,
+          ),
+          isTrue,
+        );
+      });
+
+      test('fails when scheduled in the past (overdue)', () {
+        expect(
+          SaleFilter.upcomingScheduled.test(
+            makeSale(
+              scheduledDate: DateTime(2026, 6, 3),
+              shipmentStatus: ShipmentStatus.pending,
+            ),
+            now: _kNow,
+          ),
+          isFalse,
+        );
+      });
+
+      test('fails when no scheduled date', () {
+        expect(
+          SaleFilter.upcomingScheduled.test(makeSale(), now: _kNow),
+          isFalse,
+        );
+      });
+
+      test('fails when scheduled in the future but already delivered', () {
+        expect(
+          SaleFilter.upcomingScheduled.test(
+            makeSale(
+              scheduledDate: DateTime(2026, 7, 1),
+              shipmentStatus: ShipmentStatus.delivered,
+            ),
+            now: _kNow,
+          ),
+          isFalse,
+        );
+      });
+    });
   });
 
   group('testSaleFilters', () {
