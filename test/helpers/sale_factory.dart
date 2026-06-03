@@ -22,6 +22,7 @@ SaleItem makeSaleItem({
 Sale makeSale({
   AssemblyStatus assembly = AssemblyStatus.ready,
   PaymentStatus payment = PaymentStatus.paid,
+  PaymentMethod method = PaymentMethod.mbWay,
   ShipmentStatus shipmentStatus = ShipmentStatus.pending,
   DeliveryType delivery = DeliveryType.shipping,
   DateTime? scheduledDate,
@@ -43,7 +44,7 @@ Sale makeSale({
               price: price,
             ),
           ],
-      payment: SalePayment(status: payment, method: PaymentMethod.mbWay),
+      payment: SalePayment(status: payment, method: method),
       shipment: SaleShipment(type: delivery, status: shipmentStatus),
       requiresNif: requiresNif,
       createdAt: createdAt ?? DateTime(2026, 1, 1),

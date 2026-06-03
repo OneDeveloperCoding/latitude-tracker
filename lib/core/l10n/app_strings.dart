@@ -83,6 +83,11 @@ class AppStrings {
   final String dashboardViewTrends;
   final String trendsTitle;
   final String trendsNoPreviousData;
+  final String trendsMetricRevenue;
+  final String trendsMetricCount;
+  final String trendsAllCategories;
+  final String trendsPaymentMethods;
+  final String trendsRevenueByCategory;
 
   // ── Sales list ───────────────────────────────────────────────────────────
   final String searchSales;
@@ -416,6 +421,11 @@ class AppStrings {
     required this.dashboardViewTrends,
     required this.trendsTitle,
     required this.trendsNoPreviousData,
+    required this.trendsMetricRevenue,
+    required this.trendsMetricCount,
+    required this.trendsAllCategories,
+    required this.trendsPaymentMethods,
+    required this.trendsRevenueByCategory,
     required this.searchSales,
     required this.noSalesFound,
     required this.filterSort,
@@ -1006,6 +1016,11 @@ class AppStrings {
     dashboardViewTrends: 'View more trends',
     trendsTitle: 'Trends',
     trendsNoPreviousData: 'No data for this period',
+    trendsMetricRevenue: 'Revenue',
+    trendsMetricCount: 'Count',
+    trendsAllCategories: 'All',
+    trendsPaymentMethods: 'Payment methods',
+    trendsRevenueByCategory: 'Revenue by category',
     searchSales: 'Search buyer or item...',
     noSalesFound: 'No sales found.',
     filterSort: 'Filter & sort',
@@ -1335,6 +1350,11 @@ class AppStrings {
     dashboardViewTrends: 'Ver mais tendências',
     trendsTitle: 'Tendências',
     trendsNoPreviousData: 'Sem dados para este período',
+    trendsMetricRevenue: 'Receita',
+    trendsMetricCount: 'Nº vendas',
+    trendsAllCategories: 'Todas',
+    trendsPaymentMethods: 'Métodos de pagamento',
+    trendsRevenueByCategory: 'Receita por categoria',
     searchSales: 'Pesquisar comprador ou artigo...',
     noSalesFound: 'Sem vendas encontradas.',
     filterSort: 'Filtrar e ordenar',
