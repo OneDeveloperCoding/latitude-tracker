@@ -173,4 +173,21 @@ void main() {
       expect(sale.daysUntilScheduled(now: _kNow), -2);
     });
   });
+
+  group('SaleUrgency.daysOpen', () {
+    test('0 when created today', () {
+      final sale = makeSale(createdAt: DateTime(2026, 6, 4));
+      expect(sale.daysOpen(now: _kNow), 0);
+    });
+
+    test('1 when created yesterday', () {
+      final sale = makeSale(createdAt: DateTime(2026, 6, 3));
+      expect(sale.daysOpen(now: _kNow), 1);
+    });
+
+    test('counts full days since creation', () {
+      final sale = makeSale(createdAt: DateTime(2026, 5, 1));
+      expect(sale.daysOpen(now: _kNow), 34);
+    });
+  });
 }
