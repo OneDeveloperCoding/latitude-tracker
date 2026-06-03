@@ -36,7 +36,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
   Buyer? _buyerFilter;
   _SortOrder _sortOrder = _SortOrder.newestFirst;
 
-  bool _isSearching = false;
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -108,14 +107,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
     SalesStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _stopSearch() {
-    _isSearching = false;
-    _searchQuery = '';
-    _searchController.clear();
-    _rebuildCache();
-    setState(() {});
   }
 
   List<Sale> _applyFilter(List<Sale> sales) {
@@ -201,32 +192,37 @@ class _SalesListScreenState extends State<SalesListScreen> {
     final s = context.s;
     final filterCount = _activeFilterCount;
     return Scaffold(
-      appBar: _isSearching
-          ? AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _stopSearch,
-              ),
-              title: TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: s.searchSales,
-                  border: InputBorder.none,
-                ),
-                onChanged: (v) {
-                  _searchQuery = v;
-                  _rebuildCache();
-                  setState(() {});
-                },
-              ),
-            )
-          : AppBar(
-              title: Text(s.navSales),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () => setState(() => _isSearching = true),
+      floatingActionButton: FloatingActionButton(
+        heroTag: null,
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+        ),
+        child: const Icon(Icons.add),
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: s.searchSales,
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (v) {
+                      _searchQuery = v;
+                      _rebuildCache();
+                      setState(() {});
+                    },
+                  ),
                 ),
                 Badge(
                   label: filterCount > 0 ? Text('$filterCount') : null,
@@ -267,8 +263,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   tooltip: s.viewMap,
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const HeatMapScreen()),
+                    MaterialPageRoute(builder: (_) => const HeatMapScreen()),
                   ),
                 ),
                 IconButton(
@@ -278,19 +273,17 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: null,
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const NewSaleScreen()),
-        ),
-        child: const Icon(Icons.add),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredSales.isEmpty
+                    ? Center(child: Text(s.noSalesFound))
+                    : _TimelineView(groups: _groupedSales),
+          ),
+        ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _filteredSales.isEmpty
-              ? Center(child: Text(context.s.noSalesFound))
-              : _TimelineView(groups: _groupedSales),
+      ),
     );
   }
 
