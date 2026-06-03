@@ -243,6 +243,7 @@ class AppStrings {
   final String purchaseHistory;
   final String addresses;
   final String noPurchasesYet;
+  final String last3Months;
   final String noAddressesSaved;
   final String totalSalesLabel;
   final String totalPaidLabel;
@@ -560,6 +561,7 @@ class AppStrings {
     required this.purchaseHistory,
     required this.addresses,
     required this.noPurchasesYet,
+    required this.last3Months,
     required this.noAddressesSaved,
     required this.totalSalesLabel,
     required this.totalPaidLabel,
@@ -1150,6 +1152,7 @@ class AppStrings {
     purchaseHistory: 'Purchase history',
     addresses: 'Addresses',
     noPurchasesYet: 'No purchases yet.',
+    last3Months: 'Last 3 months',
     noAddressesSaved: 'No addresses saved.',
     totalSalesLabel: 'Total sales',
     totalPaidLabel: 'Total paid',
@@ -1478,6 +1481,7 @@ class AppStrings {
     purchaseHistory: 'Histórico de compras',
     addresses: 'Moradas',
     noPurchasesYet: 'Sem compras registadas.',
+    last3Months: 'Últimos 3 meses',
     noAddressesSaved: 'Sem moradas guardadas.',
     totalSalesLabel: 'Total de vendas',
     totalPaidLabel: 'Total pago',
