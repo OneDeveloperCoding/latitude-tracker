@@ -15,9 +15,11 @@ class DashboardStats {
   final int unpaidActionCount;
   final double unpaidActionRevenue;
   final int pendingShipmentCount;
+  final int shippedCount;
   final int assemblyNotReadyCount;
   final int nifRequiredCount;
   final int overdueCount;
+  final int upcomingCount;
 
   int get totalCount => paidCount + unpaidCount;
   double get avgOrderValue => paidCount > 0 ? paidRevenue / paidCount : 0;
@@ -30,9 +32,11 @@ class DashboardStats {
     required this.unpaidActionCount,
     required this.unpaidActionRevenue,
     required this.pendingShipmentCount,
+    required this.shippedCount,
     required this.assemblyNotReadyCount,
     required this.nifRequiredCount,
     required this.overdueCount,
+    required this.upcomingCount,
   });
 
   static List<({String category, double revenue})> computeTopCategories(
@@ -122,9 +126,10 @@ class DashboardStats {
   factory DashboardStats.compute(
     List<Sale> all,
     DateTime start,
-    DateTime end,
-  ) {
-    final now = DateTime.now();
+    DateTime end, {
+    DateTime? now,
+  }) {
+    final effectiveNow = now ?? DateTime.now();
     bool active(Sale s) => s.shipment.status != ShipmentStatus.delivered;
 
     double paidRevenue = 0;
@@ -134,9 +139,11 @@ class DashboardStats {
     int unpaidActionCount = 0;
     double unpaidActionRevenue = 0;
     int pendingShipmentCount = 0;
+    int shippedCount = 0;
     int assemblyNotReadyCount = 0;
     int nifRequiredCount = 0;
     int overdueCount = 0;
+    int upcomingCount = 0;
 
     for (final s in all) {
       // Global action counts — always current, period-independent.
@@ -145,9 +152,11 @@ class DashboardStats {
         unpaidActionRevenue += s.totalPrice;
       }
       if (SaleFilter.pendingShipment.test(s)) pendingShipmentCount++;
+      if (SaleFilter.shipped.test(s)) shippedCount++;
       if (SaleFilter.assemblyNotReady.test(s) && active(s)) assemblyNotReadyCount++;
       if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) nifRequiredCount++;
-      if (SaleFilter.overdue.test(s, now: now)) overdueCount++;
+      if (SaleFilter.overdue.test(s, now: effectiveNow)) overdueCount++;
+      if (SaleFilter.upcomingScheduled.test(s, now: effectiveNow)) upcomingCount++;
 
       // Period-scoped revenue — only sales created within the selected window.
       if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
@@ -168,9 +177,11 @@ class DashboardStats {
       unpaidActionCount: unpaidActionCount,
       unpaidActionRevenue: unpaidActionRevenue,
       pendingShipmentCount: pendingShipmentCount,
+      shippedCount: shippedCount,
       assemblyNotReadyCount: assemblyNotReadyCount,
       nifRequiredCount: nifRequiredCount,
       overdueCount: overdueCount,
+      upcomingCount: upcomingCount,
     );
   }
 }

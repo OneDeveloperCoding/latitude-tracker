@@ -79,6 +79,10 @@ class AppStrings {
   final String dashboardGroupMoney;
   final String dashboardGroupLogistics;
   final String dashboardGroupCompliance;
+  final String dashboardGroupProduction;
+  final String dashboardGroupPlanning;
+  final String inTransit;
+  final String upcomingScheduled;
   final String dashboardTopCategories;
   final String dashboardViewTrends;
   final String trendsTitle;
@@ -417,6 +421,10 @@ class AppStrings {
     required this.dashboardGroupMoney,
     required this.dashboardGroupLogistics,
     required this.dashboardGroupCompliance,
+    required this.dashboardGroupProduction,
+    required this.dashboardGroupPlanning,
+    required this.inTransit,
+    required this.upcomingScheduled,
     required this.dashboardTopCategories,
     required this.dashboardViewTrends,
     required this.trendsTitle,
@@ -719,6 +727,7 @@ class AppStrings {
           SaleFilter.pickup => 'Levantamento',
           SaleFilter.assemblyNotReady => 'Faltam materiais',
           SaleFilter.overdue => 'Em atraso',
+          SaleFilter.upcomingScheduled => 'Próximas',
         }
       : switch (f) {
           SaleFilter.all => 'All',
@@ -730,6 +739,7 @@ class AppStrings {
           SaleFilter.pickup => 'Pickup',
           SaleFilter.assemblyNotReady => 'Needs materials',
           SaleFilter.overdue => 'Overdue',
+          SaleFilter.upcomingScheduled => 'Upcoming',
         };
 
   String assemblyLabel(AssemblyStatus s) => _pt
@@ -1018,9 +1028,13 @@ class AppStrings {
     nifRequired: 'NIF required',
     overdue: 'Overdue',
     dashboardTrends: 'Trends',
-    dashboardGroupMoney: 'Money',
+    dashboardGroupMoney: 'Finances',
     dashboardGroupLogistics: 'Logistics',
     dashboardGroupCompliance: 'Compliance',
+    dashboardGroupProduction: 'Production',
+    dashboardGroupPlanning: 'Planning',
+    inTransit: 'In transit',
+    upcomingScheduled: 'Upcoming',
     dashboardTopCategories: 'Top categories',
     dashboardViewTrends: 'View more trends',
     trendsTitle: 'Trends',
@@ -1355,6 +1369,10 @@ class AppStrings {
     dashboardGroupMoney: 'Finanças',
     dashboardGroupLogistics: 'Logística',
     dashboardGroupCompliance: 'Documentação',
+    dashboardGroupProduction: 'Produção',
+    dashboardGroupPlanning: 'Planeamento',
+    inTransit: 'Em trânsito',
+    upcomingScheduled: 'Próximas',
     dashboardTopCategories: 'Principais categorias',
     dashboardViewTrends: 'Ver mais tendências',
     trendsTitle: 'Tendências',

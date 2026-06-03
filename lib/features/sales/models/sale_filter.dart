@@ -36,6 +36,7 @@ enum SaleFilter {
   pickup,
   assemblyNotReady,
   overdue,
+  upcomingScheduled,
 }
 
 extension SaleFilterLabel on SaleFilter {
@@ -49,6 +50,7 @@ extension SaleFilterLabel on SaleFilter {
         SaleFilter.pickup => 'Pickup',
         SaleFilter.assemblyNotReady => 'Assembly not ready',
         SaleFilter.overdue => 'Overdue',
+        SaleFilter.upcomingScheduled => 'Upcoming',
       };
 }
 
@@ -75,6 +77,10 @@ extension SaleFilterTest on SaleFilter {
       SaleFilter.overdue =>
         sale.scheduledDate != null &&
             sale.scheduledDate!.isBefore(startOfToday) &&
+            sale.shipment.status != ShipmentStatus.delivered,
+      SaleFilter.upcomingScheduled =>
+        sale.scheduledDate != null &&
+            !sale.scheduledDate!.isBefore(startOfToday) &&
             sale.shipment.status != ShipmentStatus.delivered,
     };
   }
