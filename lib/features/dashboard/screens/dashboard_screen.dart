@@ -12,7 +12,7 @@ import '../../sales/screens/nif_pending_screen.dart';
 import '../../sales/screens/sales_list_screen.dart';
 import '../../sales/screens/shopping_list_screen.dart';
 import '../models/dashboard_stats.dart';
-import 'trends_screen.dart';
+import 'analytics_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -57,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        TrendsScreen(initialPeriod: DashboardPeriod.monthly),
+                        AnalyticsScreen(initialPeriod: DashboardPeriod.monthly),
                   ),
                 ),
               ),
@@ -239,119 +239,107 @@ class _ActionGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionLabel(context, s.dashboardGroupMoney),
-        _ButtonRow(buttons: [
-          _ActionButton(
-            icon: Icons.schedule,
-            label: s.overdue,
-            count: stats.overdueCount,
-            color: Colors.red,
-            destination: const SalesListScreen(
-                initialFilters: {SaleFilter.overdue}),
-          ),
-          _ActionButton(
-            icon: Icons.euro,
-            label: s.unpaid,
-            count: stats.unpaidActionCount,
-            color: Colors.orange,
-            amountLabel: stats.unpaidActionCount > 0
-                ? currency.format(stats.unpaidActionRevenue)
-                : null,
-            destination: const UnpaidBalancesScreen(),
-          ),
-          _ActionButton(
-            icon: kNifIcon,
-            label: s.nifRequired,
-            count: stats.nifRequiredCount,
-            color: Colors.teal,
-            destination: const NifPendingScreen(),
-          ),
-        ]),
+        _ActionGroupHeader(label: s.dashboardGroupMoney),
+        _ActionRow(
+          icon: Icons.euro,
+          label: s.unpaid,
+          count: stats.unpaidActionCount,
+          subtitle: stats.unpaidActionCount > 0
+              ? currency.format(stats.unpaidActionRevenue)
+              : null,
+          color: Colors.orange,
+          destination: const UnpaidBalancesScreen(),
+        ),
+        _ActionRow(
+          icon: Icons.schedule,
+          label: s.overdue,
+          count: stats.overdueCount,
+          color: Colors.red,
+          destination: const SalesListScreen(
+              initialFilters: {SaleFilter.overdue}),
+        ),
+        _ActionRow(
+          icon: kNifIcon,
+          label: s.nifRequired,
+          count: stats.nifRequiredCount,
+          color: Colors.teal,
+          destination: const NifPendingScreen(),
+        ),
         const SizedBox(height: 8),
-        _sectionLabel(context, s.dashboardGroupProduction),
-        _ButtonRow(buttons: [
-          _ActionButton(
-            icon: Icons.shopping_cart,
-            label: s.assemblyNotReady,
-            count: stats.assemblyNotReadyCount,
-            color: Colors.purple,
-            destination: const ShoppingListScreen(),
-          ),
-          _ActionButton(
-            icon: Icons.local_shipping,
-            label: s.pendingShipment,
-            count: stats.pendingShipmentCount,
-            color: Colors.blue,
-            destination: const SalesListScreen(
-                initialFilters: {SaleFilter.pendingShipment}),
-          ),
-          _ActionButton(
-            icon: Icons.markunread_mailbox,
-            label: s.inTransit,
-            count: stats.shippedCount,
-            color: Colors.indigo,
-            destination: const SalesListScreen(
-                initialFilters: {SaleFilter.shipped}),
-          ),
-        ]),
+        _ActionGroupHeader(label: s.dashboardGroupProduction),
+        _ActionRow(
+          icon: Icons.shopping_cart,
+          label: s.assemblyNotReady,
+          count: stats.assemblyNotReadyCount,
+          color: Colors.purple,
+          destination: const ShoppingListScreen(),
+        ),
+        _ActionRow(
+          icon: Icons.local_shipping,
+          label: s.pendingShipment,
+          count: stats.pendingShipmentCount,
+          color: Colors.blue,
+          destination: const SalesListScreen(
+              initialFilters: {SaleFilter.pendingShipment}),
+        ),
+        _ActionRow(
+          icon: Icons.markunread_mailbox,
+          label: s.inTransit,
+          count: stats.shippedCount,
+          color: Colors.indigo,
+          destination: const SalesListScreen(
+              initialFilters: {SaleFilter.shipped}),
+        ),
         const SizedBox(height: 8),
-        _sectionLabel(context, s.dashboardGroupPlanning),
-        _UpcomingButton(
-          count: stats.upcomingCount,
+        _ActionGroupHeader(label: s.dashboardGroupPlanning),
+        _ActionRow(
+          icon: Icons.event,
           label: s.upcomingScheduled,
+          count: stats.upcomingCount,
+          color: Colors.green,
+          destination: const SalesListScreen(
+              initialFilters: {SaleFilter.upcomingScheduled}),
         ),
       ],
     );
   }
-
-  Widget _sectionLabel(BuildContext context, String label) => Padding(
-        padding: const EdgeInsets.only(bottom: 6, top: 2),
-        child: Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-                letterSpacing: 0.8,
-              ),
-        ),
-      );
 }
 
-class _ButtonRow extends StatelessWidget {
-  final List<Widget> buttons;
+class _ActionGroupHeader extends StatelessWidget {
+  final String label;
 
-  const _ButtonRow({required this.buttons});
+  const _ActionGroupHeader({required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (int i = 0; i < buttons.length; i++) ...[
-            Expanded(child: buttons[i]),
-            if (i < buttons.length - 1) const SizedBox(width: 8),
-          ],
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6, top: 2),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
+              letterSpacing: 0.8,
+            ),
       ),
     );
   }
 }
 
-class _ActionButton extends StatelessWidget {
+class _ActionRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final int count;
   final Color color;
   final Widget destination;
-  final String? amountLabel;
+  final String? subtitle;
 
-  const _ActionButton({
+  const _ActionRow({
     required this.icon,
     required this.label,
     required this.count,
     required this.color,
     required this.destination,
-    this.amountLabel,
+    this.subtitle,
   });
 
   @override
@@ -360,7 +348,7 @@ class _ActionButton extends StatelessWidget {
     final effectiveColor = isActive ? color : Colors.grey;
 
     return Card(
-      margin: EdgeInsets.zero,
+      margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: isActive
@@ -370,125 +358,51 @@ class _ActionButton extends StatelessWidget {
                 )
             : null,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: effectiveColor.withAlpha(30),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: effectiveColor, size: 24),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '$count',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: effectiveColor,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isActive
-                                ? Theme.of(context).colorScheme.onSurface
-                                : Colors.grey,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (amountLabel != null)
-                    Text(
-                      amountLabel!,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: effectiveColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _UpcomingButton extends StatelessWidget {
-  final int count;
-  final String label;
-
-  const _UpcomingButton({required this.count, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = count > 0;
-    final color = isActive ? Colors.green : Colors.grey;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: isActive
-            ? () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SalesListScreen(
-                      initialFilters: {SaleFilter.upcomingScheduled},
-                    ),
-                  ),
-                )
-            : null,
-        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: color.withAlpha(30),
+                  color: effectiveColor.withAlpha(30),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.event, color: color, size: 20),
+                child: Icon(icon, color: effectiveColor, size: 22),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: isActive
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Colors.grey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isActive
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Colors.grey,
+                          ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: effectiveColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
+                  ],
                 ),
               ),
               Text(
                 '$count',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: color,
+                      color: effectiveColor,
                     ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: color, size: 18),
+              Icon(Icons.chevron_right, color: effectiveColor, size: 18),
             ],
           ),
         ),

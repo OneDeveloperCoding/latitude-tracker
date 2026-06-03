@@ -9,7 +9,7 @@ import '../../../core/store/store_state.dart';
 import '../../sales/models/sale.dart';
 import '../models/dashboard_stats.dart';
 
-enum _TrendsMetric { revenue, count }
+enum _AnalyticsMetric { revenue, count }
 
 // Tableau 10 palette — designed for perceptual distinctiveness.
 const _kCategoryColors = [
@@ -30,21 +30,21 @@ Color _colorForCategory(String category, List<String> ordered) {
   return i < 0 ? Colors.grey : _kCategoryColors[i % _kCategoryColors.length];
 }
 
-class TrendsScreen extends StatefulWidget {
+class AnalyticsScreen extends StatefulWidget {
   final DashboardPeriod initialPeriod;
 
-  const TrendsScreen({super.key, required this.initialPeriod});
+  const AnalyticsScreen({super.key, required this.initialPeriod});
 
   @override
-  State<TrendsScreen> createState() => _TrendsScreenState();
+  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-class _TrendsScreenState extends State<TrendsScreen> {
+class _AnalyticsScreenState extends State<AnalyticsScreen> {
   late DashboardPeriod _period;
   int _year = DateTime.now().year;
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _weekStart = _mondayOf(DateTime.now());
-  _TrendsMetric _metric = _TrendsMetric.revenue;
+  _AnalyticsMetric _metric = _AnalyticsMetric.revenue;
 
   static DateTime _mondayOf(DateTime date) =>
       date.subtract(Duration(days: date.weekday - 1));
@@ -197,24 +197,18 @@ class _TrendsScreenState extends State<TrendsScreen> {
           }
           final all = storeState.data;
           final currentStats = DashboardStats.computePeriodStats(
-            all,
-            _periodStart,
-            _periodEnd,
-          );
+              all, _periodStart, _periodEnd);
+          final (prevStart, prevEnd) = _shiftPeriod(-1);
+          final prevStats =
+              DashboardStats.computePeriodStats(all, prevStart, prevEnd);
           final stackedSparkline = _computeStackedSparkline(all);
           final paymentBreakdown = DashboardStats.computePaymentMethodBreakdown(
-            all,
-            _periodStart,
-            _periodEnd,
-          );
+              all, _periodStart, _periodEnd);
           final categoryBreakdown = DashboardStats.computeCategoryBreakdown(
-            all,
-            _periodStart,
-            _periodEnd,
-          );
+              all, _periodStart, _periodEnd);
           final shifts = _comparisonShifts;
           final labels = s.trendComparisonLabels(_period);
-          final hasChartData =
+          final hasStackedData =
               stackedSparkline.any((period) => period.isNotEmpty);
 
           return ListView(
@@ -232,12 +226,12 @@ class _TrendsScreenState extends State<TrendsScreen> {
                 onChanged: (m) => setState(() => _metric = m),
               ),
               const SizedBox(height: 16),
-              _CurrentPeriodCard(
-                stats: currentStats,
-                periodLabel: _periodLabel,
+              _RevenueSummaryCard(
+                currentStats: currentStats,
+                prevStats: prevStats,
                 metric: _metric,
               ),
-              if (hasChartData) ...[
+              if (hasStackedData) ...[
                 const SizedBox(height: 16),
                 _StackedBarChart(
                   periodsData: stackedSparkline,
@@ -248,10 +242,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
               ...List.generate(shifts.length, (i) {
                 final (cmpStart, cmpEnd) = _shiftPeriod(shifts[i]);
                 final cmpStats = DashboardStats.computePeriodStats(
-                  all,
-                  cmpStart,
-                  cmpEnd,
-                );
+                    all, cmpStart, cmpEnd);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: _ComparisonRow(
@@ -326,23 +317,23 @@ class _PeriodHeader extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _MetricToggle extends StatelessWidget {
-  final _TrendsMetric metric;
-  final ValueChanged<_TrendsMetric> onChanged;
+  final _AnalyticsMetric metric;
+  final ValueChanged<_AnalyticsMetric> onChanged;
 
   const _MetricToggle({required this.metric, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return SegmentedButton<_TrendsMetric>(
+    return SegmentedButton<_AnalyticsMetric>(
       segments: [
         ButtonSegment(
-          value: _TrendsMetric.revenue,
+          value: _AnalyticsMetric.revenue,
           label: Text(s.trendsMetricRevenue),
           icon: const Icon(Icons.euro, size: 16),
         ),
         ButtonSegment(
-          value: _TrendsMetric.count,
+          value: _AnalyticsMetric.count,
           label: Text(s.trendsMetricCount),
           icon: const Icon(Icons.receipt_long, size: 16),
         ),
@@ -355,17 +346,17 @@ class _MetricToggle extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Current period headline card
+// Revenue summary card — paid total + avg order + trend badge
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _CurrentPeriodCard extends StatelessWidget {
-  final ({double revenue, int count}) stats;
-  final String periodLabel;
-  final _TrendsMetric metric;
+class _RevenueSummaryCard extends StatelessWidget {
+  final ({double revenue, int count}) currentStats;
+  final ({double revenue, int count}) prevStats;
+  final _AnalyticsMetric metric;
 
-  const _CurrentPeriodCard({
-    required this.stats,
-    required this.periodLabel,
+  const _RevenueSummaryCard({
+    required this.currentStats,
+    required this.prevStats,
     required this.metric,
   });
 
@@ -375,40 +366,79 @@ class _CurrentPeriodCard extends StatelessWidget {
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final colorScheme = Theme.of(context).colorScheme;
 
-    final primary = metric == _TrendsMetric.revenue
-        ? currency.format(stats.revenue)
-        : '${stats.count}';
-    final secondary = metric == _TrendsMetric.revenue
-        ? s.nSales(stats.count)
-        : currency.format(stats.revenue);
+    final currentValue = metric == _AnalyticsMetric.revenue
+        ? currentStats.revenue
+        : currentStats.count.toDouble();
+    final prevValue = metric == _AnalyticsMetric.revenue
+        ? prevStats.revenue
+        : prevStats.count.toDouble();
+    final double? trendPct =
+        prevValue > 0 ? (currentValue - prevValue) / prevValue * 100 : null;
+
+    final primary = metric == _AnalyticsMetric.revenue
+        ? currency.format(currentStats.revenue)
+        : '${currentStats.count}';
+    final secondary = metric == _AnalyticsMetric.revenue
+        ? s.nSales(currentStats.count)
+        : currency.format(currentStats.revenue);
+    final avgOrder = currentStats.count > 0
+        ? currentStats.revenue / currentStats.count
+        : null;
 
     return Card(
       color: colorScheme.primaryContainer,
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              periodLabel,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    primary,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              primary,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
+                  Text(
+                    secondary,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
                   ),
+                  if (metric == _AnalyticsMetric.revenue && avgOrder != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.show_chart,
+                            size: 13,
+                            color: colorScheme.onPrimaryContainer.withAlpha(180),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${s.avgOrderMetric} ${currency.format(avgOrder)}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onPrimaryContainer
+                                          .withAlpha(180),
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
-            Text(
-              secondary,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-            ),
+            if (trendPct != null) ...[
+              const SizedBox(width: 12),
+              _TrendBadge(pct: trendPct.abs(), up: trendPct >= 0),
+            ],
           ],
         ),
       ),
@@ -493,7 +523,6 @@ class _StackedBarChartState extends State<_StackedBarChart> {
             .toList(),
     };
 
-    // Empty selection = all categories shown in value rows.
     final shownCategories = _selectedCategories.isEmpty
         ? orderedCategories
         : orderedCategories
@@ -514,7 +543,6 @@ class _StackedBarChartState extends State<_StackedBarChart> {
                   ),
             ),
             const SizedBox(height: 12),
-            // Tappable chart + period labels + totals row.
             GestureDetector(
               onTap: () => setState(() => _showValues = !_showValues),
               child: Column(
@@ -581,8 +609,6 @@ class _StackedBarChartState extends State<_StackedBarChart> {
                 ],
               ),
             ),
-            // Per-category value rows — shown only when values are revealed.
-            // Background tint = category color; no dot column needed.
             if (_showValues && shownCategories.isNotEmpty) ...[
               const SizedBox(height: 8),
               ...shownCategories.map((cat) {
@@ -599,40 +625,37 @@ class _StackedBarChartState extends State<_StackedBarChart> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
                     child: Row(
-                      children: [
-                        ...List.generate(
-                          values.length,
-                          (i) => Expanded(
-                            child: Text(
-                              values[i] > 0
-                                  ? '€${values[i].toStringAsFixed(0)}'
-                                  : '—',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: i == lastIndex
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: i == lastIndex
-                                    ? color
-                                    : color.withAlpha(140),
-                              ),
+                      children: List.generate(
+                        values.length,
+                        (i) => Expanded(
+                          child: Text(
+                            values[i] > 0
+                                ? '€${values[i].toStringAsFixed(0)}'
+                                : '—',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: i == lastIndex
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: i == lastIndex
+                                  ? color
+                                  : color.withAlpha(140),
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 );
               }),
             ],
-            // Divider before chips.
             if (orderedCategories.isNotEmpty) ...[
               const SizedBox(height: 10),
               const Divider(height: 1),
               const SizedBox(height: 8),
-              // Multi-select category chips — act as both legend and filter.
-              // Empty selection = all categories shown/highlighted.
+              // Multi-select chips — act as both legend and filter.
+              // Empty selection means all categories shown/highlighted.
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -650,8 +673,9 @@ class _StackedBarChartState extends State<_StackedBarChart> {
                         labelStyle: TextStyle(
                           fontSize: 12,
                           color: color,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                         onSelected: (v) => setState(() {
                           if (v) {
@@ -759,7 +783,7 @@ class _ComparisonRow extends StatelessWidget {
   final String label;
   final ({double revenue, int count}) currentStats;
   final ({double revenue, int count}) comparisonStats;
-  final _TrendsMetric metric;
+  final _AnalyticsMetric metric;
 
   const _ComparisonRow({
     required this.label,
@@ -768,11 +792,11 @@ class _ComparisonRow extends StatelessWidget {
     required this.metric,
   });
 
-  double get _currentValue => metric == _TrendsMetric.revenue
+  double get _currentValue => metric == _AnalyticsMetric.revenue
       ? currentStats.revenue
       : currentStats.count.toDouble();
 
-  double get _comparisonValue => metric == _TrendsMetric.revenue
+  double get _comparisonValue => metric == _AnalyticsMetric.revenue
       ? comparisonStats.revenue
       : comparisonStats.count.toDouble();
 
@@ -807,7 +831,7 @@ class _ComparisonRow extends StatelessWidget {
             const SizedBox(height: 6),
             if (hasPrev) ...[
               Text(
-                metric == _TrendsMetric.revenue
+                metric == _AnalyticsMetric.revenue
                     ? currency.format(comparisonStats.revenue)
                     : '${comparisonStats.count}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -815,7 +839,7 @@ class _ComparisonRow extends StatelessWidget {
                     ),
               ),
               Text(
-                metric == _TrendsMetric.revenue
+                metric == _AnalyticsMetric.revenue
                     ? s.nSales(comparisonStats.count)
                     : currency.format(comparisonStats.revenue),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -954,8 +978,7 @@ class _TopCategoriesSection extends StatelessWidget {
                 child: _BarRow(
                   label: cat.category,
                   sublabel: currency.format(cat.revenue),
-                  fraction:
-                      maxRevenue > 0 ? cat.revenue / maxRevenue : 0,
+                  fraction: maxRevenue > 0 ? cat.revenue / maxRevenue : 0,
                   barColor: colorScheme.primary,
                   trackColor: colorScheme.outlineVariant,
                 ),
@@ -1021,7 +1044,8 @@ class _BarRow extends StatelessWidget {
                   Container(color: trackColor, width: constraints.maxWidth),
                   Container(
                     color: barColor,
-                    width: constraints.maxWidth * math.max(0, math.min(1, fraction)),
+                    width: constraints.maxWidth *
+                        math.max(0, math.min(1, fraction)),
                   ),
                 ],
               ),
