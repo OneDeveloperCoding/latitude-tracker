@@ -119,7 +119,7 @@ class _PhotoGridState extends State<PhotoGrid> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _PhotoViewer(
+        builder: (_) => PhotoViewer(
           urls: widget.photoUrls,
           initialIndex: index,
         ),
@@ -333,17 +333,58 @@ class _AddPhotoTile extends StatelessWidget {
   }
 }
 
-class _PhotoViewer extends StatefulWidget {
+class PhotoThumbnail extends StatelessWidget {
+  final String url;
+  final double size;
+  final VoidCallback? onTap;
+
+  const PhotoThumbnail({
+    super.key,
+    required this.url,
+    this.size = 48,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget image = url.startsWith('demo://')
+        ? _DemoPhotoPlaceholder(url: url)
+        : Image.network(
+            url,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, progress) =>
+                progress == null ? child : Container(color: Colors.grey[200]),
+            errorBuilder: (_, err, stack) => Container(
+              color: Colors.grey[200],
+              child: const Icon(Icons.broken_image, size: 16),
+            ),
+          );
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: image,
+        ),
+      ),
+    );
+  }
+}
+
+class PhotoViewer extends StatefulWidget {
   final List<String> urls;
   final int initialIndex;
 
-  const _PhotoViewer({required this.urls, required this.initialIndex});
+  const PhotoViewer({super.key, required this.urls, required this.initialIndex});
 
   @override
-  State<_PhotoViewer> createState() => _PhotoViewerState();
+  State<PhotoViewer> createState() => _PhotoViewerState();
 }
 
-class _PhotoViewerState extends State<_PhotoViewer> {
+class _PhotoViewerState extends State<PhotoViewer> {
   late int _current;
   late PageController _pageController;
 

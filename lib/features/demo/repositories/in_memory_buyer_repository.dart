@@ -92,6 +92,13 @@ class InMemoryBuyerRepository implements BuyerRepository {
   }
 
   @override
+  Future<void> deleteAllBuyers() async {
+    _buyers.clear();
+    _addresses.clear();
+    _emitBuyers();
+  }
+
+  @override
   Future<void> createAddress(String buyerId, BuyerAddress address) async {
     final list = _addresses.putIfAbsent(buyerId, () => []);
     if (address.isDefault) {

@@ -222,7 +222,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<AssemblyStatus>(
-                    value: _assemblyStatus,
+                    initialValue: _assemblyStatus,
                     decoration: InputDecoration(
                       labelText: s.assemblyStatusLabel,
                       border: const OutlineInputBorder(),

@@ -327,6 +327,17 @@ class AppStrings {
   final String alsoDeletePhotosSubtitle;
   final String deletePermanently;
   final String invalidArchive;
+  final String continueAction;
+  final String dangerZone;
+  final String resetApp;
+  final String resetAppSubtitle;
+  final String resetAppConfirmTitle;
+  final String resetAppConfirmBody;
+  final String resetAppFinalTitle;
+  final String resetAppFinalBody;
+  final String resetEverything;
+  final String resettingApp;
+  final String resetAppFailed;
 
   // ── Plural word stems (used in methods below) ─────────────────────────────
   final String _saleSingular;
@@ -618,6 +629,17 @@ class AppStrings {
     required this.alsoDeletePhotosSubtitle,
     required this.deletePermanently,
     required this.invalidArchive,
+    required this.continueAction,
+    required this.dangerZone,
+    required this.resetApp,
+    required this.resetAppSubtitle,
+    required this.resetAppConfirmTitle,
+    required this.resetAppConfirmBody,
+    required this.resetAppFinalTitle,
+    required this.resetAppFinalBody,
+    required this.resetEverything,
+    required this.resettingApp,
+    required this.resetAppFailed,
     required String saleSingular,
     required String salePlural,
     required String photoSingular,
@@ -1209,6 +1231,21 @@ class AppStrings {
         'Removes photos from Storage — archive photo previews will no longer work',
     deletePermanently: 'Delete permanently',
     invalidArchive: 'Invalid archive file',
+    continueAction: 'Continue',
+    dangerZone: 'Danger zone',
+    resetApp: 'Reset app',
+    resetAppSubtitle: 'Delete all data and start fresh',
+    resetAppConfirmTitle: 'Reset the app?',
+    resetAppConfirmBody:
+        'This will permanently delete all Sales, Buyers, and Addresses. '
+        'Export a backup first if you want to keep your data.',
+    resetAppFinalTitle: 'This cannot be undone',
+    resetAppFinalBody:
+        'You are about to permanently delete everything. '
+        'There is no way to recover this data.',
+    resetEverything: 'Delete everything',
+    resettingApp: 'Resetting app…',
+    resetAppFailed: 'Reset failed',
     saleSingular: 'sale',
     salePlural: 'sales',
     photoSingular: 'photo',
@@ -1522,6 +1559,21 @@ class AppStrings {
         'Remove fotos do armazenamento — as pré-visualizações do arquivo deixarão de funcionar',
     deletePermanently: 'Eliminar permanentemente',
     invalidArchive: 'Ficheiro de arquivo inválido',
+    continueAction: 'Continuar',
+    dangerZone: 'Zona de perigo',
+    resetApp: 'Repor app',
+    resetAppSubtitle: 'Eliminar todos os dados e começar do zero',
+    resetAppConfirmTitle: 'Repor a app?',
+    resetAppConfirmBody:
+        'Isto eliminará permanentemente todas as Vendas, Compradores e Moradas. '
+        'Exporta uma cópia de segurança primeiro se quiseres guardar os dados.',
+    resetAppFinalTitle: 'Esta ação é irreversível',
+    resetAppFinalBody:
+        'Estás prestes a eliminar tudo permanentemente. '
+        'Não é possível recuperar estes dados.',
+    resetEverything: 'Eliminar tudo',
+    resettingApp: 'A repor app…',
+    resetAppFailed: 'Falha ao repor',
     saleSingular: 'venda',
     salePlural: 'vendas',
     photoSingular: 'foto',

@@ -412,7 +412,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               child: Column(
                 children: [
                   DropdownButtonFormField<PaymentMethod>(
-                    value: _paymentMethod,
+                    initialValue: _paymentMethod,
                     decoration: InputDecoration(
                       labelText: s.paymentMethodDropdownLabel,
                       border: const OutlineInputBorder(),
@@ -465,7 +465,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     const SizedBox(height: 16),
                     if (_buyerAddresses.isNotEmpty) ...[
                       DropdownButtonFormField<BuyerAddress>(
-                        value: _selectedAddress,
+                        initialValue: _selectedAddress,
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: s.shipToAddressLabel,
@@ -692,7 +692,7 @@ class _FormCard extends StatelessWidget {
                         color: Theme.of(context).colorScheme.primary,
                       ),
                 ),
-                if (trailing != null) trailing!,
+                ?trailing,
               ],
             ),
             const SizedBox(height: 12),
