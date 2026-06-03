@@ -144,8 +144,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
     }
 
     if (_categoryFilters.isNotEmpty) {
-      result =
-          result.where((s) => _categoryFilters.contains(s.category)).toList();
+      result = result
+          .where((s) => s.items.any((i) => _categoryFilters.contains(i.category)))
+          .toList();
     }
 
     if (_activeFilters.isNotEmpty) {
@@ -164,7 +165,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     return sales
         .where((s) =>
             s.buyerName.toLowerCase().contains(q) ||
-            s.itemDescription.toLowerCase().contains(q))
+            s.items.any((i) => i.description.toLowerCase().contains(q)))
         .toList();
   }
 
@@ -175,9 +176,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
       case _SortOrder.oldestFirst:
         sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       case _SortOrder.priceHigh:
-        sorted.sort((a, b) => b.price.compareTo(a.price));
+        sorted.sort((a, b) => b.totalPrice.compareTo(a.totalPrice));
       case _SortOrder.priceLow:
-        sorted.sort((a, b) => a.price.compareTo(b.price));
+        sorted.sort((a, b) => a.totalPrice.compareTo(b.totalPrice));
       case _SortOrder.newestFirst:
         break;
     }
@@ -472,7 +473,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       child: Builder(
                         builder: (_) {
                           final allCats = (SalesStore.current ?? [])
-                              .map((s) => s.category)
+                              .expand((s) => s.items.map((i) => i.category))
                               .toSet()
                               .toList()
                             ..sort();
@@ -613,6 +614,69 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
+// Shows item descriptions (up to 3) plus "and X more" if needed.
+class _ItemDescriptions extends StatelessWidget {
+  final Sale sale;
+  final List<UrgencyReason> reasons;
+
+  const _ItemDescriptions({required this.sale, required this.reasons});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final items = sale.items;
+    final shown = items.take(3).toList();
+    final overflow = items.length - 3;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...shown.map((item) => Text(
+                    item.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  )),
+              if (overflow > 0)
+                Text(
+                  s.andXMore(overflow),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
+            ],
+          ),
+        ),
+        _AttentionBadges(sale: sale, reasons: reasons),
+      ],
+    );
+  }
+}
+
+// Shows one chip per unique category across all SaleItems.
+class _CategoryChips extends StatelessWidget {
+  final Sale sale;
+
+  const _CategoryChips({required this.sale});
+
+  @override
+  Widget build(BuildContext context) {
+    final uniqueCategories =
+        sale.items.map((i) => i.category).toSet().toList();
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: uniqueCategories
+          .map((cat) => _CategoryChip(category: cat))
+          .toList(),
+    );
+  }
+}
+
 class _TimelineView extends StatelessWidget {
   final Map<String, List<Sale>> groups;
 
@@ -706,32 +770,15 @@ class _SaleCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '€${sale.price.toStringAsFixed(2)}',
+                    '€${sale.totalPrice.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ],
               ),
               const SizedBox(height: 2),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      sale.itemDescription,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  _AttentionBadges(sale: sale, reasons: reasons),
-                ],
-              ),
+              _ItemDescriptions(sale: sale, reasons: reasons),
               const SizedBox(height: 4),
-              Row(
-                children: [
-                  _CategoryChip(category: sale.category),
-                ],
-              ),
+              _CategoryChips(sale: sale),
               Row(
                 children: [
                   Text(
@@ -1006,7 +1053,7 @@ class _SaleProgressPath extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _assemblyNode(),
-        _line(sale.assemblyStatus == AssemblyStatus.ready),
+        _line(sale.derivedAssemblyStatus == AssemblyStatus.ready),
         _paymentNode(),
         _line(sale.payment.status == PaymentStatus.paid),
         _shipmentNode(),
@@ -1015,7 +1062,7 @@ class _SaleProgressPath extends StatelessWidget {
   }
 
   Widget _assemblyNode() {
-    final (icon, color) = switch (sale.assemblyStatus) {
+    final (icon, color) = switch (sale.derivedAssemblyStatus) {
       AssemblyStatus.notStarted => (Icons.build_outlined, Colors.grey),
       AssemblyStatus.waitingForMaterials =>
         (Icons.shopping_bag_outlined, Colors.amber[700]!),

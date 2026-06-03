@@ -11,11 +11,13 @@ class PhotoService {
 
   String get _userId => _auth.currentUser!.uid;
 
-  Reference _photoRef(String saleId, String photoId) =>
-      _storage.ref('users/$_userId/sales/$saleId/photos/$photoId.jpg');
+  Reference _photoRef(String saleId, String itemId, String photoId) =>
+      _storage.ref(
+          'users/$_userId/sales/$saleId/items/$itemId/photos/$photoId.jpg');
 
   Future<String?> pickAndUpload({
     required String saleId,
+    required String itemId,
     required ImageSource source,
   }) async {
     final file = await _picker.pickImage(
@@ -28,7 +30,7 @@ class PhotoService {
 
     final bytes = await file.readAsBytes();
     final photoId = _uuid.v4();
-    final ref = _photoRef(saleId, photoId);
+    final ref = _photoRef(saleId, itemId, photoId);
 
     await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
     return await ref.getDownloadURL();
@@ -43,16 +45,24 @@ class PhotoService {
     }
   }
 
+  // Recursively deletes all files under the sale's Storage folder,
+  // including all item subfolders. Safe to call when the folder doesn't exist.
   Future<void> deleteAllPhotos(String saleId) async {
     if (_auth.currentUser == null) return;
     try {
-      final listResult =
-          await _storage.ref('users/$_userId/sales/$saleId/photos').listAll();
-      for (final item in listResult.items) {
-        await item.delete();
-      }
+      await _deleteFolder('users/$_userId/sales/$saleId');
     } catch (_) {
       // Folder may not exist — ignore
+    }
+  }
+
+  Future<void> _deleteFolder(String path) async {
+    final result = await _storage.ref(path).listAll();
+    for (final item in result.items) {
+      await item.delete();
+    }
+    for (final prefix in result.prefixes) {
+      await _deleteFolder(prefix.fullPath);
     }
   }
 }

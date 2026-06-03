@@ -24,7 +24,7 @@ class _UnpaidBalancesGroup {
     required this.buyerId,
     required this.buyerName,
     required this.unpaidSales,
-  }) : totalOwed = unpaidSales.fold(0.0, (sum, s) => sum + s.price);
+  }) : totalOwed = unpaidSales.fold(0.0, (sum, s) => sum + s.totalPrice);
 }
 
 class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
@@ -208,13 +208,17 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
                   ),
                 ),
                 title: Text(
-                  sale.itemDescription,
+                  sale.items.isEmpty
+                      ? '—'
+                      : sale.items.length == 1
+                          ? sale.items.first.description
+                          : '${sale.items.length} items',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(dateFormat.format(sale.createdAt)),
                 trailing: Text(
-                  '€${sale.price.toStringAsFixed(2)}',
+                  '€${sale.totalPrice.toStringAsFixed(2)}',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),

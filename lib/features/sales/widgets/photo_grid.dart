@@ -7,6 +7,7 @@ import '../services/photo_service.dart';
 
 class PhotoGrid extends StatefulWidget {
   final String saleId;
+  final String itemId;
   final List<String> photoUrls;
   final ValueChanged<List<String>> onChanged;
 
@@ -20,6 +21,7 @@ class PhotoGrid extends StatefulWidget {
   const PhotoGrid({
     super.key,
     required this.saleId,
+    required this.itemId,
     required this.photoUrls,
     required this.onChanged,
     this.onPhotoAdded,
@@ -39,6 +41,7 @@ class _PhotoGridState extends State<PhotoGrid> {
     try {
       final url = await _service.pickAndUpload(
         saleId: widget.saleId,
+        itemId: widget.itemId,
         source: source,
       );
       if (url != null) {
