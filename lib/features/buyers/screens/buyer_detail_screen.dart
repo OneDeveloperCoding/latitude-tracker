@@ -447,17 +447,37 @@ class _SaleTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(DateFormat('dd MMM yyyy').format(sale.createdAt)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text('€${sale.totalPrice.toStringAsFixed(2)}'),
-            Text(
-              isPaid ? s.paid : s.unpaid,
-              style: TextStyle(
-                fontSize: 11,
-                color: isPaid ? Colors.green : Colors.orange,
+            if (sale.notes?.isNotEmpty == true) ...[
+              InkWell(
+                onTap: () => _showNotePreview(context, sale.notes!),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.sticky_note_2_outlined,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
+              const SizedBox(width: 8),
+            ],
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('€${sale.totalPrice.toStringAsFixed(2)}'),
+                Text(
+                  isPaid ? s.paid : s.unpaid,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isPaid ? Colors.green : Colors.orange,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -469,6 +489,33 @@ class _SaleTile extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showNotePreview(BuildContext context, String notes) {
+  final s = context.s;
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sticky_note_2_outlined,
+                  color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 12),
+              Text(s.sectionNotes,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(notes, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Addresses list ────────────────────────────────────────────────────────────
