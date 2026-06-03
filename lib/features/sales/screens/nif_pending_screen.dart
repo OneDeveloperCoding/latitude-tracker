@@ -168,10 +168,21 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                                   tooltip: filed
                                       ? s.markAsPending
                                       : s.markAsFiled,
-                                  onPressed: () => _saleRepo.updateSale(
-                                    sale.copyWith(
-                                        atSubmissionDone: !filed),
-                                  ),
+                                  onPressed: () async {
+                                    try {
+                                      await _saleRepo.updateSale(
+                                        sale.copyWith(
+                                            atSubmissionDone: !filed),
+                                      );
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    context.s.errorMsg(e))));
+                                      }
+                                    }
+                                  },
                                 ),
                               ],
                             ),
