@@ -43,25 +43,34 @@ class AppStrings {
   final String exitDemo;
   final String demoUser;
   final String demoTourTitle;
-  final String gotIt;
 
-  // Demo tutorial tip titles & bodies
-  final String tipDashboardTitle;
-  final String tipDashboardBody;
-  final String tipSalesTitle;
-  final String tipSalesBody;
-  final String tipDetailTitle;
-  final String tipDetailBody;
-  final String tipComponentsTitle;
-  final String tipComponentsBody;
-  final String tipBuyersTitle;
-  final String tipBuyersBody;
-  final String tipShoppingTitle;
-  final String tipShoppingBody;
-  final String tipNifTitle;
-  final String tipNifBody;
-  final String tipMapTitle;
-  final String tipMapBody;
+  // App tour (paged walkthrough)
+  final String appTour;
+  final String tutorialNext;
+  final String tutorialBack;
+  final String tutorialGetStarted;
+  final String tourWelcomeTitle;
+  final String tourWelcomeBody;
+  final String tourCreateSaleTitle;
+  final String tourCreateSaleBody;
+  final String tourSaleDetailTitle;
+  final String tourSaleDetailBody;
+  final String tourDashboardTitle;
+  final String tourDashboardBody;
+  final String tourBuyersTitle;
+  final String tourBuyersBody;
+  final String tourAnalyticsTitle;
+  final String tourAnalyticsBody;
+  final String tourDiscoverTitle;
+  final String tourDiscoverBody;
+  final String tourGemShoppingTitle;
+  final String tourGemShoppingBody;
+  final String tourGemMapTitle;
+  final String tourGemMapBody;
+  final String tourGemUnpaidTitle;
+  final String tourGemUnpaidBody;
+  final String tourGemNifTitle;
+  final String tourGemNifBody;
 
   // ── Dashboard ────────────────────────────────────────────────────────────
   final String dashboard;
@@ -389,23 +398,32 @@ class AppStrings {
     required this.exitDemo,
     required this.demoUser,
     required this.demoTourTitle,
-    required this.gotIt,
-    required this.tipDashboardTitle,
-    required this.tipDashboardBody,
-    required this.tipSalesTitle,
-    required this.tipSalesBody,
-    required this.tipDetailTitle,
-    required this.tipDetailBody,
-    required this.tipComponentsTitle,
-    required this.tipComponentsBody,
-    required this.tipBuyersTitle,
-    required this.tipBuyersBody,
-    required this.tipShoppingTitle,
-    required this.tipShoppingBody,
-    required this.tipNifTitle,
-    required this.tipNifBody,
-    required this.tipMapTitle,
-    required this.tipMapBody,
+    required this.appTour,
+    required this.tutorialNext,
+    required this.tutorialBack,
+    required this.tutorialGetStarted,
+    required this.tourWelcomeTitle,
+    required this.tourWelcomeBody,
+    required this.tourCreateSaleTitle,
+    required this.tourCreateSaleBody,
+    required this.tourSaleDetailTitle,
+    required this.tourSaleDetailBody,
+    required this.tourDashboardTitle,
+    required this.tourDashboardBody,
+    required this.tourBuyersTitle,
+    required this.tourBuyersBody,
+    required this.tourAnalyticsTitle,
+    required this.tourAnalyticsBody,
+    required this.tourDiscoverTitle,
+    required this.tourDiscoverBody,
+    required this.tourGemShoppingTitle,
+    required this.tourGemShoppingBody,
+    required this.tourGemMapTitle,
+    required this.tourGemMapBody,
+    required this.tourGemUnpaidTitle,
+    required this.tourGemUnpaidBody,
+    required this.tourGemNifTitle,
+    required this.tourGemNifBody,
     required this.dashboard,
     required this.actionNeeded,
     required this.pending,
@@ -991,31 +1009,42 @@ class AppStrings {
     exitDemo: 'Exit demo',
     demoUser: 'Demo user',
     demoTourTitle: 'Demo tour',
-    gotIt: 'Got it',
-    tipDashboardTitle: 'Dashboard',
-    tipDashboardBody:
-        'Your month at a glance — total sales, revenue, and pending actions. Warning cards at the top surface unpaid orders and NIF receipts that need filing.',
-    tipSalesTitle: 'Sales list',
-    tipSalesBody:
-        'All your orders, newest first. Each card shows a progress path — assembly → payment → shipping. Tap the path bar for a legend. Cards with an approaching or overdue due date show a coloured left bar; tap the purple receipt or orange blocker icon for details.',
-    tipDetailTitle: 'Sale detail',
-    tipDetailBody:
-        'Tap any sale to open the full detail. From here you can edit every field, manage the materials list, add photos, record a tracking number, and duplicate or delete the order.',
-    tipComponentsTitle: 'Components',
-    tipComponentsBody:
-        'Inside a sale, tick off materials as they arrive. When the last component is checked, the assembly status advances automatically. Swipe a component left to remove it.',
-    tipBuyersTitle: 'Buyers',
-    tipBuyersBody:
-        'Buyer profiles store contact info, NIF, saved addresses, and a live purchase history. Tap any past order to jump straight to its detail screen.',
-    tipShoppingTitle: 'Shopping list',
-    tipShoppingBody:
-        'Access from the Dashboard. Shows every component still needed across all active sales, grouped by urgency — overdue orders appear first so you know what to prioritise on your next supply run.',
-    tipNifTitle: 'NIF / AT receipts',
-    tipNifBody:
-        'Sales that require a fiscal receipt are flagged with a purple badge. Open the NIF screen from the Dashboard to see all pending submissions in one place.',
-    tipMapTitle: 'Heat map',
-    tipMapBody:
-        'Switch to the map view in the sales list to see where your buyers are. Sales are grouped by postal code locality — tap a marker to see the count for that area.',
+    appTour: 'App tour',
+    tutorialNext: 'Next',
+    tutorialBack: 'Back',
+    tutorialGetStarted: 'Get started',
+    tourWelcomeTitle: 'Welcome to Latitude Tracker',
+    tourWelcomeBody:
+        'Your private sales journal for handmade accessories. Track every sale — from Instagram DM or market stall — through assembly, payment, and shipment, all in one place.',
+    tourCreateSaleTitle: 'Creating a sale',
+    tourCreateSaleBody:
+        'Tap + on the Sales tab to start. Pick or create a buyer, then add one or more items — each with its own description, category, price, assembly status, and photos. Finish with payment method, delivery details, and any special notes.',
+    tourSaleDetailTitle: 'Managing a sale',
+    tourSaleDetailBody:
+        'Tap any sale card to open its detail. Toggle payment with one tap, advance assembly per item, record a CTT tracking code when you ship, and follow the NIF/AT compliance row from "receipt requested" to "filed".',
+    tourDashboardTitle: 'Your dashboard',
+    tourDashboardBody:
+        'See revenue for any period — scroll the month chips or switch between weekly, monthly, and yearly. Tap the insights icon to explore trends by category. Below the revenue card, action rows for Money, Production, and Planning show exactly what needs attention; tap any row to jump to the filtered sales list.',
+    tourBuyersTitle: 'Buyer profiles',
+    tourBuyersBody:
+        'Every buyer builds a profile over time: saved addresses with Portuguese postal-code auto-fill, NIF for fiscal receipts, and a full purchase history you can drill into by year and month. Returning buyers get a hint when you create a new sale.',
+    tourAnalyticsTitle: 'Analytics',
+    tourAnalyticsBody:
+        'Tap the insights icon on the revenue card to open the Analytics screen. A stacked bar chart shows revenue by category across 6 periods. Filter by category, toggle between revenue and count, and check the payment method breakdown to see how buyers prefer to pay.',
+    tourDiscoverTitle: 'More to explore',
+    tourDiscoverBody: 'Four screens worth knowing:',
+    tourGemShoppingTitle: 'Shopping list',
+    tourGemShoppingBody:
+        'Every component still needed across open sales, grouped by sale — so you know exactly what to buy on your next supply run.',
+    tourGemMapTitle: 'Sales heat map',
+    tourGemMapBody:
+        'A geographic view of where your shipped sales go, grouped by postal code on a map of Portugal.',
+    tourGemUnpaidTitle: 'Unpaid balances',
+    tourGemUnpaidBody:
+        'Outstanding payments grouped by buyer, sorted by total amount owed — your go-to for follow-ups.',
+    tourGemNifTitle: 'NIF receipts',
+    tourGemNifBody:
+        'All pending AT submissions in one place, with a one-tap toggle to mark each one filed.',
     dashboard: 'Dashboard',
     actionNeeded: 'Action needed',
     pending: 'Pending',
@@ -1329,31 +1358,42 @@ class AppStrings {
     exitDemo: 'Sair',
     demoUser: 'Utilizador de demonstração',
     demoTourTitle: 'Tour de demonstração',
-    gotIt: 'Percebi',
-    tipDashboardTitle: 'Painel',
-    tipDashboardBody:
-        'O seu mês de relance — total de vendas, receita e ações pendentes. Os cartões de aviso no topo mostram encomendas por pagar e recibos NIF por submeter.',
-    tipSalesTitle: 'Lista de vendas',
-    tipSalesBody:
-        'Todas as suas encomendas, mais recentes primeiro. Cada cartão mostra o progresso — montagem → pagamento → envio. Toque na barra de progresso para ver a legenda. Cartões com data limite próxima ou em atraso mostram uma barra colorida à esquerda; toque no recibo roxo ou no ícone laranja de bloqueio para ver detalhes.',
-    tipDetailTitle: 'Detalhe da venda',
-    tipDetailBody:
-        'Toque numa venda para abrir o detalhe completo. Aqui pode editar todos os campos, gerir a lista de materiais, adicionar fotos, registar um código de rastreio, e duplicar ou eliminar a encomenda.',
-    tipComponentsTitle: 'Componentes',
-    tipComponentsBody:
-        'Dentro de uma venda, assinale os materiais à medida que chegam. Quando o último componente for marcado, o estado de montagem avança automaticamente. Deslize um componente para a esquerda para o remover.',
-    tipBuyersTitle: 'Compradores',
-    tipBuyersBody:
-        'Os perfis de compradores guardam contacto, NIF, moradas e histórico de compras. Toque numa encomenda anterior para ir diretamente ao seu detalhe.',
-    tipShoppingTitle: 'Lista de compras',
-    tipShoppingBody:
-        'Acesse pelo Painel. Mostra todos os componentes ainda em falta nas vendas ativas, ordenados por urgência — as encomendas em atraso aparecem primeiro.',
-    tipNifTitle: 'NIF / AT',
-    tipNifBody:
-        'As vendas que requerem recibo fiscal são sinalizadas com um indicador roxo. Abra o ecrã NIF no Painel para ver todas as submissões pendentes num só lugar.',
-    tipMapTitle: 'Mapa de calor',
-    tipMapBody:
-        'Mude para a vista de mapa na lista de vendas para ver onde estão os seus compradores. As vendas são agrupadas por localidade — toque num marcador para ver a contagem dessa área.',
+    appTour: 'Tour da aplicação',
+    tutorialNext: 'Seguinte',
+    tutorialBack: 'Voltar',
+    tutorialGetStarted: 'Começar',
+    tourWelcomeTitle: 'Bem-vindo ao Latitude Tracker',
+    tourWelcomeBody:
+        'O seu diário privado de vendas de acessórios artesanais. Acompanhe cada venda — do DM do Instagram ou mercado — da montagem ao pagamento e envio, tudo num só lugar.',
+    tourCreateSaleTitle: 'Criar uma venda',
+    tourCreateSaleBody:
+        'Toque em + no separador Vendas para começar. Selecione ou crie um comprador, depois adicione um ou mais artigos — cada um com descrição, categoria, preço, estado de montagem e fotos. Termine com o método de pagamento, detalhes de entrega e notas.',
+    tourSaleDetailTitle: 'Gerir uma venda',
+    tourSaleDetailBody:
+        'Toque num cartão de venda para abrir o detalhe. Marque o pagamento com um toque, avance o estado de montagem por artigo, registe o código CTT ao enviar, e siga a linha NIF/AT de "recibo solicitado" até "submetido".',
+    tourDashboardTitle: 'O seu painel',
+    tourDashboardBody:
+        'Veja a receita de qualquer período — deslize os chips de mês ou mude entre semanal, mensal e anual. Toque no ícone de insights para explorar tendências por categoria. Abaixo do cartão de receita, as linhas de Finanças, Produção e Planeamento mostram o que precisa de atenção; toque numa linha para ver as vendas filtradas.',
+    tourBuyersTitle: 'Perfis de compradores',
+    tourBuyersBody:
+        'Cada comprador constrói um perfil ao longo do tempo: moradas guardadas com preenchimento automático de código postal português, NIF para recibos fiscais, e histórico completo de compras por ano e mês. Compradores recorrentes recebem uma dica ao criar nova venda.',
+    tourAnalyticsTitle: 'Análises',
+    tourAnalyticsBody:
+        'Toque no ícone de insights no cartão de receita para abrir as Análises. Um gráfico de barras empilhadas mostra a receita por categoria ao longo de 6 períodos. Filtre por categoria, alterne entre receita e contagem, e veja como os compradores preferem pagar.',
+    tourDiscoverTitle: 'Mais para explorar',
+    tourDiscoverBody: 'Quatro ecrãs que vale a pena conhecer:',
+    tourGemShoppingTitle: 'Lista de compras',
+    tourGemShoppingBody:
+        'Todos os componentes em falta nas vendas ativas, agrupados por venda — para saber exatamente o que comprar na próxima ida à loja.',
+    tourGemMapTitle: 'Mapa de calor',
+    tourGemMapBody:
+        'Vista geográfica de onde vão os seus envios, agrupados por código postal num mapa de Portugal.',
+    tourGemUnpaidTitle: 'Saldos em dívida',
+    tourGemUnpaidBody:
+        'Pagamentos em falta agrupados por comprador, ordenados por valor — ideal para acompanhamento.',
+    tourGemNifTitle: 'Recibos NIF',
+    tourGemNifBody:
+        'Todas as submissões AT pendentes num só lugar, com toggle para marcar cada uma como submetida.',
     dashboard: 'Painel',
     actionNeeded: 'Ações necessárias',
     pending: 'Pendente',
