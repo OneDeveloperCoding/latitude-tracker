@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0] — 2026-06-04
+
+### Features
+- Dashboard period control replaced with a scrollable 6-month chip row — the dashboard now operates at monthly granularity only; yearly/weekly modes are available exclusively in the AnalyticsScreen
+- Dashboard action section redesigned as grouped full-width rows (coloured icon, label, count, chevron); actions split into three labelled sections: **Money** (Unpaid, Overdue, NIF required), **Production** (Assembly not ready, Pending shipment, In transit), **Planning** (Upcoming scheduled) — seven rows total, up from five
+- `InsightsCard` and `TrendsScreen` merged into a single **AnalyticsScreen** accessed from an insights icon button embedded in the revenue card; the standalone entry card at the bottom of the Dashboard is removed
+- Search bars unified across Sales list, Buyers list, and Unpaid Balances screens — consistent placement and behaviour
+
+### Fixes
+- Error handling audit: non-fatal Crashlytics recording wired up consistently across all repository and service layers
+
+### Infrastructure
+- Flutter upgraded to 3.44.1 (required by `image_picker` Dart SDK constraint)
+
 ## [1.1.0] — 2026-06-02
 
 ### Features
