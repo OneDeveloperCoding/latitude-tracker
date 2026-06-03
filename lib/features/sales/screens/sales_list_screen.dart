@@ -846,13 +846,32 @@ class _AttentionBadges extends StatelessWidget {
         sale.payment.status == PaymentStatus.unpaid &&
         sale.shipment.status != ShipmentStatus.delivered;
 
-    if (!showNifBadge && !isReadyButUnpaid && reasons.isEmpty) {
+    final hasNote = sale.notes?.isNotEmpty == true;
+
+    if (!hasNote && !showNifBadge && !isReadyButUnpaid && reasons.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    // Order: note → NIF → ready-but-unpaid → urgency warnings.
+    // Warnings are rightmost so they catch the eye first when scanning right-to-left.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (hasNote) ...[
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: () => _showNotePreview(context, sale.notes!),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                Icons.sticky_note_2_outlined,
+                size: 22,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
         if (showNifBadge) ...[
           const SizedBox(width: 4),
           InkWell(
@@ -969,6 +988,33 @@ class _ScheduledDateLabel extends StatelessWidget {
           ?.copyWith(color: color, fontWeight: FontWeight.w500),
     );
   }
+}
+
+void _showNotePreview(BuildContext context, String notes) {
+  final s = context.s;
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sticky_note_2_outlined,
+                  color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 12),
+              Text(s.sectionNotes,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(notes, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    ),
+  );
 }
 
 void _showNifDetail(
