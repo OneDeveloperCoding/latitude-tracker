@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
 import '../../demo/demo_mode.dart';
+import '../../demo/demo_tutorial_sheet.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
 import '../services/reset_app_service.dart';
@@ -63,6 +64,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(),
           _SectionHeader(s.app),
+          ListTile(
+            leading: const Icon(Icons.explore_outlined),
+            title: Text(s.appTour),
+            onTap: () => DemoTutorialSheet.show(context),
+          ),
           _LanguageTile(),
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
