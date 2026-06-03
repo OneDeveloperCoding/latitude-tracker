@@ -96,13 +96,25 @@ class _MainNavState extends State<MainNav> {
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
         destinations: [
           NavigationDestination(
-              icon: const Icon(Icons.dashboard), label: s.navDashboard),
+            selectedIcon: const Icon(Icons.dashboard),
+            icon: const Icon(Icons.dashboard_outlined),
+            label: s.navDashboard,
+          ),
           NavigationDestination(
-              icon: const Icon(Icons.sell), label: s.navSales),
+            selectedIcon: const Icon(Icons.sell),
+            icon: const Icon(Icons.sell_outlined),
+            label: s.navSales,
+          ),
           NavigationDestination(
-              icon: const Icon(Icons.people), label: s.navBuyers),
+            selectedIcon: const Icon(Icons.people),
+            icon: const Icon(Icons.people_outline),
+            label: s.navBuyers,
+          ),
           NavigationDestination(
-              icon: const Icon(Icons.settings), label: s.navSettings),
+            selectedIcon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings_outlined),
+            label: s.navSettings,
+          ),
         ],
       ),
     );
