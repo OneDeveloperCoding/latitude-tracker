@@ -410,6 +410,20 @@ class _ItemSummaryTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
+      leading: item.photoUrls.isNotEmpty
+          ? PhotoThumbnail(
+              url: item.photoUrls.first,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PhotoViewer(
+                    urls: item.photoUrls,
+                    initialIndex: 0,
+                  ),
+                ),
+              ),
+            )
+          : null,
       title: Text(
         item.description,
         maxLines: 1,

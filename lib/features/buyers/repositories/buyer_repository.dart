@@ -17,6 +17,7 @@ abstract class BuyerRepository {
   Future<void> createBuyer(Buyer buyer);
   Future<void> updateBuyer(Buyer buyer);
   Future<void> deleteBuyer(String id);
+  Future<void> deleteAllBuyers();
   Future<void> createAddress(String buyerId, BuyerAddress address);
   Future<void> updateAddress(String buyerId, BuyerAddress address);
   Future<void> deleteAddress(String buyerId, String addressId);
@@ -83,6 +84,14 @@ class _FirestoreBuyerRepository implements BuyerRepository {
           .orderBy('label')
           .snapshots()
           .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+
+  @override
+  Future<void> deleteAllBuyers() async {
+    final buyers = await getAllBuyers();
+    for (final buyer in buyers) {
+      await deleteBuyer(buyer.id);
+    }
+  }
 
   @override
   Future<void> createAddress(String buyerId, BuyerAddress address) async {

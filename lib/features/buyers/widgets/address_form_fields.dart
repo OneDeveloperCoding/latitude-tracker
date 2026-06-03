@@ -189,7 +189,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _country,
+          initialValue: _country,
           decoration: InputDecoration(
             labelText: s.addressCountry,
             border: const OutlineInputBorder(),

@@ -11,6 +11,7 @@ import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSett
 import '../../demo/demo_mode.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
+import '../services/reset_app_service.dart';
 import 'archive_import_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -74,6 +75,17 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
+          if (!isDemo) ...[
+            const Divider(),
+            _SectionHeader(s.dangerZone),
+            ListTile(
+              leading: const Icon(Icons.delete_sweep, color: Colors.red),
+              title: Text(s.resetApp,
+                  style: const TextStyle(color: Colors.red)),
+              subtitle: Text(s.resetAppSubtitle),
+              onTap: () => _resetApp(context),
+            ),
+          ],
         ],
       ),
     );
@@ -99,6 +111,50 @@ class SettingsScreen extends StatelessWidget {
     );
     if (confirmed == true) {
       await FirebaseAuth.instance.signOut();
+    }
+  }
+
+  Future<void> _resetApp(BuildContext context) async {
+    final s = context.s;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.resetAppConfirmTitle),
+        content: Text(s.resetAppConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.continueAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final deletePhotos = await showDialog<bool>(
+      context: context,
+      builder: (_) => _ResetAppDialog(),
+    );
+    if (deletePhotos == null || !context.mounted) return;
+
+    try {
+      await _runWithProgress(
+        context,
+        s.resettingApp,
+        () => ResetAppService().resetApp(deletePhotos: deletePhotos),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${s.resetAppFailed}: $e')),
+        );
+      }
     }
   }
 
@@ -328,6 +384,49 @@ class _DeleteYearDialogState extends State<_DeleteYearDialog> {
           style: TextButton.styleFrom(foregroundColor: Colors.red),
           onPressed: () => Navigator.pop(context, _deletePhotos),
           child: Text(s.deletePermanently),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetAppDialog extends StatefulWidget {
+  @override
+  State<_ResetAppDialog> createState() => _ResetAppDialogState();
+}
+
+class _ResetAppDialogState extends State<_ResetAppDialog> {
+  bool _deletePhotos = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return AlertDialog(
+      title: Text(s.resetAppFinalTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(s.resetAppFinalBody),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: Text(s.alsoDeletePhotos),
+            subtitle: Text(s.alsoDeletePhotosSubtitle),
+            value: _deletePhotos,
+            onChanged: (v) => setState(() => _deletePhotos = v),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(s.cancel),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, _deletePhotos),
+          child: Text(s.resetEverything),
         ),
       ],
     );

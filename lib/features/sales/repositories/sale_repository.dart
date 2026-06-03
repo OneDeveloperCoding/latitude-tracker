@@ -17,6 +17,7 @@ abstract class SaleRepository {
   Future<void> deleteSale(String id);
   Future<List<Sale>> getSalesForYear(int year);
   Future<void> deleteAllSalesForYear(int year, {bool deletePhotos});
+  Future<void> deleteAllSales({bool deletePhotos});
   Future<List<Sale>> getSalesForBuyer(String buyerId);
 }
 
@@ -72,6 +73,22 @@ class _FirestoreSaleRepository implements SaleRepository {
     final batch = _firestore.batch();
     for (final sale in sales) {
       batch.delete(_salesRef.doc(sale.id));
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<void> deleteAllSales({bool deletePhotos = false}) async {
+    final docs = await _salesRef.get().then((s) => s.docs);
+    if (docs.isEmpty) return;
+    if (deletePhotos) {
+      for (final doc in docs) {
+        await PhotoService().deleteAllPhotos(doc.id);
+      }
+    }
+    final batch = _firestore.batch();
+    for (final doc in docs) {
+      batch.delete(doc.reference);
     }
     await batch.commit();
   }
