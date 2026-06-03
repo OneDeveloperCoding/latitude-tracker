@@ -79,6 +79,91 @@ class ComponentItem {
       );
 }
 
+class SaleItem {
+  final String id;
+  final String description;
+  final String category;
+  final double price;
+  final AssemblyStatus assemblyStatus;
+  final List<ComponentItem> components;
+  final List<String> photoUrls;
+
+  const SaleItem({
+    required this.id,
+    required this.description,
+    required this.category,
+    required this.price,
+    required this.assemblyStatus,
+    this.components = const [],
+    this.photoUrls = const [],
+  });
+
+  factory SaleItem.fromMap(Map<String, dynamic> map) => SaleItem(
+        id: map['id'] as String,
+        description: map['description'] as String,
+        category: map['category'] as String? ?? kDefaultCategories.first,
+        price: (map['price'] as num).toDouble(),
+        assemblyStatus:
+            AssemblyStatus.values.byName(map['assemblyStatus'] as String),
+        components: (map['components'] as List<dynamic>? ?? [])
+            .map((e) => ComponentItem.fromMap(e as Map<String, dynamic>))
+            .toList(),
+        photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
+      );
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'description': description,
+        'category': category,
+        'price': price,
+        'assemblyStatus': assemblyStatus.name,
+        'components': components.map((c) => c.toMap()).toList(),
+        'photoUrls': photoUrls,
+      };
+
+  SaleItem copyWith({
+    String? description,
+    String? category,
+    double? price,
+    AssemblyStatus? assemblyStatus,
+    List<ComponentItem>? components,
+    List<String>? photoUrls,
+  }) =>
+      SaleItem(
+        id: id,
+        description: description ?? this.description,
+        category: category ?? this.category,
+        price: price ?? this.price,
+        assemblyStatus: assemblyStatus ?? this.assemblyStatus,
+        components: components ?? this.components,
+        photoUrls: photoUrls ?? this.photoUrls,
+      );
+
+  // waitingForMaterials is never auto-changed — the user controls it manually.
+  static AssemblyStatus deriveAssemblyStatus(
+    List<ComponentItem> components,
+    AssemblyStatus current,
+  ) {
+    if (current == AssemblyStatus.waitingForMaterials) return current;
+    final allAvailable =
+        components.isNotEmpty && components.every((c) => c.isAvailable);
+    if (allAvailable &&
+        (current == AssemblyStatus.notStarted ||
+            current == AssemblyStatus.inProgress)) {
+      return AssemblyStatus.ready;
+    }
+    if (!allAvailable && current == AssemblyStatus.ready) {
+      return AssemblyStatus.inProgress;
+    }
+    return current;
+  }
+
+  SaleItem withUpdatedComponents(List<ComponentItem> updated) => copyWith(
+        components: updated,
+        assemblyStatus: deriveAssemblyStatus(updated, assemblyStatus),
+      );
+}
+
 class SalePayment {
   final PaymentStatus status;
   final PaymentMethod method;
@@ -152,12 +237,7 @@ class Sale {
   final String id;
   final String buyerId;
   final String buyerName;
-  final String itemDescription;
-  final String category;
-  final List<String> photoUrls;
-  final double price;
-  final AssemblyStatus assemblyStatus;
-  final List<ComponentItem> components;
+  final List<SaleItem> items;
   final SalePayment payment;
   final SaleShipment shipment;
   final bool requiresNif;
@@ -170,12 +250,7 @@ class Sale {
     required this.id,
     required this.buyerId,
     required this.buyerName,
-    required this.itemDescription,
-    required this.category,
-    this.photoUrls = const [],
-    required this.price,
-    required this.assemblyStatus,
-    required this.components,
+    required this.items,
     required this.payment,
     required this.shipment,
     required this.requiresNif,
@@ -185,20 +260,36 @@ class Sale {
     this.notes,
   });
 
+  double get totalPrice => items.fold(0.0, (acc, item) => acc + item.price);
+
+  // Worst-case across all items: waitingForMaterials > inProgress > notStarted > ready.
+  // A Sale is only ready when every SaleItem is ready.
+  AssemblyStatus get derivedAssemblyStatus {
+    if (items.isEmpty) return AssemblyStatus.notStarted;
+    AssemblyStatus worst = AssemblyStatus.ready;
+    for (final item in items) {
+      final s = item.assemblyStatus;
+      if (s == AssemblyStatus.waitingForMaterials) {
+        return AssemblyStatus.waitingForMaterials;
+      }
+      if (s == AssemblyStatus.inProgress) {
+        worst = AssemblyStatus.inProgress;
+      } else if (s == AssemblyStatus.notStarted &&
+          worst != AssemblyStatus.inProgress) {
+        worst = AssemblyStatus.notStarted;
+      }
+    }
+    return worst;
+  }
+
   factory Sale.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Sale(
       id: doc.id,
       buyerId: data['buyerId'] as String,
       buyerName: data['buyerName'] as String,
-      itemDescription: data['itemDescription'] as String,
-      category: data['category'] as String? ?? kDefaultCategories.first,
-      photoUrls: List<String>.from(data['photoUrls'] as List? ?? []),
-      price: (data['price'] as num).toDouble(),
-      assemblyStatus:
-          AssemblyStatus.values.byName(data['assemblyStatus'] as String),
-      components: (data['components'] as List<dynamic>? ?? [])
-          .map((e) => ComponentItem.fromMap(e as Map<String, dynamic>))
+      items: (data['items'] as List<dynamic>? ?? [])
+          .map((e) => SaleItem.fromMap(e as Map<String, dynamic>))
           .toList(),
       payment: SalePayment.fromMap(data['payment'] as Map<String, dynamic>),
       shipment: SaleShipment.fromMap(data['shipment'] as Map<String, dynamic>),
@@ -215,12 +306,7 @@ class Sale {
   Map<String, dynamic> toFirestore() => {
         'buyerId': buyerId,
         'buyerName': buyerName,
-        'itemDescription': itemDescription,
-        'category': category,
-        'photoUrls': photoUrls,
-        'price': price,
-        'assemblyStatus': assemblyStatus.name,
-        'components': components.map((c) => c.toMap()).toList(),
+        'items': items.map((item) => item.toMap()).toList(),
         'payment': payment.toMap(),
         'shipment': shipment.toMap(),
         'requiresNif': requiresNif,
@@ -233,12 +319,7 @@ class Sale {
 
   // Nullable fields use a sentinel to distinguish "clear to null" from "not provided".
   Sale copyWith({
-    String? itemDescription,
-    String? category,
-    List<String>? photoUrls,
-    double? price,
-    AssemblyStatus? assemblyStatus,
-    List<ComponentItem>? components,
+    List<SaleItem>? items,
     SalePayment? payment,
     SaleShipment? shipment,
     bool? requiresNif,
@@ -250,45 +331,16 @@ class Sale {
         id: id,
         buyerId: buyerId,
         buyerName: buyerName,
-        itemDescription: itemDescription ?? this.itemDescription,
-        category: category ?? this.category,
-        photoUrls: photoUrls ?? this.photoUrls,
-        price: price ?? this.price,
-        assemblyStatus: assemblyStatus ?? this.assemblyStatus,
-        components: components ?? this.components,
+        items: items ?? this.items,
         payment: payment ?? this.payment,
         shipment: shipment ?? this.shipment,
         requiresNif: requiresNif ?? this.requiresNif,
         atSubmissionDone: atSubmissionDone ?? this.atSubmissionDone,
         createdAt: createdAt,
-        scheduledDate:
-            scheduledDate == _unset ? this.scheduledDate : scheduledDate as DateTime?,
+        scheduledDate: scheduledDate == _unset
+            ? this.scheduledDate
+            : scheduledDate as DateTime?,
         notes: notes == _unset ? this.notes : notes as String?,
-      );
-
-  // Derives AssemblyStatus from components + current status.
-  // waitingForMaterials is never auto-changed — the user controls it manually.
-  static AssemblyStatus deriveAssemblyStatus(
-    List<ComponentItem> components,
-    AssemblyStatus current,
-  ) {
-    if (current == AssemblyStatus.waitingForMaterials) return current;
-    final allAvailable =
-        components.isNotEmpty && components.every((c) => c.isAvailable);
-    if (allAvailable &&
-        (current == AssemblyStatus.notStarted ||
-            current == AssemblyStatus.inProgress)) {
-      return AssemblyStatus.ready;
-    }
-    if (!allAvailable && current == AssemblyStatus.ready) {
-      return AssemblyStatus.inProgress;
-    }
-    return current;
-  }
-
-  Sale withUpdatedComponents(List<ComponentItem> updated) => copyWith(
-        components: updated,
-        assemblyStatus: deriveAssemblyStatus(updated, assemblyStatus),
       );
 }
 

@@ -119,7 +119,11 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  sale.itemDescription,
+                                  sale.items.isEmpty
+                                      ? '—'
+                                      : sale.items.length == 1
+                                          ? sale.items.first.description
+                                          : '${sale.items.length} items',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -135,7 +139,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '€${sale.price.toStringAsFixed(2)}',
+                                      '€${sale.totalPrice.toStringAsFixed(2)}',
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelLarge,

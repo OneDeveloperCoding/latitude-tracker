@@ -29,12 +29,12 @@ class BuyerStats {
         sales.reduce((a, b) => a.createdAt.isAfter(b.createdAt) ? a : b);
     final totalPaid = sales
         .where((s) => s.payment.status == PaymentStatus.paid)
-        .fold(0.0, (sum, s) => sum + s.price);
+        .fold(0.0, (sum, s) => sum + s.totalPrice);
     final unpaidBalance = sales
         .where((s) => s.payment.status == PaymentStatus.unpaid)
-        .fold(0.0, (sum, s) => sum + s.price);
+        .fold(0.0, (sum, s) => sum + s.totalPrice);
     final averageOrderValue =
-        sales.fold(0.0, (sum, s) => sum + s.price) / sales.length;
+        sales.fold(0.0, (acc, s) => acc + s.totalPrice) / sales.length;
 
     return BuyerStats(
       saleCount: sales.length,

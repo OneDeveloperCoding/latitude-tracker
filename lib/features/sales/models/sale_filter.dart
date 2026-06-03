@@ -71,7 +71,7 @@ extension SaleFilterTest on SaleFilter {
         sale.shipment.status == ShipmentStatus.shipped,
       SaleFilter.pickup => sale.shipment.type == DeliveryType.pickup,
       SaleFilter.assemblyNotReady =>
-        sale.assemblyStatus != AssemblyStatus.ready,
+        sale.derivedAssemblyStatus != AssemblyStatus.ready,
       SaleFilter.overdue =>
         sale.scheduledDate != null &&
             sale.scheduledDate!.isBefore(startOfToday) &&

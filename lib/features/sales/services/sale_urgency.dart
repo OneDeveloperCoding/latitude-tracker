@@ -40,13 +40,14 @@ extension SaleUrgency on Sale {
     if (level == UrgencyLevel.none) return const [];
 
     final reasons = <UrgencyReason>[];
-    if (assemblyStatus == AssemblyStatus.waitingForMaterials) {
+    final assembly = derivedAssemblyStatus;
+    if (assembly == AssemblyStatus.waitingForMaterials) {
       reasons.add(const UrgencyReason(
         type: UrgencyReasonType.waitingForMaterials,
         icon: Icons.shopping_bag_outlined,
         color: Colors.orange,
       ));
-    } else if (assemblyStatus != AssemblyStatus.ready) {
+    } else if (assembly != AssemblyStatus.ready) {
       reasons.add(const UrgencyReason(
         type: UrgencyReasonType.assemblyNotReady,
         icon: Icons.construction,
