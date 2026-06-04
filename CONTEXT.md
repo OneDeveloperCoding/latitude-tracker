@@ -76,6 +76,44 @@ _Avoid_: Invoice, filing, tax return
 A read-only export of Sales, Buyers, and BuyerAddresses for a given year, shared via the OS share sheet (Google Drive, email, etc.). Can be re-imported into the app for historical lookup only. The JSON includes `photoUrls` for each Sale — since photos are kept in Firebase Storage after a year purge, they remain viewable in the import screen via those URLs.
 _Avoid_: Backup, dump
 
+**Archive JSON schema (version 1.0)**:
+```json
+{
+  "version": "1.0",
+  "exportedAt": "<ISO-8601 string>",
+  "year": 2026,
+  "sales": [
+    {
+      "id": "<uuid>",
+      "buyerId": "...", "buyerName": "...",
+      "items": [ { "id": "...", "description": "...", "category": "...", "price": 0.0,
+                   "assemblyStatus": "notStarted|...", "components": [...], "photoUrls": [...] } ],
+      "payment": { "status": "paid|unpaid", "method": "mbWay|cash|sumup|bankTransfer" },
+      "shipment": { "type": "shipping|pickup", "status": "pending|shipped|delivered",
+                    "trackingCode": null, "addressId": null, "postalCode": null },
+      "requiresNif": false, "atSubmissionDone": false,
+      "createdAt": "<ISO-8601 string>",
+      "scheduledDate": "<ISO-8601 string or null>",
+      "notes": null
+    }
+  ],
+  "buyers": [
+    {
+      "id": "<uuid>",
+      "name": "...", "instagramHandle": null, "phone": null, "nif": null,
+      "tags": [], "notes": null,
+      "createdAt": "<ISO-8601 string>",
+      "addresses": [
+        { "id": "<uuid>", "label": "...", "street": "...", "houseNumber": "...",
+          "fraction": null, "notes": null, "city": "...", "postalCode": "...",
+          "country": "Portugal", "isDefault": false }
+      ]
+    }
+  ]
+}
+```
+Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. `ArchiveService` rejects archives whose `version` field does not match `"1.0"` with a `FormatException`.
+
 ## Relationships
 
 - A **Sale** belongs to exactly one **Buyer** (stores `buyerId` + `buyerName` as a snapshot)
