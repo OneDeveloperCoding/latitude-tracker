@@ -44,6 +44,19 @@ _Avoid_: Invoice, charge
 The physical delivery of Items from a Sale to a Buyer. Has a status (pending / shipped / delivered), optionally a CTT tracking code, and a postal code used for geographic analytics. References a BuyerAddress if shipped.
 _Avoid_: Delivery, fulfillment, dispatch
 
+**Repair**:
+A repair job for a physical item brought in by a contact. Distinct from a Sale — Repairs are tracked separately and their revenue is never mixed into Sale analytics. A Repair may optionally reference the original Sale the item came from. Contact is required: either a linked Buyer or a free-text name (which can be promoted to a full Buyer later). Fields: item description, ItemCategory, problem description, work done (free text), materials cost (optional), photos, RepairStatus, Payment, and ReturnDelivery.
+_Portuguese_: Reparação
+_Avoid_: Order, job ticket, work order
+
+**RepairStatus**:
+The current state of a Repair job: `received` (item is with the seller), `waiting_for_materials` (parts must be sourced before work can start), `in_progress` (work is underway), `done` (repair complete, item still with seller), `returned` (item back with the customer). Selection is free — no enforced linear progression. A Repair is considered "active" (shown in the default list view) unless RepairStatus is `returned` AND ReturnDelivery status is `delivered`.
+_Avoid_: Repair state, job status
+
+**ReturnDelivery**:
+The logistics of returning a repaired item to the customer. Has a delivery type (shipping or in-person pickup), a status (pending / shipped / delivered), an optional CTT tracking code, and an optional postal code (for shipping returns only). Separate from RepairStatus — a Repair can be `done` while ReturnDelivery is still `pending` (item ready but not yet dispatched). Mirrors the Shipment pattern on a Sale.
+_Avoid_: Return shipment, return tracking
+
 **Dashboard**:
 A summary screen showing revenue and action counts for a selected period (yearly / monthly / weekly). Displays paid and pending revenue, plus counts for unpaid Sales, pending Shipments, assembly-not-ready Items, NIF-required Sales, and overdue deliveries. Tapping a count navigates to the filtered Sales list.
 _Avoid_: Report, analytics, overview
@@ -76,7 +89,7 @@ _Avoid_: Invoice, filing, tax return
 A read-only export of Sales, Buyers, and BuyerAddresses for a given year, shared via the OS share sheet (Google Drive, email, etc.). Can be re-imported into the app for historical lookup only. The JSON includes `photoUrls` for each Sale — since photos are kept in Firebase Storage after a year purge, they remain viewable in the import screen via those URLs.
 _Avoid_: Backup, dump
 
-**Archive JSON schema (version 1.0)**:
+**Archive JSON schema (version 1.1)**:
 ```json
 {
   "version": "1.0",
@@ -112,7 +125,7 @@ _Avoid_: Backup, dump
   ]
 }
 ```
-Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. `ArchiveService` rejects archives whose `version` field does not match `"1.0"` with a `FormatException`.
+Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` adds a `repairs` array alongside `sales`. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`.
 
 ## Relationships
 
@@ -130,6 +143,12 @@ Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and 
 - A **Buyer** may have multiple **BuyerAddresses**; one is marked as default
 - A **Buyer** may optionally have a saved **NIF**
 - An **Archive** is read-only — Sales cannot be edited after archiving
+- A **Repair** has one **RepairStatus** and one **ReturnDelivery**
+- A **Repair** has one **Payment** (same structure as Sale payment — amount, paid/unpaid, method)
+- A **Repair** contact is either a linked **Buyer** (stores `buyerId` + `buyerName`) or a free-text name — one is required
+- A **Repair** may optionally reference one **Sale** (the original Sale the item came from)
+- A **Repair** may have zero or more photos (same compression and storage pattern as SaleItem photos)
+- A **Sale** may have zero or more linked **Repairs** (visible as a section on the Sale detail screen)
 
 ## Data deletion rules
 
@@ -157,6 +176,16 @@ These rules define exactly what is removed when each entity is deleted, and what
 - BuyerAddress Firestore document removed
 - Any Sale whose Shipment references that address is unaffected (the address data was copied into the Shipment at the time of sale)
 
+**Deleting a single Repair:**
+- Firestore document removed
+- All photos for that Repair deleted from Firebase Storage immediately (before the Firestore delete, to avoid orphans)
+- The linked Sale (if any) is unaffected
+- The linked Buyer (if any) is unaffected
+
+**Purging a year (includes Repairs):**
+- All Repair Firestore documents for that year are batch-deleted alongside Sales
+- Repair photos are **not** deleted — same intentional exception as Sale photos; the Archive JSON includes `photoUrls`
+
 **Removing a photo from a Sale:**
 - If removed during an active edit session and it was a new upload (not yet saved): deleted from Storage immediately
 - If removed during an active edit session and it was a pre-existing photo: marked for deletion, actually deleted from Storage only when the Sale is saved
@@ -179,11 +208,13 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 **Expandability:** all Storage operations are isolated in `lib/features/sales/services/photo_service.dart`. Swapping the storage backend (e.g. to Google Drive) requires changes only to that file.
 
+**Repair photos:** stored at `users/{uid}/repairs/{repairId}/photos/{uuid}.jpg`. Same compression settings (maxWidth: 1200px, JPEG quality: 85). Same orphan-prevention lifecycle as Sale photos: cancel new repair → delete session uploads; cancel edit → delete only session uploads; delete repair → delete all photos before Firestore doc. Year purge exception applies: photos kept, Archive JSON includes `photoUrls`.
+
 ## Screens
 
 1. **Login** — email + password, stays logged in permanently; "Try Demo" button enters Demo mode without credentials
 
-1a. **Demo mode** — read-only sandbox with 255 pre-seeded sales across 18 months (7 hand-crafted active + 248 generated historical, fixed `Random(42)` seed). A tutorial bottom sheet auto-displays on first entry; re-accessible via **?** in the demo banner. Write operations (add/edit/delete) are blocked. Demo data strings are in English regardless of app language setting.
+1a. **Demo mode** — read-only sandbox with 255 pre-seeded sales across 18 months (7 hand-crafted active + 248 generated historical, fixed `Random(42)` seed) and ~5–8 hand-crafted Repairs (mix of RepairStatuses, some linked to demo Sales, some with free-text contacts). A tutorial bottom sheet auto-displays on first entry; re-accessible via **?** in the demo banner. Write operations (add/edit/delete) are blocked. Demo data strings are in English regardless of app language setting.
 
 2. **Dashboard** — scrollable 6-month chip row for period selection (monthly granularity only); paid revenue card with an insights icon button that navigates to the AnalyticsScreen. Seven action rows grouped into three labelled sections:
    - **Money**: Unpaid (count + total €), Overdue, NIF required
@@ -191,7 +222,9 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
    - **Planning**: Upcoming scheduled
    Each row taps to its dedicated view (UnpaidBalances, filtered Sales list, ShoppingList, NifPending). Inactive rows (count = 0) are shown dimmed and non-tappable.
 
-2a. **AnalyticsScreen** — period-navigable analytics screen accessed from the insights icon button in the Dashboard revenue card; launched with the Dashboard's current period pre-selected. Shows a stacked bar chart of per-category revenue across 6 periods; bars dim until tapped to reveal period totals and per-category value rows. Multi-select category chips at the bottom act as legend and filter (empty = all). Metric toggle (revenue / count) affects both the headline card and all comparison rows. Separate sections for payment method breakdown (revenue share per method) and top categories with proportional bars. Period navigation is adaptive: weekly shows −1/−4/−52 week comparisons; monthly shows −1/−3/−6/−12; yearly shows −1/−3/−5.
+2a. **AnalyticsScreen** — period-navigable analytics screen with a **Sales / Repairs tab bar**. Accessed from the Dashboard insights icon button (lands on Sales tab) or from the Repairs list AppBar insights icon (lands on Repairs tab); launched with the Dashboard's current period pre-selected. **Sales tab:** stacked bar chart of per-category revenue across 6 periods; bars dim until tapped to reveal period totals and per-category value rows; multi-select category chips act as legend and filter; metric toggle (revenue / count); payment method breakdown section; top categories section. **Repairs tab:** total repair revenue by period, count of Repairs by RepairStatus, most repaired ItemCategory. Period navigation is adaptive: weekly shows −1/−4/−52 week comparisons; monthly shows −1/−3/−6/−12; yearly shows −1/−3/−5.
+
+3. **Sales / Repairs area** — the Sales bottom-nav tab contains two inner tabs: **Sales** (existing list) and **Repairs** (new list). The AppBar and FAB adapt to the active inner tab.
 
 3. **Sales list** — default view shows only **active Sales** (not yet delivered); timeline grouped Overdue → This week → Next week → Later → past months. Tune icon opens a filter/sort sheet with grouped filters (Money / Logistics / Compliance), year chips (one per year that has Sales, dynamically generated), date range picker (mutually exclusive with year chips), inline buyer search (single-select). Sort is a separate AppBar popup with its own badge. Selecting a year chip shows **all** Sales in that calendar year including delivered ones, overriding the active-only default; grouping switches to creation month. Selecting a date range does not override the default (still hides delivered). Map icon in AppBar navigates to the standalone SalesHeatMap screen. Each Sale shown as a card: buyer name + derived total price top row; SaleItem descriptions one per line (up to 3; "and X more" tappable to a bottom sheet if more) + attention badges right; one ItemCategory chip per unique category across all SaleItems (wrapping); creation date left + due date right; age indicator (hourglass icon — amber after 14 days open, red after 30 days, hidden for fresh or delivered sales); progress path spanning full card width at the bottom (tap → legend). Left accent bar: red = overdue with blockers, amber = this week with blockers. Attention badges (tap to open detail sheet): `receipt_long` purple = NIF unfiled (also shown in orange when no NIF on file), green = NIF filed; `price_check` = assembly ready but unpaid; specific blocker icon = single urgency reason, generic ⚠️ = multiple.
 
@@ -199,7 +232,13 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 4a. **SaleItemScreen** — sub-screen pushed from the new/edit sale form for adding or editing a single SaleItem: description, ItemCategory, price, AssemblyStatus (including `waiting_for_materials`), ComponentChecklist, and photos.
 
-5. **Sale detail** — live stream; SaleItems list (description, category, price per item; tap item to see its assembly status, component checklist, and photos); derived total price; payment toggle; unified NIF/AT compliance row that progresses through four states — (1) no NIF on file (with inline "Add NIF" dialog that saves to Buyer without leaving the screen), (2) NIF receipt required but AT not yet filed, (3) AT pending, (4) AT filed — shown when `requiresNif`; delivery card with status, address, CTT tracking code; Notes card (inline editable); buyer name taps to Buyer detail
+5. **Sale detail** — live stream; SaleItems list (description, category, price per item; tap item to see its assembly status, component checklist, and photos); derived total price; payment toggle; unified NIF/AT compliance row that progresses through four states — (1) no NIF on file (with inline "Add NIF" dialog that saves to Buyer without leaving the screen), (2) NIF receipt required but AT not yet filed, (3) AT pending, (4) AT filed — shown when `requiresNif`; delivery card with status, address, CTT tracking code; **Repairs section** (only shown when at least one Repair is linked to this Sale — lists each Repair with description, RepairStatus, and date; each row taps to Repair detail); Notes card (inline editable); buyer name taps to Buyer detail
+
+5a. **Repairs list** — inner tab within the Sales/Repairs area. Default view shows only **active Repairs** (RepairStatus ≠ `returned`, or ReturnDelivery status ≠ `delivered`). AppBar has an insights icon that opens AnalyticsScreen on the Repairs tab. FAB creates a new Repair. Each Repair shown as a card: contact name (Buyer link or free-text), item description, ItemCategory chip, RepairStatus badge, date received, materials cost if set.
+
+5b. **New/edit Repair** — Contact section (Buyer picker or free-text name entry); item description; ItemCategory picker (same seeded defaults as SaleItem); problem description; Work done field; materials cost; RepairStatus picker; Payment section (same fields as Sale payment); ReturnDelivery section (type: shipping/pickup; status; CTT tracking code; postal code for shipping); photos; optional linked Sale picker. Orphan photo cleanup on cancel.
+
+5c. **Repair detail** — live stream; contact row (taps to Buyer detail if linked, "Promote to Buyer" action if free-text); linked Sale row (if set, taps to Sale detail); item description, category, problem description; Work done field (inline editable); photos; materials cost; RepairStatus picker; Payment card; ReturnDelivery card.
 
 6. **Buyers list** — all Buyers, searchable; three sort modes (alphabetical, grouped by last purchase, ranking); ranking metric chips (total spent, frequency, average order, unpaid balance)
 
@@ -235,3 +274,5 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 - "address" initially assumed one per Buyer — resolved to **BuyerAddress** supporting multiple per Buyer with a default.
 - "NIF on sale" clarified: the Buyer profile stores NIF for convenience, but each Sale independently records whether a NIF receipt was requested for that transaction.
 - "components tracking" clarified: resolved to a simple **ComponentChecklist** per Sale, not a full inventory system.
+- "returned" status for Repairs clarified: RepairStatus `returned` alone does not mark a Repair as inactive — it is only removed from the default active list view when *both* RepairStatus is `returned` AND ReturnDelivery status is `delivered`. This preserves visibility during the return-shipping window.
+- Repair analytics placement clarified: Repair analytics live in the existing AnalyticsScreen (new Repairs tab), not a separate screen. This keeps analytics access unified under the Dashboard entry point.

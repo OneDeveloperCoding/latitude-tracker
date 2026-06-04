@@ -7,18 +7,23 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../buyers/repositories/buyer_repository.dart';
+import '../../repairs/repositories/repair_repository.dart';
 import '../../sales/repositories/sale_repository.dart';
 
-const _kSupportedArchiveVersion = '1.0';
+// Version 1.1 adds a `repairs` array to the archive.
+const _kCurrentArchiveVersion = '1.1';
+const _kSupportedArchiveVersions = {'1.0', '1.1'};
 
 class ImportResult {
   final int salesImported;
   final int buyersImported;
+  final int repairsImported;
   final int skipped;
 
   const ImportResult({
     required this.salesImported,
     required this.buyersImported,
+    required this.repairsImported,
     required this.skipped,
   });
 }
@@ -28,9 +33,11 @@ class ArchiveService {
   // allowing the version check to throw before any Firebase interaction.
   late final _salesRepo = SaleRepository();
   late final _buyersRepo = BuyerRepository();
+  late final _repairsRepo = RepairRepository();
 
   Future<File> exportYear(int year) async {
     final sales = await _salesRepo.getSalesForYear(year);
+    final repairs = await _repairsRepo.getRepairsForYear(year);
     final buyers = await _buyersRepo.getAllBuyers();
 
     final buyerAddresses = <String, List<Map<String, dynamic>>>{};
@@ -42,11 +49,14 @@ class ArchiveService {
     }
 
     final archive = _toJsonSafe({
-      'version': '1.0',
+      'version': _kCurrentArchiveVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'year': year,
       'sales': sales
           .map((s) => {'id': s.id, ...s.toFirestore()})
+          .toList(),
+      'repairs': repairs
+          .map((r) => {'id': r.id, ...r.toFirestore()})
           .toList(),
       'buyers': buyers
           .map((b) => {
@@ -70,10 +80,10 @@ class ArchiveService {
   // Throws [FormatException] if the archive version is not supported.
   Future<ImportResult> importArchive(Map<String, dynamic> archive) async {
     final version = archive['version'] as String?;
-    if (version != _kSupportedArchiveVersion) {
+    if (version == null || !_kSupportedArchiveVersions.contains(version)) {
       throw FormatException(
         'Unsupported archive version: $version. '
-        'Expected $_kSupportedArchiveVersion.',
+        'Supported: ${_kSupportedArchiveVersions.join(', ')}.',
       );
     }
 
@@ -85,10 +95,13 @@ class ArchiveService {
 
     final sales =
         (archive['sales'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final repairs =
+        (archive['repairs'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final buyers =
         (archive['buyers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
     var salesImported = 0;
+    var repairsImported = 0;
     var buyersImported = 0;
     var skipped = 0;
 
@@ -148,9 +161,30 @@ class ArchiveService {
       salesImported++;
     }
 
+    for (final repairMap in repairs) {
+      final repairId = repairMap['id'] as String?;
+      if (repairId == null) continue;
+
+      final repairRef = firestore
+          .collection('users')
+          .doc(userId)
+          .collection('repairs')
+          .doc(repairId);
+
+      final existing = await repairRef.get();
+      if (existing.exists) {
+        skipped++;
+        continue;
+      }
+
+      await repairRef.set(toFirestoreMap(Map.from(repairMap)..remove('id')));
+      repairsImported++;
+    }
+
     return ImportResult(
       salesImported: salesImported,
       buyersImported: buyersImported,
+      repairsImported: repairsImported,
       skipped: skipped,
     );
   }
