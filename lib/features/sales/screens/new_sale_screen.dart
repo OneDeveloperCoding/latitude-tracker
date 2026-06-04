@@ -421,7 +421,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     items: kPaymentMethodOrder
                         .map((m) => DropdownMenuItem(
                               value: m,
-                              child: _PaymentMethodItem(m),
+                              child: PaymentMethodDropdownItem(m),
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => _paymentMethod = v!),
@@ -746,26 +746,3 @@ class _BuyerSelector extends StatelessWidget {
   }
 }
 
-class _PaymentMethodItem extends StatelessWidget {
-  final PaymentMethod method;
-
-  const _PaymentMethodItem(this.method);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: paymentMethodColor(method),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(context.s.paymentMethodLabel(method)),
-      ],
-    );
-  }
-}
