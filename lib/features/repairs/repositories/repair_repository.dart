@@ -18,6 +18,7 @@ abstract class RepairRepository {
   Future<List<Repair>> getRepairsForYear(int year);
   Future<void> deleteAllRepairsForYear(int year, {bool deletePhotos});
   Future<void> deleteAllRepairs({bool deletePhotos});
+  Future<void> renameCategory(String oldName, String newName);
 }
 
 class _FirestoreRepairRepository implements RepairRepository {
@@ -101,5 +102,22 @@ class _FirestoreRepairRepository implements RepairRepository {
       batch.delete(doc.reference);
     }
     await batch.commit();
+  }
+
+  @override
+  Future<void> renameCategory(String oldName, String newName) async {
+    final snap = await _repairsRef
+        .where('itemCategory', isEqualTo: oldName)
+        .get();
+    if (snap.docs.isEmpty) return;
+
+    for (var i = 0; i < snap.docs.length; i += 500) {
+      final chunk = snap.docs.sublist(i, (i + 500).clamp(0, snap.docs.length));
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        batch.update(doc.reference, {'itemCategory': newName});
+      }
+      await batch.commit();
+    }
   }
 }

@@ -25,7 +25,7 @@ A unique, one-of-a-kind physical product within a Sale (e.g. necklace, earring, 
 _Avoid_: Product, SKU, stock, Item (too generic in code)
 
 **ItemCategory**:
-A free-text string on a SaleItem that classifies its product type. Seeded with defaults (e.g. Colares, Brincos, Chapéus); the seller can add custom categories which are auto-discovered from existing SaleItems and offered in the picker. Not an enum — new categories are added by typing them. Used for filtering in the Sales list and for per-category revenue analytics (e.g. "€100 in Colares this month").
+A free-text string on a SaleItem (and Repair) that classifies its product type. Seeded with defaults (e.g. Colares, Brincos, Chapéus); the seller can add custom categories which are auto-discovered from existing SaleItems and Repairs and offered in the picker. Not an enum — new categories are added by typing them. Used for filtering in the Sales list and for per-category revenue analytics (e.g. "€100 in Colares this month"). A category can be **hidden** via Settings → Categories: it is removed from the picker but not from existing records — history and analytics are preserved. Rename (batch-updates all SaleItems and Repairs), hide/unhide, and delete (only when use count = 0) are managed from `CategoryMaintenanceScreen`. The hidden list is persisted at `users/{uid}/settings/catalogue` as `hiddenCategories: []`.
 _Avoid_: Product type, product category (implies a separate catalogue entity)
 
 **AssemblyStatus**:

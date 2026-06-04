@@ -451,19 +451,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SegmentedButton<DeliveryType>(
-                    segments: [
+                    showSelectedIcon: false,
+                    segments: const [
                       ButtonSegment(
                           value: DeliveryType.shipping,
-                          icon: const Icon(Icons.local_shipping),
-                          label: Text(s.shipping)),
+                          icon: Icon(Icons.local_shipping)),
                       ButtonSegment(
                           value: DeliveryType.pickup,
-                          icon: const Icon(Icons.store),
-                          label: Text(s.pickup)),
+                          icon: Icon(Icons.store)),
                       ButtonSegment(
                           value: DeliveryType.handDelivery,
-                          icon: const Icon(Icons.directions_walk),
-                          label: Text(s.handDelivery)),
+                          icon: Icon(Icons.directions_walk)),
                     ],
                     selected: {_deliveryType},
                     onSelectionChanged: (v) =>

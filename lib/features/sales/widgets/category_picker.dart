@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
+import '../../settings/repositories/catalogue_repository.dart';
 import '../models/sale.dart';
 
 /// Opens a bottom sheet that lets the user pick an existing category or type a
-/// new one. Categories are sorted by frequency of use (most used first), seeded
-/// with [kDefaultCategories] so the picker is useful on a fresh install.
+/// new one. Fetches the hidden-category list once before showing the sheet so
+/// hidden categories are excluded from the picker.
 Future<String?> showCategoryPicker(
   BuildContext context, {
   String? current,
-}) {
-  final allCategories = _buildSortedCategories();
+}) async {
+  final hidden = await CatalogueRepository().fetchHiddenCategories();
+  if (!context.mounted) return null;
+  final allCategories = _buildSortedCategories(hidden.toSet());
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
@@ -22,20 +25,21 @@ Future<String?> showCategoryPicker(
   );
 }
 
-/// Returns deduplicated categories sorted by usage frequency descending.
-/// Seeds from [kDefaultCategories] so the list is never empty.
-List<String> _buildSortedCategories() {
+/// Returns deduplicated, visible categories sorted by usage frequency descending.
+/// Seeds from [kDefaultCategories] so the list is never empty on a fresh install.
+List<String> _buildSortedCategories(Set<String> hidden) {
   final counts = <String, int>{};
   for (final sale in SalesStore.current ?? []) {
     for (final item in sale.items) {
       counts[item.category] = (counts[item.category] ?? 0) + 1;
     }
   }
-  // Seed defaults that aren't yet in use with count 0.
   for (final cat in kDefaultCategories) {
     counts.putIfAbsent(cat, () => 0);
   }
-  return counts.keys.toList()
+  return counts.keys
+      .where((cat) => !hidden.contains(cat))
+      .toList()
     ..sort((a, b) {
       final cmp = counts[b]!.compareTo(counts[a]!);
       return cmp != 0 ? cmp : a.compareTo(b);
