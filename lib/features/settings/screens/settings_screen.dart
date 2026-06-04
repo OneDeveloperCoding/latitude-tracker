@@ -10,6 +10,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
 import '../../demo/demo_mode.dart';
 import '../../demo/demo_tutorial_sheet.dart';
+import '../../repairs/repositories/repair_repository.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
 import '../services/reset_app_service.dart';
@@ -260,8 +261,12 @@ class SettingsScreen extends StatelessWidget {
       await _runWithProgress(
         context,
         s.deletingYear(year, deletePhotos),
-        () => SaleRepository()
-            .deleteAllSalesForYear(year, deletePhotos: deletePhotos),
+        () async {
+          await SaleRepository()
+              .deleteAllSalesForYear(year, deletePhotos: deletePhotos);
+          await RepairRepository()
+              .deleteAllRepairsForYear(year, deletePhotos: deletePhotos);
+        },
       );
     } catch (e) {
       if (context.mounted) {

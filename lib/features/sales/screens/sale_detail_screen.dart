@@ -12,6 +12,9 @@ import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../buyers/screens/buyer_detail_screen.dart';
+import '../../repairs/models/repair.dart';
+import '../../repairs/repositories/repair_repository.dart';
+import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../widgets/photo_grid.dart';
@@ -350,6 +353,8 @@ class _SaleDetailBody extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        _RepairsSection(saleId: sale.id),
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionNotes,
@@ -1177,6 +1182,46 @@ class _StatusChip extends StatelessWidget {
       padding: EdgeInsets.zero,
       labelPadding: const EdgeInsets.symmetric(horizontal: 8),
       visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+class _RepairsSection extends StatelessWidget {
+  final String saleId;
+
+  const _RepairsSection({required this.saleId});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return StreamBuilder<List<Repair>>(
+      stream: RepairRepository().watchRepairsForSale(saleId),
+      builder: (context, snapshot) {
+        final repairs = snapshot.data ?? [];
+        if (repairs.isEmpty) return const SizedBox.shrink();
+
+        return _SectionCard(
+          title: s.repairsOnSale,
+          child: Column(
+            children: repairs
+                .map((repair) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.build_outlined),
+                      title: Text(repair.itemDescription),
+                      subtitle: Text(
+                          '${repair.contactName} · ${s.repairStatusLabelFor(repair.status)}'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              RepairDetailScreen(repairId: repair.id),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        );
+      },
     );
   }
 }

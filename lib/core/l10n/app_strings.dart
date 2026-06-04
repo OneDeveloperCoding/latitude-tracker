@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/dashboard/models/dashboard_stats.dart';
+import '../../features/repairs/models/repair.dart';
 import '../../features/sales/models/sale.dart';
 import '../../features/sales/models/sale_filter.dart';
 import '../../features/sales/services/sale_urgency.dart';
@@ -360,6 +361,47 @@ class AppStrings {
   final String resetAppFailed;
   final String selectSalePrompt;
 
+  // ── Repairs ──────────────────────────────────────────────────────────────
+  final String repairs;
+  final String newRepair;
+  final String editRepair;
+  final String deleteRepair;
+  final String deleteRepairTitle;
+  final String noRepairsFound;
+  final String repairContact;
+  final String repairContactRequired;
+  final String repairContactHint;
+  final String repairContactFreeText;
+  final String repairItemDescription;
+  final String repairItemDescriptionRequired;
+  final String repairProblemDescription;
+  final String repairProblemDescriptionRequired;
+  final String repairWorkDone;
+  final String repairMaterialsCost;
+  final String repairStatusLabel;
+  final String repairLinkedSale;
+  final String repairLinkedSaleNone;
+  final String repairReturnDelivery;
+  final String repairSectionContact;
+  final String repairSectionItem;
+  final String repairSectionWork;
+  final String repairSectionReturn;
+  final String repairSectionLinked;
+  final String promoteTobuyer;
+  final String promoteToBuyerTitle;
+  final String promoteToBuyerBody;
+  final String repairsOnSale;
+  final String noLinkedRepairs;
+  final String errorSavingRepair;
+  final String errorDeletingRepair;
+  final String analyticsSalesTab;
+  final String analyticsRepairsTab;
+  final String repairRevenue;
+  final String repairCount;
+  final String repairTopCategories;
+  final String repairStatusByCount;
+  final String noRepairDataForPeriod;
+
   // ── Plural word stems (used in methods below) ─────────────────────────────
   final String _saleSingular;
   final String _salePlural;
@@ -682,6 +724,45 @@ class AppStrings {
     required this.resettingApp,
     required this.resetAppFailed,
     required this.selectSalePrompt,
+    required this.repairs,
+    required this.newRepair,
+    required this.editRepair,
+    required this.deleteRepair,
+    required this.deleteRepairTitle,
+    required this.noRepairsFound,
+    required this.repairContact,
+    required this.repairContactRequired,
+    required this.repairContactHint,
+    required this.repairContactFreeText,
+    required this.repairItemDescription,
+    required this.repairItemDescriptionRequired,
+    required this.repairProblemDescription,
+    required this.repairProblemDescriptionRequired,
+    required this.repairWorkDone,
+    required this.repairMaterialsCost,
+    required this.repairStatusLabel,
+    required this.repairLinkedSale,
+    required this.repairLinkedSaleNone,
+    required this.repairReturnDelivery,
+    required this.repairSectionContact,
+    required this.repairSectionItem,
+    required this.repairSectionWork,
+    required this.repairSectionReturn,
+    required this.repairSectionLinked,
+    required this.promoteTobuyer,
+    required this.promoteToBuyerTitle,
+    required this.promoteToBuyerBody,
+    required this.repairsOnSale,
+    required this.noLinkedRepairs,
+    required this.errorSavingRepair,
+    required this.errorDeletingRepair,
+    required this.analyticsSalesTab,
+    required this.analyticsRepairsTab,
+    required this.repairRevenue,
+    required this.repairCount,
+    required this.repairTopCategories,
+    required this.repairStatusByCount,
+    required this.noRepairDataForPeriod,
     required String saleSingular,
     required String salePlural,
     required String photoSingular,
@@ -794,6 +875,22 @@ class AppStrings {
           ShipmentStatus.pending => 'Pending',
           ShipmentStatus.shipped => 'Shipped',
           ShipmentStatus.delivered => 'Delivered',
+        };
+
+  String repairStatusLabelFor(RepairStatus s) => _pt
+      ? switch (s) {
+          RepairStatus.received => 'Recebido',
+          RepairStatus.waitingForMaterials => 'A aguardar materiais',
+          RepairStatus.inProgress => 'Em curso',
+          RepairStatus.done => 'Concluído',
+          RepairStatus.returned => 'Devolvido',
+        }
+      : switch (s) {
+          RepairStatus.received => 'Received',
+          RepairStatus.waitingForMaterials => 'Waiting for materials',
+          RepairStatus.inProgress => 'In progress',
+          RepairStatus.done => 'Done',
+          RepairStatus.returned => 'Returned',
         };
 
   // ── Dynamic string helpers ────────────────────────────────────────────────
@@ -1322,6 +1419,46 @@ class AppStrings {
     resettingApp: 'Resetting app…',
     resetAppFailed: 'Reset failed',
     selectSalePrompt: 'Select a sale to view details',
+    repairs: 'Repairs',
+    newRepair: 'New Repair',
+    editRepair: 'Edit Repair',
+    deleteRepair: 'Delete repair',
+    deleteRepairTitle: 'Delete repair?',
+    noRepairsFound: 'No repairs yet.',
+    repairContact: 'Contact *',
+    repairContactRequired: 'Contact is required',
+    repairContactHint: 'Name or Instagram handle',
+    repairContactFreeText: 'Free-text name',
+    repairItemDescription: 'Item description *',
+    repairItemDescriptionRequired: 'Item description is required',
+    repairProblemDescription: 'Problem description *',
+    repairProblemDescriptionRequired: 'Problem description is required',
+    repairWorkDone: 'Work done',
+    repairMaterialsCost: 'Materials cost (€)',
+    repairStatusLabel: 'Status',
+    repairLinkedSale: 'Linked sale',
+    repairLinkedSaleNone: 'No linked sale',
+    repairReturnDelivery: 'Return delivery',
+    repairSectionContact: 'Contact',
+    repairSectionItem: 'Item',
+    repairSectionWork: 'Work',
+    repairSectionReturn: 'Return',
+    repairSectionLinked: 'Linked sale',
+    promoteTobuyer: 'Promote to Buyer',
+    promoteToBuyerTitle: 'Promote to Buyer?',
+    promoteToBuyerBody:
+        'A new Buyer profile will be created with this name. You can add contact details from the Buyer detail screen.',
+    repairsOnSale: 'Repairs',
+    noLinkedRepairs: 'No repairs linked to this sale.',
+    errorSavingRepair: 'Error saving repair',
+    errorDeletingRepair: 'Error deleting repair',
+    analyticsSalesTab: 'Sales',
+    analyticsRepairsTab: 'Repairs',
+    repairRevenue: 'Repair revenue',
+    repairCount: 'Repairs',
+    repairTopCategories: 'Top categories',
+    repairStatusByCount: 'By status',
+    noRepairDataForPeriod: 'No repair data for this period',
     saleSingular: 'sale',
     salePlural: 'sales',
     photoSingular: 'photo',
@@ -1673,6 +1810,46 @@ class AppStrings {
     resettingApp: 'A repor app…',
     resetAppFailed: 'Falha ao repor',
     selectSalePrompt: 'Seleciona uma venda para ver os detalhes',
+    repairs: 'Reparações',
+    newRepair: 'Nova Reparação',
+    editRepair: 'Editar Reparação',
+    deleteRepair: 'Eliminar reparação',
+    deleteRepairTitle: 'Eliminar reparação?',
+    noRepairsFound: 'Sem reparações ainda.',
+    repairContact: 'Contacto *',
+    repairContactRequired: 'Contacto é obrigatório',
+    repairContactHint: 'Nome ou Instagram',
+    repairContactFreeText: 'Nome livre',
+    repairItemDescription: 'Descrição do artigo *',
+    repairItemDescriptionRequired: 'Descrição do artigo é obrigatória',
+    repairProblemDescription: 'Descrição do problema *',
+    repairProblemDescriptionRequired: 'Descrição do problema é obrigatória',
+    repairWorkDone: 'Trabalho realizado',
+    repairMaterialsCost: 'Custo de materiais (€)',
+    repairStatusLabel: 'Estado',
+    repairLinkedSale: 'Venda associada',
+    repairLinkedSaleNone: 'Sem venda associada',
+    repairReturnDelivery: 'Devolução',
+    repairSectionContact: 'Contacto',
+    repairSectionItem: 'Artigo',
+    repairSectionWork: 'Trabalho',
+    repairSectionReturn: 'Devolução',
+    repairSectionLinked: 'Venda associada',
+    promoteTobuyer: 'Promover a Comprador',
+    promoteToBuyerTitle: 'Promover a Comprador?',
+    promoteToBuyerBody:
+        'Será criado um novo perfil de Comprador com este nome. Pode adicionar detalhes de contacto no ecrã do Comprador.',
+    repairsOnSale: 'Reparações',
+    noLinkedRepairs: 'Sem reparações associadas a esta venda.',
+    errorSavingRepair: 'Erro ao guardar reparação',
+    errorDeletingRepair: 'Erro ao eliminar reparação',
+    analyticsSalesTab: 'Vendas',
+    analyticsRepairsTab: 'Reparações',
+    repairRevenue: 'Receita de reparações',
+    repairCount: 'Reparações',
+    repairTopCategories: 'Principais categorias',
+    repairStatusByCount: 'Por estado',
+    noRepairDataForPeriod: 'Sem dados de reparações para este período',
     saleSingular: 'venda',
     salePlural: 'vendas',
     photoSingular: 'foto',

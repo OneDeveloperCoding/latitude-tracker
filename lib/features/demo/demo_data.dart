@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../buyers/models/buyer.dart';
 import '../buyers/models/buyer_address.dart';
+import '../repairs/models/repair.dart';
 import '../sales/models/sale.dart';
 
 class DemoData {
@@ -781,4 +782,103 @@ class DemoData {
 
     return sales;
   }
+
+  // ── Repairs ───────────────────────────────────────────────────────────────
+
+  static List<Repair> repairs() => [
+        // 1. Received — necklace with broken clasp, linked to demo-sale-1
+        Repair(
+          id: 'demo-repair-1',
+          buyerId: 'demo-buyer-1',
+          buyerName: 'Ana Ferreira',
+          linkedSaleId: 'demo-sale-1',
+          itemDescription: 'Silver necklace with natural pearls',
+          itemCategory: 'Colares',
+          problemDescription: 'Clasp broke after first wear',
+          status: RepairStatus.received,
+          payment: const SalePayment(
+              status: PaymentStatus.unpaid, method: PaymentMethod.mbWay),
+          returnDelivery: const RepairReturnDelivery(
+            type: DeliveryType.shipping,
+            status: ShipmentStatus.pending,
+          ),
+          photoUrls: const ['demo://repair-photo-1'],
+          createdAt: _ago(3),
+        ),
+        // 2. In progress — earrings, waiting for materials
+        Repair(
+          id: 'demo-repair-2',
+          buyerId: 'demo-buyer-2',
+          buyerName: 'Mariana Costa',
+          itemDescription: 'Gold-plated drop earrings',
+          itemCategory: 'Brincos',
+          problemDescription: 'One earring hook snapped',
+          workDone: 'Sourcing replacement hooks',
+          status: RepairStatus.waitingForMaterials,
+          payment: const SalePayment(
+              status: PaymentStatus.unpaid, method: PaymentMethod.mbWay),
+          returnDelivery: const RepairReturnDelivery(
+            type: DeliveryType.pickup,
+            status: ShipmentStatus.pending,
+          ),
+          createdAt: _ago(10),
+        ),
+        // 3. Done — hat brim repair, paid
+        Repair(
+          id: 'demo-repair-3',
+          buyerId: 'demo-buyer-3',
+          buyerName: 'João Rodrigues',
+          itemDescription: 'Straw hat with fabric brim',
+          itemCategory: 'Chapéus',
+          problemDescription: 'Brim stitching came undone',
+          workDone: 'Re-stitched brim with matching thread. Reinforced inner band.',
+          materialsCost: 3.50,
+          status: RepairStatus.done,
+          payment: const SalePayment(
+              status: PaymentStatus.paid, method: PaymentMethod.cash),
+          returnDelivery: const RepairReturnDelivery(
+            type: DeliveryType.pickup,
+            status: ShipmentStatus.pending,
+          ),
+          createdAt: _ago(18),
+        ),
+        // 4. Returned and delivered — standalone (free-text contact, third party)
+        Repair(
+          id: 'demo-repair-4',
+          freeTextContact: 'Beatriz Silva',
+          itemDescription: 'Beaded tote bag',
+          itemCategory: 'Tote Bags',
+          problemDescription: 'Handle stitching fraying on both sides',
+          workDone: 'Replaced both handles with reinforced canvas straps.',
+          materialsCost: 8.00,
+          status: RepairStatus.returned,
+          payment: const SalePayment(
+              status: PaymentStatus.paid, method: PaymentMethod.mbWay),
+          returnDelivery: const RepairReturnDelivery(
+            type: DeliveryType.shipping,
+            status: ShipmentStatus.delivered,
+            postalCode: '4050-234',
+            trackingCode: 'CT123456789PT',
+          ),
+          createdAt: _ago(35),
+        ),
+        // 5. In progress — pin repair, awaiting collection
+        Repair(
+          id: 'demo-repair-5',
+          buyerId: 'demo-buyer-5',
+          buyerName: 'Rita Mendes',
+          itemDescription: 'Enamel pin set (3 pins)',
+          itemCategory: 'Pins',
+          problemDescription: 'Pin backs lost, need replacements fitted',
+          workDone: 'Fitted new butterfly pin backs on 2 of 3 pins.',
+          status: RepairStatus.inProgress,
+          payment: const SalePayment(
+              status: PaymentStatus.unpaid, method: PaymentMethod.cash),
+          returnDelivery: const RepairReturnDelivery(
+            type: DeliveryType.pickup,
+            status: ShipmentStatus.pending,
+          ),
+          createdAt: _ago(7),
+        ),
+      ];
 }
