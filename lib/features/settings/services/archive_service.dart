@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../sales/repositories/sale_repository.dart';
+
+const _kSupportedArchiveVersion = '1.0';
 
 class ImportResult {
   final int salesImported;
@@ -21,8 +24,10 @@ class ImportResult {
 }
 
 class ArchiveService {
-  final _salesRepo = SaleRepository();
-  final _buyersRepo = BuyerRepository();
+  // late so Firebase isn't accessed until the first actual read/write call,
+  // allowing the version check to throw before any Firebase interaction.
+  late final _salesRepo = SaleRepository();
+  late final _buyersRepo = BuyerRepository();
 
   Future<File> exportYear(int year) async {
     final sales = await _salesRepo.getSalesForYear(year);
@@ -62,7 +67,16 @@ class ArchiveService {
 
   // Reimports an archive into Firestore. Documents that already exist are
   // skipped — this makes it safe to run multiple times on the same archive.
+  // Throws [FormatException] if the archive version is not supported.
   Future<ImportResult> importArchive(Map<String, dynamic> archive) async {
+    final version = archive['version'] as String?;
+    if (version != _kSupportedArchiveVersion) {
+      throw FormatException(
+        'Unsupported archive version: $version. '
+        'Expected $_kSupportedArchiveVersion.',
+      );
+    }
+
     final firestore = FirebaseFirestore.instance;
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
@@ -95,7 +109,7 @@ class ArchiveService {
           (buyerMap['addresses'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
       final batch = firestore.batch();
-      batch.set(buyerRef, _toFirestoreMap(Map.from(buyerMap)
+      batch.set(buyerRef, toFirestoreMap(Map.from(buyerMap)
         ..remove('id')
         ..remove('addresses')));
 
@@ -104,7 +118,7 @@ class ArchiveService {
         if (addrId == null) continue;
         final addrRef = buyerRef.collection('addresses').doc(addrId);
         batch.set(addrRef,
-            Map<String, dynamic>.from(addrMap)..remove('id'));
+            toFirestoreMap(Map<String, dynamic>.from(addrMap)..remove('id')));
       }
 
       await batch.commit();
@@ -127,7 +141,7 @@ class ArchiveService {
         continue;
       }
 
-      await saleRef.set(_toFirestoreMap(Map.from(saleMap)..remove('id')));
+      await saleRef.set(toFirestoreMap(Map.from(saleMap)..remove('id')));
       salesImported++;
     }
 
@@ -140,7 +154,8 @@ class ArchiveService {
 
   // Converts ISO date strings back to Firestore Timestamps for known date fields.
   // All other values pass through unchanged.
-  static Map<String, dynamic> _toFirestoreMap(Map<String, dynamic> map) {
+  @visibleForTesting
+  static Map<String, dynamic> toFirestoreMap(Map<String, dynamic> map) {
     return map.map((key, value) {
       if (value is String &&
           (key == 'createdAt' || key == 'scheduledDate')) {
@@ -149,11 +164,11 @@ class ArchiveService {
       }
       if (value is Map) {
         return MapEntry(
-            key, _toFirestoreMap(Map<String, dynamic>.from(value)));
+            key, toFirestoreMap(Map<String, dynamic>.from(value)));
       }
       if (value is List) {
         return MapEntry(key, value.map((v) {
-          if (v is Map) return _toFirestoreMap(Map<String, dynamic>.from(v));
+          if (v is Map) return toFirestoreMap(Map<String, dynamic>.from(v));
           return v;
         }).toList());
       }
