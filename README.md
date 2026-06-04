@@ -91,7 +91,8 @@ Examples: `feat: add heat map view`, `fix: nif badge crash on empty buyer`, `doc
 | `features/sales/models/sale_filter.dart` | `SaleFilter` enum + `.test(sale)` predicate extension — single definition used by the sales list, dashboard stats, and any future callers |
 | `features/dashboard/models/dashboard_stats.dart` | `DashboardStats.compute(sales, start, end)` — pure function, no Flutter dependency, straightforward to unit test |
 | `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
-| `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping + rate-limited Nominatim geocoding; `_MapView` is a pure rendering widget |
+| `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping; delegates geocoding to `GeocodingService` |
+| `features/heat_map/services/geocoding_service.dart` | `GeocodingService.geocode(prefix)` — Nominatim lookup with two-layer cache (in-memory L1 + 180-day SharedPreferences L2, v2 cache key); `warmUp()` pre-fetches known prefixes in the background |
 | `features/sales/services/photo_service.dart` | All Firebase Storage operations; swap storage backend here only |
 | `features/sales/services/sale_urgency.dart` | `extension SaleUrgency on Sale` — `urgencyLevel()` / `urgencyReasons()` / `daysUntilScheduled()` — single authoritative urgency source used by sales list, shopping list, and sale filter |
 | `features/sales/services/sale_grouper.dart` | `SaleGrouper.byWeek(sales)` — timeline grouping logic extracted from the sales list; pure function, testable in isolation |
@@ -166,11 +167,7 @@ Tests are also run automatically in CI on every tag push — the APK build is bl
 | `test/features/sales/sale_filter_test.dart` | All 9 `SaleFilter` variants including date-sensitive overdue boundary |
 | `test/features/sales/sale_model_test.dart` | `Sale.deriveAssemblyStatus` — component auto-ready logic |
 | `test/features/buyers/buyer_stats_test.dart` | `BuyerStats.compute` — totals, average order value, last purchase |
+| `test/features/buyers/buyer_address_test.dart` | `BuyerAddress` model — field validation and formatting |
+| `test/features/dashboard/dashboard_stats_test.dart` | `DashboardStats.computeTopCategories` — per-category revenue ranking |
+| `test/features/settings/archive_service_test.dart` | `ArchiveService.toFirestoreMap` — ISO-8601 string → Firestore Timestamp conversion |
 
-### Screens added since initial build
-
-| Screen | Entry point |
-|--------|------------|
-| `UnpaidBalancesScreen` | Dashboard Unpaid card |
-| `NifPendingScreen` | Dashboard NIF required card |
-| `ShoppingListScreen` | Dashboard Assembly not ready card |

@@ -650,6 +650,9 @@ class _AddressesListState extends State<_AddressesList> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasError) {
+          return Center(child: Text(s.errorLoadingDetail));
+        }
         final addresses = snapshot.data ?? [];
         if (addresses.isEmpty) {
           return Text(

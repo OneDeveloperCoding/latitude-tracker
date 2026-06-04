@@ -192,6 +192,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       body: ValueListenableBuilder<StoreState<List<Sale>>>(
         valueListenable: SalesStore.state,
         builder: (context, storeState, _) {
+          if (storeState is StoreError<List<Sale>>) {
+            return Center(child: Text(context.s.errorLoadingSales));
+          }
           if (storeState is! StoreLoaded<List<Sale>>) {
             return const Center(child: CircularProgressIndicator());
           }

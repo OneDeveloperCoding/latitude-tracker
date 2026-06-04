@@ -9,6 +9,9 @@ class PhotoService {
   final _picker = ImagePicker();
   final _uuid = const Uuid();
 
+  // TODO(safety): currentUser! will crash on a mid-flight auth revoke. Safe for
+  // now because the router gates all repo access behind the auth stream, but
+  // worth adding a null-guard if auth edge cases become a concern.
   String get _userId => _auth.currentUser!.uid;
 
   Reference _photoRef(String saleId, String itemId, String photoId) =>
