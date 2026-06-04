@@ -297,6 +297,33 @@ class Sale {
     return worst;
   }
 
+  factory Sale.fromArchiveMap(Map<String, dynamic> map) => Sale(
+        id: map['id'] as String? ?? '',
+        buyerId: map['buyerId'] as String? ?? '',
+        buyerName: map['buyerName'] as String? ?? '',
+        items: (map['items'] as List<dynamic>? ?? [])
+            .map((e) => SaleItem.fromMap(e as Map<String, dynamic>))
+            .toList(),
+        payment: SalePayment.fromMap(map['payment'] as Map<String, dynamic>),
+        shipment: SaleShipment.fromMap(map['shipment'] as Map<String, dynamic>),
+        requiresNif: map['requiresNif'] as bool? ?? false,
+        atSubmissionDone: map['atSubmissionDone'] as bool? ?? false,
+        createdAt: _parseArchiveDate(map['createdAt']),
+        scheduledDate: map['scheduledDate'] != null
+            ? _parseArchiveDate(map['scheduledDate'])
+            : null,
+        notes: map['notes'] as String?,
+      );
+
+  static DateTime _parseArchiveDate(dynamic value) {
+    if (value is String) return DateTime.parse(value);
+    if (value is Map && value['_seconds'] != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+          (value['_seconds'] as int) * 1000);
+    }
+    return DateTime.now();
+  }
+
   factory Sale.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Sale(

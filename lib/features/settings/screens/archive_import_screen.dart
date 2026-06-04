@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../services/archive_service.dart';
+import 'archive_analytics_screen.dart';
 
 class ArchiveImportScreen extends StatefulWidget {
   final Map<String, dynamic> archive;
@@ -122,6 +123,16 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
       appBar: AppBar(
         title: Text(year != null ? 'Archive $year' : 'Archive'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    ArchiveAnalyticsScreen(archive: widget.archive),
+              ),
+            ),
+          ),
           if (_importing)
             const Padding(
               padding: EdgeInsets.all(16),
