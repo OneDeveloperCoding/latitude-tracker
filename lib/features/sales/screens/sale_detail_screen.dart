@@ -1202,6 +1202,7 @@ class _RepairsSection extends StatelessWidget {
     return StreamBuilder<List<Repair>>(
       stream: RepairRepository().watchRepairsForSale(saleId),
       builder: (context, snapshot) {
+        if (snapshot.hasError) return const SizedBox.shrink();
         final repairs = snapshot.data ?? [];
         if (repairs.isEmpty) return const SizedBox.shrink();
 

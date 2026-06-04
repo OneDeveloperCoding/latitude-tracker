@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../features/sales/models/sale.dart';
@@ -23,7 +24,10 @@ class SalesStore {
     state.value = const StoreLoading();
     _sub = SaleRepository().watchSales().listen(
       (sales) => state.value = StoreLoaded(sales),
-      onError: (e) => state.value = StoreError(e),
+      onError: (e, StackTrace st) {
+        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+        state.value = StoreError(e);
+      },
     );
   }
 
