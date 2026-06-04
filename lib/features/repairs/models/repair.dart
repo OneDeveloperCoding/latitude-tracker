@@ -111,6 +111,34 @@ class Repair {
       !(status == RepairStatus.returned &&
           returnDelivery.status == ShipmentStatus.delivered);
 
+  factory Repair.fromArchiveMap(Map<String, dynamic> map) => Repair(
+        id: map['id'] as String? ?? '',
+        buyerId: map['buyerId'] as String?,
+        buyerName: map['buyerName'] as String?,
+        freeTextContact: map['freeTextContact'] as String?,
+        linkedSaleId: map['linkedSaleId'] as String?,
+        itemDescription: map['itemDescription'] as String,
+        itemCategory: map['itemCategory'] as String,
+        problemDescription: map['problemDescription'] as String,
+        workDone: map['workDone'] as String? ?? '',
+        materialsCost: (map['materialsCost'] as num?)?.toDouble(),
+        status: RepairStatus.values.byName(map['status'] as String),
+        payment: SalePayment.fromMap(map['payment'] as Map<String, dynamic>),
+        returnDelivery: RepairReturnDelivery.fromMap(
+            map['returnDelivery'] as Map<String, dynamic>),
+        photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
+        createdAt: _parseArchiveDate(map['createdAt']),
+      );
+
+  static DateTime _parseArchiveDate(dynamic value) {
+    if (value is String) return DateTime.parse(value);
+    if (value is Map && value['_seconds'] != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+          (value['_seconds'] as int) * 1000);
+    }
+    return DateTime.now();
+  }
+
   factory Repair.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Repair(
