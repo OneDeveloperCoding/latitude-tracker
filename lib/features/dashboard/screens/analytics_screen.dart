@@ -256,13 +256,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
                 );
               }),
-              if (paymentBreakdown.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                _PaymentMethodSection(breakdown: paymentBreakdown),
-              ],
               if (categoryBreakdown.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 _TopCategoriesSection(breakdown: categoryBreakdown),
+              ],
+              if (paymentBreakdown.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _PaymentMethodSection(breakdown: paymentBreakdown),
               ],
             ],
           );
