@@ -358,6 +358,7 @@ class AppStrings {
   final String resetEverything;
   final String resettingApp;
   final String resetAppFailed;
+  final String selectSalePrompt;
 
   // ── Plural word stems (used in methods below) ─────────────────────────────
   final String _saleSingular;
@@ -680,6 +681,7 @@ class AppStrings {
     required this.resetEverything,
     required this.resettingApp,
     required this.resetAppFailed,
+    required this.selectSalePrompt,
     required String saleSingular,
     required String salePlural,
     required String photoSingular,
@@ -1319,6 +1321,7 @@ class AppStrings {
     resetEverything: 'Delete everything',
     resettingApp: 'Resetting app…',
     resetAppFailed: 'Reset failed',
+    selectSalePrompt: 'Select a sale to view details',
     saleSingular: 'sale',
     salePlural: 'sales',
     photoSingular: 'photo',
@@ -1669,6 +1672,7 @@ class AppStrings {
     resetEverything: 'Eliminar tudo',
     resettingApp: 'A repor app…',
     resetAppFailed: 'Falha ao repor',
+    selectSalePrompt: 'Seleciona uma venda para ver os detalhes',
     saleSingular: 'venda',
     salePlural: 'vendas',
     photoSingular: 'foto',
