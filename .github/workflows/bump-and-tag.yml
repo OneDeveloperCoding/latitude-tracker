@@ -1,0 +1,91 @@
+name: Bump version and tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_override:
+        description: 'Override auto-detected bump (leave blank to auto-detect from commits)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - patch
+          - minor
+          - major
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Detect bump from commits since last tag
+        id: detect_bump
+        run: |
+          LAST_TAG="${{ steps.latest_tag.outputs.tag }}"
+          OVERRIDE="${{ inputs.bump_override }}"
+
+          if [ -n "$OVERRIDE" ]; then
+            echo "bump=$OVERRIDE" >> "$GITHUB_OUTPUT"
+            echo "Using override: $OVERRIDE"
+            exit 0
+          fi
+
+          COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s %b")
+
+          BUMP="patch"
+
+          if echo "$COMMITS" | grep -qiE "BREAKING.CHANGE|^(feat|fix|refactor|perf)(\(.+\))?!:"; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?:"; then
+            BUMP="minor"
+          fi
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "Auto-detected bump: $BUMP"
+
+      - name: Compute next version
+        id: next_version
+        run: |
+          LAST_TAG="${{ steps.latest_tag.outputs.tag }}"
+          BUMP="${{ steps.detect_bump.outputs.bump }}"
+
+          # Strip leading 'v'
+          VERSION="${LAST_TAG#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "Next tag: $NEW_TAG (bump: $BUMP from $LAST_TAG)"
+
+      - name: Show commits included in this release
+        run: |
+          git log "${{ steps.latest_tag.outputs.tag }}..HEAD" --oneline
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.next_version.outputs.new_tag }}"
+          git push origin "${{ steps.next_version.outputs.new_tag }}"
