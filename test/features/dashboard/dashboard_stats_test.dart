@@ -311,5 +311,20 @@ void main() {
 
       expect(result, isEmpty);
     });
+
+    test('tracks revolut and paypal as distinct methods', () {
+      final sales = [
+        makeSale(method: PaymentMethod.revolut, price: 60, createdAt: jan),
+        makeSale(method: PaymentMethod.paypal, price: 40, createdAt: jan),
+      ];
+
+      final result =
+          DashboardStats.computePaymentMethodBreakdown(sales, jan, feb);
+
+      expect(result[PaymentMethod.revolut]?.revenue, 60);
+      expect(result[PaymentMethod.revolut]?.count, 1);
+      expect(result[PaymentMethod.paypal]?.revenue, 40);
+      expect(result[PaymentMethod.paypal]?.count, 1);
+    });
   });
 }

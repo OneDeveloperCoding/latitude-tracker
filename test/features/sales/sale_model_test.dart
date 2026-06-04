@@ -133,6 +133,18 @@ void main() {
     });
   });
 
+  group('SalePayment round-trip serialisation', () {
+    for (final method in PaymentMethod.values) {
+      test('${method.name} survives toMap → fromMap', () {
+        final original =
+            SalePayment(status: PaymentStatus.paid, method: method);
+        final restored = SalePayment.fromMap(original.toMap());
+        expect(restored.method, method);
+        expect(restored.status, PaymentStatus.paid);
+      });
+    }
+  });
+
   group('Sale.totalPrice', () {
     test('sums all item prices', () {
       final sale = Sale(
