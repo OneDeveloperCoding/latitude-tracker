@@ -79,4 +79,10 @@ class InMemoryRepairRepository implements RepairRepository {
     _repairs.removeWhere((r) => r.createdAt.year == year);
     _emit();
   }
+
+  @override
+  Future<void> deleteAllRepairs({bool deletePhotos = false}) async {
+    _repairs.clear();
+    _emit();
+  }
 }

@@ -17,6 +17,7 @@ abstract class RepairRepository {
   Future<void> deleteRepair(String id);
   Future<List<Repair>> getRepairsForYear(int year);
   Future<void> deleteAllRepairsForYear(int year, {bool deletePhotos});
+  Future<void> deleteAllRepairs({bool deletePhotos});
 }
 
 class _FirestoreRepairRepository implements RepairRepository {
@@ -82,6 +83,22 @@ class _FirestoreRepairRepository implements RepairRepository {
     final batch = _firestore.batch();
     for (final repair in repairs) {
       batch.delete(_repairsRef.doc(repair.id));
+    }
+    await batch.commit();
+  }
+
+  @override
+  Future<void> deleteAllRepairs({bool deletePhotos = false}) async {
+    final docs = await _repairsRef.get().then((s) => s.docs);
+    if (docs.isEmpty) return;
+    if (deletePhotos) {
+      for (final doc in docs) {
+        await RepairPhotoService().deleteAllPhotos(doc.id);
+      }
+    }
+    final batch = _firestore.batch();
+    for (final doc in docs) {
+      batch.delete(doc.reference);
     }
     await batch.commit();
   }
