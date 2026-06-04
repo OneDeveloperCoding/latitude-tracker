@@ -19,6 +19,7 @@ abstract class SaleRepository {
   Future<void> deleteAllSalesForYear(int year, {bool deletePhotos});
   Future<void> deleteAllSales({bool deletePhotos});
   Future<List<Sale>> getSalesForBuyer(String buyerId);
+  Future<void> renameCategory(String oldName, String newName);
 }
 
 class _FirestoreSaleRepository implements SaleRepository {
@@ -113,5 +114,33 @@ class _FirestoreSaleRepository implements SaleRepository {
   Future<void> deleteSale(String id) async {
     await PhotoService().deleteAllPhotos(id);
     await _salesRef.doc(id).delete();
+  }
+
+  @override
+  Future<void> renameCategory(String oldName, String newName) async {
+    final snap = await _salesRef.get();
+    final toUpdate = snap.docs.where((doc) {
+      final items = doc.data()['items'] as List<dynamic>? ?? [];
+      return items.any(
+          (item) => (item as Map<String, dynamic>)['category'] == oldName);
+    }).toList();
+    if (toUpdate.isEmpty) return;
+
+    // Firestore batches are capped at 500 ops per commit — chunk if needed.
+    for (var i = 0; i < toUpdate.length; i += 500) {
+      final chunk = toUpdate.sublist(i, (i + 500).clamp(0, toUpdate.length));
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        final items = (doc.data()['items'] as List<dynamic>)
+            .map((raw) {
+              final item = Map<String, dynamic>.from(raw as Map);
+              if (item['category'] == oldName) item['category'] = newName;
+              return item;
+            })
+            .toList();
+        batch.update(doc.reference, {'items': items});
+      }
+      await batch.commit();
+    }
   }
 }

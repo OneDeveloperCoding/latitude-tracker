@@ -15,6 +15,7 @@ import '../../sales/repositories/sale_repository.dart';
 import '../services/archive_service.dart';
 import '../services/reset_app_service.dart';
 import 'archive_import_screen.dart';
+import 'category_maintenance_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -41,6 +42,19 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.logout),
             title: Text(s.signOut),
             onTap: () => isDemo ? DemoMode.exit() : _confirmSignOut(context),
+          ),
+          const Divider(),
+          _SectionHeader(s.catalogueSection),
+          ListTile(
+            leading: const Icon(Icons.label_outline),
+            title: Text(s.categoriesTitle),
+            subtitle: Text(s.categoriesSubtitle),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CategoryMaintenanceScreen(),
+              ),
+            ),
           ),
           const Divider(),
           _SectionHeader(s.archive),

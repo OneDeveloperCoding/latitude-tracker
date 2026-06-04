@@ -89,4 +89,20 @@ class InMemorySaleRepository implements SaleRepository {
     _sales.clear();
     _emit();
   }
+
+  @override
+  Future<void> renameCategory(String oldName, String newName) async {
+    for (var i = 0; i < _sales.length; i++) {
+      final sale = _sales[i];
+      if (!sale.items.any((item) => item.category == oldName)) continue;
+      _sales[i] = sale.copyWith(
+        items: sale.items
+            .map((item) => item.category == oldName
+                ? item.copyWith(category: newName)
+                : item)
+            .toList(),
+      );
+    }
+    _emit();
+  }
 }
