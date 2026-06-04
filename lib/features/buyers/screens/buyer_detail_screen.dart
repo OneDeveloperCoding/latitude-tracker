@@ -44,6 +44,12 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
       child: FutureBuilder<Buyer?>(
         future: _buyerFuture,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Scaffold(
+              appBar: AppBar(title: Text(s.saleFallbackTitle)),
+              body: Center(child: Text(s.errorLoadingDetail)),
+            );
+          }
           final buyer = snapshot.data;
           return Scaffold(
             appBar: AppBar(
@@ -174,8 +180,15 @@ class _BuyerDetailBody extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed == true) {
+    if (confirmed != true || !context.mounted) return;
+    try {
       await buyerRepo.deleteAddress(buyer.id, address.id);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.errGeneric)),
+        );
+      }
     }
   }
 }

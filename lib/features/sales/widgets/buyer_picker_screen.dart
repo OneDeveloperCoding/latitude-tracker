@@ -84,6 +84,9 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+                if (snapshot.hasError) {
+                  return Center(child: Text(context.s.errorLoadingDetail));
+                }
                 final buyers = _filtered(snapshot.data ?? []);
                 if (buyers.isEmpty) {
                   return Center(child: Text(s.noBuyersFound));
