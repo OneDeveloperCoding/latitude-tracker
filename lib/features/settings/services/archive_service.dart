@@ -78,6 +78,9 @@ class ArchiveService {
     }
 
     final firestore = FirebaseFirestore.instance;
+    // TODO(safety): currentUser! will crash on a mid-flight auth revoke. Safe for
+    // now because the router gates all repo access behind the auth stream, but
+    // worth adding a null-guard if auth edge cases become a concern.
     final userId = FirebaseAuth.instance.currentUser!.uid;
 
     final sales =

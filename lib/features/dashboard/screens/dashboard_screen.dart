@@ -36,6 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: ValueListenableBuilder<StoreState<List<Sale>>>(
         valueListenable: SalesStore.state,
         builder: (context, storeState, _) {
+          if (storeState is StoreError<List<Sale>>) {
+            return Center(child: Text(s.errorLoadingSales));
+          }
           if (storeState is! StoreLoaded<List<Sale>>) {
             return const Center(child: CircularProgressIndicator());
           }
