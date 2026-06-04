@@ -39,6 +39,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
+  Sale? _selectedSale;
+  final _rightPanelKey = GlobalKey<NavigatorState>();
+
   // Cached once per store/filter/sort/search change — not on every build().
   List<Sale> _filteredSales = [];
   Map<String, List<Sale>> _groupedSales = {};
@@ -187,102 +190,166 @@ class _SalesListScreenState extends State<SalesListScreen> {
     };
   }
 
+  bool _isTablet() => MediaQuery.sizeOf(context).width >= 600;
+
+  void _selectSale(Sale sale) {
+    if (!_isTablet()) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+      );
+      return;
+    }
+    if (_selectedSale?.id == sale.id) return;
+    setState(() => _selectedSale = sale);
+    final nav = _rightPanelKey.currentState;
+    if (nav != null) {
+      nav.popUntil((r) => r.isFirst);
+      nav.push(MaterialPageRoute(
+        builder: (_) => SaleDetailScreen(saleId: sale.id),
+      ));
+    }
+  }
+
+  void _openNewSale() {
+    if (!_isTablet()) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+      );
+      return;
+    }
+    setState(() => _selectedSale = null);
+    final nav = _rightPanelKey.currentState;
+    if (nav != null) {
+      nav.popUntil((r) => r.isFirst);
+      nav.push(MaterialPageRoute(builder: (_) => const NewSaleScreen()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final filterCount = _activeFilterCount;
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: null,
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+    final isTablet = _isTablet();
+
+    final listPanel = Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: s.searchSales,
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (v) {
+                    _searchQuery = v;
+                    _rebuildCache();
+                    setState(() {});
+                  },
+                ),
+              ),
+              Badge(
+                label: filterCount > 0 ? Text('$filterCount') : null,
+                isLabelVisible: filterCount > 0,
+                child: IconButton(
+                  icon: const Icon(Icons.tune),
+                  tooltip: s.moreFilters,
+                  onPressed: _showOptionsSheet,
+                ),
+              ),
+              Badge(
+                isLabelVisible: _sortOrder != _SortOrder.newestFirst,
+                child: PopupMenuButton<_SortOrder>(
+                  icon: const Icon(Icons.sort),
+                  tooltip: s.sortBy,
+                  onSelected: (order) {
+                    setState(() => _sortOrder = order);
+                    _rebuildCache();
+                  },
+                  itemBuilder: (_) => _SortOrder.values
+                      .map((order) => PopupMenuItem(
+                            value: order,
+                            child: Row(
+                              children: [
+                                Text(_sortOrderLabel(order)),
+                                if (_sortOrder == order) ...[
+                                  const Spacer(),
+                                  const Icon(Icons.check, size: 16),
+                                ],
+                              ],
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.map_outlined),
+                tooltip: s.viewMap,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HeatMapScreen()),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                tooltip: s.legendTitle,
+                onPressed: () => _showPathLegend(context, s),
+              ),
+            ],
+          ),
         ),
-        child: const Icon(Icons.add),
-      ),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _filteredSales.isEmpty
+                  ? Center(child: Text(s.noSalesFound))
+                  : _TimelineView(
+                      groups: _groupedSales,
+                      selectedSaleId: isTablet ? _selectedSale?.id : null,
+                      onSaleTap: _selectSale,
+                    ),
+        ),
+      ],
+    );
+
+    final fab = FloatingActionButton(
+      heroTag: null,
+      onPressed: _openNewSale,
+      child: const Icon(Icons.add),
+    );
+
+    if (!isTablet) {
+      return Scaffold(
+        floatingActionButton: fab,
+        body: SafeArea(bottom: false, child: listPanel),
+      );
+    }
+
+    return Scaffold(
+      floatingActionButton: fab,
       body: SafeArea(
         bottom: false,
-        child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: s.searchSales,
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onChanged: (v) {
-                      _searchQuery = v;
-                      _rebuildCache();
-                      setState(() {});
-                    },
-                  ),
+        child: Row(
+          children: [
+            SizedBox(width: 360, child: listPanel),
+            const VerticalDivider(width: 1, thickness: 1),
+            Expanded(
+              child: Navigator(
+                key: _rightPanelKey,
+                onGenerateRoute: (_) => MaterialPageRoute(
+                  builder: (_) => const _RightPanelPlaceholder(),
                 ),
-                Badge(
-                  label: filterCount > 0 ? Text('$filterCount') : null,
-                  isLabelVisible: filterCount > 0,
-                  child: IconButton(
-                    icon: const Icon(Icons.tune),
-                    tooltip: s.moreFilters,
-                    onPressed: _showOptionsSheet,
-                  ),
-                ),
-                Badge(
-                  isLabelVisible: _sortOrder != _SortOrder.newestFirst,
-                  child: PopupMenuButton<_SortOrder>(
-                    icon: const Icon(Icons.sort),
-                    tooltip: s.sortBy,
-                    onSelected: (order) {
-                      setState(() => _sortOrder = order);
-                      _rebuildCache();
-                    },
-                    itemBuilder: (_) => _SortOrder.values
-                        .map((order) => PopupMenuItem(
-                              value: order,
-                              child: Row(
-                                children: [
-                                  Text(_sortOrderLabel(order)),
-                                  if (_sortOrder == order) ...[
-                                    const Spacer(),
-                                    const Icon(Icons.check, size: 16),
-                                  ],
-                                ],
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.map_outlined),
-                  tooltip: s.viewMap,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HeatMapScreen()),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.info_outline),
-                  tooltip: s.legendTitle,
-                  onPressed: () => _showPathLegend(context, s),
-                ),
-              ],
+              ),
             ),
-          ),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredSales.isEmpty
-                    ? Center(child: Text(s.noSalesFound))
-                    : _TimelineView(groups: _groupedSales),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -565,6 +632,26 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
 }
 
+// ── Tablet right-panel placeholder ───────────────────────────────────────────
+
+class _RightPanelPlaceholder extends StatelessWidget {
+  const _RightPanelPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Text(
+          context.s.selectSalePrompt,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Shared sheet label ────────────────────────────────────────────────────────
 
 class _SheetSectionLabel extends StatelessWidget {
@@ -673,8 +760,14 @@ class _CategoryChips extends StatelessWidget {
 
 class _TimelineView extends StatelessWidget {
   final Map<String, List<Sale>> groups;
+  final String? selectedSaleId;
+  final void Function(Sale) onSaleTap;
 
-  const _TimelineView({required this.groups});
+  const _TimelineView({
+    required this.groups,
+    required this.onSaleTap,
+    this.selectedSaleId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +794,11 @@ class _TimelineView extends StatelessWidget {
             ),
             ...groupSales.map((sale) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: _SaleCard(sale: sale),
+                  child: _SaleCard(
+                    sale: sale,
+                    isSelected: sale.id == selectedSaleId,
+                    onTap: () => onSaleTap(sale),
+                  ),
                 )),
             const Divider(height: 1),
           ],
@@ -715,8 +812,14 @@ class _TimelineView extends StatelessWidget {
 
 class _SaleCard extends StatelessWidget {
   final Sale sale;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _SaleCard({required this.sale});
+  const _SaleCard({
+    required this.sale,
+    required this.onTap,
+    this.isSelected = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -731,12 +834,11 @@ class _SaleCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
+      color: isSelected
+          ? Theme.of(context).colorScheme.primaryContainer
+          : null,
       child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => SaleDetailScreen(saleId: sale.id)),
-        ),
+        onTap: onTap,
         child: Container(
           decoration: accentColor != null
               ? BoxDecoration(
