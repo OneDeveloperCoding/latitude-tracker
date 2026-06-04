@@ -8,10 +8,13 @@ import '../../sales/models/sale.dart';
 import '../../sales/widgets/buyer_picker_screen.dart';
 import '../../sales/widgets/category_picker.dart';
 import '../../sales/widgets/payment_method_display.dart';
+import 'package:intl/intl.dart';
+
 import '../models/repair.dart';
 import '../repositories/repair_repository.dart';
 import '../services/repair_photo_service.dart';
 import '../widgets/repair_photo_grid.dart';
+import '../widgets/sale_picker_screen.dart';
 
 class NewRepairScreen extends StatefulWidget {
   final Repair? existing;
@@ -120,6 +123,37 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
     );
     if (buyer != null) setState(() => _linkedBuyer = buyer);
+  }
+
+  Future<void> _pickSale() async {
+    String? buyerId;
+    String? buyerName;
+
+    if (!_useFreeText) {
+      buyerId = _linkedBuyer?.id ?? widget.existing?.buyerId;
+      buyerName = _linkedBuyer?.name ?? widget.existing?.buyerName;
+    }
+
+    if (buyerId == null) {
+      final buyer = await Navigator.of(context).push<Buyer>(
+        MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
+      );
+      if (buyer == null || !mounted) return;
+      buyerId = buyer.id;
+      buyerName = buyer.name;
+      // Filling the Contact section avoids the save guard blocking after this flow.
+      if (!_useFreeText) setState(() => _linkedBuyer = buyer);
+    }
+
+    final sale = await Navigator.of(context).push<Sale>(
+      MaterialPageRoute(
+        builder: (_) => SalePickerScreen(
+          buyerId: buyerId!,
+          buyerName: buyerName ?? '',
+        ),
+      ),
+    );
+    if (sale != null && mounted) setState(() => _linkedSale = sale);
   }
 
   Future<void> _pickCategory() async {
@@ -471,21 +505,26 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
   }
 
   Widget _buildLinkedSaleSection(AppStrings s) {
-    final sales = SalesStore.current ?? [];
-    return DropdownButtonFormField<Sale?>(
-      initialValue: _linkedSale,
-      decoration: InputDecoration(labelText: s.repairLinkedSale),
-      items: [
-        DropdownMenuItem(value: null, child: Text(s.repairLinkedSaleNone)),
-        ...sales.map((sale) => DropdownMenuItem(
-              value: sale,
-              child: Text(
-                '${sale.buyerName} — ${sale.items.first.description}',
-                overflow: TextOverflow.ellipsis,
-              ),
-            )),
-      ],
-      onChanged: (v) => setState(() => _linkedSale = v),
+    final linked = _linkedSale;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        linked != null
+            ? '${DateFormat('dd MMM yyyy').format(linked.createdAt)}${linked.items.isNotEmpty ? ' · ${linked.items.first.description}' : ''}'
+            : s.repairLinkedSaleNone,
+        style: linked == null
+            ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)
+            : null,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(s.repairLinkedSale),
+      trailing: linked != null
+          ? IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () => setState(() => _linkedSale = null),
+            )
+          : const Icon(Icons.chevron_right),
+      onTap: linked == null ? _pickSale : null,
     );
   }
 }
