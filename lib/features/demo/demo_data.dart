@@ -685,6 +685,8 @@ class DemoData {
     PaymentMethod.mbWay,
     PaymentMethod.mbWay,
     PaymentMethod.mbWay,
+    PaymentMethod.revolut,
+    PaymentMethod.paypal,
     PaymentMethod.sumup,
     PaymentMethod.sumup,
     PaymentMethod.bankTransfer,
