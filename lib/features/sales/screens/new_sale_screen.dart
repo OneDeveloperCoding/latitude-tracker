@@ -12,6 +12,7 @@ import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../services/photo_service.dart';
 import '../widgets/buyer_picker_screen.dart';
+import '../widgets/payment_method_display.dart';
 import 'sale_item_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
@@ -417,9 +418,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                       labelText: s.paymentMethodDropdownLabel,
                       border: const OutlineInputBorder(),
                     ),
-                    items: PaymentMethod.values
+                    items: kPaymentMethodOrder
                         .map((m) => DropdownMenuItem(
-                            value: m, child: Text(s.paymentMethodLabel(m))))
+                              value: m,
+                              child: _PaymentMethodItem(m),
+                            ))
                         .toList(),
                     onChanged: (v) => setState(() => _paymentMethod = v!),
                   ),
@@ -739,6 +742,30 @@ class _BuyerSelector extends StatelessWidget {
               : null,
         ),
       ),
+    );
+  }
+}
+
+class _PaymentMethodItem extends StatelessWidget {
+  final PaymentMethod method;
+
+  const _PaymentMethodItem(this.method);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: paymentMethodColor(method),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(context.s.paymentMethodLabel(method)),
+      ],
     );
   }
 }

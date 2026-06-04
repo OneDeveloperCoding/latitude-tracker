@@ -7,6 +7,7 @@ import '../../buyers/models/buyer.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/widgets/buyer_picker_screen.dart';
 import '../../sales/widgets/category_picker.dart';
+import '../../sales/widgets/payment_method_display.dart';
 import '../models/repair.dart';
 import '../repositories/repair_repository.dart';
 import '../services/repair_photo_service.dart';
@@ -410,10 +411,10 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
           initialValue: _paymentMethod,
           decoration:
               InputDecoration(labelText: s.paymentMethodDropdownLabel),
-          items: PaymentMethod.values
+          items: kPaymentMethodOrder
               .map((m) => DropdownMenuItem(
                     value: m,
-                    child: Text(s.paymentMethodLabel(m)),
+                    child: _PaymentMethodItem(m),
                   ))
               .toList(),
           onChanged: (v) => setState(() => _paymentMethod = v!),
@@ -504,6 +505,30 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
       ),
+    );
+  }
+}
+
+class _PaymentMethodItem extends StatelessWidget {
+  final PaymentMethod method;
+
+  const _PaymentMethodItem(this.method);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: paymentMethodColor(method),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(context.s.paymentMethodLabel(method)),
+      ],
     );
   }
 }
