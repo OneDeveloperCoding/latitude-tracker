@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -43,8 +44,9 @@ class PhotoService {
     if (photoUrl.startsWith('demo://')) return;
     try {
       await _storage.refFromURL(photoUrl).delete();
-    } catch (_) {
-      // Photo may already be deleted — ignore
+    } catch (e, st) {
+      // Photo may already be deleted — best-effort, but track unexpected errors.
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
     }
   }
 
@@ -54,8 +56,9 @@ class PhotoService {
     if (_auth.currentUser == null) return;
     try {
       await _deleteFolder('users/$_userId/sales/$saleId');
-    } catch (_) {
-      // Folder may not exist — ignore
+    } catch (e, st) {
+      // Folder may not exist — best-effort, but track unexpected errors.
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
     }
   }
 

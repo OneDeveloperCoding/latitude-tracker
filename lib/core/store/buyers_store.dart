@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../features/buyers/models/buyer.dart';
@@ -23,7 +24,10 @@ class BuyersStore {
     state.value = const StoreLoading();
     _sub = BuyerRepository().watchBuyers().listen(
       (buyers) => state.value = StoreLoaded(buyers),
-      onError: (e) => state.value = StoreError(e),
+      onError: (e, StackTrace st) {
+        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+        state.value = StoreError(e);
+      },
     );
   }
 

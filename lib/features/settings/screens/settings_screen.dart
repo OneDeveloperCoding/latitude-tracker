@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
@@ -135,7 +136,8 @@ class SettingsScreen extends StatelessWidget {
     if (confirmed == true) {
       try {
         await FirebaseAuth.instance.signOut();
-      } catch (_) {
+      } catch (e, st) {
+        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.s.errGeneric)),
@@ -233,7 +235,8 @@ class SettingsScreen extends StatelessWidget {
     final String content;
     try {
       content = await File(path).readAsString();
-    } catch (_) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.invalidArchive)),
