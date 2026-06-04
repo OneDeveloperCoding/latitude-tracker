@@ -69,6 +69,16 @@ void main() {
         );
       });
 
+      test('passes for handDelivery + pending', () {
+        expect(
+          SaleFilter.pendingShipment.test(makeSale(
+            delivery: DeliveryType.handDelivery,
+            shipmentStatus: ShipmentStatus.pending,
+          )),
+          isTrue,
+        );
+      });
+
       test('fails for pickup even if pending', () {
         expect(
           SaleFilter.pendingShipment.test(makeSale(
@@ -117,6 +127,32 @@ void main() {
       test('fails for shipping delivery type', () {
         expect(
           SaleFilter.pickup.test(makeSale(delivery: DeliveryType.shipping)),
+          isFalse,
+        );
+      });
+    });
+
+    group('handDelivery', () {
+      test('passes for handDelivery type', () {
+        expect(
+          SaleFilter.handDelivery
+              .test(makeSale(delivery: DeliveryType.handDelivery)),
+          isTrue,
+        );
+      });
+
+      test('fails for shipping type', () {
+        expect(
+          SaleFilter.handDelivery
+              .test(makeSale(delivery: DeliveryType.shipping)),
+          isFalse,
+        );
+      });
+
+      test('fails for pickup type', () {
+        expect(
+          SaleFilter.handDelivery
+              .test(makeSale(delivery: DeliveryType.pickup)),
           isFalse,
         );
       });

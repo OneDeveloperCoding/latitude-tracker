@@ -26,7 +26,9 @@ class HeatMapService {
     final counts = <String, int>{};
     for (final sale in sales) {
       final prefix = _localityPrefix(sale.shipment.postalCode);
-      if (sale.shipment.type == DeliveryType.shipping && prefix != null) {
+      if ((sale.shipment.type == DeliveryType.shipping ||
+              sale.shipment.type == DeliveryType.handDelivery) &&
+          prefix != null) {
         counts[prefix] = (counts[prefix] ?? 0) + 1;
       }
     }

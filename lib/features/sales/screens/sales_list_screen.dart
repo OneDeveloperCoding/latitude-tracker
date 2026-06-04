@@ -370,6 +370,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
           SaleFilter.shipped,
           SaleFilter.scheduled,
           SaleFilter.pickup,
+          SaleFilter.handDelivery,
         ],
       ),
       (
@@ -1253,6 +1254,7 @@ void _showPathLegend(BuildContext context, AppStrings s) {
           _LegendRow(Icons.local_shipping, Colors.green,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.delivered)}'),
           _LegendRow(Icons.store, Colors.green, s.pickupNoShipment),
+          _LegendRow(Icons.directions_walk, Colors.green, s.handDelivery),
         ],
       ),
     ),
@@ -1325,6 +1327,14 @@ class _SaleProgressPath extends StatelessWidget {
   Widget _shipmentNode() {
     if (sale.shipment.type == DeliveryType.pickup) {
       return _PathNode(icon: Icons.store, color: Colors.green);
+    }
+    if (sale.shipment.type == DeliveryType.handDelivery) {
+      return _PathNode(
+        icon: Icons.directions_walk,
+        color: sale.shipment.status == ShipmentStatus.delivered
+            ? Colors.green
+            : Colors.grey,
+      );
     }
     final (icon, color) = switch (sale.shipment.status) {
       ShipmentStatus.pending =>

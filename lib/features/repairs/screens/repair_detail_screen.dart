@@ -195,9 +195,11 @@ class _RepairDetailBody extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.local_shipping_outlined),
-                title: Text(repair.returnDelivery.type == DeliveryType.shipping
-                    ? s.shipping
-                    : s.inPersonPickup),
+                title: Text(switch (repair.returnDelivery.type) {
+                  DeliveryType.shipping => s.shipping,
+                  DeliveryType.pickup => s.inPersonPickup,
+                  DeliveryType.handDelivery => s.handDelivery,
+                }),
                 subtitle: Text(
                     s.shipmentStatusLabel(repair.returnDelivery.status)),
               ),

@@ -34,6 +34,7 @@ enum SaleFilter {
   pendingShipment,
   shipped,
   pickup,
+  handDelivery,
   assemblyNotReady,
   overdue,
   upcomingScheduled,
@@ -48,6 +49,7 @@ extension SaleFilterLabel on SaleFilter {
         SaleFilter.pendingShipment => 'Pending shipment',
         SaleFilter.shipped => 'Shipped',
         SaleFilter.pickup => 'Pickup',
+        SaleFilter.handDelivery => 'Hand delivery',
         SaleFilter.assemblyNotReady => 'Assembly not ready',
         SaleFilter.overdue => 'Overdue',
         SaleFilter.upcomingScheduled => 'Upcoming',
@@ -67,11 +69,14 @@ extension SaleFilterTest on SaleFilter {
       SaleFilter.nifRequired => sale.requiresNif,
       SaleFilter.scheduled => sale.scheduledDate != null,
       SaleFilter.pendingShipment =>
-        sale.shipment.type == DeliveryType.shipping &&
+        (sale.shipment.type == DeliveryType.shipping ||
+                sale.shipment.type == DeliveryType.handDelivery) &&
             sale.shipment.status == ShipmentStatus.pending,
       SaleFilter.shipped =>
         sale.shipment.status == ShipmentStatus.shipped,
       SaleFilter.pickup => sale.shipment.type == DeliveryType.pickup,
+      SaleFilter.handDelivery =>
+        sale.shipment.type == DeliveryType.handDelivery,
       SaleFilter.assemblyNotReady =>
         sale.derivedAssemblyStatus != AssemblyStatus.ready,
       SaleFilter.overdue =>

@@ -41,7 +41,7 @@ Money received (or owed) for a Sale. Has a status (paid / unpaid) and a method (
 _Avoid_: Invoice, charge
 
 **Shipment**:
-The physical delivery of Items from a Sale to a Buyer. Has a status (pending / shipped / delivered), optionally a CTT tracking code, and a postal code used for geographic analytics. References a BuyerAddress if shipped.
+The physical delivery of Items from a Sale to a Buyer. Has a `DeliveryType` (`shipping`, `pickup`, or `handDelivery`), a status, an optional CTT tracking code, and a postal code used for geographic analytics. References a BuyerAddress for `shipping` and `handDelivery`. Status flow differs by type: `shipping` goes `pending → shipped → delivered`; `pickup` and `handDelivery` go `pending → delivered` (the `shipped` state is never written for those). Hand delivery is seller-delivered within the same city — address and postal code are required (used in the SalesHeatMap), tracking code is absent.
 _Avoid_: Delivery, fulfillment, dispatch
 
 **Repair**:
@@ -54,7 +54,7 @@ The current state of a Repair job: `received` (item is with the seller), `waitin
 _Avoid_: Repair state, job status
 
 **ReturnDelivery**:
-The logistics of returning a repaired item to the customer. Has a delivery type (shipping or in-person pickup), a status (pending / shipped / delivered), an optional CTT tracking code, and an optional postal code (for shipping returns only). Separate from RepairStatus — a Repair can be `done` while ReturnDelivery is still `pending` (item ready but not yet dispatched). Mirrors the Shipment pattern on a Sale.
+The logistics of returning a repaired item to the customer. Has a `DeliveryType` (`shipping`, `pickup`, or `handDelivery`), a status (pending / shipped / delivered), an optional CTT tracking code, and an optional postal code (for `shipping` returns only). `handDelivery` requires an address but no tracking code, same as on a Sale Shipment. Separate from RepairStatus — a Repair can be `done` while ReturnDelivery is still `pending` (item ready but not yet dispatched). Mirrors the Shipment pattern on a Sale.
 _Avoid_: Return shipment, return tracking
 
 **Dashboard**:
@@ -66,7 +66,7 @@ An analytics screen reached from the insights icon button in the Dashboard reven
 _Avoid_: Analytics dashboard, reports screen, TrendsScreen (old name)
 
 **SalesHeatMap**:
-A geographic view showing the distribution of online Sales by postal code, visualised as a heat map over a map of Portugal. Sales are grouped by 4-digit locality prefix (e.g. 3000-550 and 3000-313 both map to "3000" → one marker for Coimbra). Only Portuguese postal codes are plotted; foreign addresses are excluded.
+A geographic view showing the distribution of Sales with a postal code (shipping and hand delivery) by postal code, visualised as a heat map over a map of Portugal. Sales are grouped by 4-digit locality prefix (e.g. 3000-550 and 3000-313 both map to "3000" → one marker for Coimbra). Only Portuguese postal codes are plotted; foreign addresses are excluded. An AppBar toggle (`directions_walk` icon, `isSelected` style) lets the seller exclude hand deliveries from the map when local clustering obscures the broader geographic picture; default is included.
 _Avoid_: Geographic report, map view
 
 **ShoppingList**:
@@ -89,10 +89,10 @@ _Avoid_: Invoice, filing, tax return
 A read-only export of Sales, Buyers, and BuyerAddresses for a given year, shared via the OS share sheet (Google Drive, email, etc.). Can be re-imported into the app for historical lookup only. The JSON includes `photoUrls` for each Sale — since photos are kept in Firebase Storage after a year purge, they remain viewable in the import screen via those URLs.
 _Avoid_: Backup, dump
 
-**Archive JSON schema (version 1.1)**:
+**Archive JSON schema (version 1.2)**:
 ```json
 {
-  "version": "1.0",
+  "version": "1.2",
   "exportedAt": "<ISO-8601 string>",
   "year": 2026,
   "sales": [
@@ -102,7 +102,7 @@ _Avoid_: Backup, dump
       "items": [ { "id": "...", "description": "...", "category": "...", "price": 0.0,
                    "assemblyStatus": "notStarted|...", "components": [...], "photoUrls": [...] } ],
       "payment": { "status": "paid|unpaid", "method": "mbWay|cash|sumup|bankTransfer" },
-      "shipment": { "type": "shipping|pickup", "status": "pending|shipped|delivered",
+      "shipment": { "type": "shipping|pickup|handDelivery", "status": "pending|shipped|delivered",
                     "trackingCode": null, "addressId": null, "postalCode": null },
       "requiresNif": false, "atSubmissionDone": false,
       "createdAt": "<ISO-8601 string>",
@@ -125,7 +125,7 @@ _Avoid_: Backup, dump
   ]
 }
 ```
-Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` adds a `repairs` array alongside `sales`. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`.
+Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` added a `repairs` array alongside `sales`. Version `"1.2"` adds `handDelivery` as a valid `shipment.type` value. On import, all recognised versions (`"1.0"`, `"1.1"`, `"1.2"`) are accepted; an unknown `DeliveryType` string falls back to `shipping` rather than throwing. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`.
 
 ## Relationships
 
