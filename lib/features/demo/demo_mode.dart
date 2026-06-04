@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../settings/repositories/catalogue_repository.dart';
 import 'repositories/in_memory_buyer_repository.dart';
 import 'repositories/in_memory_repair_repository.dart';
 import 'repositories/in_memory_sale_repository.dart';
@@ -15,6 +16,10 @@ class DemoMode {
   static final InMemorySaleRepository saleRepo = InMemorySaleRepository();
   static final InMemoryBuyerRepository buyerRepo = InMemoryBuyerRepository();
   static final InMemoryRepairRepository repairRepo = InMemoryRepairRepository();
+  // Shared singleton so CategoryMaintenanceScreen and showCategoryPicker
+  // read/write the same in-memory instance during a demo session.
+  static final InMemoryCatalogueRepository catalogueRepo =
+      InMemoryCatalogueRepository();
 
   static void enter() {
     saleRepo.seed();
@@ -29,5 +34,6 @@ class DemoMode {
     saleRepo.clear();
     buyerRepo.clear();
     repairRepo.clear();
+    catalogueRepo.clear();
   }
 }

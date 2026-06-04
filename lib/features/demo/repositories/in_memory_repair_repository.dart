@@ -85,4 +85,14 @@ class InMemoryRepairRepository implements RepairRepository {
     _repairs.clear();
     _emit();
   }
+
+  @override
+  Future<void> renameCategory(String oldName, String newName) async {
+    for (var i = 0; i < _repairs.length; i++) {
+      if (_repairs[i].itemCategory == oldName) {
+        _repairs[i] = _repairs[i].copyWith(itemCategory: newName);
+      }
+    }
+    _emit();
+  }
 }

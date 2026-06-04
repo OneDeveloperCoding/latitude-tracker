@@ -403,6 +403,20 @@ class AppStrings {
   final String repairStatusByCount;
   final String noRepairDataForPeriod;
 
+  // ── Category maintenance ──────────────────────────────────────────────────
+  final String catalogueSection;
+  final String categoriesTitle;
+  final String categoriesSubtitle;
+  final String renameCategoryTitle;
+  final String renameCategoryHint;
+  final String renameCategoryEmpty;
+  final String renameCategoryDuplicate;
+  final String rename;
+  final String hide;
+  final String unhide;
+  final String hiddenLabel;
+  final String renamingCategory;
+
   // ── Plural word stems (used in methods below) ─────────────────────────────
   final String _saleSingular;
   final String _salePlural;
@@ -765,6 +779,18 @@ class AppStrings {
     required this.repairTopCategories,
     required this.repairStatusByCount,
     required this.noRepairDataForPeriod,
+    required this.catalogueSection,
+    required this.categoriesTitle,
+    required this.categoriesSubtitle,
+    required this.renameCategoryTitle,
+    required this.renameCategoryHint,
+    required this.renameCategoryEmpty,
+    required this.renameCategoryDuplicate,
+    required this.rename,
+    required this.hide,
+    required this.unhide,
+    required this.hiddenLabel,
+    required this.renamingCategory,
     required String saleSingular,
     required String salePlural,
     required String photoSingular,
@@ -1069,6 +1095,16 @@ class AppStrings {
 
   String addCategoryLabel(String query) =>
       _pt ? 'Adicionar "$query"' : 'Add "$query"';
+
+  String nUses(int n) =>
+      _pt ? '$n ${n == 1 ? 'uso' : 'usos'}' : '$n ${n == 1 ? 'use' : 'uses'}';
+
+  String categoryDeleteTitle(String name) =>
+      _pt ? 'Eliminar "$name"?' : 'Delete "$name"?';
+
+  String categoryDeleteBody(String name) => _pt
+      ? '"$name" não tem utilizações e será removida da lista de categorias.'
+      : '"$name" has no uses and will be removed from the category list.';
 
   List<String> trendComparisonLabels(DashboardPeriod period) =>
       switch (period) {
@@ -1466,6 +1502,18 @@ class AppStrings {
     repairTopCategories: 'Top categories',
     repairStatusByCount: 'By status',
     noRepairDataForPeriod: 'No repair data for this period',
+    catalogueSection: 'Catalogue',
+    categoriesTitle: 'Categories',
+    categoriesSubtitle: 'Rename, hide, or remove item categories',
+    renameCategoryTitle: 'Rename category',
+    renameCategoryHint: 'Category name',
+    renameCategoryEmpty: 'Name cannot be empty',
+    renameCategoryDuplicate: 'A category with this name already exists',
+    rename: 'Rename',
+    hide: 'Hide',
+    unhide: 'Show',
+    hiddenLabel: 'hidden',
+    renamingCategory: 'Renaming…',
     saleSingular: 'sale',
     salePlural: 'sales',
     photoSingular: 'photo',
@@ -1858,6 +1906,18 @@ class AppStrings {
     repairTopCategories: 'Principais categorias',
     repairStatusByCount: 'Por estado',
     noRepairDataForPeriod: 'Sem dados de reparações para este período',
+    catalogueSection: 'Catálogo',
+    categoriesTitle: 'Categorias',
+    categoriesSubtitle: 'Renomear, ocultar ou remover categorias',
+    renameCategoryTitle: 'Renomear categoria',
+    renameCategoryHint: 'Nome da categoria',
+    renameCategoryEmpty: 'O nome não pode estar vazio',
+    renameCategoryDuplicate: 'Já existe uma categoria com este nome',
+    rename: 'Renomear',
+    hide: 'Ocultar',
+    unhide: 'Mostrar',
+    hiddenLabel: 'oculta',
+    renamingCategory: 'A renomear…',
     saleSingular: 'venda',
     salePlural: 'vendas',
     photoSingular: 'foto',
