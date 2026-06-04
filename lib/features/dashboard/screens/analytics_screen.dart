@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
+import '../../repairs/models/repair.dart';
 import '../../sales/models/sale.dart';
 import '../models/dashboard_stats.dart';
 
@@ -32,19 +34,26 @@ Color _colorForCategory(String category, List<String> ordered) {
 
 class AnalyticsScreen extends StatefulWidget {
   final DashboardPeriod initialPeriod;
+  final bool startOnRepairs;
 
-  const AnalyticsScreen({super.key, required this.initialPeriod});
+  const AnalyticsScreen({
+    super.key,
+    required this.initialPeriod,
+    this.startOnRepairs = false,
+  });
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-class _AnalyticsScreenState extends State<AnalyticsScreen> {
+class _AnalyticsScreenState extends State<AnalyticsScreen>
+    with SingleTickerProviderStateMixin {
   late DashboardPeriod _period;
   int _year = DateTime.now().year;
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _weekStart = _mondayOf(DateTime.now());
   _AnalyticsMetric _metric = _AnalyticsMetric.revenue;
+  late final TabController _tabController;
 
   static DateTime _mondayOf(DateTime date) =>
       date.subtract(Duration(days: date.weekday - 1));
@@ -53,6 +62,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   void initState() {
     super.initState();
     _period = widget.initialPeriod;
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.startOnRepairs ? 1 : 0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   DateTime get _periodStart => switch (_period) {
@@ -188,8 +208,26 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
           const SizedBox(width: 8),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: s.analyticsSalesTab),
+            Tab(text: s.analyticsRepairsTab),
+          ],
+        ),
       ),
-      body: ValueListenableBuilder<StoreState<List<Sale>>>(
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildSalesTab(context, s),
+          _buildRepairsTab(context, s),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesTab(BuildContext context, AppStrings s) {
+    return ValueListenableBuilder<StoreState<List<Sale>>>(
         valueListenable: SalesStore.state,
         builder: (context, storeState, _) {
           if (storeState is StoreError<List<Sale>>) {
@@ -267,7 +305,147 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ],
           );
         },
-      ),
+      );
+  }
+
+  Widget _buildRepairsTab(BuildContext context, AppStrings s) {
+    return ValueListenableBuilder<StoreState<List<Repair>>>(
+      valueListenable: RepairsStore.state,
+      builder: (context, storeState, _) {
+        if (storeState is StoreError<List<Repair>>) {
+          return Center(child: Text(context.s.errorLoadingSales));
+        }
+        if (storeState is! StoreLoaded<List<Repair>>) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final all = storeState.data;
+        final current = all
+            .where((r) =>
+                r.createdAt.isAfter(_periodStart) &&
+                r.createdAt.isBefore(_periodEnd))
+            .toList();
+
+        if (current.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _PeriodHeader(
+                  label: _periodLabel,
+                  onPrevious: _previous,
+                  onNext: _isCurrentPeriod ? null : _next,
+                ),
+                const SizedBox(height: 24),
+                Text(s.noRepairDataForPeriod),
+              ],
+            ),
+          );
+        }
+
+        final totalRevenue = current.fold<double>(
+          0,
+          (sum, r) =>
+              sum +
+              (r.payment.status == PaymentStatus.paid
+                  ? (r.materialsCost ?? 0)
+                  : 0),
+        );
+        final statusCounts = <RepairStatus, int>{};
+        for (final r in current) {
+          statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
+        }
+        final categoryCounts = <String, int>{};
+        for (final r in current) {
+          categoryCounts[r.itemCategory] =
+              (categoryCounts[r.itemCategory] ?? 0) + 1;
+        }
+        final topCategories = categoryCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+        return ListView(
+          padding: EdgeInsets.fromLTRB(
+              16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+          children: [
+            _PeriodHeader(
+              label: _periodLabel,
+              onPrevious: _previous,
+              onNext: _isCurrentPeriod ? null : _next,
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.repairRevenue,
+                        style: Theme.of(context).textTheme.labelMedium),
+                    const SizedBox(height: 4),
+                    Text(
+                      '€${totalRevenue.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    Text('${current.length} ${s.repairCount.toLowerCase()}',
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.repairStatusByCount,
+                        style: Theme.of(context).textTheme.labelMedium),
+                    const SizedBox(height: 8),
+                    ...RepairStatus.values.map((st) {
+                      final count = statusCounts[st] ?? 0;
+                      if (count == 0) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(s.repairStatusLabelFor(st))),
+                            Text('$count'),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+            if (topCategories.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(s.repairTopCategories,
+                          style: Theme.of(context).textTheme.labelMedium),
+                      const SizedBox(height: 8),
+                      ...topCategories.map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(e.key)),
+                                Text('${e.value}'),
+                              ],
+                            ),
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

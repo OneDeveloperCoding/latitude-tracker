@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'repositories/in_memory_buyer_repository.dart';
+import 'repositories/in_memory_repair_repository.dart';
 import 'repositories/in_memory_sale_repository.dart';
 
 class DemoMode {
@@ -13,10 +14,12 @@ class DemoMode {
 
   static final InMemorySaleRepository saleRepo = InMemorySaleRepository();
   static final InMemoryBuyerRepository buyerRepo = InMemoryBuyerRepository();
+  static final InMemoryRepairRepository repairRepo = InMemoryRepairRepository();
 
   static void enter() {
     saleRepo.seed();
     buyerRepo.seed();
+    repairRepo.seed();
     active.value = true;
     pendingTutorial.value = true;
   }
@@ -25,5 +28,6 @@ class DemoMode {
     active.value = false;
     saleRepo.clear();
     buyerRepo.clear();
+    repairRepo.clear();
   }
 }

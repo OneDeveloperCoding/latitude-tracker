@@ -83,6 +83,10 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
       parts.add(
           '${result.buyersImported} buyer${result.buyersImported == 1 ? '' : 's'} imported');
     }
+    if (result.repairsImported > 0) {
+      parts.add(
+          '${result.repairsImported} repair${result.repairsImported == 1 ? '' : 's'} imported');
+    }
     if (result.skipped > 0) {
       parts.add('${result.skipped} skipped (already exist)');
     }
