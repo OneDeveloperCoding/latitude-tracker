@@ -465,6 +465,10 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
             ButtonSegment(
                 value: DeliveryType.shipping, label: Text(s.shipping)),
             ButtonSegment(value: DeliveryType.pickup, label: Text(s.pickup)),
+            ButtonSegment(
+                value: DeliveryType.handDelivery,
+                icon: const Icon(Icons.directions_walk),
+                label: Text(s.handDelivery)),
           ],
           selected: {_returnType},
           onSelectionChanged: (v) =>

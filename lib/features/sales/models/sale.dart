@@ -29,7 +29,7 @@ enum PaymentStatus { paid, unpaid }
 
 enum AssemblyStatus { notStarted, waitingForMaterials, inProgress, ready }
 
-enum DeliveryType { shipping, pickup }
+enum DeliveryType { shipping, pickup, handDelivery }
 
 enum ShipmentStatus { pending, shipped, delivered }
 
@@ -215,7 +215,10 @@ class SaleShipment {
   });
 
   factory SaleShipment.fromMap(Map<String, dynamic> map) => SaleShipment(
-        type: DeliveryType.values.byName(map['type'] as String),
+        type: DeliveryType.values.firstWhere(
+          (e) => e.name == map['type'],
+          orElse: () => DeliveryType.shipping,
+        ),
         status: ShipmentStatus.values.byName(map['status'] as String),
         trackingCode: map['trackingCode'] as String?,
         addressId: map['addressId'] as String?,

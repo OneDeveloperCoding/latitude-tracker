@@ -10,9 +10,9 @@ import '../../buyers/repositories/buyer_repository.dart';
 import '../../repairs/repositories/repair_repository.dart';
 import '../../sales/repositories/sale_repository.dart';
 
-// Version 1.1 adds a `repairs` array to the archive.
-const _kCurrentArchiveVersion = '1.1';
-const _kSupportedArchiveVersions = {'1.0', '1.1'};
+// Version 1.1 adds a `repairs` array. Version 1.2 adds `handDelivery` type.
+const _kCurrentArchiveVersion = '1.2';
+const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2'};
 
 class ImportResult {
   final int salesImported;

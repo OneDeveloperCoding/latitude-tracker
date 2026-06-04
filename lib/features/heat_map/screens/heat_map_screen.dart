@@ -19,10 +19,11 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
   bool _loading = true;
   String _status = '';
 
-  // Available years derived from shipped sales with postal codes.
+  // Available years derived from sales with postal codes.
   List<int> _years = [];
   // null = all years
   int? _selectedYear;
+  bool _includeHandDelivery = true;
 
   // Created once so the tile cache singleton isn't re-instantiated on rebuild.
   late final NetworkTileProvider _tileProvider;
@@ -108,7 +109,9 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
 
   List<Sale> _shippedSalesWithPostalCode(List<Sale> sales) => sales
       .where((s) =>
-          s.shipment.type == DeliveryType.shipping &&
+          (s.shipment.type == DeliveryType.shipping ||
+              (_includeHandDelivery &&
+                  s.shipment.type == DeliveryType.handDelivery)) &&
           s.shipment.postalCode != null &&
           s.shipment.postalCode!.isNotEmpty)
       .toList();
@@ -122,6 +125,20 @@ class _HeatMapScreenState extends State<HeatMapScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(s.salesHeatMapTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.directions_walk),
+            tooltip: s.handDelivery,
+            isSelected: _includeHandDelivery,
+            onPressed: () {
+              setState(() => _includeHandDelivery = !_includeHandDelivery);
+              _load(
+                _shippedSalesWithPostalCode(SalesStore.current ?? []),
+                _selectedYear,
+              );
+            },
+          ),
+        ],
         bottom: _years.isEmpty
             ? null
             : PreferredSize(
