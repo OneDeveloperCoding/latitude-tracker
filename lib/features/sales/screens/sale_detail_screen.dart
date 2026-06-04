@@ -297,9 +297,11 @@ class _SaleDetailBody extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(sale.shipment.type == DeliveryType.shipping
-                      ? s.shipping
-                      : s.inPersonPickup),
+                  Text(switch (sale.shipment.type) {
+                    DeliveryType.shipping => s.shipping,
+                    DeliveryType.pickup => s.inPersonPickup,
+                    DeliveryType.handDelivery => s.handDelivery,
+                  }),
                   _StatusChip(
                     label: s.shipmentStatusLabel(sale.shipment.status),
                     color: sale.shipment.status == ShipmentStatus.delivered
@@ -326,7 +328,8 @@ class _SaleDetailBody extends StatelessWidget {
                       shipment: sale.shipment.copyWith(status: v)),
                 ),
               ),
-              if (sale.shipment.type == DeliveryType.shipping) ...[
+              if (sale.shipment.type == DeliveryType.shipping ||
+                  sale.shipment.type == DeliveryType.handDelivery) ...[
                 const SizedBox(height: 8),
                 if (sale.shipment.addressId != null)
                   _AddressDisplay(
@@ -339,6 +342,7 @@ class _SaleDetailBody extends StatelessWidget {
                     icon: Icons.location_on,
                     text: sale.shipment.postalCode!,
                   ),
+                if (sale.shipment.type == DeliveryType.shipping)
                 _TrackingCodeField(
                   initialValue: sale.shipment.trackingCode ?? '',
                   onSave: (code) => _update(
@@ -372,7 +376,8 @@ class _SaleDetailBody extends StatelessWidget {
   }
 
   List<ShipmentStatus> _availableStatuses(SaleShipment shipment) {
-    if (shipment.type == DeliveryType.pickup) {
+    if (shipment.type == DeliveryType.pickup ||
+        shipment.type == DeliveryType.handDelivery) {
       return [ShipmentStatus.pending, ShipmentStatus.delivered];
     }
     return ShipmentStatus.values;

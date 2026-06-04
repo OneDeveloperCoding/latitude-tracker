@@ -179,6 +179,7 @@ class AppStrings {
   final String requiresNifLabel;
   final String shipping;
   final String pickup;
+  final String handDelivery;
   final String shipToAddressLabel;
   final String postalCodeLabel;
   final String postalCodeHint;
@@ -565,6 +566,7 @@ class AppStrings {
     required this.requiresNifLabel,
     required this.shipping,
     required this.pickup,
+    required this.handDelivery,
     required this.shipToAddressLabel,
     required this.postalCodeLabel,
     required this.postalCodeHint,
@@ -826,6 +828,7 @@ class AppStrings {
           SaleFilter.pendingShipment => 'Envio pendente',
           SaleFilter.shipped => 'Enviado',
           SaleFilter.pickup => 'Levantamento',
+          SaleFilter.handDelivery => 'Entrega em mão',
           SaleFilter.assemblyNotReady => 'Faltam materiais',
           SaleFilter.overdue => 'Em atraso',
           SaleFilter.upcomingScheduled => 'Próximas',
@@ -838,6 +841,7 @@ class AppStrings {
           SaleFilter.pendingShipment => 'Pending shipment',
           SaleFilter.shipped => 'Shipped',
           SaleFilter.pickup => 'Pickup',
+          SaleFilter.handDelivery => 'Hand delivery',
           SaleFilter.assemblyNotReady => 'Needs materials',
           SaleFilter.overdue => 'Overdue',
           SaleFilter.upcomingScheduled => 'Upcoming',
@@ -1245,6 +1249,7 @@ class AppStrings {
     requiresNifLabel: 'Requires NIF receipt',
     shipping: 'Shipping',
     pickup: 'Pickup',
+    handDelivery: 'Hand delivery',
     shipToAddressLabel: 'Ship to address',
     postalCodeLabel: 'Postal code *',
     postalCodeHint: '0000-000',
@@ -1635,6 +1640,7 @@ class AppStrings {
     requiresNifLabel: 'Requer recibo com NIF',
     shipping: 'Correio',
     pickup: 'Levantamento',
+    handDelivery: 'Entrega em mão',
     shipToAddressLabel: 'Endereço de envio',
     postalCodeLabel: 'Código postal *',
     postalCodeHint: '0000-000',

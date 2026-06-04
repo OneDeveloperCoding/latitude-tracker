@@ -25,7 +25,10 @@ class RepairReturnDelivery {
 
   factory RepairReturnDelivery.fromMap(Map<String, dynamic> map) =>
       RepairReturnDelivery(
-        type: DeliveryType.values.byName(map['type'] as String),
+        type: DeliveryType.values.firstWhere(
+          (e) => e.name == map['type'],
+          orElse: () => DeliveryType.shipping,
+        ),
         status: ShipmentStatus.values.byName(map['status'] as String),
         trackingCode: map['trackingCode'] as String?,
         postalCode: map['postalCode'] as String?,

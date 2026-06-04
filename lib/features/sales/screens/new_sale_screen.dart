@@ -257,7 +257,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ? _nullIfEmpty(_trackingCodeController.text)
             : null,
         addressId: _selectedAddress?.id,
-        postalCode: _deliveryType == DeliveryType.shipping
+        postalCode: (_deliveryType == DeliveryType.shipping ||
+                _deliveryType == DeliveryType.handDelivery)
             ? _nullIfEmpty(_postalCodeController.text)
             : null,
       );
@@ -459,12 +460,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                           value: DeliveryType.pickup,
                           icon: const Icon(Icons.store),
                           label: Text(s.pickup)),
+                      ButtonSegment(
+                          value: DeliveryType.handDelivery,
+                          icon: const Icon(Icons.directions_walk),
+                          label: Text(s.handDelivery)),
                     ],
                     selected: {_deliveryType},
                     onSelectionChanged: (v) =>
                         setState(() => _deliveryType = v.first),
                   ),
-                  if (_deliveryType == DeliveryType.shipping) ...[
+                  if (_deliveryType == DeliveryType.shipping ||
+                      _deliveryType == DeliveryType.handDelivery) ...[
                     const SizedBox(height: 16),
                     if (_buyerAddresses.isNotEmpty) ...[
                       DropdownButtonFormField<BuyerAddress>(
@@ -523,15 +529,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         border: const OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _trackingCodeController,
-                      decoration: InputDecoration(
-                        labelText: s.cttTrackingLabel,
-                        hintText: s.cttTrackingHint,
-                        border: const OutlineInputBorder(),
+                    if (_deliveryType == DeliveryType.shipping) ...[
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _trackingCodeController,
+                        decoration: InputDecoration(
+                          labelText: s.cttTrackingLabel,
+                          hintText: s.cttTrackingHint,
+                          border: const OutlineInputBorder(),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                   const SizedBox(height: 8),
                   _ScheduledDatePicker(
