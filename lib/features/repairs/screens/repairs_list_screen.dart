@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/store_state.dart';
+import '../../dashboard/models/dashboard_stats.dart';
+import '../../dashboard/screens/analytics_screen.dart';
 import '../models/repair.dart';
 import '../widgets/repair_card.dart';
 import 'new_repair_screen.dart';
@@ -83,6 +85,18 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
       appBar: AppBar(
         title: Text(s.repairs),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.insights),
+            tooltip: s.dashboardViewTrends,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AnalyticsScreen(
+                  initialPeriod: DashboardPeriod.monthly,
+                  startOnRepairs: true,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: Icon(_showAll ? Icons.filter_list_off : Icons.filter_list),
             tooltip: _showAll ? 'Active only' : 'Show all',
