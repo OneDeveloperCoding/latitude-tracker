@@ -858,9 +858,11 @@ class AppStrings {
         };
 
   String paymentMethodLabel(PaymentMethod m) => switch (m) {
-        PaymentMethod.mbWay => 'MBWay',
-        PaymentMethod.sumup => 'SumUp',
+        PaymentMethod.mbWay => 'MB Way',
+        PaymentMethod.revolut => 'Revolut',
+        PaymentMethod.paypal => 'PayPal',
         PaymentMethod.cash => _pt ? 'Numerário' : 'Cash',
+        PaymentMethod.sumup => 'SumUp',
         PaymentMethod.bankTransfer =>
           _pt ? 'Transferência bancária' : 'Bank Transfer',
       };

@@ -9,6 +9,7 @@ import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
 import '../../repairs/models/repair.dart';
 import '../../sales/models/sale.dart';
+import '../../sales/widgets/payment_method_display.dart';
 import '../models/dashboard_stats.dart';
 
 enum _AnalyticsMetric { revenue, count }
@@ -1111,7 +1112,7 @@ class _PaymentMethodSection extends StatelessWidget {
                   fraction: totalRevenue > 0
                       ? entry.value.revenue / totalRevenue
                       : 0,
-                  barColor: colorScheme.primary,
+                  barColor: paymentMethodColor(entry.key),
                   trackColor: colorScheme.outlineVariant,
                 ),
               ),

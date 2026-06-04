@@ -13,7 +13,17 @@ const kDefaultCategories = [
   'Stickers',
 ];
 
-enum PaymentMethod { mbWay, cash, sumup, bankTransfer }
+enum PaymentMethod { mbWay, revolut, paypal, cash, sumup, bankTransfer }
+
+// Display order for pickers — most common digital wallets first.
+const kPaymentMethodOrder = [
+  PaymentMethod.mbWay,
+  PaymentMethod.revolut,
+  PaymentMethod.paypal,
+  PaymentMethod.cash,
+  PaymentMethod.sumup,
+  PaymentMethod.bankTransfer,
+];
 
 enum PaymentStatus { paid, unpaid }
 
@@ -26,6 +36,8 @@ enum ShipmentStatus { pending, shipped, delivered }
 extension PaymentMethodLabel on PaymentMethod {
   String get label => switch (this) {
         PaymentMethod.mbWay => 'MB Way',
+        PaymentMethod.revolut => 'Revolut',
+        PaymentMethod.paypal => 'PayPal',
         PaymentMethod.cash => 'Cash',
         PaymentMethod.sumup => 'SumUp',
         PaymentMethod.bankTransfer => 'Bank Transfer',
