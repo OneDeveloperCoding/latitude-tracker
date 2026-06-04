@@ -27,6 +27,9 @@ class _FirestoreBuyerRepository implements BuyerRepository {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
+  // TODO(safety): currentUser! will crash on a mid-flight auth revoke. Safe for
+  // now because the router gates all repo access behind the auth stream, but
+  // worth adding a null-guard if auth edge cases become a concern.
   String get _userId => _auth.currentUser!.uid;
 
   CollectionReference<Map<String, dynamic>> get _buyersRef =>

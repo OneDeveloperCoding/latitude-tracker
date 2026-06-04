@@ -42,6 +42,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return StreamBuilder<Sale?>(
       stream: _stream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: Text(context.s.errorLoadingDetail)),
+            body: Center(child: Text(context.s.errorLoadingDetail)),
+          );
+        }
         final sale = snapshot.data;
 
         return Scaffold(
