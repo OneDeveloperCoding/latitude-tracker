@@ -1,4 +1,4 @@
-name: Bump version and tag
+name: Manual bump and tag
 
 on:
   workflow_dispatch:
