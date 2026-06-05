@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../services/error_reporter.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../features/buyers/models/buyer.dart';
@@ -25,7 +25,7 @@ class BuyersStore {
     _sub = BuyerRepository().watchBuyers().listen(
       (buyers) => state.value = StoreLoaded(buyers),
       onError: (e, StackTrace st) {
-        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+        logError(e, st);
         state.value = StoreError(e);
       },
     );

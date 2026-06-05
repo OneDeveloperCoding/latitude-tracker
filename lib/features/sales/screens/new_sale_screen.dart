@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -218,20 +219,25 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       value.trim().isEmpty ? null : value.trim();
 
   Future<void> _cancel() async {
-    if (_isEditing) {
-      // Delete photos from newly added items (those not in the original sale).
-      for (final item in _items) {
-        if (!_originalItemIds.contains(item.id)) {
-          for (final url in item.photoUrls) {
-            await _photoService.deletePhoto(_saleId, url);
+    try {
+      if (_isEditing) {
+        // Delete photos from newly added items (those not in the original sale).
+        for (final item in _items) {
+          if (!_originalItemIds.contains(item.id)) {
+            for (final url in item.photoUrls) {
+              await _photoService.deletePhoto(_saleId, url);
+            }
           }
         }
+      } else {
+        // New sale — wipe everything under this sale's storage folder.
+        await _photoService.deleteAllPhotos(_saleId);
       }
-    } else {
-      // New sale — wipe everything under this sale's storage folder.
-      await _photoService.deleteAllPhotos(_saleId);
+    } catch (e, st) {
+      logError(e, st);
+    } finally {
+      if (mounted) Navigator.of(context).pop();
     }
-    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _save() async {
@@ -295,7 +301,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         await _saleRepository.createSale(sale);
       }
       if (mounted) Navigator.pop(context);
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(s.errorSavingSaleMsg(e))));

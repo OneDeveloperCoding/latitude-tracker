@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'error_reporter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -84,7 +84,7 @@ class PostalCodeService {
       if (city.isEmpty) return null;
       return PostalCodeResult(streets: streets, city: city);
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       return null;
     }
   }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -12,8 +13,9 @@ import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../buyers/screens/buyer_detail_screen.dart';
+import '../../../core/store/repairs_store.dart';
+import '../../../core/store/store_state.dart';
 import '../../repairs/models/repair.dart';
-import '../../repairs/repositories/repair_repository.dart';
 import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
@@ -148,7 +150,8 @@ Future<void> _confirmDelete(
   try {
     await repository.deleteSale(sale.id);
     if (context.mounted) Navigator.of(context).pop();
-  } catch (e) {
+  } catch (e, st) {
+    logError(e, st);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
@@ -165,7 +168,8 @@ class _SaleDetailBody extends StatelessWidget {
   Future<void> _update(BuildContext context, Sale updated) async {
     try {
       await repository.updateSale(updated);
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
@@ -937,7 +941,8 @@ class _NifComplianceRow extends StatelessWidget {
     try {
       await repository.updateSale(
           sale.copyWith(atSubmissionDone: !sale.atSubmissionDone));
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
@@ -988,7 +993,8 @@ class _NifComplianceRow extends StatelessWidget {
 
       await BuyerRepository()
           .updateBuyer(buyer.copyWith(nif: controller.text.trim()));
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
@@ -1199,11 +1205,29 @@ class _RepairsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return StreamBuilder<List<Repair>>(
-      stream: RepairRepository().watchRepairsForSale(saleId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) return const SizedBox.shrink();
-        final repairs = snapshot.data ?? [];
+    return ValueListenableBuilder<StoreState<List<Repair>>>(
+      valueListenable: RepairsStore.state,
+      builder: (context, storeState, _) {
+        if (storeState is StoreError<List<Repair>>) {
+          return _SectionCard(
+            title: s.repairsOnSale,
+            child: Text(s.errorLoadingRepairs,
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          );
+        }
+        if (storeState is StoreLoading<List<Repair>>) {
+          return _SectionCard(
+            title: s.repairsOnSale,
+            child: const LinearProgressIndicator(),
+          );
+        }
+        if (storeState is! StoreLoaded<List<Repair>>) {
+          return const SizedBox.shrink();
+        }
+        final repairs = storeState.data
+            .where((r) => r.linkedSaleId == saleId)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         if (repairs.isEmpty) return const SizedBox.shrink();
 
         return _SectionCard(
