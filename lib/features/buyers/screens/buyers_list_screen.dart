@@ -46,6 +46,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _searchExpanded = false;
   _SortMode _sortMode = _SortMode.alphabetical;
   _RankingMetric _rankingMetric = _RankingMetric.totalSpent;
 
@@ -221,22 +222,43 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
             child: Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: s.searchBuyers,
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
-                      isDense: true,
+                if (_searchExpanded)
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: s.searchBuyers,
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _searchController.clear();
+                            _searchQuery = '';
+                            _rebuildViews();
+                            setState(() => _searchExpanded = false);
+                          },
+                        ),
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onChanged: (value) {
+                        _searchQuery = value;
+                        _rebuildViews();
+                        setState(() {});
+                      },
                     ),
-                    onChanged: (value) {
-                      _searchQuery = value;
-                      _rebuildViews();
-                      setState(() {});
-                    },
+                  )
+                else ...[
+                  FilterChip(
+                    avatar: const Icon(Icons.search, size: 18),
+                    label: Text(s.searchBuyers),
+                    selected: false,
+                    onSelected: (_) => setState(() => _searchExpanded = true),
+                    visualDensity: VisualDensity.compact,
                   ),
-                ),
+                  const Spacer(),
+                ],
                 IconButton(
                   icon: const Icon(Icons.tune),
                   tooltip: s.changeView,
