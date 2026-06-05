@@ -1,4 +1,4 @@
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
@@ -36,8 +36,13 @@ class _CategoryMaintenanceScreenState
       final hidden = await _repo.fetchHiddenCategories();
       if (mounted) setState(() { _hidden = hidden; _loading = false; });
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
-      if (mounted) setState(() => _loading = false);
+      logError(e, st);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.errorMsg(e))),
+        );
+      }
     }
   }
 
@@ -169,7 +174,7 @@ class _CategoryMaintenanceScreenState
         await _service.renameCategory(entry.name, newName, _hidden);
       });
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.errorMsg(e))),
@@ -188,7 +193,7 @@ class _CategoryMaintenanceScreenState
         await _service.hideCategory(entry.name, _hidden);
       }
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorMsg(e))),
@@ -223,7 +228,7 @@ class _CategoryMaintenanceScreenState
     try {
       await _service.deleteCategory(entry.name, _hidden);
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.errorMsg(e))),

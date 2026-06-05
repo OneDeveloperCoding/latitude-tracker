@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -227,8 +226,7 @@ class ArchiveService {
   static Map<String, dynamic>? parseArchive(String jsonContent) {
     try {
       return jsonDecode(jsonContent) as Map<String, dynamic>;
-    } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+    } catch (_) {
       return null;
     }
   }

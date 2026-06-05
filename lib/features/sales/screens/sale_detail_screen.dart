@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -151,7 +151,7 @@ Future<void> _confirmDelete(
     await repository.deleteSale(sale.id);
     if (context.mounted) Navigator.of(context).pop();
   } catch (e, st) {
-    FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+    logError(e, st);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
@@ -169,7 +169,7 @@ class _SaleDetailBody extends StatelessWidget {
     try {
       await repository.updateSale(updated);
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
@@ -942,7 +942,7 @@ class _NifComplianceRow extends StatelessWidget {
       await repository.updateSale(
           sale.copyWith(atSubmissionDone: !sale.atSubmissionDone));
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));
@@ -994,7 +994,7 @@ class _NifComplianceRow extends StatelessWidget {
       await BuyerRepository()
           .updateBuyer(buyer.copyWith(nif: controller.text.trim()));
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.s.errorMsg(e))));

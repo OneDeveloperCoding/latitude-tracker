@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -135,7 +135,7 @@ class GeocodingService {
 
       return (latLng: LatLng(lat, lon), locality: locality);
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       return null;
     }
   }

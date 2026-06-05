@@ -1,4 +1,4 @@
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -229,7 +229,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
 
       if (mounted) Navigator.of(context).pop();
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -248,7 +248,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
         await _photoService.deletePhoto(url);
       }
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
     } finally {
       if (mounted) Navigator.of(context).pop();
     }
@@ -257,7 +257,12 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? s.editRepair : s.newRepair),
         leading: IconButton(
@@ -319,6 +324,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
             const SizedBox(height: 32),
           ],
         ),
+      ),
       ),
     );
   }
