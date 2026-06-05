@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/auth_revoked_exception.dart';
 import '../../demo/demo_mode.dart';
 import '../services/photo_service.dart';
 
@@ -49,6 +51,10 @@ class _PhotoGridState extends State<PhotoGrid> {
         widget.onChanged([...widget.photoUrls, url]);
       }
     } catch (e) {
+      if (e is AuthRevokedException) {
+        FirebaseAuth.instance.signOut();
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorUploadingPhotoMsg(e))),
