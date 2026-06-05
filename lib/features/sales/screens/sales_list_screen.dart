@@ -28,6 +28,8 @@ class SalesListScreen extends StatefulWidget {
 
 enum _SortOrder { newestFirst, oldestFirst, priceHigh, priceLow }
 
+enum _OverflowAction { map, legend }
+
 class _SalesListScreenState extends State<SalesListScreen> {
   Set<SaleFilter> _activeFilters = {};
   Set<String> _categoryFilters = {};
@@ -38,6 +40,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _searchExpanded = false;
 
   Sale? _selectedSale;
   final _rightPanelKey = GlobalKey<NavigatorState>();
@@ -48,13 +51,13 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   bool get _loading => SalesStore.current == null;
 
-  // Counts active filter constraints for the tune-icon badge.
-  // Sort is excluded — it has its own badge on the sort button.
+  // Counts active filter/sort constraints for the tune-icon badge.
   int get _activeFilterCount =>
       _activeFilters.length +
       _categoryFilters.length +
       (_selectedYear != null ? 1 : 0) +
-      (_buyerFilter != null ? 1 : 0);
+      (_buyerFilter != null ? 1 : 0) +
+      (_sortOrder != _SortOrder.newestFirst ? 1 : 0);
 
   // Years that have at least one Sale, newest first.
   List<int> get _availableYears {
@@ -239,22 +242,43 @@ class _SalesListScreenState extends State<SalesListScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
           child: Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: s.searchSales,
-                    prefixIcon: const Icon(Icons.search),
-                    border: const OutlineInputBorder(),
-                    isDense: true,
+              if (_searchExpanded)
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: s.searchSales,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _searchController.clear();
+                          _searchQuery = '';
+                          _rebuildCache();
+                          setState(() => _searchExpanded = false);
+                        },
+                      ),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (v) {
+                      _searchQuery = v;
+                      _rebuildCache();
+                      setState(() {});
+                    },
                   ),
-                  onChanged: (v) {
-                    _searchQuery = v;
-                    _rebuildCache();
-                    setState(() {});
-                  },
+                )
+              else ...[
+                FilterChip(
+                  avatar: const Icon(Icons.search, size: 18),
+                  label: Text(s.searchSales),
+                  selected: false,
+                  onSelected: (_) => setState(() => _searchExpanded = true),
+                  visualDensity: VisualDensity.compact,
                 ),
-              ),
+                const Spacer(),
+              ],
               Badge(
                 label: filterCount > 0 ? Text('$filterCount') : null,
                 isLabelVisible: filterCount > 0,
@@ -264,43 +288,33 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   onPressed: _showOptionsSheet,
                 ),
               ),
-              Badge(
-                isLabelVisible: _sortOrder != _SortOrder.newestFirst,
-                child: PopupMenuButton<_SortOrder>(
-                  icon: const Icon(Icons.sort),
-                  tooltip: s.sortBy,
-                  onSelected: (order) {
-                    setState(() => _sortOrder = order);
-                    _rebuildCache();
-                  },
-                  itemBuilder: (_) => _SortOrder.values
-                      .map((order) => PopupMenuItem(
-                            value: order,
-                            child: Row(
-                              children: [
-                                Text(_sortOrderLabel(order)),
-                                if (_sortOrder == order) ...[
-                                  const Spacer(),
-                                  const Icon(Icons.check, size: 16),
-                                ],
-                              ],
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.map_outlined),
-                tooltip: s.viewMap,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HeatMapScreen()),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.info_outline),
-                tooltip: s.legendTitle,
-                onPressed: () => _showPathLegend(context, s),
+              PopupMenuButton<_OverflowAction>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (action) => switch (action) {
+                  _OverflowAction.map => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HeatMapScreen()),
+                    ),
+                  _OverflowAction.legend => _showPathLegend(context, s),
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: _OverflowAction.map,
+                    child: Row(children: [
+                      const Icon(Icons.map_outlined),
+                      const SizedBox(width: 12),
+                      Text(s.viewMap),
+                    ]),
+                  ),
+                  PopupMenuItem(
+                    value: _OverflowAction.legend,
+                    child: Row(children: [
+                      const Icon(Icons.info_outline),
+                      const SizedBox(width: 12),
+                      Text(s.legendTitle),
+                    ]),
+                  ),
+                ],
               ),
             ],
           ),
@@ -401,6 +415,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
             _selectedYear = null;
             _selectedMonth = null;
             _buyerFilter = null;
+            _sortOrder = _SortOrder.newestFirst;
             buyerSearchController.clear();
             _rebuildCache();
             setState(() {});
@@ -410,7 +425,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
           final hasAnyActive = _activeFilters.isNotEmpty ||
               _categoryFilters.isNotEmpty ||
               _selectedYear != null ||
-              _buyerFilter != null;
+              _buyerFilter != null ||
+              _sortOrder != _SortOrder.newestFirst;
 
           final buyerQuery =
               buyerSearchController.text.trim().toLowerCase();
@@ -451,6 +467,28 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               child: Text(s.clearAllFilters),
                             ),
                         ],
+                      ),
+                    ),
+                    // ── Sort ───────────────────────────────────────────────
+                    _SheetSectionLabel(s.sortBy.toUpperCase()),
+                    RadioGroup<_SortOrder>(
+                      groupValue: _sortOrder,
+                      onChanged: (v) {
+                        _sortOrder = v!;
+                        _rebuildCache();
+                        setState(() {});
+                        setSheetState(() {});
+                      },
+                      child: Column(
+                        children: _SortOrder.values
+                            .map((order) => RadioListTile<_SortOrder>(
+                                  title: Text(_sortOrderLabel(order)),
+                                  value: order,
+                                  dense: true,
+                                  controlAffinity:
+                                      ListTileControlAffinity.trailing,
+                                ))
+                            .toList(),
                       ),
                     ),
                     // ── Year / month drill-down ────────────────────────────
