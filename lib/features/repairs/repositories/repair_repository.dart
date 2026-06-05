@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/services/firestore_batch_utils.dart';
 import '../../demo/demo_mode.dart';
 import '../models/repair.dart';
 import '../services/repair_photo_service.dart';
@@ -71,21 +72,25 @@ class _FirestoreRepairRepository implements RepairRepository {
       .get()
       .then((snap) => snap.docs.map(Repair.fromFirestore).toList());
 
+  // By default keeps photos in Storage so archive JSON URLs stay valid.
+  // Pass deletePhotos: true for a full wipe (e.g. reset).
   @override
   Future<void> deleteAllRepairsForYear(int year,
       {bool deletePhotos = false}) async {
     final repairs = await getRepairsForYear(year);
     if (repairs.isEmpty) return;
     if (deletePhotos) {
+      // Photos before Firestore: if photo deletion fails, docs remain intact
+      // and the caller can retry without orphaning anything.
       for (final repair in repairs) {
         await RepairPhotoService().deleteAllPhotos(repair.id);
       }
     }
-    final batch = _firestore.batch();
-    for (final repair in repairs) {
-      batch.delete(_repairsRef.doc(repair.id));
-    }
-    await batch.commit();
+    await commitInBatches<DocumentReference>(
+      _firestore,
+      repairs.map((r) => _repairsRef.doc(r.id)).toList(),
+      (batch, ref) => batch.delete(ref),
+    );
   }
 
   @override
@@ -93,15 +98,17 @@ class _FirestoreRepairRepository implements RepairRepository {
     final docs = await _repairsRef.get().then((s) => s.docs);
     if (docs.isEmpty) return;
     if (deletePhotos) {
+      // Photos before Firestore: if photo deletion fails, docs remain intact
+      // and the caller can retry without orphaning anything.
       for (final doc in docs) {
         await RepairPhotoService().deleteAllPhotos(doc.id);
       }
     }
-    final batch = _firestore.batch();
-    for (final doc in docs) {
-      batch.delete(doc.reference);
-    }
-    await batch.commit();
+    await commitInBatches<DocumentReference>(
+      _firestore,
+      docs.map((d) => d.reference).toList(),
+      (batch, ref) => batch.delete(ref),
+    );
   }
 
   @override
@@ -111,13 +118,10 @@ class _FirestoreRepairRepository implements RepairRepository {
         .get();
     if (snap.docs.isEmpty) return;
 
-    for (var i = 0; i < snap.docs.length; i += 500) {
-      final chunk = snap.docs.sublist(i, (i + 500).clamp(0, snap.docs.length));
-      final batch = _firestore.batch();
-      for (final doc in chunk) {
-        batch.update(doc.reference, {'itemCategory': newName});
-      }
-      await batch.commit();
-    }
+    await commitInBatches(
+      _firestore,
+      snap.docs,
+      (batch, doc) => batch.update(doc.reference, {'itemCategory': newName}),
+    );
   }
 }
