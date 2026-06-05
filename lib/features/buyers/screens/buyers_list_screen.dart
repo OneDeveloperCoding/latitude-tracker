@@ -170,6 +170,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
                   _sortMode = _SortMode.alphabetical;
                   _rebuildViews();
                   setState(() {});
+                  setSheetState(() {});
                   Navigator.pop(sheetContext);
                 },
               ),
@@ -181,6 +182,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
                   _sortMode = _SortMode.lastPurchase;
                   _rebuildViews();
                   setState(() {});
+                  setSheetState(() {});
                   Navigator.pop(sheetContext);
                 },
               ),

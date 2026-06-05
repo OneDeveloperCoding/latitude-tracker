@@ -412,6 +412,12 @@ class _SalesListScreenState extends State<SalesListScreen> {
             setSheetState(() {});
           }
 
+          void refresh() {
+            _rebuildCache();
+            setState(() {});
+            setSheetState(() {});
+          }
+
           final hasAnyActive = _activeFilters.isNotEmpty ||
               _categoryFilters.isNotEmpty ||
               _selectedYear != null ||
@@ -473,9 +479,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               _sortOrder = _sortOrder == _SortOrder.oldestFirst
                                   ? _SortOrder.newestFirst
                                   : _SortOrder.oldestFirst;
-                              _rebuildCache();
-                              setState(() {});
-                              setSheetState(() {});
+                              refresh();
                             },
                           ),
                           const SizedBox(width: 8),
@@ -492,9 +496,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                 _SortOrder.priceLow => _SortOrder.newestFirst,
                                 _ => _SortOrder.priceHigh,
                               };
-                              _rebuildCache();
-                              setState(() {});
-                              setSheetState(() {});
+                              refresh();
                             },
                           ),
                         ],
@@ -516,9 +518,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                       onSelected: (_) {
                                         _selectedYear = y;
                                         _selectedMonth = null;
-                                        _rebuildCache();
-                                        setState(() {});
-                                        setSheetState(() {});
+                                        refresh();
                                       },
                                     ))
                                 .toList(),
@@ -535,9 +535,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                 onPressed: () {
                                   _selectedYear = null;
                                   _selectedMonth = null;
-                                  _rebuildCache();
-                                  setState(() {});
-                                  setSheetState(() {});
+                                  refresh();
                                 },
                               ),
                               Text(
@@ -564,9 +562,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                             _selectedMonth == m
                                                 ? null
                                                 : m;
-                                        _rebuildCache();
-                                        setState(() {});
-                                        setSheetState(() {});
+                                        refresh();
                                       },
                                     ))
                                 .toList(),
@@ -599,9 +595,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                             ? {..._categoryFilters, cat}
                                             : ({..._categoryFilters}
                                               ..remove(cat));
-                                        _rebuildCache();
-                                        setState(() {});
-                                        setSheetState(() {});
+                                        refresh();
                                       },
                                     ))
                                 .toList(),
@@ -621,9 +615,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           onPressed: () {
                             _buyerFilter = null;
                             buyerSearchController.clear();
-                            _rebuildCache();
-                            setState(() {});
-                            setSheetState(() {});
+                            refresh();
                           },
                         ),
                       )
@@ -648,9 +640,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                             onTap: () {
                               _buyerFilter = b;
                               buyerSearchController.clear();
-                              _rebuildCache();
-                              setState(() {});
-                              setSheetState(() {});
+                              refresh();
                             },
                           )),
                     ],
@@ -704,22 +694,22 @@ class _RightPanelPlaceholder extends StatelessWidget {
 
 class _SortChip extends StatelessWidget {
   final String label;
-  final IconData activeIcon;
+  final IconData? activeIcon;
   final bool isActive;
   final VoidCallback onTap;
 
   const _SortChip({
     required this.label,
-    required this.activeIcon,
     required this.isActive,
     required this.onTap,
+    this.activeIcon,
   });
 
   @override
   Widget build(BuildContext context) {
     return FilterChip(
       label: Text(label),
-      avatar: isActive ? Icon(activeIcon, size: 16) : null,
+      avatar: isActive && activeIcon != null ? Icon(activeIcon!, size: 16) : null,
       selected: isActive,
       onSelected: (_) => onTap(),
       visualDensity: VisualDensity.compact,
