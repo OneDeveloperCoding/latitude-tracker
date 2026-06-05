@@ -12,8 +12,9 @@ import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../buyers/screens/buyer_detail_screen.dart';
+import '../../../core/store/repairs_store.dart';
+import '../../../core/store/store_state.dart';
 import '../../repairs/models/repair.dart';
-import '../../repairs/repositories/repair_repository.dart';
 import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
@@ -1199,11 +1200,29 @@ class _RepairsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return StreamBuilder<List<Repair>>(
-      stream: RepairRepository().watchRepairsForSale(saleId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) return const SizedBox.shrink();
-        final repairs = snapshot.data ?? [];
+    return ValueListenableBuilder<StoreState<List<Repair>>>(
+      valueListenable: RepairsStore.state,
+      builder: (context, storeState, _) {
+        if (storeState is StoreError<List<Repair>>) {
+          return _SectionCard(
+            title: s.repairsOnSale,
+            child: Text(s.errorLoadingRepairs,
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          );
+        }
+        if (storeState is StoreLoading<List<Repair>>) {
+          return _SectionCard(
+            title: s.repairsOnSale,
+            child: const LinearProgressIndicator(),
+          );
+        }
+        if (storeState is! StoreLoaded<List<Repair>>) {
+          return const SizedBox.shrink();
+        }
+        final repairs = storeState.data
+            .where((r) => r.linkedSaleId == saleId)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         if (repairs.isEmpty) return const SizedBox.shrink();
 
         return _SectionCard(
