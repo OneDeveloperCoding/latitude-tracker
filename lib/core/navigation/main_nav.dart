@@ -9,6 +9,7 @@ import '../../features/heat_map/services/heat_map_service.dart';
 import '../../features/repairs/screens/sales_repairs_tab_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../l10n/app_strings.dart';
+import '../store/addresses_store.dart';
 import '../store/buyers_store.dart';
 import '../store/repairs_store.dart';
 import '../store/sales_store.dart';
@@ -38,6 +39,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.init();
     BuyersStore.init();
     RepairsStore.init();
+    AddressesStore.init();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     SalesStore.state.addListener(_onSalesStoreChanged);
     // After a DemoMode transition the old MainNav's dispose() runs after this
@@ -48,6 +50,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
       SalesStore.ensureSubscribed();
       BuyersStore.ensureSubscribed();
       RepairsStore.ensureSubscribed();
+      AddressesStore.ensureSubscribed();
     });
   }
 
@@ -59,6 +62,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.dispose();
     BuyersStore.dispose();
     RepairsStore.dispose();
+    AddressesStore.dispose();
     super.dispose();
   }
 
@@ -68,6 +72,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.ensureSubscribed();
     BuyersStore.ensureSubscribed();
     RepairsStore.ensureSubscribed();
+    AddressesStore.ensureSubscribed();
   }
 
   // Geocode heat map prefixes in the background whenever the sales list
