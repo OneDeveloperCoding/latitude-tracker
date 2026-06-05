@@ -40,6 +40,15 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     RepairsStore.init();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     SalesStore.state.addListener(_onSalesStoreChanged);
+    // After a DemoMode transition the old MainNav's dispose() runs after this
+    // initState — tearing down the subscription init() just created. The
+    // post-frame callback re-subscribes once the frame has fully settled.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      SalesStore.ensureSubscribed();
+      BuyersStore.ensureSubscribed();
+      RepairsStore.ensureSubscribed();
+    });
   }
 
   @override

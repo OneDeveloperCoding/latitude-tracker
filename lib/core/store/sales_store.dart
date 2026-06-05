@@ -58,6 +58,16 @@ class SalesStore {
     if (_sub == null) _subscribe();
   }
 
+  // Called by DemoMode before toggling active.value so the new MainNav's
+  // init() finds _sub == null and opens a fresh subscription to the correct
+  // (now-flipped) repository. Bypasses _refCount because the widget tree is
+  // about to be fully replaced.
+  static void forceReset() {
+    _tearDown();
+    _refCount = 0;
+    state.value = const StoreLoading();
+  }
+
   // Called by MainNav.dispose — only tears down when the last mounted
   // instance releases ownership.
   static void dispose() {

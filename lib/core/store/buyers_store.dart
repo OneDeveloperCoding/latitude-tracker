@@ -54,6 +54,12 @@ class BuyersStore {
     if (_sub == null) _subscribe();
   }
 
+  static void forceReset() {
+    _tearDown();
+    _refCount = 0;
+    state.value = const StoreLoading();
+  }
+
   static void dispose() {
     if (_refCount > 0) _refCount--;
     if (_refCount > 0) return;
