@@ -1,6 +1,10 @@
 # Local environment
 .envrc
 
+# Firebase config — contains API keys, never commit
+lib/firebase_options.dart
+android/app/google-services.json
+
 # Miscellaneous
 *.class
 *.log
