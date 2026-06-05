@@ -97,7 +97,9 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
                     final buyer = buyers[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        child: Text(buyer.name[0].toUpperCase()),
+                        child: Text(buyer.name.isNotEmpty
+                            ? buyer.name[0].toUpperCase()
+                            : '?'),
                       ),
                       title: Text(buyer.name),
                       subtitle: buyer.instagramHandle != null
