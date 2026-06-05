@@ -20,6 +20,8 @@ permissions:
 jobs:
   tag:
     runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.next_version.outputs.new_tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -89,3 +91,43 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ steps.next_version.outputs.new_tag }}"
           git push origin "${{ steps.next_version.outputs.new_tag }}"
+
+  build:
+    needs: tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.tag.outputs.new_tag }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --no-pub
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/latitude-tracker-${{ needs.tag.outputs.new_tag }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.tag.outputs.new_tag }}
+          name: ${{ needs.tag.outputs.new_tag }}
+          files: build/app/outputs/flutter-apk/latitude-tracker-${{ needs.tag.outputs.new_tag }}.apk
+          fail_on_unmatched_files: true
