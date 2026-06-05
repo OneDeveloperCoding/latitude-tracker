@@ -43,7 +43,6 @@ class InMemoryBuyerRepository implements BuyerRepository {
     for (final id in _addresses.keys) {
       _emitAddresses(id);
     }
-    _allAddressesController.add(_allAddresses);
   }
 
   void clear() {
