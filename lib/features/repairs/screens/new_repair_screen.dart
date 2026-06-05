@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -227,7 +228,8 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       }
 
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -240,11 +242,16 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
   }
 
   Future<void> _cancel() async {
-    // Delete only photos uploaded in this session on cancel
-    for (final url in _sessionUploads) {
-      await _photoService.deletePhoto(url);
+    try {
+      // Delete only photos uploaded in this session on cancel
+      for (final url in _sessionUploads) {
+        await _photoService.deletePhoto(url);
+      }
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+    } finally {
+      if (mounted) Navigator.of(context).pop();
     }
-    if (mounted) Navigator.of(context).pop();
   }
 
   @override

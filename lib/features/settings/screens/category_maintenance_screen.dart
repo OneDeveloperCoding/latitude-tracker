@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
@@ -31,8 +32,13 @@ class _CategoryMaintenanceScreenState
   }
 
   Future<void> _loadHidden() async {
-    final hidden = await _repo.fetchHiddenCategories();
-    if (mounted) setState(() { _hidden = hidden; _loading = false; });
+    try {
+      final hidden = await _repo.fetchHiddenCategories();
+      if (mounted) setState(() { _hidden = hidden; _loading = false; });
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   List<_CategoryEntry> _buildEntries() {
@@ -162,7 +168,8 @@ class _CategoryMaintenanceScreenState
       await _runWithProgress(s.renamingCategory, () async {
         await _service.renameCategory(entry.name, newName, _hidden);
       });
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.errorMsg(e))),
@@ -180,7 +187,8 @@ class _CategoryMaintenanceScreenState
       } else {
         await _service.hideCategory(entry.name, _hidden);
       }
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorMsg(e))),
@@ -214,7 +222,8 @@ class _CategoryMaintenanceScreenState
     if (confirmed != true || !mounted) return;
     try {
       await _service.deleteCategory(entry.name, _hidden);
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.errorMsg(e))),

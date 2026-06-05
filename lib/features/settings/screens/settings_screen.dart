@@ -182,7 +182,8 @@ class SettingsScreen extends StatelessWidget {
         s.resettingApp,
         () => ResetAppService().resetApp(deletePhotos: deletePhotos),
       );
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${s.resetAppFailed}: $e')),
@@ -203,7 +204,8 @@ class SettingsScreen extends StatelessWidget {
       await _runWithProgress(context, s.exportingYear(year), () async {
         file = await service.exportYear(year);
       });
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.exportFailed(e))),
@@ -287,7 +289,8 @@ class SettingsScreen extends StatelessWidget {
               .deleteAllRepairsForYear(year, deletePhotos: deletePhotos);
         },
       );
-    } catch (e) {
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
       if (context.mounted) {
         final message = salesDeleted
             ? s.deleteYearPartialFailed(year, e)
