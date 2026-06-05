@@ -473,7 +473,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
                         children: [
                           _SortChip(
                             label: s.sortDimensionDate,
-                            activeIcon: Icons.arrow_upward,
+                            icon: _sortOrder == _SortOrder.oldestFirst
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
                             isActive: _sortOrder == _SortOrder.oldestFirst,
                             onTap: () {
                               _sortOrder = _sortOrder == _SortOrder.oldestFirst
@@ -485,9 +487,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           const SizedBox(width: 8),
                           _SortChip(
                             label: s.sortDimensionPrice,
-                            activeIcon: _sortOrder == _SortOrder.priceHigh
+                            icon: _sortOrder == _SortOrder.priceHigh
                                 ? Icons.arrow_downward
-                                : Icons.arrow_upward,
+                                : _sortOrder == _SortOrder.priceLow
+                                    ? Icons.arrow_upward
+                                    : null,
                             isActive: _sortOrder == _SortOrder.priceHigh ||
                                 _sortOrder == _SortOrder.priceLow,
                             onTap: () {
@@ -694,7 +698,7 @@ class _RightPanelPlaceholder extends StatelessWidget {
 
 class _SortChip extends StatelessWidget {
   final String label;
-  final IconData? activeIcon;
+  final IconData? icon;
   final bool isActive;
   final VoidCallback onTap;
 
@@ -702,15 +706,16 @@ class _SortChip extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
-    this.activeIcon,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return FilterChip(
       label: Text(label),
-      avatar: isActive && activeIcon != null ? Icon(activeIcon!, size: 16) : null,
+      avatar: icon != null ? Icon(icon!, size: 16) : null,
       selected: isActive,
+      showCheckmark: false,
       onSelected: (_) => onTap(),
       visualDensity: VisualDensity.compact,
     );
