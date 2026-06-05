@@ -34,16 +34,18 @@ Select the existing Firebase project and choose Android only.
 
 ## Releases
 
-APK builds are automated via GitHub Actions (`.github/workflows/release.yml`). To cut a release:
+APK builds are automated via GitHub Actions (`.github/workflows/release.yml`), triggered by any `v*.*.*` tag.
 
-```bash
-# 1. Update CHANGELOG.md — add a new ## [x.x.x] section
-# 2. Bump version in pubspec.yaml  e.g. version: 1.1.0+2
-git commit -m "Release v1.1.0"
-git tag v1.1.0 && git push --tags
-```
+To cut a release:
 
-GitHub Actions builds the APK and attaches it to a GitHub Release under the tag. Download and sideload from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with the debug key (sufficient for personal/closed sideloading; not Play Store compatible).
+1. Update `CHANGELOG.md` — add a new `## [x.x.x]` section summarising the changes.
+2. Bump `version` in `pubspec.yaml` (e.g. `1.3.0+4`).
+3. Commit: `git commit -m "docs: update CHANGELOG for vX.Y.Z"` then push to `main`.
+4. Run the **Manual bump and tag** workflow from the GitHub Actions tab. Leave the override blank — it auto-detects the version bump from commit messages since the last tag:
+   - `feat:` → minor bump · `BREAKING CHANGE` / `feat!:` → major · everything else → patch
+5. CI tags `main`, builds the APK, and attaches it to a GitHub Release automatically.
+
+Download and sideload from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with the debug key (sufficient for personal/closed sideloading; not Play Store compatible).
 
 ## Git
 
@@ -54,8 +56,8 @@ Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 ### Branching
 
 - `main` is always release-ready — only moves forward via feature/fix branch merges
-- Branch naming: `feat/<short-description>` or `fix/<short-description>` (e.g. `feat/firebase-analytics`, `fix/nif-badge-crash`)
-- Tag `main` when the accumulated changes are worth a release (see [Releases](#releases))
+- Branch naming mirrors the commit type: `feat/<short-description>`, `fix/<short-description>`, `refactor/<short-description>`, `perf/<short-description>`, `test/<short-description>`, `chore/<short-description>`
+- Examples: `feat/watchbuyer-stream`, `fix/repair-stream-leak`, `refactor/base-photo-service`
 
 ### Commit message convention
 
@@ -71,9 +73,12 @@ All commits follow [Conventional Commits](https://www.conventionalcommits.org):
 | `fix` | bug fix |
 | `perf` | performance improvement |
 | `refactor` | code restructure with no behaviour change |
+| `test` | adding or fixing tests only |
 | `docs` | documentation or changelog only |
 | `chore` | tooling, dependencies, config |
 | `ci` | CI/CD workflow changes |
+
+The type also drives **automatic version bump detection** in the release workflow: `feat:` → minor, `BREAKING CHANGE`/`feat!:` → major, everything else → patch.
 
 Examples: `feat: add heat map view`, `fix: nif badge crash on empty buyer`, `docs: update CHANGELOG for v1.1.0`
 
