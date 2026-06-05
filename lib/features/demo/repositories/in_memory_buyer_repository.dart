@@ -11,6 +11,8 @@ class InMemoryBuyerRepository implements BuyerRepository {
   final _buyerController = StreamController<List<Buyer>>.broadcast();
   final _addressControllers =
       <String, StreamController<List<BuyerAddress>>>{};
+  final _allAddressesController =
+      StreamController<List<BuyerAddress>>.broadcast();
 
   StreamController<List<BuyerAddress>> _addressController(String buyerId) =>
       _addressControllers.putIfAbsent(
@@ -19,10 +21,16 @@ class InMemoryBuyerRepository implements BuyerRepository {
   List<Buyer> get _sorted =>
       List.from(_buyers)..sort((a, b) => a.name.compareTo(b.name));
 
+  List<BuyerAddress> get _allAddresses => _addresses.entries
+      .expand((e) => e.value.map((a) => a.copyWith(buyerId: e.key)))
+      .toList();
+
   void _emitBuyers() => _buyerController.add(_sorted);
 
-  void _emitAddresses(String buyerId) => _addressController(buyerId)
-      .add(List.from(_addresses[buyerId] ?? []));
+  void _emitAddresses(String buyerId) {
+    _addressController(buyerId).add(List.from(_addresses[buyerId] ?? []));
+    _allAddressesController.add(_allAddresses);
+  }
 
   void seed() {
     _buyers
@@ -44,6 +52,7 @@ class InMemoryBuyerRepository implements BuyerRepository {
     for (final id in _addressControllers.keys) {
       _addressControllers[id]!.add([]);
     }
+    _allAddressesController.add([]);
   }
 
   @override
@@ -67,6 +76,12 @@ class InMemoryBuyerRepository implements BuyerRepository {
   Stream<List<BuyerAddress>> watchAddresses(String buyerId) async* {
     yield List.from(_addresses[buyerId] ?? []);
     yield* _addressController(buyerId).stream;
+  }
+
+  @override
+  Stream<List<BuyerAddress>> watchAllAddresses() async* {
+    yield _allAddresses;
+    yield* _allAddressesController.stream;
   }
 
   @override

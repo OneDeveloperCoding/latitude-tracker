@@ -12,6 +12,7 @@ abstract class BuyerRepository {
 
   Stream<List<Buyer>> watchBuyers();
   Stream<List<BuyerAddress>> watchAddresses(String buyerId);
+  Stream<List<BuyerAddress>> watchAllAddresses();
   Future<List<Buyer>> getAllBuyers();
   Future<Buyer?> getBuyer(String id);
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId);
@@ -84,6 +85,13 @@ class _FirestoreBuyerRepository implements BuyerRepository {
   Stream<List<BuyerAddress>> watchAddresses(String buyerId) =>
       _addressesRef(buyerId)
           .orderBy('label')
+          .snapshots()
+          .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+
+  @override
+  Stream<List<BuyerAddress>> watchAllAddresses() =>
+      _firestore
+          .collectionGroup('addresses')
           .snapshots()
           .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
 
