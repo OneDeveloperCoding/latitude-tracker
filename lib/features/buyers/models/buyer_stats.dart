@@ -5,13 +5,13 @@ class BuyerStats {
   final DateTime? lastPurchaseAt;
   final double totalPaid;
   final double unpaidBalance;
-  final double averageOrderValue;
+  final double averageSaleValue;
 
   const BuyerStats({
     required this.saleCount,
     required this.totalPaid,
     required this.unpaidBalance,
-    required this.averageOrderValue,
+    required this.averageSaleValue,
     this.lastPurchaseAt,
   });
 
@@ -19,7 +19,7 @@ class BuyerStats {
     saleCount: 0,
     totalPaid: 0,
     unpaidBalance: 0,
-    averageOrderValue: 0,
+    averageSaleValue: 0,
   );
 
   factory BuyerStats.compute(List<Sale> sales) {
@@ -33,7 +33,7 @@ class BuyerStats {
     final unpaidBalance = sales
         .where((s) => s.payment.status == PaymentStatus.unpaid)
         .fold(0.0, (sum, s) => sum + s.totalPrice);
-    final averageOrderValue =
+    final averageSaleValue =
         sales.fold(0.0, (acc, s) => acc + s.totalPrice) / sales.length;
 
     return BuyerStats(
@@ -41,7 +41,7 @@ class BuyerStats {
       lastPurchaseAt: lastSale.createdAt,
       totalPaid: totalPaid,
       unpaidBalance: unpaidBalance,
-      averageOrderValue: averageOrderValue,
+      averageSaleValue: averageSaleValue,
     );
   }
 }

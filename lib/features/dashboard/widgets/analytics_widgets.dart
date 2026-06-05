@@ -191,7 +191,7 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${s.avgOrderMetric} ${currency.format(avgOrder)}',
+                            '${s.avgSaleMetric} ${currency.format(avgOrder)}',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: colorScheme.onPrimaryContainer
