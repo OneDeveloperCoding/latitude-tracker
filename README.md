@@ -23,14 +23,18 @@ flutter run
 
 ### Firebase configuration
 
-`lib/firebase_options.dart` and `android/app/google-services.json` are committed to the repo (private repo — safe). If you ever need to regenerate `firebase_options.dart`:
+`lib/firebase_options.dart` and `android/app/google-services.json` are **not committed** — they contain API keys. You need to supply them locally before running or building.
+
+To regenerate both files against the existing Firebase project:
 
 ```bash
 dart pub global activate flutterfire_cli
 flutterfire configure
 ```
 
-Select the existing Firebase project and choose Android only.
+Select the existing Firebase project (`latitude-tracker-f5d03`) and choose Android only. This overwrites both files with fresh values.
+
+CI restores them automatically from the `FIREBASE_OPTIONS_DART` and `GOOGLE_SERVICES_JSON` GitHub Actions secrets.
 
 ## Releases
 
