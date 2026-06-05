@@ -29,7 +29,10 @@ class RepairReturnDelivery {
           (e) => e.name == map['type'],
           orElse: () => DeliveryType.shipping,
         ),
-        status: ShipmentStatus.values.byName(map['status'] as String),
+        status: ShipmentStatus.values.firstWhere(
+          (e) => e.name == map['status'],
+          orElse: () => ShipmentStatus.pending,
+        ),
         trackingCode: map['trackingCode'] as String?,
         postalCode: map['postalCode'] as String?,
       );
@@ -115,17 +118,25 @@ class Repair {
         id: map['id'] as String? ?? '',
         buyerId: map['buyerId'] as String?,
         buyerName: map['buyerName'] as String?,
-        freeTextContact: map['freeTextContact'] as String?,
+        // If buyerId is absent, freeTextContact must be non-null to satisfy the
+        // constructor assert. Fall back to '' rather than letting both be null.
+        freeTextContact: map['buyerId'] == null
+            ? (map['freeTextContact'] as String? ?? '')
+            : map['freeTextContact'] as String?,
         linkedSaleId: map['linkedSaleId'] as String?,
-        itemDescription: map['itemDescription'] as String,
-        itemCategory: map['itemCategory'] as String,
-        problemDescription: map['problemDescription'] as String,
+        itemDescription: map['itemDescription'] as String? ?? '',
+        itemCategory: map['itemCategory'] as String? ?? '',
+        problemDescription: map['problemDescription'] as String? ?? '',
         workDone: map['workDone'] as String? ?? '',
         materialsCost: (map['materialsCost'] as num?)?.toDouble(),
-        status: RepairStatus.values.byName(map['status'] as String),
-        payment: SalePayment.fromMap(map['payment'] as Map<String, dynamic>),
+        status: RepairStatus.values.firstWhere(
+          (e) => e.name == map['status'],
+          orElse: () => RepairStatus.received,
+        ),
+        payment: SalePayment.fromMap(
+            (map['payment'] as Map<String, dynamic>?) ?? const {}),
         returnDelivery: RepairReturnDelivery.fromMap(
-            map['returnDelivery'] as Map<String, dynamic>),
+            (map['returnDelivery'] as Map<String, dynamic>?) ?? const {}),
         photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
         createdAt: _parseArchiveDate(map['createdAt']),
       );
@@ -136,7 +147,7 @@ class Repair {
       return DateTime.fromMillisecondsSinceEpoch(
           (value['_seconds'] as int) * 1000);
     }
-    return DateTime.now();
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   factory Repair.fromFirestore(DocumentSnapshot doc) {
@@ -147,17 +158,22 @@ class Repair {
       buyerName: data['buyerName'] as String?,
       freeTextContact: data['freeTextContact'] as String?,
       linkedSaleId: data['linkedSaleId'] as String?,
-      itemDescription: data['itemDescription'] as String,
-      itemCategory: data['itemCategory'] as String,
-      problemDescription: data['problemDescription'] as String,
+      itemDescription: data['itemDescription'] as String? ?? '',
+      itemCategory: data['itemCategory'] as String? ?? '',
+      problemDescription: data['problemDescription'] as String? ?? '',
       workDone: data['workDone'] as String? ?? '',
       materialsCost: (data['materialsCost'] as num?)?.toDouble(),
-      status: RepairStatus.values.byName(data['status'] as String),
-      payment: SalePayment.fromMap(data['payment'] as Map<String, dynamic>),
+      status: RepairStatus.values.firstWhere(
+        (e) => e.name == data['status'],
+        orElse: () => RepairStatus.received,
+      ),
+      payment: SalePayment.fromMap(
+          (data['payment'] as Map<String, dynamic>?) ?? const {}),
       returnDelivery: RepairReturnDelivery.fromMap(
-          data['returnDelivery'] as Map<String, dynamic>),
+          (data['returnDelivery'] as Map<String, dynamic>?) ?? const {}),
       photoUrls: List<String>.from(data['photoUrls'] as List? ?? []),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
+          DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 

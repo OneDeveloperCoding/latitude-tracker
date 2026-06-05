@@ -25,13 +25,13 @@ class Buyer {
     final data = doc.data() as Map<String, dynamic>;
     return Buyer(
       id: doc.id,
-      name: data['name'] as String,
+      name: data['name'] as String? ?? '',
       instagramHandle: data['instagramHandle'] as String?,
       phone: data['phone'] as String?,
       nif: data['nif'] as String?,
       tags: List<String>.from(data['tags'] as List? ?? []),
       notes: data['notes'] as String?,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
