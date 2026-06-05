@@ -4,6 +4,9 @@ import '../settings/repositories/catalogue_repository.dart';
 import 'repositories/in_memory_buyer_repository.dart';
 import 'repositories/in_memory_repair_repository.dart';
 import 'repositories/in_memory_sale_repository.dart';
+import '../../../core/store/buyers_store.dart';
+import '../../../core/store/repairs_store.dart';
+import '../../../core/store/sales_store.dart';
 
 class DemoMode {
   DemoMode._();
@@ -25,11 +28,21 @@ class DemoMode {
     saleRepo.seed();
     buyerRepo.seed();
     repairRepo.seed();
+    // Reset stores before the rebuild so the new MainNav's init() finds
+    // _sub == null and opens a fresh subscription to the InMemory backend.
+    SalesStore.forceReset();
+    BuyersStore.forceReset();
+    RepairsStore.forceReset();
     active.value = true;
     pendingTutorial.value = true;
   }
 
   static void exit() {
+    // Same rationale as enter(): reset before the rebuild so the new MainNav
+    // gets a fresh Firestore subscription instead of the InMemory one.
+    SalesStore.forceReset();
+    BuyersStore.forceReset();
+    RepairsStore.forceReset();
     active.value = false;
     saleRepo.clear();
     buyerRepo.clear();

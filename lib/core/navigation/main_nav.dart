@@ -40,6 +40,15 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     RepairsStore.init();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     SalesStore.state.addListener(_onSalesStoreChanged);
+    // After a DemoMode transition the old MainNav's dispose() runs after this
+    // initState — tearing down the subscription init() just created. The
+    // post-frame callback re-subscribes once the frame has fully settled.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      SalesStore.ensureSubscribed();
+      BuyersStore.ensureSubscribed();
+      RepairsStore.ensureSubscribed();
+    });
   }
 
   @override
@@ -56,9 +65,9 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
-    if (SalesStore.state.value is StoreError) SalesStore.init();
-    if (BuyersStore.state.value is StoreError) BuyersStore.init();
-    if (RepairsStore.state.value is StoreError) RepairsStore.init();
+    SalesStore.ensureSubscribed();
+    BuyersStore.ensureSubscribed();
+    RepairsStore.ensureSubscribed();
   }
 
   // Geocode heat map prefixes in the background whenever the sales list
