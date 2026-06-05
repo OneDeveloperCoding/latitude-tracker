@@ -56,9 +56,9 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
-    if (SalesStore.state.value is StoreError) SalesStore.init();
-    if (BuyersStore.state.value is StoreError) BuyersStore.init();
-    if (RepairsStore.state.value is StoreError) RepairsStore.init();
+    SalesStore.ensureSubscribed();
+    BuyersStore.ensureSubscribed();
+    RepairsStore.ensureSubscribed();
   }
 
   // Geocode heat map prefixes in the background whenever the sales list

@@ -15,6 +15,7 @@ class SalesStore {
   static final state =
       ValueNotifier<StoreState<List<Sale>>>(const StoreLoading());
   static StreamSubscription<List<Sale>>? _sub;
+  static int _refCount = 0;
 
   static List<Sale>? get current =>
       state.value is StoreLoaded<List<Sale>>
@@ -26,8 +27,7 @@ class SalesStore {
     _sub = null;
   }
 
-  static void init() {
-    if (_sub != null) return;
+  static void _subscribe() {
     state.value = const StoreLoading();
     _sub = SaleRepository().watchSales().listen(
       (sales) => state.value = StoreLoaded(sales),
@@ -35,6 +35,7 @@ class SalesStore {
         _tearDown();
         if (e is AuthRevokedException ||
             (e is FirebaseException && e.code == 'permission-denied')) {
+          state.value = const StoreLoading();
           FirebaseAuth.instance.signOut();
           return;
         }
@@ -44,9 +45,25 @@ class SalesStore {
     );
   }
 
+  // Called by MainNav.initState — increments the mount count so that a
+  // dispose() from a stale widget instance cannot tear down an active store.
+  static void init() {
+    _refCount++;
+    if (_sub == null) _subscribe();
+  }
+
+  // Called by MainNav.didChangeAppLifecycleState — re-subscribes when the
+  // subscription is absent without affecting the mount count.
+  static void ensureSubscribed() {
+    if (_sub == null) _subscribe();
+  }
+
+  // Called by MainNav.dispose — only tears down when the last mounted
+  // instance releases ownership.
   static void dispose() {
-    _sub?.cancel();
-    _sub = null;
+    if (_refCount > 0) _refCount--;
+    if (_refCount > 0) return;
+    _tearDown();
     state.value = const StoreLoading();
   }
 }

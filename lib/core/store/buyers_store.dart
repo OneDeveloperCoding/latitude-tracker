@@ -15,6 +15,7 @@ class BuyersStore {
   static final state =
       ValueNotifier<StoreState<List<Buyer>>>(const StoreLoading());
   static StreamSubscription<List<Buyer>>? _sub;
+  static int _refCount = 0;
 
   static List<Buyer>? get current =>
       state.value is StoreLoaded<List<Buyer>>
@@ -26,8 +27,7 @@ class BuyersStore {
     _sub = null;
   }
 
-  static void init() {
-    if (_sub != null) return;
+  static void _subscribe() {
     state.value = const StoreLoading();
     _sub = BuyerRepository().watchBuyers().listen(
       (buyers) => state.value = StoreLoaded(buyers),
@@ -35,6 +35,7 @@ class BuyersStore {
         _tearDown();
         if (e is AuthRevokedException ||
             (e is FirebaseException && e.code == 'permission-denied')) {
+          state.value = const StoreLoading();
           FirebaseAuth.instance.signOut();
           return;
         }
@@ -44,9 +45,19 @@ class BuyersStore {
     );
   }
 
+  static void init() {
+    _refCount++;
+    if (_sub == null) _subscribe();
+  }
+
+  static void ensureSubscribed() {
+    if (_sub == null) _subscribe();
+  }
+
   static void dispose() {
-    _sub?.cancel();
-    _sub = null;
+    if (_refCount > 0) _refCount--;
+    if (_refCount > 0) return;
+    _tearDown();
     state.value = const StoreLoading();
   }
 }
