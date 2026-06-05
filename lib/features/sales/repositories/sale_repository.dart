@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/services/firestore_batch_utils.dart';
 import '../../demo/demo_mode.dart';
 import '../models/sale.dart';
 import '../services/photo_service.dart';
@@ -70,15 +71,17 @@ class _FirestoreSaleRepository implements SaleRepository {
     final sales = await getSalesForYear(year);
     if (sales.isEmpty) return;
     if (deletePhotos) {
+      // Photos before Firestore: if photo deletion fails, docs remain intact
+      // and the caller can retry without orphaning anything.
       for (final sale in sales) {
         await PhotoService().deleteAllPhotos(sale.id);
       }
     }
-    final batch = _firestore.batch();
-    for (final sale in sales) {
-      batch.delete(_salesRef.doc(sale.id));
-    }
-    await batch.commit();
+    await commitInBatches<DocumentReference>(
+      _firestore,
+      sales.map((s) => _salesRef.doc(s.id)).toList(),
+      (batch, ref) => batch.delete(ref),
+    );
   }
 
   @override
@@ -86,15 +89,17 @@ class _FirestoreSaleRepository implements SaleRepository {
     final docs = await _salesRef.get().then((s) => s.docs);
     if (docs.isEmpty) return;
     if (deletePhotos) {
+      // Photos before Firestore: if photo deletion fails, docs remain intact
+      // and the caller can retry without orphaning anything.
       for (final doc in docs) {
         await PhotoService().deleteAllPhotos(doc.id);
       }
     }
-    final batch = _firestore.batch();
-    for (final doc in docs) {
-      batch.delete(doc.reference);
-    }
-    await batch.commit();
+    await commitInBatches<DocumentReference>(
+      _firestore,
+      docs.map((d) => d.reference).toList(),
+      (batch, ref) => batch.delete(ref),
+    );
   }
 
   @override
@@ -126,11 +131,10 @@ class _FirestoreSaleRepository implements SaleRepository {
     }).toList();
     if (toUpdate.isEmpty) return;
 
-    // Firestore batches are capped at 500 ops per commit — chunk if needed.
-    for (var i = 0; i < toUpdate.length; i += 500) {
-      final chunk = toUpdate.sublist(i, (i + 500).clamp(0, toUpdate.length));
-      final batch = _firestore.batch();
-      for (final doc in chunk) {
+    await commitInBatches(
+      _firestore,
+      toUpdate,
+      (batch, doc) {
         final items = (doc.data()['items'] as List<dynamic>)
             .map((raw) {
               final item = Map<String, dynamic>.from(raw as Map);
@@ -139,8 +143,7 @@ class _FirestoreSaleRepository implements SaleRepository {
             })
             .toList();
         batch.update(doc.reference, {'items': items});
-      }
-      await batch.commit();
-    }
+      },
+    );
   }
 }
