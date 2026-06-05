@@ -27,7 +27,10 @@ class BuyersStore {
     _sub = BuyerRepository().watchBuyers().listen(
       (buyers) => state.value = StoreLoaded(buyers),
       onError: (e, StackTrace st) {
-        if (e is AuthRevokedException) {
+        if (e is AuthRevokedException ||
+            (e is FirebaseException && e.code == 'permission-denied')) {
+          _sub?.cancel();
+          _sub = null;
           FirebaseAuth.instance.signOut();
           return;
         }

@@ -27,7 +27,10 @@ class RepairsStore {
     _sub = RepairRepository().watchRepairs().listen(
       (repairs) => state.value = StoreLoaded(repairs),
       onError: (e, StackTrace st) {
-        if (e is AuthRevokedException) {
+        if (e is AuthRevokedException ||
+            (e is FirebaseException && e.code == 'permission-denied')) {
+          _sub?.cancel();
+          _sub = null;
           FirebaseAuth.instance.signOut();
           return;
         }

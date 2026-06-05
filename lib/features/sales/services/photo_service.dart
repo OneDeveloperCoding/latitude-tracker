@@ -56,6 +56,7 @@ class PhotoService {
     try {
       await _deleteFolder('users/$_userId/sales/$saleId');
     } catch (e, st) {
+      if (e is AuthRevokedException) rethrow;
       // Folder may not exist — best-effort, but track unexpected errors.
       logError(e, st);
     }
