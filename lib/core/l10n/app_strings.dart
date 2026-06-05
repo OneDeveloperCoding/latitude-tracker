@@ -113,6 +113,8 @@ class AppStrings {
   final String oldestFirst;
   final String priceHighToLow;
   final String priceLowToHigh;
+  final String sortDimensionDate;
+  final String sortDimensionPrice;
   final String noShippedSalesWithPostalCode;
   final String clearAllFilters;
   final String year;
@@ -520,6 +522,8 @@ class AppStrings {
     required this.oldestFirst,
     required this.priceHighToLow,
     required this.priceLowToHigh,
+    required this.sortDimensionDate,
+    required this.sortDimensionPrice,
     required this.noShippedSalesWithPostalCode,
     required this.clearAllFilters,
     required this.year,
@@ -1229,6 +1233,8 @@ class AppStrings {
     oldestFirst: 'Oldest first',
     priceHighToLow: 'Price: high to low',
     priceLowToHigh: 'Price: low to high',
+    sortDimensionDate: 'Date',
+    sortDimensionPrice: 'Price',
     noShippedSalesWithPostalCode: 'No shipped sales with postal codes.',
     clearAllFilters: 'Clear all',
     year: 'Year',
@@ -1633,6 +1639,8 @@ class AppStrings {
     oldestFirst: 'Mais antigas',
     priceHighToLow: 'Preço: decrescente',
     priceLowToHigh: 'Preço: crescente',
+    sortDimensionDate: 'Data',
+    sortDimensionPrice: 'Preço',
     noShippedSalesWithPostalCode: 'Sem vendas enviadas com código postal.',
     clearAllFilters: 'Limpar tudo',
     year: 'Ano',
