@@ -26,6 +26,11 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore Firebase config
+        run: |
+          echo "${{ secrets.FIREBASE_OPTIONS_DART }}" > lib/firebase_options.dart
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+
       - name: Install dependencies
         run: flutter pub get
 
