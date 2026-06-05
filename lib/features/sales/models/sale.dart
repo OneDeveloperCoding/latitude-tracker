@@ -73,8 +73,8 @@ class ComponentItem {
   });
 
   factory ComponentItem.fromMap(Map<String, dynamic> map) => ComponentItem(
-        id: map['id'] as String,
-        name: map['name'] as String,
+        id: map['id'] as String? ?? '',
+        name: map['name'] as String? ?? '',
         isAvailable: map['isAvailable'] as bool? ?? false,
       );
 
@@ -111,12 +111,14 @@ class SaleItem {
   });
 
   factory SaleItem.fromMap(Map<String, dynamic> map) => SaleItem(
-        id: map['id'] as String,
-        description: map['description'] as String,
+        id: map['id'] as String? ?? '',
+        description: map['description'] as String? ?? '',
         category: map['category'] as String? ?? kDefaultCategories.first,
         price: (map['price'] as num).toDouble(),
-        assemblyStatus:
-            AssemblyStatus.values.byName(map['assemblyStatus'] as String),
+        assemblyStatus: AssemblyStatus.values.firstWhere(
+          (e) => e.name == map['assemblyStatus'],
+          orElse: () => AssemblyStatus.notStarted,
+        ),
         components: (map['components'] as List<dynamic>? ?? [])
             .map((e) => ComponentItem.fromMap(e as Map<String, dynamic>))
             .toList(),
@@ -183,8 +185,14 @@ class SalePayment {
   const SalePayment({required this.status, required this.method});
 
   factory SalePayment.fromMap(Map<String, dynamic> map) => SalePayment(
-        status: PaymentStatus.values.byName(map['status'] as String),
-        method: PaymentMethod.values.byName(map['method'] as String),
+        status: PaymentStatus.values.firstWhere(
+          (e) => e.name == map['status'],
+          orElse: () => PaymentStatus.unpaid,
+        ),
+        method: PaymentMethod.values.firstWhere(
+          (e) => e.name == map['method'],
+          orElse: () => PaymentMethod.cash,
+        ),
       );
 
   Map<String, dynamic> toMap() => {
@@ -219,7 +227,10 @@ class SaleShipment {
           (e) => e.name == map['type'],
           orElse: () => DeliveryType.shipping,
         ),
-        status: ShipmentStatus.values.byName(map['status'] as String),
+        status: ShipmentStatus.values.firstWhere(
+          (e) => e.name == map['status'],
+          orElse: () => ShipmentStatus.pending,
+        ),
         trackingCode: map['trackingCode'] as String?,
         addressId: map['addressId'] as String?,
         postalCode: map['postalCode'] as String?,
@@ -328,8 +339,8 @@ class Sale {
     final data = doc.data() as Map<String, dynamic>;
     return Sale(
       id: doc.id,
-      buyerId: data['buyerId'] as String,
-      buyerName: data['buyerName'] as String,
+      buyerId: data['buyerId'] as String? ?? '',
+      buyerName: data['buyerName'] as String? ?? '',
       items: (data['items'] as List<dynamic>? ?? [])
           .map((e) => SaleItem.fromMap(e as Map<String, dynamic>))
           .toList(),
@@ -337,10 +348,8 @@ class Sale {
       shipment: SaleShipment.fromMap(data['shipment'] as Map<String, dynamic>),
       requiresNif: data['requiresNif'] as bool? ?? false,
       atSubmissionDone: data['atSubmissionDone'] as bool? ?? false,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      scheduledDate: data['scheduledDate'] != null
-          ? (data['scheduledDate'] as Timestamp).toDate()
-          : null,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      scheduledDate: (data['scheduledDate'] as Timestamp?)?.toDate(),
       notes: data['notes'] as String?,
     );
   }

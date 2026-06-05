@@ -145,6 +145,97 @@ void main() {
     }
   });
 
+  group('SaleItem.fromMap — unknown enum falls back to default', () {
+    Map<String, dynamic> baseItemMap() => {
+          'id': 'i1',
+          'description': 'Test',
+          'category': 'Colares',
+          'price': 10.0,
+          'assemblyStatus': 'notStarted',
+        };
+
+    test('unknown assemblyStatus falls back to notStarted', () {
+      final map = baseItemMap()..['assemblyStatus'] = 'obsoleteStatus';
+      expect(SaleItem.fromMap(map).assemblyStatus, AssemblyStatus.notStarted);
+    });
+
+    test('null assemblyStatus falls back to notStarted', () {
+      final map = baseItemMap()..['assemblyStatus'] = null;
+      expect(SaleItem.fromMap(map).assemblyStatus, AssemblyStatus.notStarted);
+    });
+
+    test('null id falls back to empty string', () {
+      final map = baseItemMap()..['id'] = null;
+      expect(SaleItem.fromMap(map).id, '');
+    });
+
+    test('null description falls back to empty string', () {
+      final map = baseItemMap()..['description'] = null;
+      expect(SaleItem.fromMap(map).description, '');
+    });
+  });
+
+  group('SalePayment.fromMap — unknown enum falls back to default', () {
+    test('unknown status falls back to unpaid', () {
+      final map = {'status': 'legacyStatus', 'method': 'mbWay'};
+      expect(SalePayment.fromMap(map).status, PaymentStatus.unpaid);
+    });
+
+    test('unknown method falls back to cash', () {
+      final map = {'status': 'paid', 'method': 'legacyMethod'};
+      expect(SalePayment.fromMap(map).method, PaymentMethod.cash);
+    });
+
+    test('null status falls back to unpaid', () {
+      final map = {'status': null, 'method': 'mbWay'};
+      expect(SalePayment.fromMap(map).status, PaymentStatus.unpaid);
+    });
+
+    test('null method falls back to cash', () {
+      final map = {'status': 'paid', 'method': null};
+      expect(SalePayment.fromMap(map).method, PaymentMethod.cash);
+    });
+  });
+
+  group('SaleShipment.fromMap — unknown enum falls back to default', () {
+    Map<String, dynamic> baseShipmentMap() =>
+        {'type': 'shipping', 'status': 'pending'};
+
+    test('unknown status falls back to pending', () {
+      final map = baseShipmentMap()..['status'] = 'legacyStatus';
+      expect(SaleShipment.fromMap(map).status, ShipmentStatus.pending);
+    });
+
+    test('null status falls back to pending', () {
+      final map = baseShipmentMap()..['status'] = null;
+      expect(SaleShipment.fromMap(map).status, ShipmentStatus.pending);
+    });
+  });
+
+  group('Sale.fromArchiveMap — null-safe string and enum fields', () {
+    Map<String, dynamic> baseSaleMap() => {
+          'id': 's1',
+          'buyerId': 'b1',
+          'buyerName': 'Ana',
+          'items': <dynamic>[],
+          'payment': {'status': 'paid', 'method': 'mbWay'},
+          'shipment': {'type': 'shipping', 'status': 'pending'},
+          'requiresNif': false,
+          'atSubmissionDone': false,
+          'createdAt': '2026-01-01T00:00:00.000',
+        };
+
+    test('null buyerId falls back to empty string', () {
+      final map = baseSaleMap()..['buyerId'] = null;
+      expect(Sale.fromArchiveMap(map).buyerId, '');
+    });
+
+    test('null buyerName falls back to empty string', () {
+      final map = baseSaleMap()..['buyerName'] = null;
+      expect(Sale.fromArchiveMap(map).buyerName, '');
+    });
+  });
+
   group('Sale.totalPrice', () {
     test('sums all item prices', () {
       final sale = Sale(
