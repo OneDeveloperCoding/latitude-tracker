@@ -253,8 +253,8 @@ class AppStrings {
   final String buyerRanking;
   final String neverPurchased;
   final String totalSpentMetric;
-  final String mostOrdersMetric;
-  final String avgOrderMetric;
+  final String mostSalesMetric;
+  final String avgSaleMetric;
   final String unpaidBalanceMetric;
 
   // ── Buyer detail ─────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ class AppStrings {
   final String totalSalesLabel;
   final String totalPaidLabel;
   final String unpaidBalanceLabel;
-  final String averageOrderLabel;
+  final String averageSaleLabel;
   final String lastPurchaseLabel;
   final String addressCopied;
   final String deleteAddressTitle;
@@ -423,8 +423,6 @@ class AppStrings {
   final String _photoPlural;
   final String _itemSingular;
   final String _itemPlural;
-  final String _orderSingular;
-  final String _orderPlural;
 
   const AppStrings._({
     required bool isPt,
@@ -647,8 +645,8 @@ class AppStrings {
     required this.buyerRanking,
     required this.neverPurchased,
     required this.totalSpentMetric,
-    required this.mostOrdersMetric,
-    required this.avgOrderMetric,
+    required this.mostSalesMetric,
+    required this.avgSaleMetric,
     required this.unpaidBalanceMetric,
     required this.purchaseHistory,
     required this.addresses,
@@ -658,7 +656,7 @@ class AppStrings {
     required this.totalSalesLabel,
     required this.totalPaidLabel,
     required this.unpaidBalanceLabel,
-    required this.averageOrderLabel,
+    required this.averageSaleLabel,
     required this.lastPurchaseLabel,
     required this.addressCopied,
     required this.deleteAddressTitle,
@@ -795,17 +793,13 @@ class AppStrings {
     required String photoPlural,
     required String itemSingular,
     required String itemPlural,
-    required String orderSingular,
-    required String orderPlural,
   })  : _pt = isPt,
         _saleSingular = saleSingular,
         _salePlural = salePlural,
         _photoSingular = photoSingular,
         _photoPlural = photoPlural,
         _itemSingular = itemSingular,
-        _itemPlural = itemPlural,
-        _orderSingular = orderSingular,
-        _orderPlural = orderPlural;
+        _itemPlural = itemPlural;
 
   static AppStrings of(BuildContext context) {
     final code = AppLocaleScope.of(context).languageCode;
@@ -817,8 +811,6 @@ class AppStrings {
   String nSales(int n) => '$n ${n == 1 ? _saleSingular : _salePlural}';
   String nPhotos(int n) => '$n ${n == 1 ? _photoSingular : _photoPlural}';
   String nItems(int n) => '$n ${n == 1 ? _itemSingular : _itemPlural}';
-  String nOrders(int n) => '$n ${n == 1 ? _orderSingular : _orderPlural}';
-
   String itemsAcrossSales(int items, int sales) => _pt
       ? '${nItems(items)} em ${nSales(sales)}'
       : '${nItems(items)} across ${nSales(sales)}';
@@ -1355,8 +1347,8 @@ class AppStrings {
     buyerRanking: 'Buyer ranking',
     neverPurchased: 'Never purchased',
     totalSpentMetric: 'Total spent',
-    mostOrdersMetric: 'Most orders',
-    avgOrderMetric: 'Avg order',
+    mostSalesMetric: 'Most sales',
+    avgSaleMetric: 'Avg sale',
     unpaidBalanceMetric: 'Unpaid',
     purchaseHistory: 'Purchase history',
     addresses: 'Addresses',
@@ -1366,7 +1358,7 @@ class AppStrings {
     totalSalesLabel: 'Total sales',
     totalPaidLabel: 'Total paid',
     unpaidBalanceLabel: 'Unpaid balance',
-    averageOrderLabel: 'Average order',
+    averageSaleLabel: 'Average sale',
     lastPurchaseLabel: 'Last purchase',
     addressCopied: 'Address copied',
     deleteAddressTitle: 'Delete address?',
@@ -1521,8 +1513,6 @@ class AppStrings {
     photoPlural: 'photos',
     itemSingular: 'item',
     itemPlural: 'items',
-    orderSingular: 'order',
-    orderPlural: 'orders',
   );
 
   static const pt = AppStrings._(
@@ -1757,8 +1747,8 @@ class AppStrings {
     buyerRanking: 'Ranking de compradores',
     neverPurchased: 'Sem compras',
     totalSpentMetric: 'Total gasto',
-    mostOrdersMetric: 'Mais encomendas',
-    avgOrderMetric: 'Valor médio',
+    mostSalesMetric: 'Mais vendas',
+    avgSaleMetric: 'Valor médio',
     unpaidBalanceMetric: 'Por pagar',
     purchaseHistory: 'Histórico de compras',
     addresses: 'Moradas',
@@ -1768,7 +1758,7 @@ class AppStrings {
     totalSalesLabel: 'Total de vendas',
     totalPaidLabel: 'Total pago',
     unpaidBalanceLabel: 'Saldo em falta',
-    averageOrderLabel: 'Valor médio',
+    averageSaleLabel: 'Valor médio',
     lastPurchaseLabel: 'Última compra',
     addressCopied: 'Morada copiada',
     deleteAddressTitle: 'Eliminar morada?',
@@ -1924,8 +1914,6 @@ class AppStrings {
     photoPlural: 'fotos',
     itemSingular: 'artigo',
     itemPlural: 'artigos',
-    orderSingular: 'encomenda',
-    orderPlural: 'encomendas',
   );
 }
 

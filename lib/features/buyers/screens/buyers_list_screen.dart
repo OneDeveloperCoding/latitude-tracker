@@ -11,7 +11,7 @@ import 'buyer_form_screen.dart';
 
 enum _SortMode { alphabetical, lastPurchase, ranking }
 
-enum _RankingMetric { totalSpent, frequency, averageOrder, unpaidBalance }
+enum _RankingMetric { totalSpent, frequency, averageSale, unpaidBalance }
 
 class _BuyerWithStats {
   final Buyer buyer;
@@ -23,12 +23,12 @@ class _BuyerWithStats {
   int get saleCount => stats.saleCount;
   double get totalPaid => stats.totalPaid;
   double get unpaidBalance => stats.unpaidBalance;
-  double get averageOrderValue => stats.averageOrderValue;
+  double get averageSaleValue => stats.averageSaleValue;
 
   double metricValue(_RankingMetric metric) => switch (metric) {
         _RankingMetric.totalSpent => stats.totalPaid,
         _RankingMetric.frequency => stats.saleCount.toDouble(),
-        _RankingMetric.averageOrder => stats.averageOrderValue,
+        _RankingMetric.averageSale => stats.averageSaleValue,
         _RankingMetric.unpaidBalance => stats.unpaidBalance,
       };
 }
@@ -221,8 +221,8 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     final s = context.s;
     return switch (metric) {
       _RankingMetric.totalSpent => s.totalSpentMetric,
-      _RankingMetric.frequency => s.mostOrdersMetric,
-      _RankingMetric.averageOrder => s.avgOrderMetric,
+      _RankingMetric.frequency => s.mostSalesMetric,
+      _RankingMetric.averageSale => s.avgSaleMetric,
       _RankingMetric.unpaidBalance => s.unpaidBalanceMetric,
     };
   }
@@ -636,14 +636,14 @@ class _RankedBuyerTile extends StatelessWidget {
   String _primaryValue(NumberFormat currency, AppStrings s) => switch (metric) {
         _RankingMetric.totalSpent => currency.format(stats.totalPaid),
         _RankingMetric.frequency => s.nSales(stats.saleCount),
-        _RankingMetric.averageOrder => currency.format(stats.averageOrderValue),
+        _RankingMetric.averageSale => currency.format(stats.averageSaleValue),
         _RankingMetric.unpaidBalance => currency.format(stats.unpaidBalance),
       };
 
   String _secondaryValue(NumberFormat currency, AppStrings s) => switch (metric) {
         _RankingMetric.totalSpent => s.nSales(stats.saleCount),
         _RankingMetric.frequency => currency.format(stats.totalPaid),
-        _RankingMetric.averageOrder => s.nSales(stats.saleCount),
+        _RankingMetric.averageSale => s.nSales(stats.saleCount),
         _RankingMetric.unpaidBalance => s.nSales(stats.saleCount),
       };
 }

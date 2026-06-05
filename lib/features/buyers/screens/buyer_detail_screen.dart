@@ -471,8 +471,8 @@ class _PurchaseSummary extends StatelessWidget {
                 valueColor: Colors.orange,
               ),
             _StatRow(
-              label: s.averageOrderLabel,
-              value: currency.format(stats.averageOrderValue),
+              label: s.averageSaleLabel,
+              value: currency.format(stats.averageSaleValue),
             ),
             if (stats.lastPurchaseAt != null)
               _StatRow(

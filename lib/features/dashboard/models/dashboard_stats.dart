@@ -22,7 +22,6 @@ class DashboardStats {
   final int upcomingCount;
 
   int get totalCount => paidCount + unpaidCount;
-  double get avgOrderValue => paidCount > 0 ? paidRevenue / paidCount : 0;
 
   const DashboardStats({
     required this.paidRevenue,

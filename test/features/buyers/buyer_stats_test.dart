@@ -11,7 +11,7 @@ void main() {
       expect(stats.saleCount, 0);
       expect(stats.totalPaid, 0);
       expect(stats.unpaidBalance, 0);
-      expect(stats.averageOrderValue, 0);
+      expect(stats.averageSaleValue, 0);
       expect(stats.lastPurchaseAt, isNull);
     });
 
@@ -38,12 +38,12 @@ void main() {
       expect(BuyerStats.compute(sales).unpaidBalance, 70);
     });
 
-    test('averageOrderValue uses all sales regardless of payment status', () {
+    test('averageSaleValue uses all sales regardless of payment status', () {
       final sales = [
         makeSale(price: 100, payment: PaymentStatus.paid),
         makeSale(price: 50, payment: PaymentStatus.unpaid),
       ];
-      expect(BuyerStats.compute(sales).averageOrderValue, 75);
+      expect(BuyerStats.compute(sales).averageSaleValue, 75);
     });
 
     test('lastPurchaseAt is the most recent createdAt', () {
@@ -63,7 +63,7 @@ void main() {
       expect(stats.saleCount, 1);
       expect(stats.totalPaid, 80);
       expect(stats.unpaidBalance, 0);
-      expect(stats.averageOrderValue, 80);
+      expect(stats.averageSaleValue, 80);
       expect(stats.lastPurchaseAt, sale.createdAt);
     });
   });
