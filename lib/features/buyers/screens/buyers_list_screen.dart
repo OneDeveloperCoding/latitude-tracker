@@ -153,43 +153,68 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     );
   }
 
-  void _showSortMenu() async {
+  void _showSortMenu() {
     final s = context.s;
-    final selected = await showModalBottomSheet<_SortMode>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.sort_by_alpha),
-              title: Text(s.alphabetical),
-              selected: _sortMode == _SortMode.alphabetical,
-              onTap: () =>
-                  Navigator.pop(context, _SortMode.alphabetical),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: Text(s.groupByLastPurchase),
-              selected: _sortMode == _SortMode.lastPurchase,
-              onTap: () =>
-                  Navigator.pop(context, _SortMode.lastPurchase),
-            ),
-            ListTile(
-              leading: const Icon(Icons.emoji_events),
-              title: Text(s.buyerRanking),
-              selected: _sortMode == _SortMode.ranking,
-              onTap: () => Navigator.pop(context, _SortMode.ranking),
-            ),
-          ],
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (_, setSheetState) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.sort_by_alpha),
+                title: Text(s.alphabetical),
+                selected: _sortMode == _SortMode.alphabetical,
+                onTap: () {
+                  _sortMode = _SortMode.alphabetical;
+                  _rebuildViews();
+                  setState(() {});
+                  setSheetState(() {});
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_month),
+                title: Text(s.groupByLastPurchase),
+                selected: _sortMode == _SortMode.lastPurchase,
+                onTap: () {
+                  _sortMode = _SortMode.lastPurchase;
+                  _rebuildViews();
+                  setState(() {});
+                  setSheetState(() {});
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.emoji_events),
+                title: Text(s.buyerRanking),
+                selected: _sortMode == _SortMode.ranking,
+                onTap: () {
+                  _sortMode = _SortMode.ranking;
+                  _rebuildViews();
+                  setState(() {});
+                  setSheetState(() {});
+                },
+              ),
+              if (_sortMode == _SortMode.ranking) ...[
+                const Divider(height: 1),
+                _RankingMetricBar(
+                  selected: _rankingMetric,
+                  metricLabel: _metricLabel,
+                  onSelected: (m) {
+                    _rankingMetric = m;
+                    _rebuildViews();
+                    setState(() {});
+                    setSheetState(() {});
+                  },
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
-    if (selected != null) {
-      _sortMode = selected;
-      _rebuildViews();
-      setState(() {});
-    }
   }
 
   String _metricLabel(_RankingMetric metric) {
@@ -267,16 +292,6 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
               ],
             ),
           ),
-          if (_sortMode == _SortMode.ranking)
-            _RankingMetricBar(
-              selected: _rankingMetric,
-              metricLabel: _metricLabel,
-              onSelected: (m) {
-                _rankingMetric = m;
-                _rebuildViews();
-                setState(() {});
-              },
-            ),
           Expanded(child: _buildBody()),
         ],
       ),
