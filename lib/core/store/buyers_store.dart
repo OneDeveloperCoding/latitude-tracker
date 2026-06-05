@@ -34,6 +34,8 @@ class BuyersStore {
           FirebaseAuth.instance.signOut();
           return;
         }
+        _sub?.cancel();
+        _sub = null;
         logError(e, st);
         state.value = StoreError(e);
       },
