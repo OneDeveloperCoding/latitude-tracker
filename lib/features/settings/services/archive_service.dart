@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+
+import '../../../core/services/auth_revoked_exception.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../buyers/repositories/buyer_repository.dart';
@@ -88,10 +90,8 @@ class ArchiveService {
     }
 
     final firestore = FirebaseFirestore.instance;
-    // TODO(safety): currentUser! will crash on a mid-flight auth revoke. Safe for
-    // now because the router gates all repo access behind the auth stream, but
-    // worth adding a null-guard if auth edge cases become a concern.
-    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final userId = FirebaseAuth.instance.currentUser?.uid ??
+        (throw const AuthRevokedException());
 
     final sales =
         (archive['sales'] as List?)?.cast<Map<String, dynamic>>() ?? [];

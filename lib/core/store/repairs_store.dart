@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_revoked_exception.dart';
 import '../services/error_reporter.dart';
 import 'package:flutter/foundation.dart';
 
@@ -25,6 +27,10 @@ class RepairsStore {
     _sub = RepairRepository().watchRepairs().listen(
       (repairs) => state.value = StoreLoaded(repairs),
       onError: (e, StackTrace st) {
+        if (e is AuthRevokedException) {
+          FirebaseAuth.instance.signOut();
+          return;
+        }
         logError(e, st);
         state.value = StoreError(e);
       },

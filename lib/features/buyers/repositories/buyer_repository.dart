@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/services/auth_revoked_exception.dart';
 import '../../demo/demo_mode.dart';
 import '../models/buyer.dart';
 import '../models/buyer_address.dart';
@@ -27,10 +28,8 @@ class _FirestoreBuyerRepository implements BuyerRepository {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
-  // TODO(safety): currentUser! will crash on a mid-flight auth revoke. Safe for
-  // now because the router gates all repo access behind the auth stream, but
-  // worth adding a null-guard if auth edge cases become a concern.
-  String get _userId => _auth.currentUser!.uid;
+  String get _userId =>
+      _auth.currentUser?.uid ?? (throw const AuthRevokedException());
 
   CollectionReference<Map<String, dynamic>> get _buyersRef =>
       _firestore.collection('users').doc(_userId).collection('buyers');
