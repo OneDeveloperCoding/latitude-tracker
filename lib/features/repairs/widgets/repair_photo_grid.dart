@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/auth_revoked_exception.dart';
 import '../../demo/demo_mode.dart';
 import '../../sales/widgets/photo_grid.dart' show PhotoViewer;
 import '../services/repair_photo_service.dart';
@@ -41,6 +43,10 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
       );
       if (url != null) widget.onUploaded(url);
     } catch (e) {
+      if (e is AuthRevokedException) {
+        FirebaseAuth.instance.signOut();
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorUploadingPhotoMsg(e))),

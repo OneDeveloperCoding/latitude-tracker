@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/services/auth_revoked_exception.dart';
 import '../../demo/demo_mode.dart';
 
 abstract class CatalogueRepository {
@@ -16,7 +17,8 @@ class _FirestoreCatalogueRepository implements CatalogueRepository {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
-  String get _userId => _auth.currentUser!.uid;
+  String get _userId =>
+      _auth.currentUser?.uid ?? (throw const AuthRevokedException());
 
   DocumentReference<Map<String, dynamic>> get _docRef => _firestore
       .collection('users')

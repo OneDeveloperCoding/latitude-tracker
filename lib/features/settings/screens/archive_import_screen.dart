@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/auth_revoked_exception.dart';
 import '../services/archive_service.dart';
 import 'archive_analytics_screen.dart';
 
@@ -66,6 +68,10 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
       });
       _showResult(result);
     } catch (e) {
+      if (e is AuthRevokedException) {
+        FirebaseAuth.instance.signOut();
+        return;
+      }
       if (!mounted) return;
       setState(() => _importing = false);
       ScaffoldMessenger.of(context).showSnackBar(

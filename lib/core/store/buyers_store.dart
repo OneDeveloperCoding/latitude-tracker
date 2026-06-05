@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_revoked_exception.dart';
 import '../services/error_reporter.dart';
 import 'package:flutter/foundation.dart';
 
@@ -25,6 +27,13 @@ class BuyersStore {
     _sub = BuyerRepository().watchBuyers().listen(
       (buyers) => state.value = StoreLoaded(buyers),
       onError: (e, StackTrace st) {
+        if (e is AuthRevokedException ||
+            (e is FirebaseException && e.code == 'permission-denied')) {
+          _sub?.cancel();
+          _sub = null;
+          FirebaseAuth.instance.signOut();
+          return;
+        }
         logError(e, st);
         state.value = StoreError(e);
       },

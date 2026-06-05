@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/services/auth_revoked_exception.dart';
 import '../../../core/services/error_reporter.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,10 +11,8 @@ class PhotoService {
   final _picker = ImagePicker();
   final _uuid = const Uuid();
 
-  // TODO(safety): currentUser! will crash on a mid-flight auth revoke. Safe for
-  // now because the router gates all repo access behind the auth stream, but
-  // worth adding a null-guard if auth edge cases become a concern.
-  String get _userId => _auth.currentUser!.uid;
+  String get _userId =>
+      _auth.currentUser?.uid ?? (throw const AuthRevokedException());
 
   Reference _photoRef(String saleId, String itemId, String photoId) =>
       _storage.ref(
@@ -57,6 +56,7 @@ class PhotoService {
     try {
       await _deleteFolder('users/$_userId/sales/$saleId');
     } catch (e, st) {
+      if (e is AuthRevokedException) rethrow;
       // Folder may not exist — best-effort, but track unexpected errors.
       logError(e, st);
     }

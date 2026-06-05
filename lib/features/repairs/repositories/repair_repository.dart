@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/services/auth_revoked_exception.dart';
 import '../../../core/services/firestore_batch_utils.dart';
 import '../../demo/demo_mode.dart';
 import '../models/repair.dart';
@@ -26,7 +27,8 @@ class _FirestoreRepairRepository implements RepairRepository {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
-  String get _userId => _auth.currentUser!.uid;
+  String get _userId =>
+      _auth.currentUser?.uid ?? (throw const AuthRevokedException());
 
   CollectionReference<Map<String, dynamic>> get _repairsRef =>
       _firestore.collection('users').doc(_userId).collection('repairs');
