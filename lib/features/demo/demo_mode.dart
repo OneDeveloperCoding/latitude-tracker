@@ -4,6 +4,7 @@ import '../settings/repositories/catalogue_repository.dart';
 import 'repositories/in_memory_buyer_repository.dart';
 import 'repositories/in_memory_repair_repository.dart';
 import 'repositories/in_memory_sale_repository.dart';
+import '../../../core/store/addresses_store.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
@@ -33,6 +34,7 @@ class DemoMode {
     SalesStore.forceReset();
     BuyersStore.forceReset();
     RepairsStore.forceReset();
+    AddressesStore.forceReset();
     active.value = true;
     pendingTutorial.value = true;
   }
@@ -43,6 +45,7 @@ class DemoMode {
     SalesStore.forceReset();
     BuyersStore.forceReset();
     RepairsStore.forceReset();
+    AddressesStore.forceReset();
     active.value = false;
     saleRepo.clear();
     buyerRepo.clear();

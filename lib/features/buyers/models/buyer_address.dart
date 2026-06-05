@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BuyerAddress {
   final String id;
+  final String buyerId;
   final String label;
   final String street;
   final String houseNumber;
@@ -14,6 +15,7 @@ class BuyerAddress {
 
   const BuyerAddress({
     required this.id,
+    this.buyerId = '',
     required this.label,
     required this.street,
     required this.houseNumber,
@@ -29,6 +31,7 @@ class BuyerAddress {
     final data = doc.data() as Map<String, dynamic>;
     return BuyerAddress(
       id: doc.id,
+      buyerId: doc.reference.parent.parent?.id ?? '',
       label: data['label'] as String,
       street: data['street'] as String? ?? '',
       houseNumber: data['houseNumber'] as String? ?? '',
@@ -66,6 +69,7 @@ class BuyerAddress {
   }
 
   BuyerAddress copyWith({
+    String? buyerId,
     String? label,
     String? street,
     String? houseNumber,
@@ -78,6 +82,7 @@ class BuyerAddress {
   }) =>
       BuyerAddress(
         id: id,
+        buyerId: buyerId ?? this.buyerId,
         label: label ?? this.label,
         street: street ?? this.street,
         houseNumber: houseNumber ?? this.houseNumber,
