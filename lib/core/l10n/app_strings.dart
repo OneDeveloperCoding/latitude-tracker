@@ -109,10 +109,6 @@ class AppStrings {
   final String filterSort;
   final String moreFilters;
   final String sortBy;
-  final String newestFirst;
-  final String oldestFirst;
-  final String priceHighToLow;
-  final String priceLowToHigh;
   final String sortDimensionDate;
   final String sortDimensionPrice;
   final String noShippedSalesWithPostalCode;
@@ -518,10 +514,6 @@ class AppStrings {
     required this.filterSort,
     required this.moreFilters,
     required this.sortBy,
-    required this.newestFirst,
-    required this.oldestFirst,
-    required this.priceHighToLow,
-    required this.priceLowToHigh,
     required this.sortDimensionDate,
     required this.sortDimensionPrice,
     required this.noShippedSalesWithPostalCode,
@@ -1229,10 +1221,6 @@ class AppStrings {
     filterSort: 'Filter & sort',
     moreFilters: 'Filters',
     sortBy: 'Sort by',
-    newestFirst: 'Newest first',
-    oldestFirst: 'Oldest first',
-    priceHighToLow: 'Price: high to low',
-    priceLowToHigh: 'Price: low to high',
     sortDimensionDate: 'Date',
     sortDimensionPrice: 'Price',
     noShippedSalesWithPostalCode: 'No shipped sales with postal codes.',
@@ -1635,10 +1623,6 @@ class AppStrings {
     filterSort: 'Filtrar e ordenar',
     moreFilters: 'Filtros',
     sortBy: 'Ordenar por',
-    newestFirst: 'Mais recentes',
-    oldestFirst: 'Mais antigas',
-    priceHighToLow: 'Preço: decrescente',
-    priceLowToHigh: 'Preço: crescente',
     sortDimensionDate: 'Data',
     sortDimensionPrice: 'Preço',
     noShippedSalesWithPostalCode: 'Sem vendas enviadas com código postal.',
