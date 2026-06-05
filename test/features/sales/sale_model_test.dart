@@ -212,6 +212,35 @@ void main() {
     });
   });
 
+  group('SaleItem.fromMap — null price falls back to 0.0', () {
+    test('null price falls back to 0.0', () {
+      final map = {
+        'id': 'i1',
+        'description': 'Test',
+        'category': 'Colares',
+        'price': null,
+        'assemblyStatus': 'notStarted',
+      };
+      expect(SaleItem.fromMap(map).price, 0.0);
+    });
+  });
+
+  group('SalePayment.fromMap — missing sub-map uses defaults', () {
+    test('empty map falls back to unpaid + cash', () {
+      final payment = SalePayment.fromMap(const {});
+      expect(payment.status, PaymentStatus.unpaid);
+      expect(payment.method, PaymentMethod.cash);
+    });
+  });
+
+  group('SaleShipment.fromMap — missing sub-map uses defaults', () {
+    test('empty map falls back to shipping + pending', () {
+      final shipment = SaleShipment.fromMap(const {});
+      expect(shipment.type, DeliveryType.shipping);
+      expect(shipment.status, ShipmentStatus.pending);
+    });
+  });
+
   group('Sale.fromArchiveMap — null-safe string and enum fields', () {
     Map<String, dynamic> baseSaleMap() => {
           'id': 's1',
@@ -233,6 +262,26 @@ void main() {
     test('null buyerName falls back to empty string', () {
       final map = baseSaleMap()..['buyerName'] = null;
       expect(Sale.fromArchiveMap(map).buyerName, '');
+    });
+
+    test('null payment sub-map uses defaults', () {
+      final map = baseSaleMap()..['payment'] = null;
+      final sale = Sale.fromArchiveMap(map);
+      expect(sale.payment.status, PaymentStatus.unpaid);
+      expect(sale.payment.method, PaymentMethod.cash);
+    });
+
+    test('null shipment sub-map uses defaults', () {
+      final map = baseSaleMap()..['shipment'] = null;
+      final sale = Sale.fromArchiveMap(map);
+      expect(sale.shipment.type, DeliveryType.shipping);
+      expect(sale.shipment.status, ShipmentStatus.pending);
+    });
+
+    test('missing createdAt falls back to epoch, not current time', () {
+      final map = baseSaleMap()..['createdAt'] = null;
+      final sale = Sale.fromArchiveMap(map);
+      expect(sale.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
   });
 

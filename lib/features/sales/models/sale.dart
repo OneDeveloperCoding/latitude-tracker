@@ -114,7 +114,7 @@ class SaleItem {
         id: map['id'] as String? ?? '',
         description: map['description'] as String? ?? '',
         category: map['category'] as String? ?? kDefaultCategories.first,
-        price: (map['price'] as num).toDouble(),
+        price: (map['price'] as num?)?.toDouble() ?? 0.0,
         assemblyStatus: AssemblyStatus.values.firstWhere(
           (e) => e.name == map['assemblyStatus'],
           orElse: () => AssemblyStatus.notStarted,
@@ -315,8 +315,10 @@ class Sale {
         items: (map['items'] as List<dynamic>? ?? [])
             .map((e) => SaleItem.fromMap(e as Map<String, dynamic>))
             .toList(),
-        payment: SalePayment.fromMap(map['payment'] as Map<String, dynamic>),
-        shipment: SaleShipment.fromMap(map['shipment'] as Map<String, dynamic>),
+        payment: SalePayment.fromMap(
+            (map['payment'] as Map<String, dynamic>?) ?? const {}),
+        shipment: SaleShipment.fromMap(
+            (map['shipment'] as Map<String, dynamic>?) ?? const {}),
         requiresNif: map['requiresNif'] as bool? ?? false,
         atSubmissionDone: map['atSubmissionDone'] as bool? ?? false,
         createdAt: _parseArchiveDate(map['createdAt']),
@@ -332,7 +334,9 @@ class Sale {
       return DateTime.fromMillisecondsSinceEpoch(
           (value['_seconds'] as int) * 1000);
     }
-    return DateTime.now();
+    // Sentinel for unrecognised/missing dates — keeps corrupt docs out of
+    // current-period aggregations without losing them from the list entirely.
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   factory Sale.fromFirestore(DocumentSnapshot doc) {
@@ -344,11 +348,14 @@ class Sale {
       items: (data['items'] as List<dynamic>? ?? [])
           .map((e) => SaleItem.fromMap(e as Map<String, dynamic>))
           .toList(),
-      payment: SalePayment.fromMap(data['payment'] as Map<String, dynamic>),
-      shipment: SaleShipment.fromMap(data['shipment'] as Map<String, dynamic>),
+      payment: SalePayment.fromMap(
+          (data['payment'] as Map<String, dynamic>?) ?? const {}),
+      shipment: SaleShipment.fromMap(
+          (data['shipment'] as Map<String, dynamic>?) ?? const {}),
       requiresNif: data['requiresNif'] as bool? ?? false,
       atSubmissionDone: data['atSubmissionDone'] as bool? ?? false,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
+          DateTime.fromMillisecondsSinceEpoch(0),
       scheduledDate: (data['scheduledDate'] as Timestamp?)?.toDate(),
       notes: data['notes'] as String?,
     );

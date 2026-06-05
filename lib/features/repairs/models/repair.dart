@@ -118,7 +118,11 @@ class Repair {
         id: map['id'] as String? ?? '',
         buyerId: map['buyerId'] as String?,
         buyerName: map['buyerName'] as String?,
-        freeTextContact: map['freeTextContact'] as String?,
+        // If buyerId is absent, freeTextContact must be non-null to satisfy the
+        // constructor assert. Fall back to '' rather than letting both be null.
+        freeTextContact: map['buyerId'] == null
+            ? (map['freeTextContact'] as String? ?? '')
+            : map['freeTextContact'] as String?,
         linkedSaleId: map['linkedSaleId'] as String?,
         itemDescription: map['itemDescription'] as String? ?? '',
         itemCategory: map['itemCategory'] as String? ?? '',
@@ -129,9 +133,10 @@ class Repair {
           (e) => e.name == map['status'],
           orElse: () => RepairStatus.received,
         ),
-        payment: SalePayment.fromMap(map['payment'] as Map<String, dynamic>),
+        payment: SalePayment.fromMap(
+            (map['payment'] as Map<String, dynamic>?) ?? const {}),
         returnDelivery: RepairReturnDelivery.fromMap(
-            map['returnDelivery'] as Map<String, dynamic>),
+            (map['returnDelivery'] as Map<String, dynamic>?) ?? const {}),
         photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
         createdAt: _parseArchiveDate(map['createdAt']),
       );
@@ -142,7 +147,7 @@ class Repair {
       return DateTime.fromMillisecondsSinceEpoch(
           (value['_seconds'] as int) * 1000);
     }
-    return DateTime.now();
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   factory Repair.fromFirestore(DocumentSnapshot doc) {
@@ -162,11 +167,13 @@ class Repair {
         (e) => e.name == data['status'],
         orElse: () => RepairStatus.received,
       ),
-      payment: SalePayment.fromMap(data['payment'] as Map<String, dynamic>),
+      payment: SalePayment.fromMap(
+          (data['payment'] as Map<String, dynamic>?) ?? const {}),
       returnDelivery: RepairReturnDelivery.fromMap(
-          data['returnDelivery'] as Map<String, dynamic>),
+          (data['returnDelivery'] as Map<String, dynamic>?) ?? const {}),
       photoUrls: List<String>.from(data['photoUrls'] as List? ?? []),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
+          DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 
