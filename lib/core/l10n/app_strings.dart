@@ -1043,6 +1043,10 @@ class AppStrings {
   String deleteFailed(Object error) =>
       _pt ? 'Falha na eliminação: $error' : 'Delete failed: $error';
 
+  String deleteYearPartialFailed(int year, Object error) => _pt
+      ? 'Vendas de $year eliminadas, mas falha ao eliminar reparações: $error'
+      : '$year sales deleted, but repair deletion failed: $error';
+
   String errorSavingSaleMsg(Object error) =>
       _pt ? 'Erro ao guardar venda: $error' : 'Error saving sale: $error';
 

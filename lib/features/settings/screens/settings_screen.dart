@@ -274,6 +274,7 @@ class SettingsScreen extends StatelessWidget {
     );
     if (deletePhotos == null || !context.mounted) return;
 
+    var salesDeleted = false;
     try {
       await _runWithProgress(
         context,
@@ -281,14 +282,18 @@ class SettingsScreen extends StatelessWidget {
         () async {
           await SaleRepository()
               .deleteAllSalesForYear(year, deletePhotos: deletePhotos);
+          salesDeleted = true;
           await RepairRepository()
               .deleteAllRepairsForYear(year, deletePhotos: deletePhotos);
         },
       );
     } catch (e) {
       if (context.mounted) {
+        final message = salesDeleted
+            ? s.deleteYearPartialFailed(year, e)
+            : s.deleteFailed(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(s.deleteFailed(e))),
+          SnackBar(content: Text(message)),
         );
       }
       return;
