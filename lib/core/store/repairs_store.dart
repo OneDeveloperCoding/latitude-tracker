@@ -21,16 +21,20 @@ class RepairsStore {
           ? (state.value as StoreLoaded<List<Repair>>).data
           : null;
 
+  static void _tearDown() {
+    _sub?.cancel();
+    _sub = null;
+  }
+
   static void init() {
     if (_sub != null) return;
     state.value = const StoreLoading();
     _sub = RepairRepository().watchRepairs().listen(
       (repairs) => state.value = StoreLoaded(repairs),
       onError: (e, StackTrace st) {
+        _tearDown();
         if (e is AuthRevokedException ||
             (e is FirebaseException && e.code == 'permission-denied')) {
-          _sub?.cancel();
-          _sub = null;
           FirebaseAuth.instance.signOut();
           return;
         }

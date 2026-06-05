@@ -21,7 +21,7 @@ class MainNav extends StatefulWidget {
   State<MainNav> createState() => _MainNavState();
 }
 
-class _MainNavState extends State<MainNav> {
+class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   static const List<Widget> _screens = [
@@ -34,6 +34,7 @@ class _MainNavState extends State<MainNav> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     SalesStore.init();
     BuyersStore.init();
     RepairsStore.init();
@@ -43,12 +44,21 @@ class _MainNavState extends State<MainNav> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
     SalesStore.state.removeListener(_onSalesStoreChanged);
     SalesStore.dispose();
     BuyersStore.dispose();
     RepairsStore.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (SalesStore.state.value is StoreError) SalesStore.init();
+    if (BuyersStore.state.value is StoreError) BuyersStore.init();
+    if (RepairsStore.state.value is StoreError) RepairsStore.init();
   }
 
   // Geocode heat map prefixes in the background whenever the sales list
