@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
@@ -137,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
       try {
         await FirebaseAuth.instance.signOut();
       } catch (e, st) {
-        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+        logError(e, st);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.s.errGeneric)),
@@ -182,7 +182,8 @@ class SettingsScreen extends StatelessWidget {
         s.resettingApp,
         () => ResetAppService().resetApp(deletePhotos: deletePhotos),
       );
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${s.resetAppFailed}: $e')),
@@ -203,7 +204,8 @@ class SettingsScreen extends StatelessWidget {
       await _runWithProgress(context, s.exportingYear(year), () async {
         file = await service.exportYear(year);
       });
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.exportFailed(e))),
@@ -236,7 +238,7 @@ class SettingsScreen extends StatelessWidget {
     try {
       content = await File(path).readAsString();
     } catch (e, st) {
-      FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.invalidArchive)),
@@ -287,7 +289,8 @@ class SettingsScreen extends StatelessWidget {
               .deleteAllRepairsForYear(year, deletePhotos: deletePhotos);
         },
       );
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         final message = salesDeleted
             ? s.deleteYearPartialFailed(year, e)
