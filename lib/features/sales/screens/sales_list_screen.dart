@@ -13,6 +13,7 @@ import '../models/sale.dart';
 import '../models/sale_filter.dart';
 import '../services/sale_grouper.dart';
 import '../services/sale_urgency.dart';
+import '../services/sale_urgency_ui.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
@@ -775,7 +776,7 @@ class _CategoryChip extends StatelessWidget {
 // Shows item descriptions (up to 3) plus "and X more" if needed.
 class _ItemDescriptions extends StatelessWidget {
   final Sale sale;
-  final List<UrgencyReason> reasons;
+  final List<UrgencyReasonType> reasons;
 
   const _ItemDescriptions({required this.sale, required this.reasons});
 
@@ -901,10 +902,11 @@ class _SaleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd MMM yyyy');
-    final reasons = sale.urgencyReasons();
+    final level = sale.urgencyLevel();
+    final reasons = sale.urgencyReasons(level: level);
     final accentColor = reasons.isEmpty
         ? null
-        : sale.urgencyLevel() == UrgencyLevel.overdue
+        : level == UrgencyLevel.overdue
             ? Theme.of(context).colorScheme.error
             : Colors.amber[700]!;
 
@@ -990,7 +992,7 @@ class _SaleCard extends StatelessWidget {
 
 class _AttentionBadges extends StatelessWidget {
   final Sale sale;
-  final List<UrgencyReason> reasons;
+  final List<UrgencyReasonType> reasons;
 
   const _AttentionBadges({required this.sale, required this.reasons});
 
@@ -1265,7 +1267,7 @@ void _showReadyButUnpaidDetail(BuildContext context) {
 }
 
 void _showUrgencyDetail(
-    BuildContext context, List<UrgencyReason> reasons) {
+    BuildContext context, List<UrgencyReasonType> reasons) {
   final s = context.s;
   showModalBottomSheet(
     context: context,
@@ -1285,7 +1287,7 @@ void _showUrgencyDetail(
                 children: [
                   Icon(r.icon, size: 20, color: r.color),
                   const SizedBox(width: 12),
-                  Text(s.urgencyReasonLabel(r.type),
+                  Text(s.urgencyReasonLabel(r),
                       style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
