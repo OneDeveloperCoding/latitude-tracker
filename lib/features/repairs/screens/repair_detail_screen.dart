@@ -15,15 +15,30 @@ import '../models/repair.dart';
 import '../repositories/repair_repository.dart';
 import 'new_repair_screen.dart';
 
-class RepairDetailScreen extends StatelessWidget {
+class RepairDetailScreen extends StatefulWidget {
   final String repairId;
 
   const RepairDetailScreen({super.key, required this.repairId});
 
   @override
+  State<RepairDetailScreen> createState() => _RepairDetailScreenState();
+}
+
+class _RepairDetailScreenState extends State<RepairDetailScreen> {
+  late final RepairRepository _repository;
+  late final Stream<Repair?> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = RepairRepository();
+    _stream = _repository.watchRepair(widget.repairId);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<Repair?>(
-      stream: RepairRepository().watchRepair(repairId),
+      stream: _stream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Scaffold(
