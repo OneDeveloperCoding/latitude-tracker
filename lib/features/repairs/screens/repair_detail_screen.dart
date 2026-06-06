@@ -263,6 +263,8 @@ class _RepairDetailBody extends StatelessWidget {
                   title: Text(repair.returnDelivery.trackingCode!),
                   subtitle: Text(s.cttTrackingLabel),
                 ),
+              if (!DemoMode.active.value)
+                _ReturnDeliveryActions(repair: repair),
             ],
           ),
           if (repair.linkedSaleId != null) ...[
@@ -428,6 +430,78 @@ class _StatusChipInline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(s.repairStatusLabelFor(repair.status));
+  }
+}
+
+class _ReturnDeliveryActions extends StatefulWidget {
+  final Repair repair;
+
+  const _ReturnDeliveryActions({required this.repair});
+
+  @override
+  State<_ReturnDeliveryActions> createState() => _ReturnDeliveryActionsState();
+}
+
+class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
+  bool _isUpdating = false;
+
+  Future<void> _advance() async {
+    final delivery = widget.repair.returnDelivery;
+    final nextStatus = delivery.type == DeliveryType.shipping &&
+            delivery.status == ShipmentStatus.pending
+        ? ShipmentStatus.shipped
+        : ShipmentStatus.delivered;
+
+    setState(() => _isUpdating = true);
+    try {
+      await RepairRepository().updateRepair(
+        widget.repair.copyWith(
+          returnDelivery: delivery.copyWith(status: nextStatus),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.errorSavingRepair)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repair = widget.repair;
+    if (repair.status != RepairStatus.done &&
+        repair.status != RepairStatus.returned) {
+      return const SizedBox.shrink();
+    }
+
+    final delivery = repair.returnDelivery;
+    if (delivery.status == ShipmentStatus.delivered) return const SizedBox.shrink();
+
+    final s = context.s;
+    final isShippingPending = delivery.type == DeliveryType.shipping &&
+        delivery.status == ShipmentStatus.pending;
+    final label = isShippingPending ? s.markAsSent : s.markAsDelivered;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 4),
+        child: FilledButton.tonal(
+          onPressed: _isUpdating ? null : _advance,
+          child: _isUpdating
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(label),
+        ),
+      ),
+    );
   }
 }
 
