@@ -35,12 +35,76 @@ class SaleDetailScreen extends StatefulWidget {
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
   late final SaleRepository _repository;
   late final Stream<Sale?> _stream;
+  bool _popping = false;
 
   @override
   void initState() {
     super.initState();
     _repository = SaleRepository();
     _stream = _repository.watchSale(widget.saleId);
+  }
+
+  Future<void> _confirmDelete(BuildContext context, Sale sale) async {
+    final s = context.s;
+    final shipped = sale.shipment.status == ShipmentStatus.shipped ||
+        sale.shipment.status == ShipmentStatus.delivered;
+    final paid = sale.payment.status == PaymentStatus.paid;
+
+    final totalPhotos =
+        sale.items.fold(0, (acc, item) => acc + item.photoUrls.length);
+
+    final String title;
+    final String message;
+
+    if (shipped) {
+      title = s.deleteShippedSaleTitle;
+      final statusLabel = sale.shipment.status == ShipmentStatus.delivered
+          ? s.delivered
+          : s.shippedStatus;
+      message =
+          s.deleteShippedSaleBody(statusLabel, sale.atSubmissionDone, totalPhotos);
+    } else if (paid) {
+      title = s.deletePaidSaleTitle;
+      message = s.deletePaidSaleBody(sale.totalPrice, totalPhotos);
+    } else {
+      title = s.deleteSaleTitle;
+      message = s.deleteSaleBody(totalPhotos);
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await _repository.deleteSale(sale.id);
+      if (context.mounted) {
+        setState(() => _popping = true);
+        Navigator.of(context).pop();
+      }
+    } catch (e, st) {
+      logError(e, st);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
+      }
+    }
   }
 
   @override
@@ -55,108 +119,56 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           );
         }
         final sale = snapshot.data;
+        if (sale == null) {
+          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+            _popping = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            });
+          }
+          return Scaffold(
+            appBar: AppBar(title: Text(context.s.saleFallbackTitle)),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(sale?.buyerName ?? context.s.saleFallbackTitle),
+            title: Text(sale.buyerName),
             actions: [
-              if (sale != null) ...[
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NewSaleScreen(sale: sale),
-                    ),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NewSaleScreen(sale: sale),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.copy_outlined),
-                  tooltip: context.s.duplicateSaleTooltip,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          NewSaleScreen(sale: sale, isDuplicate: true),
-                    ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy_outlined),
+                tooltip: context.s.duplicateSaleTooltip,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        NewSaleScreen(sale: sale, isDuplicate: true),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: context.s.deleteSaleTooltip,
-                  onPressed: () =>
-                      _confirmDelete(context, sale, _repository),
-                ),
-              ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: context.s.deleteSaleTooltip,
+                onPressed: () => _confirmDelete(context, sale),
+              ),
             ],
           ),
-          body: sale == null
-              ? const Center(child: CircularProgressIndicator())
-              : _SaleDetailBody(sale: sale, repository: _repository),
+          body: _SaleDetailBody(sale: sale, repository: _repository),
         );
       },
     );
-  }
-}
-
-Future<void> _confirmDelete(
-    BuildContext context, Sale sale, SaleRepository repository) async {
-  final s = context.s;
-  final shipped = sale.shipment.status == ShipmentStatus.shipped ||
-      sale.shipment.status == ShipmentStatus.delivered;
-  final paid = sale.payment.status == PaymentStatus.paid;
-
-  final totalPhotos =
-      sale.items.fold(0, (acc, item) => acc + item.photoUrls.length);
-
-  final String title;
-  final String message;
-
-  if (shipped) {
-    title = s.deleteShippedSaleTitle;
-    final statusLabel = sale.shipment.status == ShipmentStatus.delivered
-        ? s.delivered
-        : s.shippedStatus;
-    message =
-        s.deleteShippedSaleBody(statusLabel, sale.atSubmissionDone, totalPhotos);
-  } else if (paid) {
-    title = s.deletePaidSaleTitle;
-    message = s.deletePaidSaleBody(sale.totalPrice, totalPhotos);
-  } else {
-    title = s.deleteSaleTitle;
-    message = s.deleteSaleBody(totalPhotos);
-  }
-
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(s.cancel),
-        ),
-        TextButton(
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(s.delete),
-        ),
-      ],
-    ),
-  );
-
-  if (confirmed != true || !context.mounted) return;
-
-  try {
-    await repository.deleteSale(sale.id);
-    if (context.mounted) Navigator.of(context).pop();
-  } catch (e, st) {
-    logError(e, st);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
-    }
   }
 }
 
