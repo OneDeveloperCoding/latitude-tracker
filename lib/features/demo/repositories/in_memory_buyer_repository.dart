@@ -62,6 +62,13 @@ class InMemoryBuyerRepository implements BuyerRepository {
   }
 
   @override
+  Stream<Buyer?> watchBuyer(String id) async* {
+    yield _buyers.where((b) => b.id == id).firstOrNull;
+    yield* _buyerController.stream
+        .map((list) => list.where((b) => b.id == id).firstOrNull);
+  }
+
+  @override
   Future<Buyer?> getBuyer(String id) async =>
       _buyers.where((b) => b.id == id).firstOrNull;
 
