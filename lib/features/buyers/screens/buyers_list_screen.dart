@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../sales/services/sale_grouper.dart';
 import '../models/buyer.dart';
 import '../models/buyer_stats.dart';
 import 'buyer_detail_screen.dart';
@@ -68,14 +69,12 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   void _rebuildStats() {
-    final allSales = SalesStore.current ?? [];
+    final byBuyer = SaleGrouper.byBuyerId(SalesStore.current ?? []);
     _statsCache = {
       for (final buyer in BuyersStore.current ?? [])
         buyer.id: _BuyerWithStats(
           buyer: buyer,
-          stats: BuyerStats.compute(
-            allSales.where((s) => s.buyerId == buyer.id).toList(),
-          ),
+          stats: BuyerStats.compute(byBuyer[buyer.id] ?? []),
         ),
     };
   }
