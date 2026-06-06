@@ -409,6 +409,8 @@ class AppStrings {
   final String noLinkedRepairs;
   final String errorSavingRepair;
   final String errorDeletingRepair;
+  final String markAsSent;
+  final String markAsDelivered;
   final String analyticsSalesTab;
   final String analyticsRepairsTab;
   final String repairRevenue;
@@ -807,6 +809,8 @@ class AppStrings {
     required this.noLinkedRepairs,
     required this.errorSavingRepair,
     required this.errorDeletingRepair,
+    required this.markAsSent,
+    required this.markAsDelivered,
     required this.analyticsSalesTab,
     required this.analyticsRepairsTab,
     required this.repairRevenue,
@@ -1605,6 +1609,8 @@ class AppStrings {
     noLinkedRepairs: 'No repairs linked to this sale.',
     errorSavingRepair: 'Error saving repair',
     errorDeletingRepair: 'Error deleting repair',
+    markAsSent: 'Mark as Sent',
+    markAsDelivered: 'Mark as Delivered',
     analyticsSalesTab: 'Sales',
     analyticsRepairsTab: 'Repairs',
     repairRevenue: 'Repair revenue',
@@ -2028,6 +2034,8 @@ class AppStrings {
     noLinkedRepairs: 'Sem reparações associadas a esta venda.',
     errorSavingRepair: 'Erro ao guardar reparação',
     errorDeletingRepair: 'Erro ao eliminar reparação',
+    markAsSent: 'Marcar como enviado',
+    markAsDelivered: 'Marcar como entregue',
     analyticsSalesTab: 'Vendas',
     analyticsRepairsTab: 'Reparações',
     repairRevenue: 'Receita de reparações',
