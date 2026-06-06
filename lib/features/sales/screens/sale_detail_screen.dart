@@ -55,44 +55,51 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           );
         }
         final sale = snapshot.data;
+        if (sale == null) {
+          if (snapshot.connectionState != ConnectionState.waiting) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) Navigator.of(context).pop();
+            });
+          }
+          return Scaffold(
+            appBar: AppBar(title: Text(context.s.saleFallbackTitle)),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(sale?.buyerName ?? context.s.saleFallbackTitle),
+            title: Text(sale.buyerName),
             actions: [
-              if (sale != null) ...[
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NewSaleScreen(sale: sale),
-                    ),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NewSaleScreen(sale: sale),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.copy_outlined),
-                  tooltip: context.s.duplicateSaleTooltip,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          NewSaleScreen(sale: sale, isDuplicate: true),
-                    ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy_outlined),
+                tooltip: context.s.duplicateSaleTooltip,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        NewSaleScreen(sale: sale, isDuplicate: true),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: context.s.deleteSaleTooltip,
-                  onPressed: () =>
-                      _confirmDelete(context, sale, _repository),
-                ),
-              ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: context.s.deleteSaleTooltip,
+                onPressed: () =>
+                    _confirmDelete(context, sale, _repository),
+              ),
             ],
           ),
-          body: sale == null
-              ? const Center(child: CircularProgressIndicator())
-              : _SaleDetailBody(sale: sale, repository: _repository),
+          body: _SaleDetailBody(sale: sale, repository: _repository),
         );
       },
     );

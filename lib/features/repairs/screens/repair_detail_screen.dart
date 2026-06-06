@@ -44,17 +44,16 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
             body: Center(child: Text(context.s.errorLoadingDetail)),
           );
         }
-        if (!snapshot.hasData) {
+        final repair = snapshot.data;
+        if (repair == null) {
+          if (snapshot.connectionState != ConnectionState.waiting) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) Navigator.of(context).pop();
+            });
+          }
           return Scaffold(
             appBar: AppBar(),
             body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-        final repair = snapshot.data;
-        if (repair == null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const SizedBox.shrink(),
           );
         }
         return _RepairDetailBody(repair: repair);
