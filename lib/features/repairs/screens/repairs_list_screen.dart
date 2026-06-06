@@ -43,6 +43,16 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
             : <Repair>[];
         final isLoading = state is StoreLoading;
 
+        // On wide layout, clear the selection if the repair was deleted on another device.
+        if (_selectedRepair != null && state is StoreLoaded<List<Repair>>) {
+          final allRepairs = state.data;
+          if (!allRepairs.any((r) => r.id == _selectedRepair!.id)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _selectedRepair = null);
+            });
+          }
+        }
+
         if (_isWide) {
           return Row(
             children: [
