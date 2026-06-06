@@ -92,4 +92,187 @@ void main() {
       );
     });
   });
+
+  group('RepairReturnDelivery — toMap / fromMap round-trip', () {
+    test('all fields survive toMap → fromMap', () {
+      const original = RepairReturnDelivery(
+        type: DeliveryType.handDelivery,
+        status: ShipmentStatus.delivered,
+        trackingCode: 'PT123456789PT',
+        postalCode: '4700-200',
+      );
+      final restored = RepairReturnDelivery.fromMap(original.toMap());
+      expect(restored.type, original.type);
+      expect(restored.status, original.status);
+      expect(restored.trackingCode, original.trackingCode);
+      expect(restored.postalCode, original.postalCode);
+    });
+
+    test('null optional fields survive round-trip', () {
+      const original = RepairReturnDelivery(
+        type: DeliveryType.shipping,
+        status: ShipmentStatus.pending,
+      );
+      final restored = RepairReturnDelivery.fromMap(original.toMap());
+      expect(restored.trackingCode, isNull);
+      expect(restored.postalCode, isNull);
+    });
+  });
+
+  group('Repair.fromArchiveMap — full field preservation', () {
+    test('all scalar fields are read correctly', () {
+      final map = _baseRepairMap()
+        ..['workDone'] = 'Replaced clasp'
+        ..['materialsCost'] = 5.50
+        ..['linkedSaleId'] = 's1'
+        ..['freeTextContact'] = null
+        ..['photoUrls'] = ['https://example.com/photo.jpg'];
+      final repair = Repair.fromArchiveMap(map);
+      expect(repair.id, 'r1');
+      expect(repair.buyerId, 'b1');
+      expect(repair.buyerName, 'Ana');
+      expect(repair.itemDescription, 'Necklace');
+      expect(repair.itemCategory, 'Colares');
+      expect(repair.problemDescription, 'Broken clasp');
+      expect(repair.workDone, 'Replaced clasp');
+      expect(repair.materialsCost, 5.50);
+      expect(repair.linkedSaleId, 's1');
+      expect(repair.photoUrls, ['https://example.com/photo.jpg']);
+      expect(repair.createdAt, DateTime(2026, 1, 1));
+    });
+
+    test('materialsCost parsed as double when stored as int', () {
+      final map = _baseRepairMap()..['materialsCost'] = 10;
+      expect(Repair.fromArchiveMap(map).materialsCost, 10.0);
+    });
+
+    test('photoUrls absent falls back to empty list', () {
+      final map = _baseRepairMap()..remove('photoUrls');
+      expect(Repair.fromArchiveMap(map).photoUrls, isEmpty);
+    });
+  });
+
+  group('Repair — computed properties', () {
+    Repair makeRepair({
+      RepairStatus status = RepairStatus.inProgress,
+      ShipmentStatus returnStatus = ShipmentStatus.pending,
+      String? buyerId = 'b1',
+      String? buyerName = 'Ana',
+      String? freeTextContact,
+    }) =>
+        Repair(
+          id: 'r1',
+          buyerId: buyerId,
+          buyerName: buyerName,
+          freeTextContact: freeTextContact,
+          itemDescription: 'Necklace',
+          itemCategory: 'Colares',
+          problemDescription: 'Broken clasp',
+          status: status,
+          payment: const SalePayment(
+              status: PaymentStatus.unpaid, method: PaymentMethod.cash),
+          returnDelivery: RepairReturnDelivery(
+              type: DeliveryType.shipping, status: returnStatus),
+          createdAt: DateTime(2026, 1, 1),
+        );
+
+    group('isActive', () {
+      test('not returned → active', () {
+        expect(makeRepair(status: RepairStatus.inProgress).isActive, isTrue);
+      });
+
+      test('returned + pending delivery → still active', () {
+        expect(
+          makeRepair(
+            status: RepairStatus.returned,
+            returnStatus: ShipmentStatus.pending,
+          ).isActive,
+          isTrue,
+        );
+      });
+
+      test('returned + delivered → inactive', () {
+        expect(
+          makeRepair(
+            status: RepairStatus.returned,
+            returnStatus: ShipmentStatus.delivered,
+          ).isActive,
+          isFalse,
+        );
+      });
+    });
+
+    group('contactName', () {
+      test('buyerName takes priority', () {
+        expect(makeRepair(buyerName: 'Ana').contactName, 'Ana');
+      });
+
+      test('freeTextContact used when no buyerName', () {
+        expect(
+          makeRepair(
+            buyerId: null,
+            buyerName: null,
+            freeTextContact: 'Maria Instagram',
+          ).contactName,
+          'Maria Instagram',
+        );
+      });
+
+      test('empty string when both are null', () {
+        // buyerId must be null, so freeTextContact is required by assert —
+        // the only reachable case here is buyerName == null with buyerId set.
+        expect(makeRepair(buyerName: null).contactName, '');
+      });
+    });
+
+    group('isLinkedToBuyer', () {
+      test('has buyerId → linked', () {
+        expect(makeRepair(buyerId: 'b1').isLinkedToBuyer, isTrue);
+      });
+
+      test('no buyerId → not linked', () {
+        expect(
+          makeRepair(buyerId: null, freeTextContact: 'Maria').isLinkedToBuyer,
+          isFalse,
+        );
+      });
+    });
+  });
+
+  group('Repair.copyWith', () {
+    final base = Repair(
+      id: 'r1',
+      buyerId: 'b1',
+      buyerName: 'Ana',
+      itemDescription: 'Necklace',
+      itemCategory: 'Colares',
+      problemDescription: 'Broken clasp',
+      status: RepairStatus.inProgress,
+      payment: const SalePayment(
+          status: PaymentStatus.unpaid, method: PaymentMethod.cash),
+      returnDelivery: const RepairReturnDelivery(
+          type: DeliveryType.shipping, status: ShipmentStatus.pending),
+      createdAt: DateTime(2026, 1, 1),
+    );
+
+    test('status updated, other fields preserved', () {
+      final updated = base.copyWith(status: RepairStatus.done);
+      expect(updated.status, RepairStatus.done);
+      expect(updated.id, base.id);
+      expect(updated.itemDescription, base.itemDescription);
+    });
+
+    test('materialsCost can be set to null via copyWith', () {
+      final withCost = base.copyWith(materialsCost: 12.0);
+      final cleared = withCost.copyWith(materialsCost: null);
+      expect(cleared.materialsCost, isNull);
+    });
+
+    test('contact fields are immutable (not in copyWith)', () {
+      // buyerId/buyerName/freeTextContact are intentionally excluded.
+      final updated = base.copyWith(workDone: 'Repaired');
+      expect(updated.buyerId, base.buyerId);
+      expect(updated.buyerName, base.buyerName);
+    });
+  });
 }

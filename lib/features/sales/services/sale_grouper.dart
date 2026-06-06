@@ -37,10 +37,10 @@ class SaleGrouper {
     return groups;
   }
 
-  static Map<String, List<Sale>> byWeek(List<Sale> sales) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final startOfThisWeek = today.subtract(Duration(days: now.weekday - 1));
+  static Map<String, List<Sale>> byWeek(List<Sale> sales, {DateTime? now}) {
+    final reference = now ?? DateTime.now();
+    final today = DateTime(reference.year, reference.month, reference.day);
+    final startOfThisWeek = today.subtract(Duration(days: today.weekday - 1));
     final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
     final endOfNextWeek = startOfNextWeek.add(const Duration(days: 7));
     final Map<String, List<Sale>> groups = {};
