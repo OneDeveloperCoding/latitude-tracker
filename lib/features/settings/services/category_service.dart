@@ -3,9 +3,17 @@ import '../../sales/repositories/sale_repository.dart';
 import '../repositories/catalogue_repository.dart';
 
 class CategoryService {
-  final _saleRepo = SaleRepository();
-  final _repairRepo = RepairRepository();
-  final _catalogueRepo = CatalogueRepository();
+  final SaleRepository _saleRepo;
+  final RepairRepository _repairRepo;
+  final CatalogueRepository _catalogueRepo;
+
+  CategoryService({
+    SaleRepository? saleRepo,
+    RepairRepository? repairRepo,
+    CatalogueRepository? catalogueRepo,
+  })  : _saleRepo = saleRepo ?? SaleRepository(),
+        _repairRepo = repairRepo ?? RepairRepository(),
+        _catalogueRepo = catalogueRepo ?? CatalogueRepository();
 
   /// Renames [oldName] to [newName] across all SaleItems, Repairs, and the
   /// hidden list. Runs in parallel where possible.
