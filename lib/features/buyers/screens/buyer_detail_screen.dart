@@ -73,6 +73,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.edit),
+                  tooltip: s.editBuyer,
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -81,6 +82,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
+                  tooltip: s.delete,
                   onPressed: () => _confirmDelete(context, buyer),
                 ),
               ],
@@ -552,7 +554,7 @@ class _SaleTile extends StatelessWidget {
                 onTap: () => _showNotePreview(context, sale.notes!),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(14),
                   child: Icon(
                     Icons.sticky_note_2_outlined,
                     size: 16,
