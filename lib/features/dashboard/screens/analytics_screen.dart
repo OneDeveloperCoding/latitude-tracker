@@ -5,6 +5,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../repairs/models/repair.dart';
 import '../../sales/models/sale.dart';
 import '../models/dashboard_stats.dart';
@@ -209,7 +210,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         valueListenable: SalesStore.state,
         builder: (context, storeState, _) {
           if (storeState is StoreError<List<Sale>>) {
-            return Center(child: Text(context.s.errorLoadingSales));
+            return StoreErrorWidget(
+              message: context.s.errorLoadingSales,
+              onRetry: SalesStore.ensureSubscribed,
+            );
           }
           if (storeState is! StoreLoaded<List<Sale>>) {
             return const Center(child: CircularProgressIndicator());
@@ -291,7 +295,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       valueListenable: RepairsStore.state,
       builder: (context, storeState, _) {
         if (storeState is StoreError<List<Repair>>) {
-          return Center(child: Text(context.s.errorLoadingSales));
+          return StoreErrorWidget(
+            message: context.s.errorLoadingRepairs,
+            onRetry: RepairsStore.ensureSubscribed,
+          );
         }
         if (storeState is! StoreLoaded<List<Repair>>) {
           return const Center(child: CircularProgressIndicator());

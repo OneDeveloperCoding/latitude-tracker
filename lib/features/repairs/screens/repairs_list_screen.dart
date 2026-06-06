@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../dashboard/models/dashboard_stats.dart';
 import '../../dashboard/screens/analytics_screen.dart';
 import '../models/repair.dart';
@@ -36,6 +37,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
     return ValueListenableBuilder<StoreState<List<Repair>>>(
       valueListenable: RepairsStore.state,
       builder: (context, state, _) {
+        final isError = state is StoreError<List<Repair>>;
         final repairs = state is StoreLoaded<List<Repair>>
             ? _filterRepairs(state.data)
             : <Repair>[];
@@ -46,11 +48,11 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
             children: [
               SizedBox(
                 width: 380,
-                child: _buildList(context, s, repairs, isLoading),
+                child: _buildList(context, s, repairs, isLoading, isError),
               ),
               const VerticalDivider(width: 1),
               Expanded(
-                child: _selectedRepair == null
+                child: isError || _selectedRepair == null
                     ? Center(
                         child: Text(
                           s.noRepairsFound,
@@ -70,7 +72,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           );
         }
 
-        return _buildList(context, s, repairs, isLoading);
+        return _buildList(context, s, repairs, isLoading, isError);
       },
     );
   }
@@ -80,6 +82,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
     AppStrings s,
     List<Repair> repairs,
     bool isLoading,
+    bool isError,
   ) {
     return Scaffold(
       appBar: AppBar(
@@ -104,9 +107,14 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : repairs.isEmpty
+      body: isError
+          ? StoreErrorWidget(
+              message: s.errorLoadingRepairs,
+              onRetry: RepairsStore.ensureSubscribed,
+            )
+          : isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : repairs.isEmpty
               ? Center(
                   child: Text(
                     s.noRepairsFound,

@@ -5,6 +5,8 @@ import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../buyers/models/buyer.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
@@ -24,7 +26,8 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
   Map<String, Buyer> _buyersById = {};
 
   bool get _loading =>
-      SalesStore.current == null || BuyersStore.current == null;
+      SalesStore.state.value is StoreLoading ||
+      BuyersStore.state.value is StoreLoading;
 
   @override
   void initState() {
@@ -63,6 +66,20 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
   Widget build(BuildContext context) {
     final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
+
+    if (SalesStore.state.value is StoreError ||
+        BuyersStore.state.value is StoreError) {
+      return Scaffold(
+        appBar: AppBar(title: Text(s.nifPendingTitle)),
+        body: StoreErrorWidget(
+          message: s.errorLoadingData,
+          onRetry: () {
+            SalesStore.ensureSubscribed();
+            BuyersStore.ensureSubscribed();
+          },
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(s.nifPendingTitle)),
