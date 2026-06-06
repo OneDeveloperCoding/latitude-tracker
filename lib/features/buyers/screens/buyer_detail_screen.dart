@@ -554,7 +554,7 @@ class _SaleTile extends StatelessWidget {
                 onTap: () => _showNotePreview(context, sale.notes!),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(14),
                   child: Icon(
                     Icons.sticky_note_2_outlined,
                     size: 16,

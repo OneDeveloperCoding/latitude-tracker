@@ -979,6 +979,7 @@ class _AttentionBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final buyerNif = (BuyersStore.current ?? [])
         .where((b) => b.id == sale.buyerId)
         .firstOrNull
@@ -1022,6 +1023,7 @@ class _AttentionBadges extends StatelessWidget {
               child: Icon(
                 Icons.sticky_note_2_outlined,
                 size: 22,
+                semanticLabel: s.sectionNotes,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
@@ -1037,6 +1039,7 @@ class _AttentionBadges extends StatelessWidget {
               child: Icon(
                 kNifIcon,
                 size: 22,
+                semanticLabel: s.nifRequired,
                 color: nifBadgeColor,
               ),
             ),
@@ -1047,11 +1050,12 @@ class _AttentionBadges extends StatelessWidget {
           InkWell(
             onTap: () => _showReadyButUnpaidDetail(context),
             borderRadius: BorderRadius.circular(20),
-            child: const Padding(
-              padding: EdgeInsets.all(11),
+            child: Padding(
+              padding: const EdgeInsets.all(11),
               child: Icon(
                 Icons.price_check,
                 size: 22,
+                semanticLabel: s.readyButUnpaidTitle,
                 color: Colors.amber,
               ),
             ),
@@ -1069,6 +1073,9 @@ class _AttentionBadges extends StatelessWidget {
                     ? reasons.first.icon
                     : Icons.warning_amber_rounded,
                 size: 22,
+                semanticLabel: reasons.length == 1
+                    ? s.urgencyReasonLabel(reasons.first)
+                    : s.urgencySheetTitle,
                 color: reasons.length == 1
                     ? reasons.first.color
                     : Colors.orange,

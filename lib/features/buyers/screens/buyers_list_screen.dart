@@ -455,6 +455,7 @@ class _BuyerTile extends StatelessWidget {
             children: [
               Semantics(
                 label: buyer.name,
+                excludeSemantics: true,
                 child: CircleAvatar(
                     child: Text(buyer.name.isNotEmpty
                         ? buyer.name[0].toUpperCase()
@@ -576,15 +577,18 @@ class _RankedBuyerTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              CircleAvatar(
-                backgroundColor: rankColor,
-                child: Text(
-                  '$rank',
-                  style: TextStyle(
-                    color: rank <= 3
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
+              Semantics(
+                excludeSemantics: true,
+                child: CircleAvatar(
+                  backgroundColor: rankColor,
+                  child: Text(
+                    '$rank',
+                    style: TextStyle(
+                      color: rank <= 3
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
