@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/widgets/discard_dialog.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
 import '../widgets/address_form_fields.dart';
@@ -34,29 +35,9 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
 
   Future<void> _onPopInvoked(bool didPop, _) async {
     if (didPop) return;
-    if (!_hasChanges) {
+    if (!_hasChanges || (await showDiscardDialog(context) && mounted)) {
       Navigator.of(context).pop();
-      return;
     }
-    final s = context.s;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(s.discardChanges),
-        content: Text(s.discardChangesMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(s.discard),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) Navigator.of(context).pop();
   }
 
   Future<void> _save() async {

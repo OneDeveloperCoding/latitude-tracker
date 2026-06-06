@@ -60,11 +60,12 @@ class AddressFormFieldsState extends State<AddressFormFields> {
     if (a == null) {
       return _labelController.text.trim().isNotEmpty ||
           _postalCodeController.text.trim().isNotEmpty ||
-          _cityController.text.trim().isNotEmpty ||
-          _streetController.text.trim().isNotEmpty ||
+          (!_cityAutoFilled && _cityController.text.trim().isNotEmpty) ||
+          (!_streetAutoFilled && _streetController.text.trim().isNotEmpty) ||
           _houseNumberController.text.trim().isNotEmpty ||
           _fractionController.text.trim().isNotEmpty ||
-          _notesController.text.trim().isNotEmpty;
+          _notesController.text.trim().isNotEmpty ||
+          _isDefault;
     }
     final fraction =
         _fractionController.text.trim().isEmpty ? null : _fractionController.text.trim();
