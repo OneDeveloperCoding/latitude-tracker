@@ -13,7 +13,7 @@ import '../models/sale.dart';
 import '../models/sale_filter.dart';
 import '../services/sale_grouper.dart';
 import '../services/sale_urgency.dart';
-import '../widgets/urgency_reason_ui.dart';
+import '../services/sale_urgency_ui.dart';
 import 'new_sale_screen.dart';
 import 'sale_detail_screen.dart';
 
@@ -902,10 +902,11 @@ class _SaleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd MMM yyyy');
-    final reasons = sale.urgencyReasons();
+    final level = sale.urgencyLevel();
+    final reasons = sale.urgencyReasons(level: level);
     final accentColor = reasons.isEmpty
         ? null
-        : sale.urgencyLevel() == UrgencyLevel.overdue
+        : level == UrgencyLevel.overdue
             ? Theme.of(context).colorScheme.error
             : Colors.amber[700]!;
 

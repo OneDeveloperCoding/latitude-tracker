@@ -21,9 +21,9 @@ extension SaleUrgency on Sale {
     return UrgencyLevel.none;
   }
 
-  List<UrgencyReasonType> urgencyReasons({DateTime? now}) {
-    final level = urgencyLevel(now: now);
-    if (level == UrgencyLevel.none) return const [];
+  List<UrgencyReasonType> urgencyReasons({DateTime? now, UrgencyLevel? level}) {
+    final resolvedLevel = level ?? urgencyLevel(now: now);
+    if (resolvedLevel == UrgencyLevel.none) return const [];
 
     final reasons = <UrgencyReasonType>[];
     final assembly = derivedAssemblyStatus;
@@ -35,7 +35,7 @@ extension SaleUrgency on Sale {
     if (payment.status == PaymentStatus.unpaid) {
       reasons.add(UrgencyReasonType.paymentPending);
     }
-    if (level == UrgencyLevel.overdue && shipment.status == ShipmentStatus.pending) {
+    if (resolvedLevel == UrgencyLevel.overdue && shipment.status == ShipmentStatus.pending) {
       reasons.add(UrgencyReasonType.notYetShipped);
     }
     return reasons;
