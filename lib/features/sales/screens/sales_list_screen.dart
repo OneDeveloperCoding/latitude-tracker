@@ -6,6 +6,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
+import '../../../core/widgets/sheet_section_label.dart';
 import '../../../core/widgets/store_error_widget.dart';
 import '../../buyers/models/buyer.dart';
 import '../../heat_map/screens/heat_map_screen.dart';
@@ -474,7 +475,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       ),
                     ),
                     // ── Sort ───────────────────────────────────────────────
-                    _SheetSectionLabel(s.sortBy.toUpperCase()),
+                    SheetSectionLabel(s.sortBy.toUpperCase()),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: Row(
@@ -517,7 +518,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     // ── Year / month drill-down ────────────────────────────
                     if (years.isNotEmpty) ...[
                       if (_selectedYear == null) ...[
-                        _SheetSectionLabel(s.year.toUpperCase()),
+                        SheetSectionLabel(s.year.toUpperCase()),
                         Padding(
                           padding:
                               const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -584,7 +585,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     ],
                     // ── Category ───────────────────────────────────────────
                     const Divider(height: 24),
-                    _SheetSectionLabel(s.categoryFilterHeader.toUpperCase()),
+                    SheetSectionLabel(s.categoryFilterHeader.toUpperCase()),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: Builder(
@@ -617,7 +618,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     ),
                     // ── Buyer ──────────────────────────────────────────────
                     const Divider(height: 24),
-                    _SheetSectionLabel(s.buyer.toUpperCase()),
+                    SheetSectionLabel(s.buyer.toUpperCase()),
                     if (_buyerFilter != null)
                       ListTile(
                         leading: const Icon(Icons.person),
@@ -659,7 +660,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     // ── Filter groups ──────────────────────────────────────
                     const Divider(height: 24),
                     ...groups.expand((group) => [
-                          _SheetSectionLabel(group.label.toUpperCase()),
+                          SheetSectionLabel(group.label.toUpperCase()),
                           ...group.filters.map((f) => CheckboxListTile(
                                 title: Text(s.filterLabel(f)),
                                 value: _activeFilters.contains(f),
@@ -730,26 +731,6 @@ class _SortChip extends StatelessWidget {
   }
 }
 
-// ── Shared sheet label ────────────────────────────────────────────────────────
-
-class _SheetSectionLabel extends StatelessWidget {
-  final String text;
-  const _SheetSectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 0.8,
-            ),
-      ),
-    );
-  }
-}
 class _CategoryChip extends StatelessWidget {
   final String category;
   const _CategoryChip({required this.category});
