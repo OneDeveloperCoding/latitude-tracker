@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
+import '../../sales/services/sale_grouper.dart';
 import '../../sales/screens/sale_detail_screen.dart';
 import 'buyer_detail_screen.dart';
 
@@ -46,12 +47,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
     final unpaid =
         all.where((s) => s.payment.status == PaymentStatus.unpaid).toList();
 
-    final Map<String, List<Sale>> bySeller = {};
-    for (final sale in unpaid) {
-      bySeller.putIfAbsent(sale.buyerId, () => []).add(sale);
-    }
-
-    final groups = bySeller.entries
+    final groups = SaleGrouper.byBuyerId(unpaid).entries
         .map((e) => _UnpaidBalancesGroup(
               buyerId: e.key,
               buyerName: e.value.first.buyerName,
