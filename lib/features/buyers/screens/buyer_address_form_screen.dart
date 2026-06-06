@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/widgets/discard_dialog.dart';
 import '../models/buyer_address.dart';
 import '../repositories/buyer_repository.dart';
 import '../widgets/address_form_fields.dart';
@@ -28,6 +29,16 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
   bool _isLoading = false;
 
   bool get _isEditing => widget.address != null;
+
+  bool get _hasChanges =>
+      _addressFormKey.currentState?.hasChanges ?? false;
+
+  Future<void> _onPopInvoked(bool didPop, _) async {
+    if (didPop) return;
+    if (!_hasChanges || (await showDiscardDialog(context) && mounted)) {
+      Navigator.of(context).pop();
+    }
+  }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -59,9 +70,12 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? s.editAddress : s.newAddress),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_isEditing ? s.editAddress : s.newAddress),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -89,6 +103,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

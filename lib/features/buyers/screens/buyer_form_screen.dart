@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/widgets/discard_dialog.dart';
 import '../models/buyer.dart';
 import '../repositories/buyer_repository.dart';
 import '../widgets/address_form_fields.dart';
@@ -69,6 +71,32 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   String? _nullIfEmpty(String value) =>
       value.trim().isEmpty ? null : value.trim();
 
+  bool get _hasChanges {
+    if (_isEditing) {
+      final b = widget.buyer!;
+      return _nameController.text.trim() != b.name ||
+          (_nullIfEmpty(_instagramController.text) ?? '') != (b.instagramHandle ?? '') ||
+          (_nullIfEmpty(_phoneController.text) ?? '') != (b.phone ?? '') ||
+          (_nullIfEmpty(_nifController.text) ?? '') != (b.nif ?? '') ||
+          (_nullIfEmpty(_notesController.text) ?? '') != (b.notes ?? '') ||
+          !listEquals(_tags, b.tags);
+    }
+    return _nameController.text.trim().isNotEmpty ||
+        _instagramController.text.trim().isNotEmpty ||
+        _phoneController.text.trim().isNotEmpty ||
+        _nifController.text.trim().isNotEmpty ||
+        _notesController.text.trim().isNotEmpty ||
+        _tags.isNotEmpty ||
+        _addAddress;
+  }
+
+  Future<void> _onPopInvoked(bool didPop, _) async {
+    if (didPop) return;
+    if (!_hasChanges || (await showDiscardDialog(context) && mounted)) {
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -124,9 +152,12 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? s.editBuyer : s.newBuyer),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_isEditing ? s.editBuyer : s.newBuyer),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -267,6 +298,8 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
+
