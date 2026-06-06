@@ -148,6 +148,8 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
 }
 
 class _DeletablePhotoTile extends StatelessWidget {
+  static const double _displaySize = 96;
+
   final String url;
   final VoidCallback onTap;
   final VoidCallback onDelete;
@@ -160,9 +162,11 @@ class _DeletablePhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize =
+        (_displaySize * MediaQuery.devicePixelRatioOf(context)).round();
     return SizedBox(
-      width: 96,
-      height: 96,
+      width: _displaySize,
+      height: _displaySize,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Stack(
@@ -175,6 +179,8 @@ class _DeletablePhotoTile extends StatelessWidget {
                   : Image.network(
                       url,
                       fit: BoxFit.cover,
+                      cacheWidth: cacheSize,
+                      cacheHeight: cacheSize,
                       errorBuilder: (_, e, s) => Container(
                         color: Colors.grey[200],
                         child: const Icon(Icons.broken_image),
