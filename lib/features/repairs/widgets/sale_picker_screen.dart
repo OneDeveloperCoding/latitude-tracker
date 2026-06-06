@@ -251,6 +251,8 @@ class _Thumbnail extends StatelessWidget {
           width: 48,
           height: 48,
           fit: BoxFit.cover,
+          cacheWidth: (48 * MediaQuery.devicePixelRatioOf(context)).round(),
+          cacheHeight: (48 * MediaQuery.devicePixelRatioOf(context)).round(),
           errorBuilder: (context, error, _) => Container(
             width: 48,
             height: 48,
