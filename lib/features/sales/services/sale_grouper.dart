@@ -29,6 +29,14 @@ class SaleGrouper {
     return {for (final k in keys) k: groups[k]!};
   }
 
+  static Map<String, List<Sale>> byBuyerId(List<Sale> sales) {
+    final groups = <String, List<Sale>>{};
+    for (final sale in sales) {
+      groups.putIfAbsent(sale.buyerId, () => []).add(sale);
+    }
+    return groups;
+  }
+
   static Map<String, List<Sale>> byWeek(List<Sale> sales) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
