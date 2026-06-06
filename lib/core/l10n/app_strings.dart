@@ -279,6 +279,7 @@ class AppStrings {
   final String errorLoadingSales;
   final String errorLoadingRepairs;
   final String errorLoadingBuyers;
+  final String errorLoadingData;
   final String retry;
 
   // ── Buyer tags & notes ───────────────────────────────────────────────────
@@ -671,6 +672,7 @@ class AppStrings {
     required this.errorLoadingSales,
     required this.errorLoadingRepairs,
     required this.errorLoadingBuyers,
+    required this.errorLoadingData,
     required this.retry,
     required this.newBuyer,
     required this.editBuyer,
@@ -1375,6 +1377,7 @@ class AppStrings {
     errorLoadingSales: 'Error loading sales',
     errorLoadingRepairs: 'Error loading repairs',
     errorLoadingBuyers: 'Error loading buyers',
+    errorLoadingData: 'Error loading data',
     retry: 'Retry',
     newBuyer: 'New Buyer',
     editBuyer: 'Edit Buyer',
@@ -1777,6 +1780,7 @@ class AppStrings {
     errorLoadingSales: 'Erro ao carregar vendas',
     errorLoadingRepairs: 'Erro ao carregar reparações',
     errorLoadingBuyers: 'Erro ao carregar compradores',
+    errorLoadingData: 'Erro ao carregar dados',
     retry: 'Tentar novamente',
     newBuyer: 'Novo Comprador',
     editBuyer: 'Editar Comprador',

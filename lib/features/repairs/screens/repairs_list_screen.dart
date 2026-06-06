@@ -52,7 +52,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
               ),
               const VerticalDivider(width: 1),
               Expanded(
-                child: _selectedRepair == null
+                child: isError || _selectedRepair == null
                     ? Center(
                         child: Text(
                           s.noRepairsFound,

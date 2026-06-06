@@ -34,7 +34,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
   List<_UnpaidBalancesGroup> _groups = [];
   double _grandTotal = 0;
 
-  bool get _loading => SalesStore.current == null;
+  bool get _loading => SalesStore.state.value is StoreLoading;
 
   @override
   void initState() {

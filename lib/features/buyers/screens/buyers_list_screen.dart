@@ -45,7 +45,8 @@ class BuyersListScreen extends StatefulWidget {
 
 class _BuyersListScreenState extends State<BuyersListScreen> {
   bool get _loading =>
-      BuyersStore.current == null || SalesStore.current == null;
+      BuyersStore.state.value is StoreLoading ||
+      SalesStore.state.value is StoreLoading;
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -305,7 +306,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
     if (SalesStore.state.value is StoreError ||
         BuyersStore.state.value is StoreError) {
       return StoreErrorWidget(
-        message: s.errorLoadingBuyers,
+        message: s.errorLoadingData,
         onRetry: () {
           SalesStore.ensureSubscribed();
           BuyersStore.ensureSubscribed();

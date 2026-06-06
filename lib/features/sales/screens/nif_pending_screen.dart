@@ -26,7 +26,8 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
   Map<String, Buyer> _buyersById = {};
 
   bool get _loading =>
-      SalesStore.current == null || BuyersStore.current == null;
+      SalesStore.state.value is StoreLoading ||
+      BuyersStore.state.value is StoreLoading;
 
   @override
   void initState() {
@@ -71,7 +72,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
       return Scaffold(
         appBar: AppBar(title: Text(s.nifPendingTitle)),
         body: StoreErrorWidget(
-          message: s.errorLoadingSales,
+          message: s.errorLoadingData,
           onRetry: () {
             SalesStore.ensureSubscribed();
             BuyersStore.ensureSubscribed();
