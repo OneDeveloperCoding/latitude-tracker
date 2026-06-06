@@ -55,9 +55,9 @@ void main() {
         scheduledDate: DateTime(2026, 6, 3),
         assembly: AssemblyStatus.waitingForMaterials,
       );
-      final types = sale.urgencyReasons(now: _kNow).map((r) => r.type);
-      expect(types, contains(UrgencyReasonType.waitingForMaterials));
-      expect(types, isNot(contains(UrgencyReasonType.assemblyNotReady)));
+      final reasons = sale.urgencyReasons(now: _kNow);
+      expect(reasons, contains(UrgencyReasonType.waitingForMaterials));
+      expect(reasons, isNot(contains(UrgencyReasonType.assemblyNotReady)));
     });
 
     test('assemblyNotReady reason for notStarted', () {
@@ -66,7 +66,7 @@ void main() {
         assembly: AssemblyStatus.notStarted,
       );
       expect(
-        sale.urgencyReasons(now: _kNow).map((r) => r.type),
+        sale.urgencyReasons(now: _kNow),
         contains(UrgencyReasonType.assemblyNotReady),
       );
     });
@@ -77,7 +77,7 @@ void main() {
         assembly: AssemblyStatus.inProgress,
       );
       expect(
-        sale.urgencyReasons(now: _kNow).map((r) => r.type),
+        sale.urgencyReasons(now: _kNow),
         contains(UrgencyReasonType.assemblyNotReady),
       );
     });
@@ -87,9 +87,9 @@ void main() {
         scheduledDate: DateTime(2026, 6, 3),
         assembly: AssemblyStatus.ready,
       );
-      final types = sale.urgencyReasons(now: _kNow).map((r) => r.type);
-      expect(types, isNot(contains(UrgencyReasonType.waitingForMaterials)));
-      expect(types, isNot(contains(UrgencyReasonType.assemblyNotReady)));
+      final reasons = sale.urgencyReasons(now: _kNow);
+      expect(reasons, isNot(contains(UrgencyReasonType.waitingForMaterials)));
+      expect(reasons, isNot(contains(UrgencyReasonType.assemblyNotReady)));
     });
 
     test('paymentPending reason when unpaid', () {
@@ -98,7 +98,7 @@ void main() {
         payment: PaymentStatus.unpaid,
       );
       expect(
-        sale.urgencyReasons(now: _kNow).map((r) => r.type),
+        sale.urgencyReasons(now: _kNow),
         contains(UrgencyReasonType.paymentPending),
       );
     });
@@ -109,7 +109,7 @@ void main() {
         payment: PaymentStatus.paid,
       );
       expect(
-        sale.urgencyReasons(now: _kNow).map((r) => r.type),
+        sale.urgencyReasons(now: _kNow),
         isNot(contains(UrgencyReasonType.paymentPending)),
       );
     });
@@ -120,7 +120,7 @@ void main() {
         shipmentStatus: ShipmentStatus.pending,
       );
       expect(
-        sale.urgencyReasons(now: _kNow).map((r) => r.type),
+        sale.urgencyReasons(now: _kNow),
         contains(UrgencyReasonType.notYetShipped),
       );
     });
@@ -131,7 +131,7 @@ void main() {
         shipmentStatus: ShipmentStatus.pending,
       );
       expect(
-        sale.urgencyReasons(now: _kNow).map((r) => r.type),
+        sale.urgencyReasons(now: _kNow),
         isNot(contains(UrgencyReasonType.notYetShipped)),
       );
     });
@@ -143,13 +143,13 @@ void main() {
         payment: PaymentStatus.unpaid,
         shipmentStatus: ShipmentStatus.pending,
       );
-      final types = sale.urgencyReasons(now: _kNow).map((r) => r.type).toList();
-      expect(types, containsAll([
+      final reasons = sale.urgencyReasons(now: _kNow);
+      expect(reasons, containsAll([
         UrgencyReasonType.assemblyNotReady,
         UrgencyReasonType.paymentPending,
         UrgencyReasonType.notYetShipped,
       ]));
-      expect(types, hasLength(3));
+      expect(reasons, hasLength(3));
     });
   });
 
