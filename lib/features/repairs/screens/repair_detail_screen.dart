@@ -25,12 +25,49 @@ class RepairDetailScreen extends StatefulWidget {
 }
 
 class _RepairDetailScreenState extends State<RepairDetailScreen> {
+  late final RepairRepository _repository;
   late final Stream<Repair?> _stream;
+  bool _popping = false;
 
   @override
   void initState() {
     super.initState();
-    _stream = RepairRepository().watchRepair(widget.repairId);
+    _repository = RepairRepository();
+    _stream = _repository.watchRepair(widget.repairId);
+  }
+
+  Future<void> _confirmDelete(BuildContext context, Repair repair) async {
+    final s = context.s;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.deleteRepairTitle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await _repository.deleteRepair(repair.id);
+      if (context.mounted) {
+        setState(() => _popping = true);
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${s.errorDeletingRepair}: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -46,9 +83,12 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
         }
         final repair = snapshot.data;
         if (repair == null) {
-          if (snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+            _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (context.mounted) Navigator.of(context).pop();
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
             });
           }
           return Scaffold(
@@ -56,7 +96,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
             body: const Center(child: CircularProgressIndicator()),
           );
         }
-        return _RepairDetailBody(repair: repair);
+        return _RepairDetailBody(repair: repair, onDelete: _confirmDelete);
       },
     );
   }
@@ -64,8 +104,9 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
 
 class _RepairDetailBody extends StatelessWidget {
   final Repair repair;
+  final Future<void> Function(BuildContext, Repair) onDelete;
 
-  const _RepairDetailBody({required this.repair});
+  const _RepairDetailBody({required this.repair, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +130,7 @@ class _RepairDetailBody extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.delete_outline),
               tooltip: s.deleteRepair,
-              onPressed: () => _confirmDelete(context, repair),
+              onPressed: () => onDelete(context, repair),
             ),
           ],
         ],
@@ -248,36 +289,6 @@ class _RepairDetailBody extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, Repair repair) async {
-    final s = context.s;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(s.deleteRepairTitle),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(s.delete),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-    try {
-      await RepairRepository().deleteRepair(repair.id);
-      if (context.mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${s.errorDeletingRepair}: $e')),
-        );
-      }
-    }
-  }
 }
 
 class _ContactRow extends StatelessWidget {
