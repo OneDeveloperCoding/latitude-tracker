@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/services/sale_grouper.dart';
 import '../../sales/screens/sale_detail_screen.dart';
@@ -32,7 +34,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
   List<_UnpaidBalancesGroup> _groups = [];
   double _grandTotal = 0;
 
-  bool get _loading => SalesStore.current == null;
+  bool get _loading => SalesStore.state.value is StoreLoading;
 
   @override
   void initState() {
@@ -72,6 +74,16 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
   Widget build(BuildContext context) {
     final s = context.s;
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
+
+    if (SalesStore.state.value is StoreError) {
+      return Scaffold(
+        appBar: AppBar(title: Text(s.unpaid)),
+        body: StoreErrorWidget(
+          message: s.errorLoadingSales,
+          onRetry: SalesStore.ensureSubscribed,
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(s.unpaid)),
