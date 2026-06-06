@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 typedef GeocodingResult = ({LatLng latLng, String locality});
+typedef _FetchResult = ({GeocodingResult? result, bool shouldCache});
 
 class GeocodingService {
   GeocodingService._();
@@ -46,9 +47,11 @@ class GeocodingService {
     }
 
     // Network — delay inside _fetchFromNominatim so cached lookups are instant.
-    final result = await _fetchFromNominatim(postalCode);
+    final (:result, :shouldCache) = await _fetchFromNominatim(postalCode);
+    // Always populate _memCache so warmUp doesn't re-hit the network on the
+    // next store emission. Transient errors are not persisted to SharedPrefs.
     _memCache[postalCode] = result;
-    await _toCache(postalCode, result);
+    if (shouldCache) await _toCache(postalCode, result);
     return result;
   }
 
@@ -97,7 +100,7 @@ class GeocodingService {
     );
   }
 
-  static Future<GeocodingResult?> _fetchFromNominatim(String postalCode) async {
+  static Future<_FetchResult> _fetchFromNominatim(String postalCode) async {
     try {
       final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
         'q': '$postalCode Portugal',
@@ -115,15 +118,17 @@ class GeocodingService {
       // return immediately — the delay only fires on real network requests.
       await Future.delayed(const Duration(seconds: 1));
 
-      if (response.statusCode != 200) return null;
+      if (response.statusCode != 200) {
+        return (result: null, shouldCache: false);
+      }
 
       final results = jsonDecode(response.body) as List;
-      if (results.isEmpty) return null;
+      if (results.isEmpty) return (result: null, shouldCache: true);
 
       final hit = results[0] as Map<String, dynamic>;
       final lat = double.tryParse(hit['lat'] as String? ?? '');
       final lon = double.tryParse(hit['lon'] as String? ?? '');
-      if (lat == null || lon == null) return null;
+      if (lat == null || lon == null) return (result: null, shouldCache: false);
 
       final address = hit['address'] as Map<String, dynamic>? ?? {};
       final locality = (address['city'] as String?) ??
@@ -133,10 +138,10 @@ class GeocodingService {
           (address['county'] as String?) ??
           postalCode;
 
-      return (latLng: LatLng(lat, lon), locality: locality);
+      return (result: (latLng: LatLng(lat, lon), locality: locality), shouldCache: true);
     } catch (e, st) {
       logError(e, st);
-      return null;
+      return (result: null, shouldCache: false);
     }
   }
 }
