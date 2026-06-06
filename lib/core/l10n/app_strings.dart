@@ -379,6 +379,7 @@ class AppStrings {
   final String repairReturnStatusLabel;
   final String repairFilterActiveOnly;
   final String repairFilterShowAll;
+  final String searchRepairs;
   final String editRepair;
   final String deleteRepair;
   final String deleteRepairTitle;
@@ -779,6 +780,7 @@ class AppStrings {
     required this.repairReturnStatusLabel,
     required this.repairFilterActiveOnly,
     required this.repairFilterShowAll,
+    required this.searchRepairs,
     required this.editRepair,
     required this.deleteRepair,
     required this.deleteRepairTitle,
@@ -1578,6 +1580,7 @@ class AppStrings {
     repairReturnStatusLabel: 'Return delivery status',
     repairFilterActiveOnly: 'Active only',
     repairFilterShowAll: 'Show all',
+    searchRepairs: 'Search repairs...',
     editRepair: 'Edit Repair',
     deleteRepair: 'Delete repair',
     deleteRepairTitle: 'Delete repair?',
@@ -2003,6 +2006,7 @@ class AppStrings {
     repairReturnStatusLabel: 'Estado da devolução',
     repairFilterActiveOnly: 'Apenas ativos',
     repairFilterShowAll: 'Mostrar todos',
+    searchRepairs: 'Pesquisar reparações...',
     editRepair: 'Editar Reparação',
     deleteRepair: 'Eliminar reparação',
     deleteRepairTitle: 'Eliminar reparação?',

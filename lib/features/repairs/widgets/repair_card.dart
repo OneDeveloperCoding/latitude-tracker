@@ -5,6 +5,8 @@ import '../../../core/l10n/app_strings.dart';
 import '../../sales/models/sale.dart';
 import '../models/repair.dart';
 
+const _kDeliveryStatuses = {RepairStatus.done, RepairStatus.returned};
+
 class RepairCard extends StatelessWidget {
   final Repair repair;
   final VoidCallback onTap;
@@ -90,6 +92,14 @@ class RepairCard extends StatelessWidget {
                           ],
                         ],
                       ),
+                      if (_kDeliveryStatuses.contains(repair.status)) ...[
+                        const SizedBox(height: 6),
+                        const Divider(height: 1),
+                        const SizedBox(height: 6),
+                        _ReturnDeliveryIndicator(
+                          delivery: repair.returnDelivery,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -108,6 +118,49 @@ class RepairCard extends StatelessWidget {
         RepairStatus.done => Colors.green,
         RepairStatus.returned => cs.onSurfaceVariant,
       };
+}
+
+class _ReturnDeliveryIndicator extends StatelessWidget {
+  final RepairReturnDelivery delivery;
+
+  const _ReturnDeliveryIndicator({required this.delivery});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final (icon, color) = _iconAndColor(cs);
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          _label(context.s),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: color),
+        ),
+      ],
+    );
+  }
+
+  (IconData, Color) _iconAndColor(ColorScheme cs) {
+    if (delivery.type == DeliveryType.pickup) {
+      return (Icons.store, Colors.green);
+    }
+    if (delivery.type == DeliveryType.handDelivery) {
+      return delivery.status == ShipmentStatus.delivered
+          ? (Icons.directions_walk, Colors.green)
+          : (Icons.directions_walk, cs.onSurfaceVariant);
+    }
+    return switch (delivery.status) {
+      ShipmentStatus.pending => (Icons.local_shipping_outlined, cs.onSurfaceVariant),
+      ShipmentStatus.shipped => (Icons.local_shipping, Colors.blue),
+      ShipmentStatus.delivered => (Icons.local_shipping, Colors.green),
+    };
+  }
+
+  String _label(AppStrings s) => s.shipmentStatusLabel(delivery.status);
 }
 
 class _StatusChip extends StatelessWidget {
