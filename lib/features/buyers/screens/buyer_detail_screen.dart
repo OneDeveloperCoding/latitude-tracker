@@ -27,13 +27,13 @@ class BuyerDetailScreen extends StatefulWidget {
 
 class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
   late final BuyerRepository _buyerRepo;
-  late final Future<Buyer?> _buyerFuture;
+  late final Stream<Buyer?> _buyerStream;
 
   @override
   void initState() {
     super.initState();
     _buyerRepo = BuyerRepository();
-    _buyerFuture = _buyerRepo.getBuyer(widget.buyerId);
+    _buyerStream = _buyerRepo.watchBuyer(widget.buyerId);
   }
 
   @override
@@ -41,8 +41,8 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
     final s = context.s;
     return DefaultTabController(
       length: 2,
-      child: FutureBuilder<Buyer?>(
-        future: _buyerFuture,
+      child: StreamBuilder<Buyer?>(
+        stream: _buyerStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Scaffold(

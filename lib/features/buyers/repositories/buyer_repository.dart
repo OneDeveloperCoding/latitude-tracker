@@ -11,6 +11,7 @@ abstract class BuyerRepository {
       DemoMode.active.value ? DemoMode.buyerRepo : _FirestoreBuyerRepository();
 
   Stream<List<Buyer>> watchBuyers();
+  Stream<Buyer?> watchBuyer(String id);
   Stream<List<BuyerAddress>> watchAddresses(String buyerId);
   Stream<List<BuyerAddress>> watchAllAddresses();
   Future<List<Buyer>> getAllBuyers();
@@ -55,6 +56,12 @@ class _FirestoreBuyerRepository implements BuyerRepository {
       .orderBy('name')
       .snapshots()
       .map((snap) => snap.docs.map(Buyer.fromFirestore).toList());
+
+  @override
+  Stream<Buyer?> watchBuyer(String id) => _buyersRef
+      .doc(id)
+      .snapshots()
+      .map((doc) => doc.exists ? Buyer.fromFirestore(doc) : null);
 
   @override
   Future<Buyer?> getBuyer(String id) => _buyersRef
