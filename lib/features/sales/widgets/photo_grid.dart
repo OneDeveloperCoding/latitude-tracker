@@ -212,6 +212,8 @@ class _PhotoTile extends StatelessWidget {
                 child: Image.network(
                   url!,
                   fit: BoxFit.cover,
+                  cacheWidth: 192,
+                  cacheHeight: 192,
                   loadingBuilder: (_, child, progress) => progress == null
                       ? child
                       : Container(
@@ -353,11 +355,14 @@ class PhotoThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize = (size * 2).round();
     final Widget image = url.startsWith('demo://')
         ? _DemoPhotoPlaceholder(url: url)
         : Image.network(
             url,
             fit: BoxFit.cover,
+            cacheWidth: cacheSize,
+            cacheHeight: cacheSize,
             loadingBuilder: (_, child, progress) =>
                 progress == null ? child : Container(color: Colors.grey[200]),
             errorBuilder: (_, err, stack) => Container(
@@ -434,6 +439,9 @@ class _PhotoViewerState extends State<PhotoViewer> {
                     ? child
                     : const Center(
                         child: CircularProgressIndicator(color: Colors.white)),
+                errorBuilder: (_, err, stack) => const Center(
+                  child: Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                ),
               ),
             ),
           );
