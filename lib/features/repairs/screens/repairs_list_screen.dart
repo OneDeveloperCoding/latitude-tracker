@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/store_state.dart';
+import '../../../core/widgets/sheet_section_label.dart';
 import '../../../core/widgets/store_error_widget.dart';
 import '../models/repair.dart';
 import '../widgets/repair_card.dart';
@@ -40,7 +41,9 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
   }
 
   List<Repair> _applyFilter(List<Repair> all) {
-    if (_statusFilters.isEmpty) return all;
+    // Default (no chips selected): honour the domain's isActive flag so
+    // fully-returned+delivered repairs are hidden, matching the old behaviour.
+    if (_statusFilters.isEmpty) return all.where((r) => r.isActive).toList();
     return all.where((r) => _statusFilters.contains(r.status)).toList();
   }
 
@@ -284,17 +287,14 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                         ],
                       ),
                     ),
-                    _SheetSectionLabel(s.sortBy.toUpperCase()),
+                    SheetSectionLabel(s.sortBy.toUpperCase()),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: FilterChip(
                         label: Text(s.sortDimensionDate),
-                        avatar: Icon(
-                          _sortOrder == _SortOrder.oldestFirst
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
-                          size: 16,
-                        ),
+                        avatar: _sortOrder == _SortOrder.oldestFirst
+                            ? const Icon(Icons.arrow_upward, size: 16)
+                            : null,
                         selected: _sortOrder == _SortOrder.oldestFirst,
                         showCheckmark: false,
                         visualDensity: VisualDensity.compact,
@@ -307,7 +307,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                       ),
                     ),
                     const Divider(height: 24),
-                    _SheetSectionLabel(s.repairStatusLabel.toUpperCase()),
+                    SheetSectionLabel(s.repairStatusLabel.toUpperCase()),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                       child: Wrap(
@@ -338,21 +338,3 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
   }
 }
 
-class _SheetSectionLabel extends StatelessWidget {
-  final String text;
-  const _SheetSectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 0.8,
-            ),
-      ),
-    );
-  }
-}
