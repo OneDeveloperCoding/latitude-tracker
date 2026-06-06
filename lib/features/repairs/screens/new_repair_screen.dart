@@ -389,7 +389,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(
-            _itemCategory.isEmpty ? s.categoryLabel : _itemCategory,
+            _itemCategory.isEmpty ? s.categoryPickerHint : _itemCategory,
             style: _itemCategory.isEmpty
                 ? TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant)

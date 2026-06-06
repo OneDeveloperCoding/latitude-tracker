@@ -1130,9 +1130,19 @@ class AppStrings {
         'your current data will not be overwritten.';
   }
 
-  String archiveResultBrief(int sales, int buyers, int skipped) => _pt
-      ? '${nSales(sales)} · ${_nBuyers(buyers)} · $skipped ignorado${skipped == 1 ? '' : 's'}'
-      : '${nSales(sales)} · ${_nBuyers(buyers)} · $skipped skipped';
+  String archiveResultBrief(int sales, int buyers, int repairs, int skipped) {
+    final parts = <String>[];
+    if (sales > 0) parts.add(nSales(sales));
+    if (buyers > 0) parts.add(_nBuyers(buyers));
+    if (repairs > 0) parts.add(_nRepairs(repairs));
+    if (skipped > 0) {
+      parts.add(_pt
+          ? '$skipped ignorado${skipped == 1 ? '' : 's'}'
+          : '$skipped skipped');
+    }
+    if (parts.isEmpty) return archiveNothingToImport;
+    return parts.join(' · ');
+  }
 
   String archiveSalesImportedMsg(int n) =>
       _pt ? '${nSales(n)} importada${n == 1 ? '' : 's'}' : '${nSales(n)} imported';

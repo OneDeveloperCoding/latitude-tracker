@@ -196,6 +196,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
                       s.archiveResultBrief(
                         _lastResult!.salesImported,
                         _lastResult!.buyersImported,
+                        _lastResult!.repairsImported,
                         _lastResult!.skipped,
                       ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -266,6 +267,7 @@ class _ArchivedSaleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final items = (sale['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final totalPrice = items.fold<double>(
         0, (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0));
@@ -290,7 +292,7 @@ class _ArchivedSaleTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            title: Text(sale['buyerName'] as String? ?? context.s.archiveUnknown),
+            title: Text(sale['buyerName'] as String? ?? s.archiveUnknown),
             subtitle: Text(
               items.isEmpty
                   ? '—'
@@ -306,7 +308,7 @@ class _ArchivedSaleTile extends StatelessWidget {
               children: [
                 Text('€${totalPrice.toStringAsFixed(2)}'),
                 Text(
-                  isPaid ? context.s.paid : context.s.unpaid,
+                  isPaid ? s.paid : s.unpaid,
                   style: TextStyle(
                     fontSize: 11,
                     color: isPaid ? Colors.green : Colors.orange,
