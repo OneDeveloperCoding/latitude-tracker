@@ -50,7 +50,7 @@ _Portuguese_: Reparação
 _Avoid_: Order, job ticket, work order
 
 **RepairStatus**:
-The current state of a Repair job: `received` (item is with the seller), `waiting_for_materials` (parts must be sourced before work can start), `in_progress` (work is underway), `done` (repair complete, item still with seller), `returned` (item back with the customer). Selection is free — no enforced linear progression. A Repair is considered "active" (shown in the default list view) unless RepairStatus is `returned` AND ReturnDelivery status is `delivered`.
+The current state of a Repair job: `received` (item is with the seller), `waiting_for_materials` (parts must be sourced before work can start), `in_progress` (work is underway), `done` (repair complete, item still with seller), `returned` (item back with the customer). Selection is free — no enforced linear progression, except that the quick-action "Mark as Delivered" button on the detail screen automatically advances RepairStatus to `returned` at the same time it sets ReturnDelivery status to `delivered`. A Repair is considered "active" (shown in the default list view) unless RepairStatus is `returned` AND ReturnDelivery status is `delivered`.
 _Avoid_: Repair state, job status
 
 **ReturnDelivery**:
@@ -238,7 +238,7 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 5b. **New/edit Repair** — Contact section (Buyer picker or free-text name entry); item description; ItemCategory picker (same seeded defaults as SaleItem); problem description; Work done field; materials cost; RepairStatus picker; Payment section (same fields as Sale payment); ReturnDelivery section (type: shipping/pickup; status; CTT tracking code; postal code for shipping); photos; optional linked Sale picker. Orphan photo cleanup on cancel.
 
-5c. **Repair detail** — live stream; contact row (taps to Buyer detail if linked, "Promote to Buyer" action if free-text); linked Sale row (if set, taps to Sale detail); item description, category, problem description; Work done field (inline editable); photos; materials cost; RepairStatus picker; Payment card; ReturnDelivery card.
+5c. **Repair detail** — live stream; contact row (taps to Buyer detail if linked, "Promote to Buyer" action if free-text); linked Sale row (if set, taps to Sale detail); item description, category, problem description; Work done field (inline editable); photos; materials cost; RepairStatus picker; Payment card; ReturnDelivery card. When RepairStatus is `done` or `returned` and ReturnDelivery is not yet `delivered`, the Return card shows a quick-action button: "Mark as Sent" (shipping, pending→shipped) or "Mark as Delivered" (all other cases). Pressing "Mark as Delivered" also auto-advances RepairStatus to `returned`.
 
 6. **Buyers list** — all Buyers, searchable; three sort modes (alphabetical, grouped by last purchase, ranking); ranking metric chips (total spent, frequency, average order, unpaid balance)
 
