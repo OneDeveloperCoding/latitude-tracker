@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (value) =>
                         (value == null || value.trim().isEmpty)
-                            ? s.email
+                            ? s.emailRequired
                             : null,
                   ),
                   const SizedBox(height: 16),
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     validator: (value) =>
-                        (value == null || value.isEmpty) ? s.password : null,
+                        (value == null || value.isEmpty) ? s.passwordRequired : null,
                   ),
                   if (_errorMessage != null) ...[
                     const SizedBox(height: 16),

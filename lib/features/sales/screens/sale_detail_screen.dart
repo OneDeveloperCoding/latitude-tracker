@@ -959,11 +959,12 @@ class _NifComplianceRow extends StatelessWidget {
             child: TextFormField(
               controller: controller,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               maxLength: 9,
               autofocus: true,
               decoration: InputDecoration(labelText: s.nifLabel),
               validator: (v) =>
-                  (v == null || v.trim().length != 9) ? s.nifInvalid : null,
+                  (v == null || v.length != 9) ? s.nifInvalid : null,
             ),
           ),
           actions: [

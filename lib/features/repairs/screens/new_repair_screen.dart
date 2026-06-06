@@ -389,7 +389,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(
-            _itemCategory.isEmpty ? s.categoryLabel : _itemCategory,
+            _itemCategory.isEmpty ? s.categoryPickerHint : _itemCategory,
             style: _itemCategory.isEmpty
                 ? TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant)
@@ -490,7 +490,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
         const SizedBox(height: 12),
         DropdownButtonFormField<ShipmentStatus>(
           initialValue: _returnStatus,
-          decoration: InputDecoration(labelText: s.repairStatusLabel),
+          decoration: InputDecoration(labelText: s.repairReturnStatusLabel),
           items: ShipmentStatus.values
               .map((st) => DropdownMenuItem(
                     value: st,
@@ -511,6 +511,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _postalCodeController,
+            keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: s.postalCodeLabel,
               hintText: s.postalCodeHint,
