@@ -25,14 +25,12 @@ class RepairDetailScreen extends StatefulWidget {
 }
 
 class _RepairDetailScreenState extends State<RepairDetailScreen> {
-  late final RepairRepository _repository;
   late final Stream<Repair?> _stream;
 
   @override
   void initState() {
     super.initState();
-    _repository = RepairRepository();
-    _stream = _repository.watchRepair(widget.repairId);
+    _stream = RepairRepository().watchRepair(widget.repairId);
   }
 
   @override
