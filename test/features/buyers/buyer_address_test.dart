@@ -106,6 +106,13 @@ void main() {
       expect(uri.queryParameters['q'], isNot(contains('null')));
     });
 
+    test('omits houseNumber from query when empty', () {
+      final uri = _address(houseNumber: '').mapsUri;
+      final q = uri.queryParameters['q']!;
+      expect(q, isNot(contains('  ')));
+      expect(q, startsWith('Rua das Flores,'));
+    });
+
     test('omits country from query for Portugal', () {
       final uri = _address(country: 'Portugal').mapsUri;
       expect(uri.queryParameters['q'], isNot(contains('Portugal')));

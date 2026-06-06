@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/addresses_store.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../buyers/models/buyer.dart';
@@ -1096,25 +1097,8 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-Future<void> _launchMaps(BuildContext context, BuyerAddress address) async {
-  try {
-    final launched = await launchUrl(
-      address.mapsUri,
-      mode: LaunchMode.externalApplication,
-    );
-    if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.s.couldNotOpenMaps)),
-      );
-    }
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.s.couldNotOpenMaps)),
-      );
-    }
-  }
-}
+Future<void> _launchMaps(BuildContext context, BuyerAddress address) =>
+    launchMapsUrl(context, address.mapsUri);
 
 class _NotesField extends StatefulWidget {
   final String initialValue;

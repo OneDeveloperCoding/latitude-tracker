@@ -60,8 +60,9 @@ class BuyerAddress {
       street.isNotEmpty && city.isNotEmpty && postalCode.isNotEmpty;
 
   Uri get mapsUri {
+    final streetLine = [street, if (houseNumber.isNotEmpty) houseNumber].join(' ');
     final parts = [
-      '$street $houseNumber',
+      streetLine,
       if (fraction?.isNotEmpty == true) fraction!,
       '$postalCode $city',
       if (country.toLowerCase() != 'portugal') country,

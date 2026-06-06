@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
@@ -662,25 +663,8 @@ class _AddressesListState extends State<_AddressesList> {
     }
   }
 
-  Future<void> _openMaps(BuildContext context, BuyerAddress address) async {
-    try {
-      final launched = await launchUrl(
-        address.mapsUri,
-        mode: LaunchMode.externalApplication,
-      );
-      if (!launched && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.s.couldNotOpenMaps)),
-        );
-      }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.s.couldNotOpenMaps)),
-        );
-      }
-    }
-  }
+  Future<void> _openMaps(BuildContext context, BuyerAddress address) =>
+      launchMapsUrl(context, address.mapsUri);
 
   @override
   Widget build(BuildContext context) {
