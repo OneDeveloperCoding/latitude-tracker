@@ -156,7 +156,9 @@ class Repair {
       id: doc.id,
       buyerId: data['buyerId'] as String?,
       buyerName: data['buyerName'] as String?,
-      freeTextContact: data['freeTextContact'] as String?,
+      freeTextContact: data['buyerId'] == null
+          ? (data['freeTextContact'] as String? ?? '')
+          : data['freeTextContact'] as String?,
       linkedSaleId: data['linkedSaleId'] as String?,
       itemDescription: data['itemDescription'] as String? ?? '',
       itemCategory: data['itemCategory'] as String? ?? '',
