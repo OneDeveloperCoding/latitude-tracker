@@ -112,7 +112,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           ),
           IconButton(
             icon: Icon(_showAll ? Icons.filter_list_off : Icons.filter_list),
-            tooltip: _showAll ? 'Active only' : 'Show all',
+            tooltip: _showAll ? s.repairFilterActiveOnly : s.repairFilterShowAll,
             onPressed: () => setState(() => _showAll = !_showAll),
           ),
         ],
