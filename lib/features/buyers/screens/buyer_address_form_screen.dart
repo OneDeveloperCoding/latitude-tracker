@@ -29,6 +29,36 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
 
   bool get _isEditing => widget.address != null;
 
+  bool get _hasChanges =>
+      _addressFormKey.currentState?.hasChanges ?? false;
+
+  Future<void> _onPopInvoked(bool didPop, _) async {
+    if (didPop) return;
+    if (!_hasChanges) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final s = context.s;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.discardChanges),
+        content: Text(s.discardChangesMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.discard),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -59,9 +89,12 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? s.editAddress : s.newAddress),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_isEditing ? s.editAddress : s.newAddress),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
@@ -89,6 +122,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

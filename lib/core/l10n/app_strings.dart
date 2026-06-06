@@ -21,6 +21,9 @@ class AppStrings {
   final String clear;
   final String setDate;
   final String ok;
+  final String discard;
+  final String discardChanges;
+  final String discardChangesMessage;
 
   // ── Navigation ───────────────────────────────────────────────────────────
   final String navDashboard;
@@ -439,6 +442,9 @@ class AppStrings {
     required this.clear,
     required this.setDate,
     required this.ok,
+    required this.discard,
+    required this.discardChanges,
+    required this.discardChangesMessage,
     required this.navDashboard,
     required this.navSales,
     required this.navBuyers,
@@ -1133,6 +1139,9 @@ class AppStrings {
     clear: 'Clear',
     setDate: 'Set date',
     ok: 'OK',
+    discard: 'Discard',
+    discardChanges: 'Discard changes?',
+    discardChangesMessage: 'You have unsaved changes. Are you sure you want to discard them?',
     navDashboard: 'Dashboard',
     navSales: 'Sales',
     navBuyers: 'Buyers',
@@ -1536,6 +1545,9 @@ class AppStrings {
     clear: 'Limpar',
     setDate: 'Definir data',
     ok: 'OK',
+    discard: 'Descartar',
+    discardChanges: 'Descartar alterações?',
+    discardChangesMessage: 'Tens alterações não guardadas. Tens a certeza que queres descartá-las?',
     navDashboard: 'Painel',
     navSales: 'Vendas',
     navBuyers: 'Compradores',
