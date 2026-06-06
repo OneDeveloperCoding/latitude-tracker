@@ -55,6 +55,33 @@ class AddressFormFieldsState extends State<AddressFormFields> {
       _streetController.text.trim().isNotEmpty &&
       _houseNumberController.text.trim().isNotEmpty;
 
+  bool get hasChanges {
+    final a = widget.initial;
+    if (a == null) {
+      return _labelController.text.trim().isNotEmpty ||
+          _postalCodeController.text.trim().isNotEmpty ||
+          (!_cityAutoFilled && _cityController.text.trim().isNotEmpty) ||
+          (!_streetAutoFilled && _streetController.text.trim().isNotEmpty) ||
+          _houseNumberController.text.trim().isNotEmpty ||
+          _fractionController.text.trim().isNotEmpty ||
+          _notesController.text.trim().isNotEmpty ||
+          _isDefault;
+    }
+    final fraction =
+        _fractionController.text.trim().isEmpty ? null : _fractionController.text.trim();
+    final notes =
+        _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    return _labelController.text.trim() != a.label ||
+        _postalCodeController.text.trim() != a.postalCode ||
+        _cityController.text.trim() != a.city ||
+        _streetController.text.trim() != a.street ||
+        _houseNumberController.text.trim() != a.houseNumber ||
+        fraction != a.fraction ||
+        notes != a.notes ||
+        _country != a.country ||
+        _isDefault != a.isDefault;
+  }
+
   BuyerAddress buildAddress(String id) => BuyerAddress(
         id: id,
         label: _labelController.text.trim().isEmpty
