@@ -174,6 +174,8 @@ class _PhotoGridState extends State<PhotoGrid> {
 }
 
 class _PhotoTile extends StatelessWidget {
+  static const double _displaySize = 96;
+
   final String? url;
   final bool isUploading;
   final VoidCallback? onTap;
@@ -188,9 +190,11 @@ class _PhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize =
+        (_displaySize * MediaQuery.devicePixelRatioOf(context)).round();
     return SizedBox(
-      width: 96,
-      height: 96,
+      width: _displaySize,
+      height: _displaySize,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Stack(
@@ -212,8 +216,8 @@ class _PhotoTile extends StatelessWidget {
                 child: Image.network(
                   url!,
                   fit: BoxFit.cover,
-                  cacheWidth: 192,
-                  cacheHeight: 192,
+                  cacheWidth: cacheSize,
+                  cacheHeight: cacheSize,
                   loadingBuilder: (_, child, progress) => progress == null
                       ? child
                       : Container(
@@ -355,7 +359,8 @@ class PhotoThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cacheSize = (size * 2).round();
+    final cacheSize =
+        (size * MediaQuery.devicePixelRatioOf(context)).round();
     final Widget image = url.startsWith('demo://')
         ? _DemoPhotoPlaceholder(url: url)
         : Image.network(
