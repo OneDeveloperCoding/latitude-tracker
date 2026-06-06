@@ -141,6 +141,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit),
+                tooltip: context.s.editSale,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(

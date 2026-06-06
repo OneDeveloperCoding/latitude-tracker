@@ -453,10 +453,13 @@ class _BuyerTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              CircleAvatar(
-                  child: Text(buyer.name.isNotEmpty
-                      ? buyer.name[0].toUpperCase()
-                      : '?')),
+              Semantics(
+                label: buyer.name,
+                child: CircleAvatar(
+                    child: Text(buyer.name.isNotEmpty
+                        ? buyer.name[0].toUpperCase()
+                        : '?')),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

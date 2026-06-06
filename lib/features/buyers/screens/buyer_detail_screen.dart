@@ -73,6 +73,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.edit),
+                  tooltip: s.editBuyer,
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -81,6 +82,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
+                  tooltip: s.delete,
                   onPressed: () => _confirmDelete(context, buyer),
                 ),
               ],

@@ -1018,7 +1018,7 @@ class _AttentionBadges extends StatelessWidget {
             onTap: () => _showNotePreview(context, sale.notes!),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(11),
               child: Icon(
                 Icons.sticky_note_2_outlined,
                 size: 22,
@@ -1033,7 +1033,7 @@ class _AttentionBadges extends StatelessWidget {
             onTap: () => _showNifDetail(context, buyerHasNif, sale.atSubmissionDone),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(11),
               child: Icon(
                 kNifIcon,
                 size: 22,
@@ -1048,7 +1048,7 @@ class _AttentionBadges extends StatelessWidget {
             onTap: () => _showReadyButUnpaidDetail(context),
             borderRadius: BorderRadius.circular(20),
             child: const Padding(
-              padding: EdgeInsets.all(6),
+              padding: EdgeInsets.all(11),
               child: Icon(
                 Icons.price_check,
                 size: 22,
@@ -1063,7 +1063,7 @@ class _AttentionBadges extends StatelessWidget {
             onTap: () => _showUrgencyDetail(context, reasons),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(11),
               child: Icon(
                 reasons.length == 1
                     ? reasons.first.icon
