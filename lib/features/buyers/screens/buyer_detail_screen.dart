@@ -27,56 +27,67 @@ class BuyerDetailScreen extends StatefulWidget {
 
 class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
   late final BuyerRepository _buyerRepo;
-  late final Future<Buyer?> _buyerFuture;
+  late final Stream<Buyer?> _buyerStream;
 
   @override
   void initState() {
     super.initState();
     _buyerRepo = BuyerRepository();
-    _buyerFuture = _buyerRepo.getBuyer(widget.buyerId);
+    _buyerStream = _buyerRepo.watchBuyer(widget.buyerId);
   }
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return DefaultTabController(
-      length: 2,
-      child: FutureBuilder<Buyer?>(
-        future: _buyerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Scaffold(
-              appBar: AppBar(title: Text(s.saleFallbackTitle)),
-              body: Center(child: Text(s.errorLoadingDetail)),
-            );
-          }
-          final buyer = snapshot.data;
+    return StreamBuilder<Buyer?>(
+      stream: _buyerStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
           return Scaffold(
+            appBar: AppBar(title: Text(s.saleFallbackTitle)),
+            body: Center(child: Text(s.errorLoadingDetail)),
+          );
+        }
+
+        final buyer = snapshot.data;
+
+        if (buyer == null) {
+          if (snapshot.connectionState != ConnectionState.waiting) {
+            // Buyer deleted on another device — navigate back after this frame.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) Navigator.of(context).pop();
+            });
+          }
+          return Scaffold(
+            appBar: AppBar(title: Text(s.saleFallbackTitle)),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
             appBar: AppBar(
-              title: Text(buyer?.name ?? s.saleFallbackTitle),
+              title: Text(buyer.name),
               actions: [
-                if (buyer != null) ...[
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => BuyerFormScreen(buyer: buyer)),
-                    ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => BuyerFormScreen(buyer: buyer)),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => _confirmDelete(context, buyer),
-                  ),
-                ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _confirmDelete(context, buyer),
+                ),
               ],
             ),
-            body: buyer == null
-                ? const Center(child: CircularProgressIndicator())
-                : _BuyerDetailBody(buyer: buyer, buyerRepo: _buyerRepo),
-          );
-        },
-      ),
+            body: _BuyerDetailBody(buyer: buyer, buyerRepo: _buyerRepo),
+          ),
+        );
+      },
     );
   }
 
