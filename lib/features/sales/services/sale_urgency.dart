@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 import '../models/sale.dart';
 
 enum UrgencyLevel { overdue, thisWeek, none }
@@ -9,18 +7,6 @@ enum UrgencyReasonType {
   assemblyNotReady,
   paymentPending,
   notYetShipped,
-}
-
-class UrgencyReason {
-  final UrgencyReasonType type;
-  final IconData icon;
-  final Color color;
-
-  const UrgencyReason({
-    required this.type,
-    required this.icon,
-    required this.color,
-  });
 }
 
 extension SaleUrgency on Sale {
@@ -35,38 +21,22 @@ extension SaleUrgency on Sale {
     return UrgencyLevel.none;
   }
 
-  List<UrgencyReason> urgencyReasons({DateTime? now}) {
+  List<UrgencyReasonType> urgencyReasons({DateTime? now}) {
     final level = urgencyLevel(now: now);
     if (level == UrgencyLevel.none) return const [];
 
-    final reasons = <UrgencyReason>[];
+    final reasons = <UrgencyReasonType>[];
     final assembly = derivedAssemblyStatus;
     if (assembly == AssemblyStatus.waitingForMaterials) {
-      reasons.add(const UrgencyReason(
-        type: UrgencyReasonType.waitingForMaterials,
-        icon: Icons.shopping_bag_outlined,
-        color: Colors.orange,
-      ));
+      reasons.add(UrgencyReasonType.waitingForMaterials);
     } else if (assembly != AssemblyStatus.ready) {
-      reasons.add(const UrgencyReason(
-        type: UrgencyReasonType.assemblyNotReady,
-        icon: Icons.construction,
-        color: Colors.orange,
-      ));
+      reasons.add(UrgencyReasonType.assemblyNotReady);
     }
     if (payment.status == PaymentStatus.unpaid) {
-      reasons.add(const UrgencyReason(
-        type: UrgencyReasonType.paymentPending,
-        icon: Icons.credit_card_off,
-        color: Colors.orange,
-      ));
+      reasons.add(UrgencyReasonType.paymentPending);
     }
     if (level == UrgencyLevel.overdue && shipment.status == ShipmentStatus.pending) {
-      reasons.add(const UrgencyReason(
-        type: UrgencyReasonType.notYetShipped,
-        icon: Icons.schedule,
-        color: Colors.red,
-      ));
+      reasons.add(UrgencyReasonType.notYetShipped);
     }
     return reasons;
   }
