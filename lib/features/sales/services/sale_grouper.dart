@@ -72,15 +72,15 @@ class SaleGrouper {
         sale.shipment.status != ShipmentStatus.delivered) {
       return 'Overdue';
     }
-    if (relevantDate.isAfter(startOfThisWeek.subtract(const Duration(seconds: 1))) &&
+    if (!relevantDate.isBefore(startOfThisWeek) &&
         relevantDate.isBefore(startOfNextWeek)) {
       return 'This week';
     }
-    if (relevantDate.isAfter(startOfNextWeek.subtract(const Duration(seconds: 1))) &&
+    if (!relevantDate.isBefore(startOfNextWeek) &&
         relevantDate.isBefore(endOfNextWeek)) {
       return 'Next week';
     }
-    if (relevantDate.isAfter(endOfNextWeek)) {
+    if (!relevantDate.isBefore(endOfNextWeek)) {
       return 'Later';
     }
     return DateFormat('MMMM yyyy').format(relevantDate);

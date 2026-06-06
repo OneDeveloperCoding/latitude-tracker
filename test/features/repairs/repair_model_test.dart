@@ -218,9 +218,9 @@ void main() {
         );
       });
 
-      test('empty string when both are null', () {
-        // buyerId must be null, so freeTextContact is required by assert —
-        // the only reachable case here is buyerName == null with buyerId set.
+      test('returns empty string when buyerName is null and buyerId is set', () {
+        // freeTextContact stays null here because buyerId is non-null, which
+        // satisfies the constructor assert without needing freeTextContact.
         expect(makeRepair(buyerName: null).contactName, '');
       });
     });

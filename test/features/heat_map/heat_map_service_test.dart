@@ -6,7 +6,6 @@ import '../../helpers/sale_factory.dart';
 
 Sale _shippingSale(String? postalCode) => makeSale(
       delivery: DeliveryType.shipping,
-      shipmentStatus: ShipmentStatus.delivered,
     ).copyWith(
       shipment: SaleShipment(
         type: DeliveryType.shipping,
