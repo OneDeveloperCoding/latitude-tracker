@@ -459,16 +459,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 children: [
                   SegmentedButton<DeliveryType>(
                     showSelectedIcon: false,
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                           value: DeliveryType.shipping,
-                          icon: Icon(Icons.local_shipping)),
+                          icon: const Icon(Icons.local_shipping),
+                          label: Text(s.shipping)),
                       ButtonSegment(
                           value: DeliveryType.pickup,
-                          icon: Icon(Icons.store)),
+                          icon: const Icon(Icons.store),
+                          label: Text(s.pickup)),
                       ButtonSegment(
                           value: DeliveryType.handDelivery,
-                          icon: Icon(Icons.directions_walk)),
+                          icon: const Icon(Icons.directions_walk),
+                          label: Text(s.handDelivery)),
                     ],
                     selected: {_deliveryType},
                     onSelectionChanged: (v) =>

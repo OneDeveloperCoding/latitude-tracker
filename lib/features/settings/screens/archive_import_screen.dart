@@ -27,25 +27,20 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
       (widget.archive['buyers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
   Future<void> _confirmImport() async {
+    final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Import to app?'),
-        content: Text(
-          'This will add ${_sales.length} sale${_sales.length == 1 ? '' : 's'} '
-          'and ${_buyers.length} buyer${_buyers.length == 1 ? '' : 's'} '
-          'to your app.\n\n'
-          'Records that already exist will be skipped — '
-          'your current data will not be overwritten.',
-        ),
+        title: Text(s.archiveImportTitle),
+        content: Text(s.archiveImportBody(_sales.length, _buyers.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Import'),
+            child: Text(s.archiveImportAction),
           ),
         ],
       ),
@@ -81,23 +76,21 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
   }
 
   void _showResult(ImportResult result) {
+    final s = context.s;
     final parts = <String>[];
     if (result.salesImported > 0) {
-      parts.add(
-          '${result.salesImported} sale${result.salesImported == 1 ? '' : 's'} imported');
+      parts.add(s.archiveSalesImportedMsg(result.salesImported));
     }
     if (result.buyersImported > 0) {
-      parts.add(
-          '${result.buyersImported} buyer${result.buyersImported == 1 ? '' : 's'} imported');
+      parts.add(s.archiveBuyersImportedMsg(result.buyersImported));
     }
     if (result.repairsImported > 0) {
-      parts.add(
-          '${result.repairsImported} repair${result.repairsImported == 1 ? '' : 's'} imported');
+      parts.add(s.archiveRepairsImportedMsg(result.repairsImported));
     }
     if (result.skipped > 0) {
-      parts.add('${result.skipped} skipped (already exist)');
+      parts.add(s.archiveSkippedMsg(result.skipped));
     }
-    if (parts.isEmpty) parts.add('Nothing to import — all records already exist');
+    if (parts.isEmpty) parts.add(s.archiveNothingToImport);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -109,25 +102,27 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final year = widget.archive['year'] as int?;
     final exportedAt = widget.archive['exportedAt'] as String?;
 
-    final totalRevenue = _sales.fold<double>(0, (sum, s) {
+    final totalRevenue = _sales.fold<double>(0, (sale, saleMap) {
       final items =
-          (s['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-      return sum +
+          (saleMap['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return sale +
           items.fold<double>(
               0, (iSum, i) => iSum + ((i['price'] as num?)?.toDouble() ?? 0));
     });
-    final paidCount =
-        _sales.where((s) => (s['payment'] as Map?)?['status'] == 'paid').length;
+    final paidCount = _sales
+        .where((sale) => (sale['payment'] as Map?)?['status'] == 'paid')
+        .length;
 
     final currencyFormat = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final dateFormat = DateFormat('dd MMM yyyy HH:mm');
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(year != null ? 'Archive $year' : 'Archive'),
+        title: Text(year != null ? '${s.archive} $year' : s.archive),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
@@ -152,7 +147,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
             TextButton.icon(
               onPressed: _confirmImport,
               icon: const Icon(Icons.download),
-              label: const Text('Import'),
+              label: Text(s.archiveImportAction),
             ),
         ],
       ),
@@ -170,7 +165,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _lastResult != null ? 'Imported' : 'Read-only archive',
+                    _lastResult != null ? s.archiveImported : s.archiveReadOnly,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: _lastResult != null
                               ? Theme.of(context)
@@ -183,7 +178,8 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
                   ),
                   if (exportedAt != null)
                     Text(
-                      'Exported ${dateFormat.format(DateTime.parse(exportedAt))}',
+                      s.archiveExportedAt(
+                          dateFormat.format(DateTime.parse(exportedAt))),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: _lastResult != null
                                 ? Theme.of(context)
@@ -197,9 +193,12 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
                   if (_lastResult != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '${_lastResult!.salesImported} sale${_lastResult!.salesImported == 1 ? '' : 's'} · '
-                      '${_lastResult!.buyersImported} buyer${_lastResult!.buyersImported == 1 ? '' : 's'} · '
-                      '${_lastResult!.skipped} skipped',
+                      s.archiveResultBrief(
+                        _lastResult!.salesImported,
+                        _lastResult!.buyersImported,
+                        _lastResult!.repairsImported,
+                        _lastResult!.skipped,
+                      ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -212,24 +211,24 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _StatRow(label: 'Total sales', value: '${_sales.length}'),
-          _StatRow(label: 'Paid', value: '$paidCount / ${_sales.length}'),
+          _StatRow(label: s.totalSalesLabel, value: '${_sales.length}'),
+          _StatRow(label: s.paid, value: '$paidCount / ${_sales.length}'),
           _StatRow(
-              label: 'Total revenue',
+              label: s.archiveTotalRevenue,
               value: currencyFormat.format(totalRevenue)),
-          _StatRow(label: 'Buyers', value: '${_buyers.length}'),
+          _StatRow(label: s.buyers, value: '${_buyers.length}'),
           const SizedBox(height: 24),
           Text(
-            'Sales',
+            s.navSales,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
           ),
           const SizedBox(height: 8),
           if (_sales.isEmpty)
-            const Text('No sales in this archive.')
+            Text(s.archiveNoSales)
           else
-            ..._sales.map((s) => _ArchivedSaleTile(sale: s)),
+            ..._sales.map((sale) => _ArchivedSaleTile(sale: sale)),
         ],
       ),
     );
@@ -268,6 +267,7 @@ class _ArchivedSaleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final items = (sale['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final totalPrice = items.fold<double>(
         0, (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0));
@@ -292,7 +292,7 @@ class _ArchivedSaleTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            title: Text(sale['buyerName'] as String? ?? 'Unknown'),
+            title: Text(sale['buyerName'] as String? ?? s.archiveUnknown),
             subtitle: Text(
               items.isEmpty
                   ? '—'
@@ -308,7 +308,7 @@ class _ArchivedSaleTile extends StatelessWidget {
               children: [
                 Text('€${totalPrice.toStringAsFixed(2)}'),
                 Text(
-                  isPaid ? 'Paid' : 'Unpaid',
+                  isPaid ? s.paid : s.unpaid,
                   style: TextStyle(
                     fontSize: 11,
                     color: isPaid ? Colors.green : Colors.orange,

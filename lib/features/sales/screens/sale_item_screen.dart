@@ -203,7 +203,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                             const Icon(Icons.arrow_forward_ios, size: 16),
                       ),
                       child: Text(
-                        _category ?? '',
+                        _category ?? s.categoryPickerHint,
                         style: _category == null
                             ? TextStyle(color: Theme.of(context).hintColor)
                             : null,

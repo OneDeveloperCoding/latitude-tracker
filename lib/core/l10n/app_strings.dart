@@ -33,7 +33,9 @@ class AppStrings {
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   final String email;
+  final String emailRequired;
   final String password;
+  final String passwordRequired;
   final String signIn;
   final String tryDemo;
   final String errInvalidCredentials;
@@ -149,6 +151,7 @@ class AppStrings {
   // ── Category picker ──────────────────────────────────────────────────────
   final String categoryLabel;
   final String categoryRequired;
+  final String categoryPickerHint;
   final String searchOrAddCategory;
   final String categoryFilterHeader;
 
@@ -204,6 +207,8 @@ class AppStrings {
   final String addPhoto;
   final String takePhoto;
   final String chooseFromGallery;
+
+  final String receivedLabel;
 
   // ── Sale detail ──────────────────────────────────────────────────────────
   final String saleFallbackTitle;
@@ -370,6 +375,10 @@ class AppStrings {
   // ── Repairs ──────────────────────────────────────────────────────────────
   final String repairs;
   final String newRepair;
+  final String repairProblemLabel;
+  final String repairReturnStatusLabel;
+  final String repairFilterActiveOnly;
+  final String repairFilterShowAll;
   final String editRepair;
   final String deleteRepair;
   final String deleteRepairTitle;
@@ -407,6 +416,16 @@ class AppStrings {
   final String repairTopCategories;
   final String repairStatusByCount;
   final String noRepairDataForPeriod;
+
+  // ── Archive import ───────────────────────────────────────────────────────
+  final String archiveImportTitle;
+  final String archiveImportAction;
+  final String archiveReadOnly;
+  final String archiveImported;
+  final String archiveTotalRevenue;
+  final String archiveNoSales;
+  final String archiveUnknown;
+  final String archiveNothingToImport;
 
   // ── Category maintenance ──────────────────────────────────────────────────
   final String catalogueSection;
@@ -450,7 +469,9 @@ class AppStrings {
     required this.navBuyers,
     required this.navSettings,
     required this.email,
+    required this.emailRequired,
     required this.password,
+    required this.passwordRequired,
     required this.signIn,
     required this.tryDemo,
     required this.errInvalidCredentials,
@@ -551,6 +572,7 @@ class AppStrings {
     required this.addNif,
     required this.categoryLabel,
     required this.categoryRequired,
+    required this.categoryPickerHint,
     required this.searchOrAddCategory,
     required this.categoryFilterHeader,
     required this.tagsLabel,
@@ -603,6 +625,7 @@ class AppStrings {
     required this.noScheduledDate,
     required this.readyBy,
     required this.scheduledLabel,
+    required this.receivedLabel,
     required this.removePhotoTitle,
     required this.removePhoto,
     required this.addPhoto,
@@ -750,6 +773,10 @@ class AppStrings {
     required this.selectSalePrompt,
     required this.repairs,
     required this.newRepair,
+    required this.repairProblemLabel,
+    required this.repairReturnStatusLabel,
+    required this.repairFilterActiveOnly,
+    required this.repairFilterShowAll,
     required this.editRepair,
     required this.deleteRepair,
     required this.deleteRepairTitle,
@@ -787,6 +814,14 @@ class AppStrings {
     required this.repairTopCategories,
     required this.repairStatusByCount,
     required this.noRepairDataForPeriod,
+    required this.archiveImportTitle,
+    required this.archiveImportAction,
+    required this.archiveReadOnly,
+    required this.archiveImported,
+    required this.archiveTotalRevenue,
+    required this.archiveNoSales,
+    required this.archiveUnknown,
+    required this.archiveNothingToImport,
     required this.catalogueSection,
     required this.categoriesTitle,
     required this.categoriesSubtitle,
@@ -1076,6 +1111,62 @@ class AppStrings {
   String errorDeletingBuyerMsg(Object error) =>
       _pt ? 'Erro ao eliminar comprador: $error' : 'Error deleting buyer: $error';
 
+  String promotedToBuyerMsg(String name) =>
+      _pt ? '$name promovido a Comprador' : '$name promoted to Buyer';
+
+  String archiveExportedAt(String date) =>
+      _pt ? 'Exportado $date' : 'Exported $date';
+
+  String archiveImportBody(int sales, int buyers) {
+    if (_pt) {
+      return 'Isto irá adicionar ${nSales(sales)} e '
+          '${_nBuyers(buyers)} à sua app.\n\n'
+          'Registos que já existam serão ignorados — '
+          'os seus dados atuais não serão substituídos.';
+    }
+    return 'This will add ${nSales(sales)} and '
+        '${_nBuyers(buyers)} to your app.\n\n'
+        'Records that already exist will be skipped — '
+        'your current data will not be overwritten.';
+  }
+
+  String archiveResultBrief(int sales, int buyers, int repairs, int skipped) {
+    final parts = <String>[];
+    if (sales > 0) parts.add(nSales(sales));
+    if (buyers > 0) parts.add(_nBuyers(buyers));
+    if (repairs > 0) parts.add(_nRepairs(repairs));
+    if (skipped > 0) {
+      parts.add(_pt
+          ? '$skipped ignorado${skipped == 1 ? '' : 's'}'
+          : '$skipped skipped');
+    }
+    if (parts.isEmpty) return archiveNothingToImport;
+    return parts.join(' · ');
+  }
+
+  String archiveSalesImportedMsg(int n) =>
+      _pt ? '${nSales(n)} importada${n == 1 ? '' : 's'}' : '${nSales(n)} imported';
+
+  String archiveBuyersImportedMsg(int n) => _pt
+      ? '${_nBuyers(n)} importado${n == 1 ? '' : 's'}'
+      : '${_nBuyers(n)} imported';
+
+  String archiveRepairsImportedMsg(int n) => _pt
+      ? '${_nRepairs(n)} importada${n == 1 ? '' : 's'}'
+      : '${_nRepairs(n)} imported';
+
+  String archiveSkippedMsg(int n) => _pt
+      ? '$n ignorado${n == 1 ? '' : 's'} (já existem)'
+      : '$n skipped (already exist)';
+
+  String _nBuyers(int n) => _pt
+      ? '$n comprador${n == 1 ? '' : 'es'}'
+      : '$n buyer${n == 1 ? '' : 's'}';
+
+  String _nRepairs(int n) => _pt
+      ? '$n reparaç${n == 1 ? 'ão' : 'ões'}'
+      : '$n repair${n == 1 ? '' : 's'}';
+
   // Maps English timeline keys (used for ordering) to translated display labels.
   String urgencyReasonLabel(UrgencyReasonType type) => switch (type) {
         UrgencyReasonType.waitingForMaterials => urgencyWaitingForMaterials,
@@ -1147,7 +1238,9 @@ class AppStrings {
     navBuyers: 'Buyers',
     navSettings: 'Settings',
     email: 'Email',
+    emailRequired: 'Email is required',
     password: 'Password',
+    passwordRequired: 'Password is required',
     signIn: 'Sign in',
     tryDemo: 'Try demo',
     errInvalidCredentials: 'Invalid email or password.',
@@ -1259,6 +1352,7 @@ class AppStrings {
     addNif: 'Add NIF',
     categoryLabel: 'Category *',
     categoryRequired: 'Category is required',
+    categoryPickerHint: 'Tap to choose',
     searchOrAddCategory: 'Search or add a category...',
     categoryFilterHeader: 'Category',
     tagsLabel: 'Tags',
@@ -1311,6 +1405,7 @@ class AppStrings {
     noScheduledDate: 'No scheduled date',
     readyBy: 'Ready by',
     scheduledLabel: 'Scheduled',
+    receivedLabel: 'Received',
     removePhotoTitle: 'Remove photo?',
     removePhoto: 'Remove',
     addPhoto: 'Add photo',
@@ -1475,6 +1570,10 @@ class AppStrings {
     selectSalePrompt: 'Select a sale to view details',
     repairs: 'Repairs',
     newRepair: 'New Repair',
+    repairProblemLabel: 'Problem',
+    repairReturnStatusLabel: 'Return delivery status',
+    repairFilterActiveOnly: 'Active only',
+    repairFilterShowAll: 'Show all',
     editRepair: 'Edit Repair',
     deleteRepair: 'Delete repair',
     deleteRepairTitle: 'Delete repair?',
@@ -1513,6 +1612,14 @@ class AppStrings {
     repairTopCategories: 'Top categories',
     repairStatusByCount: 'By status',
     noRepairDataForPeriod: 'No repair data for this period',
+    archiveImportTitle: 'Import to app?',
+    archiveImportAction: 'Import',
+    archiveReadOnly: 'Read-only archive',
+    archiveImported: 'Imported',
+    archiveTotalRevenue: 'Total revenue',
+    archiveNoSales: 'No sales in this archive.',
+    archiveUnknown: 'Unknown',
+    archiveNothingToImport: 'Nothing to import — all records already exist',
     catalogueSection: 'Catalogue',
     categoriesTitle: 'Categories',
     categoriesSubtitle: 'Rename, hide, or remove item categories',
@@ -1553,7 +1660,9 @@ class AppStrings {
     navBuyers: 'Compradores',
     navSettings: 'Definições',
     email: 'Email',
+    emailRequired: 'Email é obrigatório',
     password: 'Palavra-passe',
+    passwordRequired: 'Palavra-passe é obrigatória',
     signIn: 'Entrar',
     tryDemo: 'Experimentar',
     errInvalidCredentials: 'Email ou palavra-passe incorretos.',
@@ -1665,6 +1774,7 @@ class AppStrings {
     addNif: 'Adicionar NIF',
     categoryLabel: 'Categoria *',
     categoryRequired: 'Categoria é obrigatória',
+    categoryPickerHint: 'Toque para escolher',
     searchOrAddCategory: 'Pesquisar ou adicionar categoria...',
     categoryFilterHeader: 'Categoria',
     tagsLabel: 'Etiquetas',
@@ -1717,6 +1827,7 @@ class AppStrings {
     noScheduledDate: 'Sem data agendada',
     readyBy: 'Pronto a',
     scheduledLabel: 'Agendado',
+    receivedLabel: 'Recebido',
     removePhotoTitle: 'Remover foto?',
     removePhoto: 'Remover',
     addPhoto: 'Adicionar foto',
@@ -1882,6 +1993,10 @@ class AppStrings {
     selectSalePrompt: 'Seleciona uma venda para ver os detalhes',
     repairs: 'Reparações',
     newRepair: 'Nova Reparação',
+    repairProblemLabel: 'Problema',
+    repairReturnStatusLabel: 'Estado da devolução',
+    repairFilterActiveOnly: 'Apenas ativos',
+    repairFilterShowAll: 'Mostrar todos',
     editRepair: 'Editar Reparação',
     deleteRepair: 'Eliminar reparação',
     deleteRepairTitle: 'Eliminar reparação?',
@@ -1920,6 +2035,14 @@ class AppStrings {
     repairTopCategories: 'Principais categorias',
     repairStatusByCount: 'Por estado',
     noRepairDataForPeriod: 'Sem dados de reparações para este período',
+    archiveImportTitle: 'Importar para a app?',
+    archiveImportAction: 'Importar',
+    archiveReadOnly: 'Arquivo só de leitura',
+    archiveImported: 'Importado',
+    archiveTotalRevenue: 'Receita total',
+    archiveNoSales: 'Sem vendas neste arquivo.',
+    archiveUnknown: 'Desconhecido',
+    archiveNothingToImport: 'Nada para importar — todos os registos já existem',
     catalogueSection: 'Catálogo',
     categoriesTitle: 'Categorias',
     categoriesSubtitle: 'Renomear, ocultar ou remover categorias',

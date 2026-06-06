@@ -157,7 +157,7 @@ class _RepairDetailBody extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.report_problem_outlined),
                 title: Text(repair.problemDescription),
-                subtitle: const Text('Problem'),
+                subtitle: Text(s.repairProblemLabel),
               ),
             ],
           ),
@@ -278,7 +278,7 @@ class _RepairDetailBody extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
-              '${s.scheduledLabel}: ${DateFormat('d MMM y').format(repair.createdAt)}',
+              '${s.receivedLabel}: ${DateFormat('d MMM y').format(repair.createdAt)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -378,8 +378,7 @@ class _ContactRow extends StatelessWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('${newBuyer.name} promoted to Buyer')),
+          SnackBar(content: Text(s.promotedToBuyerMsg(newBuyer.name))),
         );
       }
     } catch (e) {

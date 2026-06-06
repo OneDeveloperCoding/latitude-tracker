@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/widgets/discard_dialog.dart';
@@ -208,6 +209,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
             TextFormField(
               controller: _nifController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(
                 labelText: s.nifLabel,
                 border: const OutlineInputBorder(),
