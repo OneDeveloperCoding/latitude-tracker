@@ -5,6 +5,8 @@ import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../buyers/models/buyer.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
@@ -63,6 +65,20 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
   Widget build(BuildContext context) {
     final s = context.s;
     final dateFormat = DateFormat('dd MMM yyyy');
+
+    if (SalesStore.state.value is StoreError ||
+        BuyersStore.state.value is StoreError) {
+      return Scaffold(
+        appBar: AppBar(title: Text(s.nifPendingTitle)),
+        body: StoreErrorWidget(
+          message: s.errorLoadingSales,
+          onRetry: () {
+            SalesStore.ensureSubscribed();
+            BuyersStore.ensureSubscribed();
+          },
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(s.nifPendingTitle)),

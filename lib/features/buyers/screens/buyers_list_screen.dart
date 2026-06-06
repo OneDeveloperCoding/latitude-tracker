@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../sales/services/sale_grouper.dart';
 import '../models/buyer.dart';
 import '../models/buyer_stats.dart';
@@ -300,6 +302,16 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
   Widget _buildBody() {
     final s = context.s;
+    if (SalesStore.state.value is StoreError ||
+        BuyersStore.state.value is StoreError) {
+      return StoreErrorWidget(
+        message: s.errorLoadingBuyers,
+        onRetry: () {
+          SalesStore.ensureSubscribed();
+          BuyersStore.ensureSubscribed();
+        },
+      );
+    }
     if (_loading) return const Center(child: CircularProgressIndicator());
 
     // Populate view caches on first build (initState has no context).

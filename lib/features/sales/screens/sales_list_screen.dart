@@ -5,6 +5,8 @@ import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
+import '../../../core/widgets/store_error_widget.dart';
 import '../../buyers/models/buyer.dart';
 import '../../heat_map/screens/heat_map_screen.dart';
 import '../models/sale.dart';
@@ -310,15 +312,20 @@ class _SalesListScreenState extends State<SalesListScreen> {
           ),
         ),
         Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _filteredSales.isEmpty
-                  ? Center(child: Text(s.noSalesFound))
-                  : _TimelineView(
-                      groups: _groupedSales,
-                      selectedSaleId: isTablet ? _selectedSale?.id : null,
-                      onSaleTap: _selectSale,
-                    ),
+          child: SalesStore.state.value is StoreError
+              ? StoreErrorWidget(
+                  message: s.errorLoadingSales,
+                  onRetry: SalesStore.ensureSubscribed,
+                )
+              : _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredSales.isEmpty
+                      ? Center(child: Text(s.noSalesFound))
+                      : _TimelineView(
+                          groups: _groupedSales,
+                          selectedSaleId: isTablet ? _selectedSale?.id : null,
+                          onSaleTap: _selectSale,
+                        ),
         ),
       ],
     );

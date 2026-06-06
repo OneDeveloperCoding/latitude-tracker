@@ -278,6 +278,8 @@ class AppStrings {
   final String totalOutstanding;
   final String errorLoadingSales;
   final String errorLoadingRepairs;
+  final String errorLoadingBuyers;
+  final String retry;
 
   // ── Buyer tags & notes ───────────────────────────────────────────────────
   final String tagsLabel;
@@ -668,6 +670,8 @@ class AppStrings {
     required this.totalOutstanding,
     required this.errorLoadingSales,
     required this.errorLoadingRepairs,
+    required this.errorLoadingBuyers,
+    required this.retry,
     required this.newBuyer,
     required this.editBuyer,
     required this.buyerNameLabel,
@@ -1370,6 +1374,8 @@ class AppStrings {
     totalOutstanding: 'Total outstanding',
     errorLoadingSales: 'Error loading sales',
     errorLoadingRepairs: 'Error loading repairs',
+    errorLoadingBuyers: 'Error loading buyers',
+    retry: 'Retry',
     newBuyer: 'New Buyer',
     editBuyer: 'Edit Buyer',
     buyerNameLabel: 'Name',
@@ -1770,6 +1776,8 @@ class AppStrings {
     totalOutstanding: 'Total em falta',
     errorLoadingSales: 'Erro ao carregar vendas',
     errorLoadingRepairs: 'Erro ao carregar reparações',
+    errorLoadingBuyers: 'Erro ao carregar compradores',
+    retry: 'Tentar novamente',
     newBuyer: 'Novo Comprador',
     editBuyer: 'Editar Comprador',
     buyerNameLabel: 'Nome',
