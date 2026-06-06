@@ -876,6 +876,15 @@ class _AddressDisplay extends StatelessWidget {
             '${address.postalCode} ${address.city}',
             address.country,
           ].join(', '),
+          trailing: address.hasMapsAddress
+              ? IconButton(
+                  icon: const Icon(Icons.map, size: 16),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _launchMaps(context, address),
+                )
+              : null,
         );
       },
     );
@@ -1057,8 +1066,9 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
-  const _InfoRow({required this.icon, required this.text, this.onTap});
+  const _InfoRow({required this.icon, required this.text, this.onTap, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -1071,7 +1081,9 @@ class _InfoRow extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
-          if (onTap != null)
+          if (trailing != null)
+            trailing!
+          else if (onTap != null)
             Icon(Icons.chevron_right,
                 size: 16,
                 color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -1081,6 +1093,26 @@ class _InfoRow extends StatelessWidget {
     if (onTap == null) return row;
     return InkWell(
         onTap: onTap, borderRadius: BorderRadius.circular(4), child: row);
+  }
+}
+
+Future<void> _launchMaps(BuildContext context, BuyerAddress address) async {
+  try {
+    final launched = await launchUrl(
+      address.mapsUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.couldNotOpenMaps)),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.couldNotOpenMaps)),
+      );
+    }
   }
 }
 

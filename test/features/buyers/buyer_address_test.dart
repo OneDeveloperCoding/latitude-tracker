@@ -67,4 +67,53 @@ void main() {
       expect(result.split('\n')[1], 'Rua das Flores, 12');
     });
   });
+
+  group('BuyerAddress.hasMapsAddress', () {
+    test('returns true when street, city, and postalCode are non-empty', () {
+      expect(_address().hasMapsAddress, isTrue);
+    });
+
+    test('returns false when street is empty', () {
+      expect(_address(street: '').hasMapsAddress, isFalse);
+    });
+
+    test('returns false when city is empty', () {
+      expect(_address(city: '').hasMapsAddress, isFalse);
+    });
+
+    test('returns false when postalCode is empty', () {
+      expect(_address(postalCode: '').hasMapsAddress, isFalse);
+    });
+  });
+
+  group('BuyerAddress.mapsUri', () {
+    test('builds a Google Maps URL with the encoded address', () {
+      final uri = _address().mapsUri;
+      expect(uri.scheme, 'https');
+      expect(uri.host, 'maps.google.com');
+      expect(uri.path, '/maps');
+      expect(uri.queryParameters['q'], contains('Rua das Flores'));
+      expect(uri.queryParameters['q'], contains('Porto'));
+    });
+
+    test('includes fraction in query when set', () {
+      final uri = _address(fraction: '2º Dto').mapsUri;
+      expect(uri.queryParameters['q'], contains('2º Dto'));
+    });
+
+    test('omits fraction from query when null', () {
+      final uri = _address(fraction: null).mapsUri;
+      expect(uri.queryParameters['q'], isNot(contains('null')));
+    });
+
+    test('omits country from query for Portugal', () {
+      final uri = _address(country: 'Portugal').mapsUri;
+      expect(uri.queryParameters['q'], isNot(contains('Portugal')));
+    });
+
+    test('includes country in query for non-Portugal addresses', () {
+      final uri = _address(country: 'France').mapsUri;
+      expect(uri.queryParameters['q'], contains('France'));
+    });
+  });
 }

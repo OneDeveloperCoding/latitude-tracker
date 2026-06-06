@@ -662,6 +662,26 @@ class _AddressesListState extends State<_AddressesList> {
     }
   }
 
+  Future<void> _openMaps(BuildContext context, BuyerAddress address) async {
+    try {
+      final launched = await launchUrl(
+        address.mapsUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.couldNotOpenMaps)),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.couldNotOpenMaps)),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
@@ -692,6 +712,9 @@ class _AddressesListState extends State<_AddressesList> {
                     onEdit: () => widget.onEdit(a),
                     onDelete: () => widget.onDelete(a),
                     onCopy: () => _copyAddress(context, a),
+                    onOpenMaps: a.hasMapsAddress
+                        ? () => _openMaps(context, a)
+                        : null,
                   ))
               .toList(),
         );
@@ -822,12 +845,14 @@ class _AddressTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onCopy;
+  final VoidCallback? onOpenMaps;
 
   const _AddressTile({
     required this.address,
     required this.onEdit,
     required this.onDelete,
     required this.onCopy,
+    this.onOpenMaps,
   });
 
   @override
@@ -854,17 +879,28 @@ class _AddressTile extends StatelessWidget {
           '${address.street}\n${address.postalCode} ${address.city}, ${address.country}',
         ),
         isThreeLine: true,
-        trailing: PopupMenuButton(
-          itemBuilder: (_) => [
-            PopupMenuItem(value: 'copy', child: Text(s.copy)),
-            PopupMenuItem(value: 'edit', child: Text(s.edit)),
-            PopupMenuItem(value: 'delete', child: Text(s.delete)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (onOpenMaps != null)
+              IconButton(
+                icon: const Icon(Icons.map),
+                onPressed: onOpenMaps,
+                tooltip: s.openInMaps,
+              ),
+            PopupMenuButton(
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'copy', child: Text(s.copy)),
+                PopupMenuItem(value: 'edit', child: Text(s.edit)),
+                PopupMenuItem(value: 'delete', child: Text(s.delete)),
+              ],
+              onSelected: (value) {
+                if (value == 'copy') onCopy();
+                if (value == 'edit') onEdit();
+                if (value == 'delete') onDelete();
+              },
+            ),
           ],
-          onSelected: (value) {
-            if (value == 'copy') onCopy();
-            if (value == 'edit') onEdit();
-            if (value == 'delete') onDelete();
-          },
         ),
       ),
     );

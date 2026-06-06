@@ -56,6 +56,20 @@ class BuyerAddress {
         'isDefault': isDefault,
       };
 
+  bool get hasMapsAddress =>
+      street.isNotEmpty && city.isNotEmpty && postalCode.isNotEmpty;
+
+  Uri get mapsUri {
+    final parts = [
+      '$street $houseNumber',
+      if (fraction?.isNotEmpty == true) fraction!,
+      '$postalCode $city',
+      if (country.toLowerCase() != 'portugal') country,
+    ];
+    return Uri.parse(
+        'https://maps.google.com/maps?q=${Uri.encodeComponent(parts.join(', '))}');
+  }
+
   String formattedAddress(String buyerName) {
     final streetLine = [street, houseNumber, if (fraction?.isNotEmpty == true) fraction!]
         .join(', ');
