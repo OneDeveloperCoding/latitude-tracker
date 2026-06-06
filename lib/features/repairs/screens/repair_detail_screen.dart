@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/error_reporter.dart';
 import '../../../core/store/sales_store.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/repositories/buyer_repository.dart';
@@ -446,7 +447,9 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
   bool _isUpdating = false;
 
   Future<void> _advance() async {
-    final delivery = widget.repair.returnDelivery;
+    // Snapshot before any await so the write is consistent with what was rendered.
+    final repair = widget.repair;
+    final delivery = repair.returnDelivery;
     final nextStatus = delivery.type == DeliveryType.shipping &&
             delivery.status == ShipmentStatus.pending
         ? ShipmentStatus.shipped
@@ -455,11 +458,16 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
     setState(() => _isUpdating = true);
     try {
       await RepairRepository().updateRepair(
-        widget.repair.copyWith(
+        repair.copyWith(
           returnDelivery: delivery.copyWith(status: nextStatus),
+          // Completing delivery marks the repair as returned so isActive flips.
+          status: nextStatus == ShipmentStatus.delivered
+              ? RepairStatus.returned
+              : null,
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorSavingRepair)),
