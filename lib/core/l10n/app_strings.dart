@@ -280,6 +280,8 @@ class AppStrings {
   final String deleteAddressTitle;
   final String noContactDetails;
   final String couldNotOpenInstagram;
+  final String couldNotOpenMaps;
+  final String openInMaps;
   final String defaultChip;
   final String all;
   final String allPaid;
@@ -697,6 +699,8 @@ class AppStrings {
     required this.deleteAddressTitle,
     required this.noContactDetails,
     required this.couldNotOpenInstagram,
+    required this.couldNotOpenMaps,
+    required this.openInMaps,
     required this.defaultChip,
     required this.all,
     required this.allPaid,
@@ -1480,6 +1484,8 @@ class AppStrings {
     deleteAddressTitle: 'Delete address?',
     noContactDetails: 'No contact details saved.',
     couldNotOpenInstagram: 'Could not open Instagram',
+    couldNotOpenMaps: 'Could not open Maps',
+    openInMaps: 'Open in Maps',
     defaultChip: 'Default',
     all: 'All',
     allPaid: 'All paid up!',
@@ -1905,6 +1911,8 @@ class AppStrings {
     deleteAddressTitle: 'Eliminar morada?',
     noContactDetails: 'Sem dados de contacto guardados.',
     couldNotOpenInstagram: 'Não foi possível abrir o Instagram',
+    couldNotOpenMaps: 'Não foi possível abrir o Maps',
+    openInMaps: 'Abrir no Maps',
     defaultChip: 'Padrão',
     all: 'Todos',
     allPaid: 'Tudo pago!',

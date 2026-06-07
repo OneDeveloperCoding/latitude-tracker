@@ -6,7 +6,6 @@ import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../demo/demo_mode.dart';
 import '../../sales/models/sale.dart';
-import '../repositories/catalogue_repository.dart';
 import '../services/category_service.dart';
 
 class CategoryMaintenanceScreen extends StatefulWidget {
@@ -20,7 +19,6 @@ class CategoryMaintenanceScreen extends StatefulWidget {
 class _CategoryMaintenanceScreenState
     extends State<CategoryMaintenanceScreen> {
   final _service = CategoryService();
-  final _repo = CatalogueRepository();
 
   List<String> _hidden = [];
   bool _loading = true;
@@ -33,12 +31,12 @@ class _CategoryMaintenanceScreenState
 
   Future<void> _loadHidden() async {
     try {
-      final hidden = await _repo.fetchHiddenCategories();
+      final hidden = await _service.fetchHiddenCategories();
       if (mounted) setState(() { _hidden = hidden; _loading = false; });
     } catch (e, st) {
       logError(e, st);
       if (mounted) {
-        setState(() => _loading = false);
+        setState(() { _hidden = []; _loading = false; });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorMsg(e))),
         );
@@ -169,9 +167,10 @@ class _CategoryMaintenanceScreenState
     final newName = controller.text.trim();
     if (newName == entry.name) return;
 
+    List<String>? updatedHidden;
     try {
       await _runWithProgress(s.renamingCategory, () async {
-        await _service.renameCategory(entry.name, newName, _hidden);
+        updatedHidden = await _service.renameCategory(entry.name, newName);
       });
     } catch (e, st) {
       logError(e, st);
@@ -182,15 +181,17 @@ class _CategoryMaintenanceScreenState
       }
       return;
     }
-    if (mounted) await _loadHidden();
+    if (mounted) setState(() => _hidden = updatedHidden ?? _hidden);
   }
 
   Future<void> _toggleHide(_CategoryEntry entry) async {
     try {
       if (entry.isHidden) {
-        await _service.unhideCategory(entry.name, _hidden);
+        await _service.unhideCategory(entry.name);
+        if (mounted) setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
       } else {
-        await _service.hideCategory(entry.name, _hidden);
+        await _service.hideCategory(entry.name);
+        if (mounted) setState(() => _hidden = [..._hidden, entry.name]);
       }
     } catch (e, st) {
       logError(e, st);
@@ -199,9 +200,7 @@ class _CategoryMaintenanceScreenState
           SnackBar(content: Text(context.s.errorMsg(e))),
         );
       }
-      return;
     }
-    if (mounted) await _loadHidden();
   }
 
   Future<void> _confirmDelete(_CategoryEntry entry) async {
@@ -226,7 +225,7 @@ class _CategoryMaintenanceScreenState
     );
     if (confirmed != true || !mounted) return;
     try {
-      await _service.deleteCategory(entry.name, _hidden);
+      await _service.deleteCategory(entry.name);
     } catch (e, st) {
       logError(e, st);
       if (mounted) {
@@ -236,7 +235,7 @@ class _CategoryMaintenanceScreenState
       }
       return;
     }
-    if (mounted) await _loadHidden();
+    if (mounted) setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
   }
 
   Future<void> _runWithProgress(

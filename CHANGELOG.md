@@ -1,5 +1,87 @@
 # Changelog
 
+## [1.4.0] — 2026-06-07
+
+### Features
+- Buyer addresses are now tappable links — tapping opens Google Maps with the formatted address pre-filled, available from both Sale detail and Buyer detail screens
+
+### Fixes
+- Accessibility: icon-only buttons now carry semantic labels; touch targets meet minimum size; `CircleAvatar` buyer initials are wrapped in `Semantics`
+- Category hide list no longer accumulates duplicate entries when `hideCategory` is called more than once for the same category
+
+### Testing
+- Unit tests added for `SaleGrouper`, `HeatMapService`, and `Repair` model (null-safe fields, enum fallbacks, sub-map defaults)
+- `CategoryService` test fixed to use injected repositories instead of relying on constructor-time snapshots
+
+### Architecture
+- `CategoryService` now fetches the hidden-category list itself rather than accepting a caller-supplied snapshot, eliminating stale-data bugs
+
+### Infrastructure
+- `bump-and-tag` workflow now restores `firebase_options.dart` and `google-services.json` from repository secrets before building the APK
+
+---
+
+## [1.3.1] — 2026-06-06
+
+### Features
+- Repair detail: quick-action buttons to advance `ReturnDelivery` status without opening the edit form
+- `BuyerRepository.watchBuyer(id)` stream — `BuyerDetailScreen` now reacts to remote buyer changes in real time
+
+### Performance
+- Thumbnail `Image.network` calls supply `cacheWidth`/`cacheHeight` — reduces GPU texture memory for list views
+- `BuyersListScreen` ranked-view rebuild reduced from O(buyers × sales) to O(sales) — eliminates quadratic scroll jank
+
+### Fixes
+- Form and label UX hardening across multiple screens (label capitalisation, keyboard type, autofill hints)
+- Nominatim geocoding errors no longer cached as misses — a server error no longer permanently suppresses map links for an address
+- Unsaved-changes `PopScope` guard added to `BuyerFormScreen` and `BuyerAddressFormScreen`
+- Detail screens (`SaleDetailScreen`, `BuyerDetailScreen`, `RepairDetailScreen`) now pop automatically when their stream emits `null` after deletion
+- `StoreErrorWidget` with retry action wired into all store-driven screens
+- `RepairDetailScreen` converted to `StatefulWidget` with stream moved to `initState` — prevents stream re-subscription on every rebuild
+- All UI strings and model fields renamed from "order/encomenda" to "sale/venda" for consistency with the domain language
+
+### Architecture
+- `UrgencyReason` icon and colour mapping moved from `SaleUrgency` business logic into a UI-layer extension
+
+---
+
+## [1.3.0] — 2026-06-06
+
+### Features
+- **Repairs**: new feature to track repair jobs — linked to a buyer or standalone free-text contact; fields include item description, category, problem, labour cost, materials cost, payment, and return delivery; full list, detail, and edit screens
+- Repair detail: quick-action buttons to advance `RepairStatus` through the workflow
+- **Category maintenance**: rename, hide, and delete item categories from Settings
+- **Archive analytics**: import a JSON archive and view yearly/monthly revenue trends in the Analytics screen
+- **Hand delivery** added as a third delivery type alongside shipping and pickup
+- **Revolut** and **PayPal** added as payment methods with brand colours
+- Buyer sale picker replaced with a buyer-scoped sheet — only that buyer's existing sales are shown when linking a repair
+- Master-detail split view for the Sales list on tablets (600 dp+)
+- Demo tour revamped as a 7-page paged walkthrough with illustrations
+- Analytics screen: `InsightsCard` and `TrendsScreen` merged into a single `AnalyticsScreen` accessed from the revenue card; standalone entry card removed
+- Sort UI in the Sales filter sheet compacted; Buyers ranking metric picker moved into the tune sheet
+- Search toolbars in Sales and Buyers screens collapse when scrolling down
+
+### Performance
+- `DashboardStats.compute()` 8-pass filter loop replaced with a single accumulator
+
+### Fixes
+- Global store lifecycle hardened: dispose race, `StoreLoading` deadlock, and stale auth data after sign-out resolved
+- Stores no longer stuck permanently in `StoreError` after the first stream error — error is surfaced and stream continues
+- Auth-revocation handling hardened; `currentUser!` force-unwraps replaced with null-guarded throws
+- `fromFirestore`/`fromMap` deserialisers guarded against null fields and unknown enum strings across all models
+- Crashlytics wired to store stream errors, UI write catch blocks, and navigation guards — no more silent failures
+- Firebase config files (`firebase_options.dart`, `google-services.json`) removed from version control; CI restores them from repository secrets
+
+### Architecture
+- Abstract `SaleRepository` / `BuyerRepository` with factory constructors routing to Firestore or in-memory implementation based on `DemoMode`
+- `SalesStore` + `BuyersStore`: shared singleton streams, one Firestore WebSocket per collection; state exposed as `StoreState<T>` sealed class
+
+### Infrastructure
+- `bump-and-tag` CI workflow: auto-detects version bump from conventional commits; creates tag and builds APK in a single run
+- `flutter test` step added to the release workflow — APK build blocked if any test fails
+
+---
+
 ## [1.2.0] — 2026-06-04
 
 ### Features

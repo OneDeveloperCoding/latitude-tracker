@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/addresses_store.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../buyers/models/buyer.dart';
@@ -140,6 +141,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit),
+                tooltip: context.s.editSale,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -876,6 +878,15 @@ class _AddressDisplay extends StatelessWidget {
             '${address.postalCode} ${address.city}',
             address.country,
           ].join(', '),
+          trailing: address.hasMapsAddress
+              ? IconButton(
+                  icon: const Icon(Icons.map, size: 16),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _launchMaps(context, address),
+                )
+              : null,
         );
       },
     );
@@ -1057,8 +1068,9 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
-  const _InfoRow({required this.icon, required this.text, this.onTap});
+  const _InfoRow({required this.icon, required this.text, this.onTap, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -1071,7 +1083,9 @@ class _InfoRow extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
-          if (onTap != null)
+          if (trailing != null)
+            trailing!
+          else if (onTap != null)
             Icon(Icons.chevron_right,
                 size: 16,
                 color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -1083,6 +1097,9 @@ class _InfoRow extends StatelessWidget {
         onTap: onTap, borderRadius: BorderRadius.circular(4), child: row);
   }
 }
+
+Future<void> _launchMaps(BuildContext context, BuyerAddress address) =>
+    launchMapsUrl(context, address.mapsUri);
 
 class _NotesField extends StatefulWidget {
   final String initialValue;

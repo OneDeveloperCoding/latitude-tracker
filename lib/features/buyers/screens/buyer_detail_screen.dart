@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/sales_store.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
@@ -72,6 +73,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.edit),
+                  tooltip: s.editBuyer,
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -80,6 +82,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
+                  tooltip: s.delete,
                   onPressed: () => _confirmDelete(context, buyer),
                 ),
               ],
@@ -551,7 +554,7 @@ class _SaleTile extends StatelessWidget {
                 onTap: () => _showNotePreview(context, sale.notes!),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(14),
                   child: Icon(
                     Icons.sticky_note_2_outlined,
                     size: 16,
@@ -662,6 +665,9 @@ class _AddressesListState extends State<_AddressesList> {
     }
   }
 
+  Future<void> _openMaps(BuildContext context, BuyerAddress address) =>
+      launchMapsUrl(context, address.mapsUri);
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
@@ -692,6 +698,9 @@ class _AddressesListState extends State<_AddressesList> {
                     onEdit: () => widget.onEdit(a),
                     onDelete: () => widget.onDelete(a),
                     onCopy: () => _copyAddress(context, a),
+                    onOpenMaps: a.hasMapsAddress
+                        ? () => _openMaps(context, a)
+                        : null,
                   ))
               .toList(),
         );
@@ -822,12 +831,14 @@ class _AddressTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onCopy;
+  final VoidCallback? onOpenMaps;
 
   const _AddressTile({
     required this.address,
     required this.onEdit,
     required this.onDelete,
     required this.onCopy,
+    this.onOpenMaps,
   });
 
   @override
@@ -854,17 +865,28 @@ class _AddressTile extends StatelessWidget {
           '${address.street}\n${address.postalCode} ${address.city}, ${address.country}',
         ),
         isThreeLine: true,
-        trailing: PopupMenuButton(
-          itemBuilder: (_) => [
-            PopupMenuItem(value: 'copy', child: Text(s.copy)),
-            PopupMenuItem(value: 'edit', child: Text(s.edit)),
-            PopupMenuItem(value: 'delete', child: Text(s.delete)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (onOpenMaps != null)
+              IconButton(
+                icon: const Icon(Icons.map),
+                onPressed: onOpenMaps,
+                tooltip: s.openInMaps,
+              ),
+            PopupMenuButton(
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'copy', child: Text(s.copy)),
+                PopupMenuItem(value: 'edit', child: Text(s.edit)),
+                PopupMenuItem(value: 'delete', child: Text(s.delete)),
+              ],
+              onSelected: (value) {
+                if (value == 'copy') onCopy();
+                if (value == 'edit') onEdit();
+                if (value == 'delete') onDelete();
+              },
+            ),
           ],
-          onSelected: (value) {
-            if (value == 'copy') onCopy();
-            if (value == 'edit') onEdit();
-            if (value == 'delete') onDelete();
-          },
         ),
       ),
     );
