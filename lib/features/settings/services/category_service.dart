@@ -15,13 +15,14 @@ class CategoryService {
         _repairRepo = repairRepo ?? RepairRepository(),
         _catalogueRepo = catalogueRepo ?? CatalogueRepository();
 
+  Future<List<String>> fetchHiddenCategories() =>
+      _catalogueRepo.fetchHiddenCategories();
+
   /// Renames [oldName] to [newName] across all SaleItems, Repairs, and the
-  /// hidden list. Runs in parallel where possible.
-  Future<void> renameCategory(
-    String oldName,
-    String newName,
-    List<String> currentHidden,
-  ) async {
+  /// hidden list. Returns the updated hidden list so callers can refresh
+  /// local state without a second round-trip.
+  Future<List<String>> renameCategory(String oldName, String newName) async {
+    final currentHidden = await _catalogueRepo.fetchHiddenCategories();
     final updatedHidden = currentHidden.contains(oldName)
         ? [...currentHidden.where((c) => c != oldName), newName]
         : currentHidden;
@@ -31,27 +32,19 @@ class CategoryService {
       _repairRepo.renameCategory(oldName, newName),
       _catalogueRepo.saveHiddenCategories(updatedHidden),
     ]);
+
+    return List<String>.from(updatedHidden);
   }
 
-  Future<void> hideCategory(
-    String name,
-    List<String> currentHidden,
-  ) =>
-      currentHidden.contains(name)
-          ? Future.value()
-          : _catalogueRepo.saveHiddenCategories([...currentHidden, name]);
+  Future<void> hideCategory(String name) =>
+      _catalogueRepo.addHiddenCategory(name);
 
-  Future<void> unhideCategory(
-    String name,
-    List<String> currentHidden,
-  ) =>
-      _catalogueRepo.saveHiddenCategories(
-        currentHidden.where((c) => c != name).toList(),
-      );
+  Future<void> unhideCategory(String name) =>
+      _catalogueRepo.removeHiddenCategory(name);
 
-  Future<void> deleteCategory(
-    String name,
-    List<String> currentHidden,
-  ) =>
-      unhideCategory(name, currentHidden);
+  // Deleting a category removes it from the hidden list — same operation as
+  // unhide, but expressed as a separate method to preserve semantic clarity
+  // at the call site.
+  Future<void> deleteCategory(String name) =>
+      _catalogueRepo.removeHiddenCategory(name);
 }

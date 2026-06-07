@@ -51,7 +51,7 @@ void main() {
       await saleRepo.createSale(_saleWithCategory('Colares'));
       await saleRepo.createSale(_saleWithCategory('Brincos'));
 
-      await service.renameCategory('Colares', 'Colares de Prata', []);
+      await service.renameCategory('Colares', 'Colares de Prata');
 
       final sales = await saleRepo.getSalesForYear(2026);
       final categories =
@@ -67,7 +67,7 @@ void main() {
       await repairRepo.createRepair(_repairWithCategory('Colares'));
       await repairRepo.createRepair(_repairWithCategory('Chapéus'));
 
-      await service.renameCategory('Colares', 'Colares de Ouro', []);
+      await service.renameCategory('Colares', 'Colares de Ouro');
 
       final repairs = await repairRepo.getRepairsForYear(2026);
       final categories = repairs.map((r) => r.itemCategory).toSet();
@@ -83,7 +83,7 @@ void main() {
       await saleRepo.createSale(_saleWithCategory('Brincos'));
       await repairRepo.createRepair(_repairWithCategory('Brincos'));
 
-      await service.renameCategory('Colares', 'Colares Novos', []);
+      await service.renameCategory('Colares', 'Colares Novos');
 
       final sales = await saleRepo.getSalesForYear(2026);
       expect(sales.first.items.first.category, 'Brincos');
@@ -94,9 +94,10 @@ void main() {
 
     test('also renames hidden category entry', () async {
       final catalogueRepo = InMemoryCatalogueRepository();
+      await catalogueRepo.saveHiddenCategories(['Colares', 'Pins']);
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.renameCategory('Colares', 'Colares Novos', ['Colares', 'Pins']);
+      await service.renameCategory('Colares', 'Colares Novos');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, containsAll(['Colares Novos', 'Pins']));
@@ -105,9 +106,10 @@ void main() {
 
     test('hidden list unchanged when renamed category is not hidden', () async {
       final catalogueRepo = InMemoryCatalogueRepository();
+      await catalogueRepo.saveHiddenCategories(['Pins']);
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.renameCategory('Colares', 'Colares Novos', ['Pins']);
+      await service.renameCategory('Colares', 'Colares Novos');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, ['Pins']);
@@ -117,9 +119,10 @@ void main() {
   group('hideCategory / unhideCategory', () {
     test('adds category to hidden list', () async {
       final catalogueRepo = InMemoryCatalogueRepository();
+      await catalogueRepo.saveHiddenCategories(['Pins']);
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.hideCategory('Brincos', ['Pins']);
+      await service.hideCategory('Brincos');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, containsAll(['Pins', 'Brincos']));
@@ -127,9 +130,10 @@ void main() {
 
     test('removes category from hidden list', () async {
       final catalogueRepo = InMemoryCatalogueRepository();
+      await catalogueRepo.saveHiddenCategories(['Pins', 'Brincos']);
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.unhideCategory('Brincos', ['Pins', 'Brincos']);
+      await service.unhideCategory('Brincos');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, ['Pins']);
@@ -140,9 +144,8 @@ void main() {
       final catalogueRepo = InMemoryCatalogueRepository();
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.hideCategory('Brincos', []);
-      final afterFirst = await catalogueRepo.fetchHiddenCategories();
-      await service.hideCategory('Brincos', afterFirst);
+      await service.hideCategory('Brincos');
+      await service.hideCategory('Brincos');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, hasLength(1));
@@ -153,9 +156,10 @@ void main() {
   group('deleteCategory', () {
     test('removes category from hidden list', () async {
       final catalogueRepo = InMemoryCatalogueRepository();
+      await catalogueRepo.saveHiddenCategories(['Colares', 'Pins']);
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.deleteCategory('Colares', ['Colares', 'Pins']);
+      await service.deleteCategory('Colares');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, ['Pins']);
@@ -163,9 +167,10 @@ void main() {
 
     test('no-op when category not in hidden list', () async {
       final catalogueRepo = InMemoryCatalogueRepository();
+      await catalogueRepo.saveHiddenCategories(['Pins']);
       final service = _makeService(catalogueRepo: catalogueRepo);
 
-      await service.deleteCategory('Stickers', ['Pins']);
+      await service.deleteCategory('Stickers');
 
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, ['Pins']);
