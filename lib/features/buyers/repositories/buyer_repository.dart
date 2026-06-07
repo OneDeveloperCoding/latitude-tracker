@@ -18,6 +18,7 @@ abstract class BuyerRepository {
   Future<Buyer?> getBuyer(String id);
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId);
   Future<void> createBuyer(Buyer buyer);
+  Future<bool> createBuyerIfNotExists(Buyer buyer, List<BuyerAddress> addresses);
   Future<void> updateBuyer(Buyer buyer);
   Future<void> deleteBuyer(String id);
   Future<void> deleteAllBuyers();
@@ -72,6 +73,18 @@ class _FirestoreBuyerRepository implements BuyerRepository {
   @override
   Future<void> createBuyer(Buyer buyer) =>
       _buyersRef.doc(buyer.id).set(buyer.toFirestore());
+
+  @override
+  Future<bool> createBuyerIfNotExists(
+      Buyer buyer, List<BuyerAddress> addresses) async {
+    final doc = await _buyersRef.doc(buyer.id).get();
+    if (doc.exists) return false;
+    await createBuyer(buyer);
+    for (final address in addresses) {
+      await createAddress(buyer.id, address);
+    }
+    return true;
+  }
 
   @override
   Future<void> updateBuyer(Buyer buyer) =>

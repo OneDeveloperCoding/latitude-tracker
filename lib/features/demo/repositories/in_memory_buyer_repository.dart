@@ -98,6 +98,17 @@ class InMemoryBuyerRepository implements BuyerRepository {
   }
 
   @override
+  Future<bool> createBuyerIfNotExists(
+      Buyer buyer, List<BuyerAddress> addresses) async {
+    if (_buyers.any((b) => b.id == buyer.id)) return false;
+    await createBuyer(buyer);
+    for (final address in addresses) {
+      await createAddress(buyer.id, address);
+    }
+    return true;
+  }
+
+  @override
   Future<void> updateBuyer(Buyer buyer) async {
     final idx = _buyers.indexWhere((b) => b.id == buyer.id);
     if (idx != -1) {
