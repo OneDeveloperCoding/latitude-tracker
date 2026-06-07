@@ -135,6 +135,19 @@ void main() {
       expect(hidden, ['Pins']);
       expect(hidden, isNot(contains('Brincos')));
     });
+
+    test('calling hideCategory twice does not duplicate the entry', () async {
+      final catalogueRepo = InMemoryCatalogueRepository();
+      final service = _makeService(catalogueRepo: catalogueRepo);
+
+      await service.hideCategory('Brincos', []);
+      final afterFirst = await catalogueRepo.fetchHiddenCategories();
+      await service.hideCategory('Brincos', afterFirst);
+
+      final hidden = await catalogueRepo.fetchHiddenCategories();
+      expect(hidden, hasLength(1));
+      expect(hidden, ['Brincos']);
+    });
   });
 
   group('deleteCategory', () {

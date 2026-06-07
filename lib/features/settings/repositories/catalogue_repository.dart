@@ -37,7 +37,7 @@ class _FirestoreCatalogueRepository implements CatalogueRepository {
 
   @override
   Future<void> saveHiddenCategories(List<String> hidden) =>
-      _docRef.set({'hiddenCategories': hidden}, SetOptions(merge: true));
+      _docRef.set({'hiddenCategories': hidden.toSet().toList()}, SetOptions(merge: true));
 }
 
 class InMemoryCatalogueRepository implements CatalogueRepository {
@@ -49,7 +49,7 @@ class InMemoryCatalogueRepository implements CatalogueRepository {
 
   @override
   Future<void> saveHiddenCategories(List<String> hidden) async =>
-      _hidden = List.of(hidden);
+      _hidden = hidden.toSet().toList();
 
   void clear() => _hidden = [];
 }
