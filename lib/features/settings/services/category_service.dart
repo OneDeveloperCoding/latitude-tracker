@@ -53,7 +53,5 @@ class CategoryService {
     String name,
     List<String> currentHidden,
   ) =>
-      _catalogueRepo.saveHiddenCategories(
-        currentHidden.where((c) => c != name).toList(),
-      );
+      unhideCategory(name, currentHidden);
 }
