@@ -11,6 +11,8 @@ abstract class CatalogueRepository {
 
   Future<List<String>> fetchHiddenCategories();
   Future<void> saveHiddenCategories(List<String> hidden);
+  Future<void> addHiddenCategory(String name);
+  Future<void> removeHiddenCategory(String name);
 }
 
 class _FirestoreCatalogueRepository implements CatalogueRepository {
@@ -38,6 +40,20 @@ class _FirestoreCatalogueRepository implements CatalogueRepository {
   @override
   Future<void> saveHiddenCategories(List<String> hidden) =>
       _docRef.set({'hiddenCategories': hidden.toSet().toList()}, SetOptions(merge: true));
+
+  @override
+  Future<void> addHiddenCategory(String name) =>
+      _docRef.set(
+        {'hiddenCategories': FieldValue.arrayUnion([name])},
+        SetOptions(merge: true),
+      );
+
+  @override
+  Future<void> removeHiddenCategory(String name) =>
+      _docRef.set(
+        {'hiddenCategories': FieldValue.arrayRemove([name])},
+        SetOptions(merge: true),
+      );
 }
 
 class InMemoryCatalogueRepository implements CatalogueRepository {
@@ -50,6 +66,15 @@ class InMemoryCatalogueRepository implements CatalogueRepository {
   @override
   Future<void> saveHiddenCategories(List<String> hidden) async =>
       _hidden = hidden.toSet().toList();
+
+  @override
+  Future<void> addHiddenCategory(String name) async {
+    if (!_hidden.contains(name)) _hidden = [..._hidden, name];
+  }
+
+  @override
+  Future<void> removeHiddenCategory(String name) async =>
+      _hidden = _hidden.where((c) => c != name).toList();
 
   void clear() => _hidden = [];
 }
