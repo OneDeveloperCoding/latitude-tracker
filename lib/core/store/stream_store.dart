@@ -15,10 +15,10 @@ class StreamStore<T> {
   StreamSubscription<List<T>>? _sub;
   int _refCount = 0;
 
-  List<T>? get current =>
-      state.value is StoreLoaded<List<T>>
-          ? (state.value as StoreLoaded<List<T>>).data
-          : null;
+  List<T>? get current => switch (state.value) {
+    StoreLoaded(:final data) => data,
+    _ => null,
+  };
 
   void _tearDown() {
     _sub?.cancel();
@@ -30,10 +30,11 @@ class StreamStore<T> {
     _sub = _streamFactory().listen(
       (items) => state.value = StoreLoaded(items),
       onError: (Object e, StackTrace st) {
+        if (_refCount > 0) _refCount--;
         _tearDown();
         if (e is AuthRevokedException ||
             (e is FirebaseException && e.code == 'permission-denied')) {
-          state.value = const StoreLoading();
+          _reset();
           FirebaseAuth.instance.signOut();
           return;
         }
@@ -43,31 +44,31 @@ class StreamStore<T> {
     );
   }
 
-  // Increments mount count; opens a subscription on first mount.
   void init() {
     _refCount++;
     if (_sub == null) _subscribe();
   }
 
-  // Re-subscribes when the subscription is absent without affecting mount count.
   void ensureSubscribed() {
     if (_sub == null) _subscribe();
   }
 
-  // Tears down the subscription and resets state without regard to mount count.
-  // Used before a DemoMode toggle so the new widget tree opens a fresh
-  // subscription to the correct (now-flipped) repository.
+  // Bypasses _refCount — used before a DemoMode toggle so the new widget tree
+  // opens a fresh subscription to the correct (now-flipped) repository.
   void forceReset() {
     _tearDown();
     _refCount = 0;
-    state.value = const StoreLoading();
+    _reset();
   }
 
-  // Decrements mount count; tears down only when the last owner releases.
   void dispose() {
     if (_refCount > 0) _refCount--;
     if (_refCount > 0) return;
     _tearDown();
+    _reset();
+  }
+
+  void _reset() {
     state.value = const StoreLoading();
   }
 }
