@@ -66,6 +66,12 @@ void main() {
       expect(repair.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
 
+    test('malformed createdAt string falls back to epoch rather than throwing', () {
+      final map = _baseRepairMap()..['createdAt'] = 'not-a-date';
+      expect(() => Repair.fromArchiveMap(map), returnsNormally);
+      expect(Repair.fromArchiveMap(map).createdAt, DateTime.fromMillisecondsSinceEpoch(0));
+    });
+
     test('both buyerId and freeTextContact absent does not throw', () {
       final map = _baseRepairMap()
         ..remove('buyerId')

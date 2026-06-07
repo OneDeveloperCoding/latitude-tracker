@@ -15,6 +15,7 @@ abstract class SaleRepository {
   Stream<Sale?> watchSale(String id);
   Stream<List<Sale>> watchSalesForBuyer(String buyerId);
   Future<void> createSale(Sale sale);
+  Future<bool> createSaleIfNotExists(Sale sale);
   Future<void> updateSale(Sale sale);
   Future<void> deleteSale(String id);
   Future<List<Sale>> getSalesForYear(int year);
@@ -49,6 +50,10 @@ class _FirestoreSaleRepository implements SaleRepository {
   @override
   Future<void> createSale(Sale sale) =>
       _salesRef.doc(sale.id).set(sale.toFirestore());
+
+  @override
+  Future<bool> createSaleIfNotExists(Sale sale) =>
+      createDocIfNotExists(_salesRef.doc(sale.id), sale.toFirestore());
 
   @override
   Future<void> updateSale(Sale sale) =>
