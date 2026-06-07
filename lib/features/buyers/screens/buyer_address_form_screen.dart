@@ -1,5 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/id_gen.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/widgets/discard_dialog.dart';
@@ -51,7 +52,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
         final updated = addressState.buildAddress(widget.address!.id);
         await _repository.updateAddress(widget.buyerId, updated);
       } else {
-        final id = FirebaseFirestore.instance.collection('_').doc().id;
+        final id = newId();
         final address = addressState.buildAddress(id);
         await _repository.createAddress(widget.buyerId, address);
       }
