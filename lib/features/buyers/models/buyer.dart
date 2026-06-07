@@ -21,6 +21,18 @@ class Buyer {
     required this.createdAt,
   });
 
+  factory Buyer.fromArchiveMap(Map<String, dynamic> map) => Buyer(
+        id: map['id'] as String? ?? '',
+        name: map['name'] as String? ?? '',
+        instagramHandle: map['instagramHandle'] as String?,
+        phone: map['phone'] as String?,
+        nif: map['nif'] as String?,
+        tags: List<String>.from(map['tags'] as List? ?? []),
+        notes: map['notes'] as String?,
+        createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0),
+      );
+
   factory Buyer.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Buyer(
