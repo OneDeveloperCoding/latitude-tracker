@@ -42,6 +42,58 @@ void main() {
       expect(prefs.getString('test_$key'), isNull);
     });
 
+    test('evicts entry aged exactly ttlDays days (boundary: >= not >)', () async {
+      final prefs = await SharedPreferences.getInstance();
+      const key = 'boundary';
+      final exactlyOnBoundary = DateTime.now().subtract(const Duration(days: 30));
+      await prefs.setString(
+        'test_$key',
+        jsonEncode({'value': 1, 'cachedAt': exactlyOnBoundary.millisecondsSinceEpoch}),
+      );
+
+      final cache = SharedPrefsCache('test_');
+      final result = await cache.get(key, ttlDays: (_) => 30);
+
+      expect(result, isNull);
+      expect(prefs.getString('test_$key'), isNull);
+    });
+
+    test('evicts and returns null for entry with missing cachedAt', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('test_no_ts', jsonEncode({'value': 1}));
+
+      final cache = SharedPrefsCache('test_');
+      final result = await cache.get('no_ts', ttlDays: (_) => 30);
+
+      expect(result, isNull);
+      expect(prefs.getString('test_no_ts'), isNull);
+    });
+
+    test('evicts and returns null for entry with non-int cachedAt', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'test_bad_ts',
+        jsonEncode({'value': 1, 'cachedAt': 'not-a-number'}),
+      );
+
+      final cache = SharedPrefsCache('test_');
+      final result = await cache.get('bad_ts', ttlDays: (_) => 30);
+
+      expect(result, isNull);
+      expect(prefs.getString('test_bad_ts'), isNull);
+    });
+
+    test('does not include cachedAt in the returned map', () async {
+      final cache = SharedPrefsCache('test_');
+      await cache.set('key', {'value': 99});
+
+      final result = await cache.get('key', ttlDays: (_) => 30);
+
+      expect(result, isNotNull);
+      expect(result!.containsKey('cachedAt'), isFalse);
+      expect(result['value'], 99);
+    });
+
     test('respects TTL returned by callback based on map content', () async {
       final prefs = await SharedPreferences.getInstance();
       final recent = DateTime.now().subtract(const Duration(days: 10));
@@ -106,6 +158,14 @@ void main() {
 
       final result = await cache.get('key', ttlDays: (_) => 30);
       expect(result!['v'], 2);
+    });
+
+    test('asserts when data contains reserved cachedAt key', () async {
+      final cache = SharedPrefsCache('test_');
+      expect(
+        () => cache.set('key', {'value': 1, 'cachedAt': 12345}),
+        throwsA(isA<AssertionError>()),
+      );
     });
   });
 }

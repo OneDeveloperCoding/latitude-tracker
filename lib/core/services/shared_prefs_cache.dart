@@ -21,7 +21,8 @@ class SharedPrefsCache {
   ///
   /// [ttlDays] receives the stored map and returns the TTL to apply — this
   /// lets callers vary the TTL based on entry content. Returns null and evicts
-  /// the entry if expired.
+  /// the entry if expired. The returned map never contains the internal
+  /// `cachedAt` key.
   Future<Map<String, dynamic>?> get(
     String key, {
     required int Function(Map<String, dynamic>) ttlDays,
@@ -31,16 +32,30 @@ class SharedPrefsCache {
     if (raw == null) return null;
 
     final map = jsonDecode(raw) as Map<String, dynamic>;
-    final cachedAt = DateTime.fromMillisecondsSinceEpoch(map['cachedAt'] as int);
-    if (DateTime.now().difference(cachedAt).inDays > ttlDays(map)) {
+    final cachedAtRaw = map['cachedAt'];
+    if (cachedAtRaw is! int) {
+      // Corrupt or legacy entry missing a valid timestamp — treat as expired.
       await prefs.remove('$prefix$key');
       return null;
     }
-    return map;
+    final cachedAt = DateTime.fromMillisecondsSinceEpoch(cachedAtRaw);
+    if (DateTime.now().difference(cachedAt).inDays >= ttlDays(map)) {
+      await prefs.remove('$prefix$key');
+      return null;
+    }
+    return map..remove('cachedAt');
   }
 
   /// Writes [data] under [key], adding a [cachedAt] timestamp automatically.
+  ///
+  /// [data] must not contain a `'cachedAt'` key — that key is reserved for
+  /// internal TTL bookkeeping and will be injected automatically.
   Future<void> set(String key, Map<String, dynamic> data) async {
+    assert(
+      !data.containsKey('cachedAt'),
+      'SharedPrefsCache.set: data must not contain a cachedAt key — '
+      'it is reserved for internal TTL bookkeeping.',
+    );
     final prefs = await _getPrefs();
     await prefs.setString(
       '$prefix$key',
