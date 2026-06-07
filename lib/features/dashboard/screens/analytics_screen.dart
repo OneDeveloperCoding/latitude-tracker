@@ -8,6 +8,7 @@ import '../../../core/store/store_state.dart';
 import '../../../core/widgets/store_error_widget.dart';
 import '../../repairs/models/repair.dart';
 import '../../sales/models/sale.dart';
+import '../../sales/services/sales_analytics_service.dart';
 import '../models/dashboard_stats.dart';
 import '../widgets/analytics_widgets.dart';
 
@@ -75,15 +76,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       _comparisonStats = [];
       return;
     }
-    _currentStats = DashboardStats.computePeriodStats(all, _periodStart, _periodEnd);
+    _currentStats = SalesAnalyticsService.computePeriodStats(all, _periodStart, _periodEnd);
     final (prevStart, prevEnd) = _shiftPeriod(-1);
-    _prevStats = DashboardStats.computePeriodStats(all, prevStart, prevEnd);
+    _prevStats = SalesAnalyticsService.computePeriodStats(all, prevStart, prevEnd);
     _stackedSparkline = _computeStackedSparkline(all);
-    _paymentBreakdown = DashboardStats.computePaymentMethodBreakdown(all, _periodStart, _periodEnd);
-    _categoryBreakdown = DashboardStats.computeCategoryBreakdown(all, _periodStart, _periodEnd);
+    _paymentBreakdown = SalesAnalyticsService.computePaymentMethodBreakdown(all, _periodStart, _periodEnd);
+    _categoryBreakdown = SalesAnalyticsService.computeCategoryBreakdown(all, _periodStart, _periodEnd);
     _comparisonStats = _comparisonShifts.map((shift) {
       final (start, end) = _shiftPeriod(shift);
-      return DashboardStats.computePeriodStats(all, start, end);
+      return SalesAnalyticsService.computePeriodStats(all, start, end);
     }).toList();
   }
 
@@ -194,7 +195,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     return List.generate(periodCount, (i) {
       final offset = i - (periodCount - 1);
       final (start, end) = _shiftPeriod(offset);
-      return DashboardStats.computeCategoryBreakdown(all, start, end);
+      return SalesAnalyticsService.computeCategoryBreakdown(all, start, end);
     });
   }
 
@@ -330,7 +331,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         final all = storeState.data;
         final current = all
             .where((r) =>
-                r.createdAt.isAfter(_periodStart) &&
+                !r.createdAt.isBefore(_periodStart) &&
                 r.createdAt.isBefore(_periodEnd))
             .toList();
 

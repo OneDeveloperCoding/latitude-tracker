@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../dashboard/models/dashboard_stats.dart';
+import '../../sales/services/sales_analytics_service.dart';
 import '../../dashboard/widgets/analytics_widgets.dart';
 import '../../repairs/models/repair.dart';
 import '../../sales/models/sale.dart';
@@ -24,9 +25,22 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
   late final int _year;
   late final bool _hasRepairs;
   late final TabController _tabController;
+  // Year-level data never changes — computed once in initState.
+  late final List<List<({String category, double revenue})>> _monthlyChart;
+  late final List<String> _monthLabels;
+
   DashboardPeriod _period = DashboardPeriod.yearly;
   late DateTime _month;
   AnalyticsMetric _metric = AnalyticsMetric.revenue;
+
+  // Period-scoped cache — updated by _rebuildPeriodCache() whenever
+  // _period or _month changes. Metric changes skip the recompute.
+  late ({double revenue, int count}) _currentStats;
+  late Map<PaymentMethod, ({double revenue, int count})> _paymentBreakdown;
+  late List<({String category, double revenue})> _categoryBreakdown;
+  // Previous-period stats: zeros for yearly (no prior year in archive),
+  // previous month's paid stats otherwise.
+  late ({double revenue, int count}) _prevStats;
 
   @override
   void initState() {
@@ -41,6 +55,14 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
         .toList();
     _hasRepairs = _repairs.isNotEmpty;
     _tabController = TabController(length: _hasRepairs ? 2 : 1, vsync: this);
+    _monthlyChart = List.generate(12, (i) {
+      final start = DateTime(_year, i + 1);
+      final end = DateTime(_year, i + 2);
+      return SalesAnalyticsService.computeCategoryBreakdown(_sales, start, end);
+    });
+    _monthLabels =
+        List.generate(12, (i) => DateFormat('MMM').format(DateTime(_year, i + 1)));
+    _rebuildPeriodCache();
   }
 
   @override
@@ -57,32 +79,41 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
       ? DateTime(_year, _month.month + 1)
       : DateTime(_year + 1);
 
+  void _rebuildPeriodCache() {
+    _currentStats =
+        SalesAnalyticsService.computePeriodStats(_sales, _periodStart, _periodEnd);
+    _paymentBreakdown = SalesAnalyticsService.computePaymentMethodBreakdown(
+        _sales, _periodStart, _periodEnd);
+    _categoryBreakdown =
+        SalesAnalyticsService.computeCategoryBreakdown(_sales, _periodStart, _periodEnd);
+    _prevStats = _period == DashboardPeriod.monthly && _month.month > 1
+        ? SalesAnalyticsService.computePeriodStats(
+            _sales,
+            DateTime(_year, _month.month - 1),
+            DateTime(_year, _month.month),
+          )
+        : (revenue: 0.0, count: 0);
+  }
+
   void _previous() {
     if (_period == DashboardPeriod.monthly && _month.month > 1) {
-      setState(() => _month = DateTime(_year, _month.month - 1));
+      _month = DateTime(_year, _month.month - 1);
+      _rebuildPeriodCache();
+      setState(() {});
     }
   }
 
   void _next() {
     if (_period == DashboardPeriod.monthly && _month.month < 12) {
-      setState(() => _month = DateTime(_year, _month.month + 1));
+      _month = DateTime(_year, _month.month + 1);
+      _rebuildPeriodCache();
+      setState(() {});
     }
   }
 
   String get _periodLabel => _period == DashboardPeriod.monthly
       ? DateFormat('MMMM yyyy').format(_month)
       : '$_year';
-
-  List<List<({String category, double revenue})>> _compute12MonthChart() {
-    return List.generate(12, (i) {
-      final start = DateTime(_year, i + 1);
-      final end = DateTime(_year, i + 2);
-      return DashboardStats.computeCategoryBreakdown(_sales, start, end);
-    });
-  }
-
-  List<String> _month12Labels() =>
-      List.generate(12, (i) => DateFormat('MMM').format(DateTime(_year, i + 1)));
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +136,11 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
               ),
             ],
             selected: {_period},
-            onSelectionChanged: (v) => setState(() => _period = v.first),
+            onSelectionChanged: (v) {
+              _period = v.first;
+              _rebuildPeriodCache();
+              setState(() {});
+            },
             style: const ButtonStyle(visualDensity: VisualDensity.compact),
           ),
           const SizedBox(width: 8),
@@ -133,47 +168,31 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
   }
 
   Widget _buildSalesTab(BuildContext context, AppStrings s) {
-    final currentStats =
-        DashboardStats.computePeriodStats(_sales, _periodStart, _periodEnd);
-    final paymentBreakdown = DashboardStats.computePaymentMethodBreakdown(
-        _sales, _periodStart, _periodEnd);
-    final categoryBreakdown = DashboardStats.computeCategoryBreakdown(
-        _sales, _periodStart, _periodEnd);
-
     if (_period == DashboardPeriod.yearly) {
       return ListView(
         padding: EdgeInsets.fromLTRB(
             16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
         children: [
-          // No prior year in archive — pass zeros so no trend badge renders.
+          // No prior year in archive — prevStats zeros suppress the trend badge.
           AnalyticsRevenueSummaryCard(
-            currentStats: currentStats,
-            prevStats: (revenue: 0.0, count: 0),
+            currentStats: _currentStats,
+            prevStats: _prevStats,
             metric: _metric,
           ),
-          if (categoryBreakdown.isNotEmpty) ...[
+          if (_categoryBreakdown.isNotEmpty) ...[
             const SizedBox(height: 16),
-            AnalyticsTopCategoriesSection(breakdown: categoryBreakdown),
+            AnalyticsTopCategoriesSection(breakdown: _categoryBreakdown),
           ],
-          if (paymentBreakdown.isNotEmpty) ...[
+          if (_paymentBreakdown.isNotEmpty) ...[
             const SizedBox(height: 8),
-            AnalyticsPaymentMethodSection(breakdown: paymentBreakdown),
+            AnalyticsPaymentMethodSection(breakdown: _paymentBreakdown),
           ],
         ],
       );
     }
 
     // Monthly view.
-    final prevStats = _month.month > 1
-        ? DashboardStats.computePeriodStats(
-            _sales,
-            DateTime(_year, _month.month - 1),
-            DateTime(_year, _month.month),
-          )
-        : (revenue: 0.0, count: 0);
-
-    final chartData = _compute12MonthChart();
-    final hasChartData = chartData.any((p) => p.isNotEmpty);
+    final hasChartData = _monthlyChart.any((p) => p.isNotEmpty);
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -191,24 +210,24 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
         ),
         const SizedBox(height: 16),
         AnalyticsRevenueSummaryCard(
-          currentStats: currentStats,
-          prevStats: prevStats,
+          currentStats: _currentStats,
+          prevStats: _prevStats,
           metric: _metric,
         ),
         if (hasChartData) ...[
           const SizedBox(height: 16),
           AnalyticsStackedBarChart(
-            periodsData: chartData,
-            periodLabels: _month12Labels(),
+            periodsData: _monthlyChart,
+            periodLabels: _monthLabels,
           ),
         ],
-        if (categoryBreakdown.isNotEmpty) ...[
+        if (_categoryBreakdown.isNotEmpty) ...[
           const SizedBox(height: 8),
-          AnalyticsTopCategoriesSection(breakdown: categoryBreakdown),
+          AnalyticsTopCategoriesSection(breakdown: _categoryBreakdown),
         ],
-        if (paymentBreakdown.isNotEmpty) ...[
+        if (_paymentBreakdown.isNotEmpty) ...[
           const SizedBox(height: 8),
-          AnalyticsPaymentMethodSection(breakdown: paymentBreakdown),
+          AnalyticsPaymentMethodSection(breakdown: _paymentBreakdown),
         ],
       ],
     );
@@ -226,7 +245,7 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
   Widget _buildRepairsTab(BuildContext context, AppStrings s) {
     final current = _repairs
         .where((r) =>
-            r.createdAt.isAfter(_periodStart) &&
+            !r.createdAt.isBefore(_periodStart) &&
             r.createdAt.isBefore(_periodEnd))
         .toList();
 
