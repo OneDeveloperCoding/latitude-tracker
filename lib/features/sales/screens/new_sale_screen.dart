@@ -209,7 +209,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     } else {
       // New item — delete its photos now (won't be saved).
       for (final url in item.photoUrls) {
-        await _photoService.deletePhoto(_saleId, url);
+        await _photoService.deletePhoto(url);
       }
     }
     if (mounted) setState(() => _items.removeAt(index));
@@ -225,7 +225,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         for (final item in _items) {
           if (!_originalItemIds.contains(item.id)) {
             for (final url in item.photoUrls) {
-              await _photoService.deletePhoto(_saleId, url);
+              await _photoService.deletePhoto(url);
             }
           }
         }
@@ -270,7 +270,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       );
 
       for (final url in _pendingDeletions) {
-        await _photoService.deletePhoto(_saleId, url);
+        await _photoService.deletePhoto(url);
       }
 
       final notesValue = _nullIfEmpty(_notesController.text);

@@ -71,7 +71,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     // that were uploaded this session (user added them but is now cancelling).
     final toDelete = _uploadedInSession.toSet();
     for (final url in toDelete) {
-      await _photoService.deletePhoto(widget.saleId, url);
+      await _photoService.deletePhoto(url);
     }
     if (mounted) Navigator.of(context).pop(null);
   }
@@ -252,7 +252,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                   if (_originalPhotoUrls.contains(url)) {
                     _pendingDeletions.add(url);
                   } else {
-                    _photoService.deletePhoto(widget.saleId, url);
+                    _photoService.deletePhoto(url);
                     _uploadedInSession.remove(url);
                   }
                 },
