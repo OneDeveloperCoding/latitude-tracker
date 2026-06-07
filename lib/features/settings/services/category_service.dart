@@ -37,7 +37,9 @@ class CategoryService {
     String name,
     List<String> currentHidden,
   ) =>
-      _catalogueRepo.saveHiddenCategories([...currentHidden, name]);
+      currentHidden.contains(name)
+          ? Future.value()
+          : _catalogueRepo.saveHiddenCategories([...currentHidden, name]);
 
   Future<void> unhideCategory(
     String name,
@@ -51,7 +53,5 @@ class CategoryService {
     String name,
     List<String> currentHidden,
   ) =>
-      _catalogueRepo.saveHiddenCategories(
-        currentHidden.where((c) => c != name).toList(),
-      );
+      unhideCategory(name, currentHidden);
 }
