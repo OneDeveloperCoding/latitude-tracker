@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../dashboard/models/dashboard_stats.dart';
+import '../../sales/services/sales_analytics_service.dart';
 import '../../dashboard/widgets/analytics_widgets.dart';
 import '../../repairs/models/repair.dart';
 import '../../sales/models/sale.dart';
@@ -77,7 +78,7 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
     return List.generate(12, (i) {
       final start = DateTime(_year, i + 1);
       final end = DateTime(_year, i + 2);
-      return DashboardStats.computeCategoryBreakdown(_sales, start, end);
+      return SalesAnalyticsService.computeCategoryBreakdown(_sales, start, end);
     });
   }
 
@@ -134,10 +135,10 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
 
   Widget _buildSalesTab(BuildContext context, AppStrings s) {
     final currentStats =
-        DashboardStats.computePeriodStats(_sales, _periodStart, _periodEnd);
-    final paymentBreakdown = DashboardStats.computePaymentMethodBreakdown(
+        SalesAnalyticsService.computePeriodStats(_sales, _periodStart, _periodEnd);
+    final paymentBreakdown = SalesAnalyticsService.computePaymentMethodBreakdown(
         _sales, _periodStart, _periodEnd);
-    final categoryBreakdown = DashboardStats.computeCategoryBreakdown(
+    final categoryBreakdown = SalesAnalyticsService.computeCategoryBreakdown(
         _sales, _periodStart, _periodEnd);
 
     if (_period == DashboardPeriod.yearly) {
@@ -165,7 +166,7 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
 
     // Monthly view.
     final prevStats = _month.month > 1
-        ? DashboardStats.computePeriodStats(
+        ? SalesAnalyticsService.computePeriodStats(
             _sales,
             DateTime(_year, _month.month - 1),
             DateTime(_year, _month.month),
