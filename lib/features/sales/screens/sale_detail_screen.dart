@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/id_gen.dart';
 import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -520,7 +520,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final updated = _item.withUpdatedComponents([
       ..._item.components,
       ComponentItem(
-        id: FirebaseFirestore.instance.collection('_').doc().id,
+        id: newId(),
         name: name,
         isAvailable: false,
       ),

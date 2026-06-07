@@ -1,5 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/id_gen.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../models/sale.dart';
@@ -45,7 +46,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
   void initState() {
     super.initState();
     final item = widget.item;
-    _itemId = item?.id ?? FirebaseFirestore.instance.collection('_').doc().id;
+    _itemId = item?.id ?? newId();
     _descController = TextEditingController(text: item?.description ?? '');
     _priceController = TextEditingController(
         text: item != null ? item.price.toStringAsFixed(2) : '');
@@ -116,7 +117,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     if (name.isEmpty) return;
     setState(() {
       _components.add(ComponentItem(
-        id: FirebaseFirestore.instance.collection('_').doc().id,
+        id: newId(),
         name: name,
         isAvailable: false,
       ));
