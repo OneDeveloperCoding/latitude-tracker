@@ -34,6 +34,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   AnalyticsMetric _metric = AnalyticsMetric.revenue;
   late final TabController _tabController;
 
+  // Cached per-period stats — recomputed only when store data or period changes,
+  // not on every build(). Null until the store emits its first StoreLoaded.
+  ({double revenue, int count})? _currentStats;
+  ({double revenue, int count})? _prevStats;
+  List<List<({String category, double revenue})>> _stackedSparkline = [];
+  Map<PaymentMethod, ({double revenue, int count})> _paymentBreakdown = {};
+  List<({String category, double revenue})> _categoryBreakdown = [];
+  List<({double revenue, int count})> _comparisonStats = [];
+
   static DateTime _mondayOf(DateTime date) =>
       date.subtract(Duration(days: date.weekday - 1));
 
@@ -46,10 +55,41 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       vsync: this,
       initialIndex: widget.startOnRepairs ? 1 : 0,
     );
+    SalesStore.state.addListener(_onStoreChanged);
+    _rebuildCache();
+  }
+
+  void _onStoreChanged() {
+    _rebuildCache();
+    setState(() {});
+  }
+
+  void _rebuildCache() {
+    final all = SalesStore.current;
+    if (all == null) {
+      _currentStats = null;
+      _prevStats = null;
+      _stackedSparkline = [];
+      _paymentBreakdown = {};
+      _categoryBreakdown = [];
+      _comparisonStats = [];
+      return;
+    }
+    _currentStats = DashboardStats.computePeriodStats(all, _periodStart, _periodEnd);
+    final (prevStart, prevEnd) = _shiftPeriod(-1);
+    _prevStats = DashboardStats.computePeriodStats(all, prevStart, prevEnd);
+    _stackedSparkline = _computeStackedSparkline(all);
+    _paymentBreakdown = DashboardStats.computePaymentMethodBreakdown(all, _periodStart, _periodEnd);
+    _categoryBreakdown = DashboardStats.computeCategoryBreakdown(all, _periodStart, _periodEnd);
+    _comparisonStats = _comparisonShifts.map((shift) {
+      final (start, end) = _shiftPeriod(shift);
+      return DashboardStats.computePeriodStats(all, start, end);
+    }).toList();
   }
 
   @override
   void dispose() {
+    SalesStore.state.removeListener(_onStoreChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -85,6 +125,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           case DashboardPeriod.weekly:
             _weekStart = _weekStart.subtract(const Duration(days: 7));
         }
+        _rebuildCache();
       });
 
   void _next() {
@@ -98,6 +139,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         case DashboardPeriod.weekly:
           _weekStart = _weekStart.add(const Duration(days: 7));
       }
+      _rebuildCache();
     });
   }
 
@@ -182,7 +224,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               ),
             ],
             selected: {_period},
-            onSelectionChanged: (v) => setState(() => _period = v.first),
+            onSelectionChanged: (v) => setState(() {
+              _period = v.first;
+              _rebuildCache();
+            }),
             style: const ButtonStyle(visualDensity: VisualDensity.compact),
           ),
           const SizedBox(width: 8),
@@ -206,88 +251,67 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   }
 
   Widget _buildSalesTab(BuildContext context, AppStrings s) {
-    return ValueListenableBuilder<StoreState<List<Sale>>>(
-        valueListenable: SalesStore.state,
-        builder: (context, storeState, _) {
-          if (storeState is StoreError<List<Sale>>) {
-            return StoreErrorWidget(
-              message: context.s.errorLoadingSales,
-              onRetry: SalesStore.ensureSubscribed,
-            );
-          }
-          if (storeState is! StoreLoaded<List<Sale>>) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final all = storeState.data;
-          final currentStats = DashboardStats.computePeriodStats(
-              all, _periodStart, _periodEnd);
-          final (prevStart, prevEnd) = _shiftPeriod(-1);
-          final prevStats =
-              DashboardStats.computePeriodStats(all, prevStart, prevEnd);
-          final stackedSparkline = _computeStackedSparkline(all);
-          final paymentBreakdown = DashboardStats.computePaymentMethodBreakdown(
-              all, _periodStart, _periodEnd);
-          final categoryBreakdown = DashboardStats.computeCategoryBreakdown(
-              all, _periodStart, _periodEnd);
-          final shifts = _comparisonShifts;
-          final labels = s.trendComparisonLabels(_period);
-          final hasStackedData =
-              stackedSparkline.any((period) => period.isNotEmpty);
-
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-                16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
-            children: [
-              AnalyticsPeriodHeader(
-                label: _periodLabel,
-                onPrevious: _previous,
-                onNext: _isCurrentPeriod ? null : _next,
-              ),
-              const SizedBox(height: 12),
-              AnalyticsMetricToggle(
-                metric: _metric,
-                onChanged: (m) => setState(() => _metric = m),
-              ),
-              const SizedBox(height: 16),
-              AnalyticsRevenueSummaryCard(
-                currentStats: currentStats,
-                prevStats: prevStats,
-                metric: _metric,
-              ),
-              if (hasStackedData) ...[
-                const SizedBox(height: 16),
-                AnalyticsStackedBarChart(
-                  periodsData: stackedSparkline,
-                  periodLabels: _sparklineLabels(),
-                ),
-              ],
-              const SizedBox(height: 8),
-              ...List.generate(shifts.length, (i) {
-                final (cmpStart, cmpEnd) = _shiftPeriod(shifts[i]);
-                final cmpStats = DashboardStats.computePeriodStats(
-                    all, cmpStart, cmpEnd);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: AnalyticsComparisonRow(
-                    label: labels[i],
-                    currentStats: currentStats,
-                    comparisonStats: cmpStats,
-                    metric: _metric,
-                  ),
-                );
-              }),
-              if (categoryBreakdown.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                AnalyticsTopCategoriesSection(breakdown: categoryBreakdown),
-              ],
-              if (paymentBreakdown.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                AnalyticsPaymentMethodSection(breakdown: paymentBreakdown),
-              ],
-            ],
-          );
-        },
+    if (SalesStore.state.value is StoreError<List<Sale>>) {
+      return StoreErrorWidget(
+        message: context.s.errorLoadingSales,
+        onRetry: SalesStore.ensureSubscribed,
       );
+    }
+    final currentStats = _currentStats;
+    final prevStats = _prevStats;
+    if (currentStats == null || prevStats == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final labels = s.trendComparisonLabels(_period);
+    final hasStackedData = _stackedSparkline.any((period) => period.isNotEmpty);
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+      children: [
+        AnalyticsPeriodHeader(
+          label: _periodLabel,
+          onPrevious: _previous,
+          onNext: _isCurrentPeriod ? null : _next,
+        ),
+        const SizedBox(height: 12),
+        AnalyticsMetricToggle(
+          metric: _metric,
+          onChanged: (m) => setState(() => _metric = m),
+        ),
+        const SizedBox(height: 16),
+        AnalyticsRevenueSummaryCard(
+          currentStats: currentStats,
+          prevStats: prevStats,
+          metric: _metric,
+        ),
+        if (hasStackedData) ...[
+          const SizedBox(height: 16),
+          AnalyticsStackedBarChart(
+            periodsData: _stackedSparkline,
+            periodLabels: _sparklineLabels(),
+          ),
+        ],
+        const SizedBox(height: 8),
+        ...List.generate(_comparisonStats.length, (i) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: AnalyticsComparisonRow(
+            label: labels[i],
+            currentStats: currentStats,
+            comparisonStats: _comparisonStats[i],
+            metric: _metric,
+          ),
+        )),
+        if (_categoryBreakdown.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          AnalyticsTopCategoriesSection(breakdown: _categoryBreakdown),
+        ],
+        if (_paymentBreakdown.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          AnalyticsPaymentMethodSection(breakdown: _paymentBreakdown),
+        ],
+      ],
+    );
   }
 
   Widget _buildRepairsTab(BuildContext context, AppStrings s) {
