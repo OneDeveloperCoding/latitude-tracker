@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import '../../../core/services/error_reporter.dart';
+import '../../../core/services/shared_prefs_cache.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 typedef GeocodingResult = ({LatLng latLng, String locality});
 typedef _FetchResult = ({GeocodingResult? result, bool shouldCache});
@@ -14,14 +14,10 @@ class GeocodingService {
   static const _hitTtlDays = 180;
   // Shorter TTL for misses — retry after a week in case Nominatim gains data.
   static const _missTtlDays = 7;
-  static const _cachePrefix = 'geocode_cache_v2_';
-  static SharedPreferences? _prefs;
+  static final _cache = SharedPrefsCache('geocode_cache_v2_');
 
   // L1 in-memory cache. null value = known miss; absent key = not yet seen.
   static final Map<String, GeocodingResult?> _memCache = {};
-
-  static Future<SharedPreferences> _getPrefs() async =>
-      _prefs ??= await SharedPreferences.getInstance();
 
   /// Pre-warms the cache for [prefixes] in the background.
   ///
@@ -57,22 +53,13 @@ class GeocodingService {
 
   static Future<({bool found, GeocodingResult? value})> _fromCache(
       String postalCode) async {
-    final prefs = await _getPrefs();
-    final raw = prefs.getString('$_cachePrefix$postalCode');
-    if (raw == null) return (found: false, value: null);
+    final map = await _cache.get(
+      postalCode,
+      ttlDays: (m) => m['miss'] == true ? _missTtlDays : _hitTtlDays,
+    );
+    if (map == null) return (found: false, value: null);
 
-    final map = jsonDecode(raw) as Map<String, dynamic>;
-    final cachedAt =
-        DateTime.fromMillisecondsSinceEpoch(map['cachedAt'] as int);
-    final isMiss = map['miss'] == true;
-    final ttl = isMiss ? _missTtlDays : _hitTtlDays;
-
-    if (DateTime.now().difference(cachedAt).inDays > ttl) {
-      await prefs.remove('$_cachePrefix$postalCode');
-      return (found: false, value: null);
-    }
-
-    if (isMiss) return (found: true, value: null);
+    if (map['miss'] == true) return (found: true, value: null);
     return (
       found: true,
       value: (
@@ -83,20 +70,15 @@ class GeocodingService {
   }
 
   static Future<void> _toCache(String postalCode, GeocodingResult? result) async {
-    final prefs = await _getPrefs();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await prefs.setString(
-      '$_cachePrefix$postalCode',
-      jsonEncode(
-        result != null
-            ? {
-                'lat': result.latLng.latitude,
-                'lng': result.latLng.longitude,
-                'locality': result.locality,
-                'cachedAt': now,
-              }
-            : {'miss': true, 'cachedAt': now},
-      ),
+    await _cache.set(
+      postalCode,
+      result != null
+          ? {
+              'lat': result.latLng.latitude,
+              'lng': result.latLng.longitude,
+              'locality': result.locality,
+            }
+          : {'miss': true},
     );
   }
 
