@@ -1,6 +1,7 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/id_gen.dart';
 import '../../../core/services/base_photo_service.dart';
 
 class PhotoService extends BasePhotoService {
@@ -13,8 +14,8 @@ class PhotoService extends BasePhotoService {
     required String itemId,
     required ImageSource source,
   }) =>
-      uploadImage(_photoRef(saleId, itemId, newPhotoId), source);
+      uploadImage(_photoRef(saleId, itemId, newId()), source);
 
   Future<void> deleteAllPhotos(String saleId) =>
-      deleteAllInFolder('users/$userId/sales/$saleId');
+      deleteAllInFolder(() => 'users/$userId/sales/$saleId');
 }
