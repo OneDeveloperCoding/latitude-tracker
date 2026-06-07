@@ -283,6 +283,12 @@ void main() {
       final sale = Sale.fromArchiveMap(map);
       expect(sale.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
+
+    test('malformed createdAt string falls back to epoch rather than throwing', () {
+      final map = baseSaleMap()..['createdAt'] = 'not-a-date';
+      expect(() => Sale.fromArchiveMap(map), returnsNormally);
+      expect(Sale.fromArchiveMap(map).createdAt, DateTime.fromMillisecondsSinceEpoch(0));
+    });
   });
 
   group('Sale.totalPrice', () {

@@ -37,6 +37,8 @@ class ArchiveService {
 
   // Lazy so Firebase isn't accessed until the first actual read/write call,
   // allowing the version check to throw before any Firebase interaction.
+  // The override fields are needed because late-field initialisers can only
+  // close over `this`, so the injected value must be stored as a field first.
   late final _salesRepo = _salesRepoOverride ?? SaleRepository();
   late final _buyersRepo = _buyersRepoOverride ?? BuyerRepository();
   late final _repairsRepo = _repairsRepoOverride ?? RepairRepository();

@@ -101,9 +101,11 @@ class InMemoryBuyerRepository implements BuyerRepository {
   Future<bool> createBuyerIfNotExists(
       Buyer buyer, List<BuyerAddress> addresses) async {
     if (_buyers.any((b) => b.id == buyer.id)) return false;
-    await createBuyer(buyer);
-    for (final address in addresses) {
-      await createAddress(buyer.id, address);
+    _buyers.add(buyer);
+    _emitBuyers();
+    if (addresses.isNotEmpty) {
+      _addresses[buyer.id] = List.from(addresses);
+      _emitAddresses(buyer.id);
     }
     return true;
   }

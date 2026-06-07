@@ -58,12 +58,8 @@ class _FirestoreRepairRepository implements RepairRepository {
       _repairsRef.doc(repair.id).set(repair.toFirestore());
 
   @override
-  Future<bool> createRepairIfNotExists(Repair repair) async {
-    final doc = await _repairsRef.doc(repair.id).get();
-    if (doc.exists) return false;
-    await createRepair(repair);
-    return true;
-  }
+  Future<bool> createRepairIfNotExists(Repair repair) =>
+      createDocIfNotExists(_repairsRef.doc(repair.id), repair.toFirestore());
 
   @override
   Future<void> updateRepair(Repair repair) =>

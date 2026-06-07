@@ -77,12 +77,16 @@ class _FirestoreBuyerRepository implements BuyerRepository {
   @override
   Future<bool> createBuyerIfNotExists(
       Buyer buyer, List<BuyerAddress> addresses) async {
-    final doc = await _buyersRef.doc(buyer.id).get();
-    if (doc.exists) return false;
-    await createBuyer(buyer);
+    if ((await _buyersRef.doc(buyer.id).get()).exists) return false;
+    // Single batch for the buyer doc + all address docs so the write is atomic.
+    // No need to call _clearDefaultAddress here because the buyer doesn't yet
+    // exist, so there are no existing default addresses to demote.
+    final batch = _firestore.batch();
+    batch.set(_buyersRef.doc(buyer.id), buyer.toFirestore());
     for (final address in addresses) {
-      await createAddress(buyer.id, address);
+      batch.set(_addressesRef(buyer.id).doc(address.id), address.toFirestore());
     }
+    await batch.commit();
     return true;
   }
 

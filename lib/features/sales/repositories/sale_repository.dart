@@ -52,12 +52,8 @@ class _FirestoreSaleRepository implements SaleRepository {
       _salesRef.doc(sale.id).set(sale.toFirestore());
 
   @override
-  Future<bool> createSaleIfNotExists(Sale sale) async {
-    final doc = await _salesRef.doc(sale.id).get();
-    if (doc.exists) return false;
-    await createSale(sale);
-    return true;
-  }
+  Future<bool> createSaleIfNotExists(Sale sale) =>
+      createDocIfNotExists(_salesRef.doc(sale.id), sale.toFirestore());
 
   @override
   Future<void> updateSale(Sale sale) =>
