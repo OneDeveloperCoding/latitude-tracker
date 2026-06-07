@@ -15,13 +15,13 @@ class CategoryService {
         _repairRepo = repairRepo ?? RepairRepository(),
         _catalogueRepo = catalogueRepo ?? CatalogueRepository();
 
+  Future<List<String>> fetchHiddenCategories() =>
+      _catalogueRepo.fetchHiddenCategories();
+
   /// Renames [oldName] to [newName] across all SaleItems, Repairs, and the
   /// hidden list. Runs in parallel where possible.
-  Future<void> renameCategory(
-    String oldName,
-    String newName,
-    List<String> currentHidden,
-  ) async {
+  Future<void> renameCategory(String oldName, String newName) async {
+    final currentHidden = await _catalogueRepo.fetchHiddenCategories();
     final updatedHidden = currentHidden.contains(oldName)
         ? [...currentHidden.where((c) => c != oldName), newName]
         : currentHidden;
@@ -33,25 +33,18 @@ class CategoryService {
     ]);
   }
 
-  Future<void> hideCategory(
-    String name,
-    List<String> currentHidden,
-  ) =>
-      currentHidden.contains(name)
-          ? Future.value()
-          : _catalogueRepo.saveHiddenCategories([...currentHidden, name]);
+  Future<void> hideCategory(String name) async {
+    final currentHidden = await _catalogueRepo.fetchHiddenCategories();
+    if (currentHidden.contains(name)) return;
+    await _catalogueRepo.saveHiddenCategories([...currentHidden, name]);
+  }
 
-  Future<void> unhideCategory(
-    String name,
-    List<String> currentHidden,
-  ) =>
-      _catalogueRepo.saveHiddenCategories(
-        currentHidden.where((c) => c != name).toList(),
-      );
+  Future<void> unhideCategory(String name) async {
+    final currentHidden = await _catalogueRepo.fetchHiddenCategories();
+    await _catalogueRepo.saveHiddenCategories(
+      currentHidden.where((c) => c != name).toList(),
+    );
+  }
 
-  Future<void> deleteCategory(
-    String name,
-    List<String> currentHidden,
-  ) =>
-      unhideCategory(name, currentHidden);
+  Future<void> deleteCategory(String name) => unhideCategory(name);
 }
