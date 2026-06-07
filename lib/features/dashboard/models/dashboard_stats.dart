@@ -1,5 +1,6 @@
 import '../../sales/models/sale.dart';
 import '../../sales/models/sale_filter.dart';
+import '../../sales/services/sales_analytics_service.dart';
 
 enum DashboardPeriod { yearly, monthly, weekly }
 
@@ -47,10 +48,17 @@ class DashboardStats {
     final effectiveNow = now ?? DateTime.now();
     bool active(Sale s) => s.shipment.status != ShipmentStatus.delivered;
 
-    double paidRevenue = 0;
+    // Period-scoped revenue — delegate to the single canonical implementation.
+    final paid = SalesAnalyticsService.computePeriodStats(all, start, end);
     double unpaidRevenue = 0;
-    int paidCount = 0;
     int unpaidCount = 0;
+    for (final s in all) {
+      if (!s.inPeriod(start, end)) continue;
+      if (s.payment.status != PaymentStatus.unpaid) continue;
+      unpaidRevenue += s.totalPrice;
+      unpaidCount++;
+    }
+
     int unpaidActionCount = 0;
     double unpaidActionRevenue = 0;
     int pendingShipmentCount = 0;
@@ -72,22 +80,12 @@ class DashboardStats {
       if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) nifRequiredCount++;
       if (SaleFilter.overdue.test(s, now: effectiveNow)) overdueCount++;
       if (SaleFilter.upcomingScheduled.test(s, now: effectiveNow)) upcomingCount++;
-
-      // Period-scoped revenue — only sales created within the selected window.
-      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
-      if (s.payment.status == PaymentStatus.paid) {
-        paidRevenue += s.totalPrice;
-        paidCount++;
-      } else {
-        unpaidRevenue += s.totalPrice;
-        unpaidCount++;
-      }
     }
 
     return DashboardStats(
-      paidRevenue: paidRevenue,
+      paidRevenue: paid.revenue,
       unpaidRevenue: unpaidRevenue,
-      paidCount: paidCount,
+      paidCount: paid.count,
       unpaidCount: unpaidCount,
       unpaidActionCount: unpaidActionCount,
       unpaidActionRevenue: unpaidActionRevenue,

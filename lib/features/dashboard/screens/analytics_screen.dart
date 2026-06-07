@@ -331,7 +331,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         final all = storeState.data;
         final current = all
             .where((r) =>
-                r.createdAt.isAfter(_periodStart) &&
+                !r.createdAt.isBefore(_periodStart) &&
                 r.createdAt.isBefore(_periodEnd))
             .toList();
 

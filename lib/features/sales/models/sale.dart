@@ -405,3 +405,9 @@ class Sale {
 }
 
 const _unset = Object();
+
+// Half-open interval [start, end): inclusive start, exclusive end.
+extension SaleInPeriod on Sale {
+  bool inPeriod(DateTime start, DateTime end) =>
+      !createdAt.isBefore(start) && createdAt.isBefore(end);
+}

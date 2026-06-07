@@ -1,6 +1,8 @@
 import '../models/sale.dart';
 
 class SalesAnalyticsService {
+  const SalesAnalyticsService._();
+
   static ({double revenue, int count}) computePeriodStats(
     List<Sale> all,
     DateTime start,
@@ -10,7 +12,7 @@ class SalesAnalyticsService {
     double revenue = 0;
     int count = 0;
     for (final s in all) {
-      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
+      if (!s.inPeriod(start, end)) continue;
       if (s.payment.status != PaymentStatus.paid) continue;
       if (category == null) {
         revenue += s.totalPrice;
@@ -36,7 +38,7 @@ class SalesAnalyticsService {
   ) {
     final map = <String, double>{};
     for (final s in all) {
-      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
+      if (!s.inPeriod(start, end)) continue;
       if (s.payment.status != PaymentStatus.paid) continue;
       for (final item in s.items) {
         map[item.category] = (map[item.category] ?? 0) + item.price;
@@ -55,7 +57,7 @@ class SalesAnalyticsService {
   ) {
     final map = <PaymentMethod, ({double revenue, int count})>{};
     for (final s in all) {
-      if (s.createdAt.isBefore(start) || !s.createdAt.isBefore(end)) continue;
+      if (!s.inPeriod(start, end)) continue;
       if (s.payment.status != PaymentStatus.paid) continue;
       final m = s.payment.method;
       final prev = map[m] ?? (revenue: 0.0, count: 0);
