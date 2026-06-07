@@ -118,7 +118,11 @@ void main() {
       expect(hidden, isNot(contains('Colares')));
     });
 
-    test('saleRepo failure stops execution — repairRepo and catalogue untouched',
+    // Both repos run concurrently via Future.wait, so the non-throwing repo
+    // always commits — its async body executes synchronously at call time,
+    // before Future.wait propagates any error. The catalogue is the only
+    // step that is deterministically skipped on any repo failure.
+    test('saleRepo failure — repairRepo still runs, catalogue not updated',
         () async {
       final repairRepo = InMemoryRepairRepository();
       final catalogueRepo = InMemoryCatalogueRepository();
@@ -136,12 +140,13 @@ void main() {
       );
 
       final repairs = await repairRepo.getRepairsForYear(2026);
-      expect(repairs.first.itemCategory, 'Colares');
+      expect(repairs.first.itemCategory, 'Colares Novos');
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, ['Colares']);
     });
 
-    test('repairRepo failure stops execution — catalogue untouched', () async {
+    test('repairRepo failure — saleRepo still runs, catalogue not updated',
+        () async {
       final saleRepo = InMemorySaleRepository();
       final catalogueRepo = InMemoryCatalogueRepository();
       await saleRepo.createSale(_saleWithCategory('Colares'));
