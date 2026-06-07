@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/id_gen.dart';
 import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -79,14 +79,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _scheduledDate = dup ? null : sale?.scheduledDate;
     _saleId = _isEditing
         ? sale!.id
-        : FirebaseFirestore.instance.collection('_').doc().id;
+        : newId();
 
     if (dup) {
       // Duplicate: reset assembly/payment but keep descriptions and categories.
       // Assign new IDs to all items so photos don't conflict.
       _items = (sale?.items ?? [])
           .map((item) => SaleItem(
-                id: FirebaseFirestore.instance.collection('_').doc().id,
+                id: newId(),
                 description: item.description,
                 category: item.category,
                 price: item.price,
