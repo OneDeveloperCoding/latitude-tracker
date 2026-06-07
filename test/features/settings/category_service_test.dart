@@ -11,6 +11,20 @@ import '../../helpers/sale_factory.dart';
 
 // ---------------------------------------------------------------------------
 
+class _ThrowingSaleRepo extends InMemorySaleRepository {
+  @override
+  Future<void> renameCategory(String oldName, String newName) =>
+      Future.error(Exception('sale repo failure'));
+}
+
+class _ThrowingRepairRepo extends InMemoryRepairRepository {
+  @override
+  Future<void> renameCategory(String oldName, String newName) =>
+      Future.error(Exception('repair repo failure'));
+}
+
+// ---------------------------------------------------------------------------
+
 Sale _saleWithCategory(String category) => makeSale(category: category);
 
 Repair _repairWithCategory(String category) => Repair(
@@ -102,6 +116,51 @@ void main() {
       final hidden = await catalogueRepo.fetchHiddenCategories();
       expect(hidden, containsAll(['Colares Novos', 'Pins']));
       expect(hidden, isNot(contains('Colares')));
+    });
+
+    test('saleRepo failure stops execution — repairRepo and catalogue untouched',
+        () async {
+      final repairRepo = InMemoryRepairRepository();
+      final catalogueRepo = InMemoryCatalogueRepository();
+      await repairRepo.createRepair(_repairWithCategory('Colares'));
+      await catalogueRepo.saveHiddenCategories(['Colares']);
+      final service = _makeService(
+        saleRepo: _ThrowingSaleRepo(),
+        repairRepo: repairRepo,
+        catalogueRepo: catalogueRepo,
+      );
+
+      await expectLater(
+        service.renameCategory('Colares', 'Colares Novos'),
+        throwsException,
+      );
+
+      final repairs = await repairRepo.getRepairsForYear(2026);
+      expect(repairs.first.itemCategory, 'Colares');
+      final hidden = await catalogueRepo.fetchHiddenCategories();
+      expect(hidden, ['Colares']);
+    });
+
+    test('repairRepo failure stops execution — catalogue untouched', () async {
+      final saleRepo = InMemorySaleRepository();
+      final catalogueRepo = InMemoryCatalogueRepository();
+      await saleRepo.createSale(_saleWithCategory('Colares'));
+      await catalogueRepo.saveHiddenCategories(['Colares']);
+      final service = _makeService(
+        saleRepo: saleRepo,
+        repairRepo: _ThrowingRepairRepo(),
+        catalogueRepo: catalogueRepo,
+      );
+
+      await expectLater(
+        service.renameCategory('Colares', 'Colares Novos'),
+        throwsException,
+      );
+
+      final sales = await saleRepo.getSalesForYear(2026);
+      expect(sales.first.items.first.category, 'Colares Novos');
+      final hidden = await catalogueRepo.fetchHiddenCategories();
+      expect(hidden, ['Colares']);
     });
 
     test('hidden list unchanged when renamed category is not hidden', () async {

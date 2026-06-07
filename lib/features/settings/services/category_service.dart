@@ -27,11 +27,13 @@ class CategoryService {
         ? [...currentHidden.where((c) => c != oldName), newName]
         : currentHidden;
 
-    await Future.wait([
-      _saleRepo.renameCategory(oldName, newName),
-      _repairRepo.renameCategory(oldName, newName),
-      _catalogueRepo.saveHiddenCategories(updatedHidden),
-    ]);
+    // Non-atomic: if an earlier step succeeds and a later one throws, the
+    // earlier writes are already committed. Ordered data-before-metadata so
+    // a failure in the catalogue step (least critical) doesn't leave Sale /
+    // Repair records inconsistent with each other.
+    await _saleRepo.renameCategory(oldName, newName);
+    await _repairRepo.renameCategory(oldName, newName);
+    await _catalogueRepo.saveHiddenCategories(updatedHidden);
 
     return List<String>.from(updatedHidden);
   }
