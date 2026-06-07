@@ -1,5 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+
+import '../../../core/id_gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -118,7 +119,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
         if (mounted) Navigator.pop(context);
       } else {
         final buyer = Buyer(
-          id: FirebaseFirestore.instance.collection('_').doc().id,
+          id: newId(),
           name: _nameController.text.trim(),
           instagramHandle: _nullIfEmpty(_instagramController.text),
           phone: _nullIfEmpty(_phoneController.text),
@@ -132,7 +133,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
         final addressState = _addressFormKey.currentState;
         if (_addAddress && (addressState?.isFilled ?? false)) {
           final address = addressState!.buildAddress(
-            FirebaseFirestore.instance.collection('_').doc().id,
+            newId(),
           );
           await _repository.createAddress(buyer.id, address);
         }

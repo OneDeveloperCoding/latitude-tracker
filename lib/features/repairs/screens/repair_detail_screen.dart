@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
+
+import '../../../core/id_gen.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/error_reporter.dart';
@@ -353,7 +354,7 @@ class _ContactRow extends StatelessWidget {
 
     try {
       final newBuyer = Buyer(
-        id: const Uuid().v4(),
+        id: newId(),
         name: repair.freeTextContact!,
         createdAt: DateTime.now(),
       );

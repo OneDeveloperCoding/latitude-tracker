@@ -1,6 +1,6 @@
+import '../../../core/id_gen.dart';
 import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
@@ -28,7 +28,6 @@ class NewRepairScreen extends StatefulWidget {
 
 class _NewRepairScreenState extends State<NewRepairScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _uuid = const Uuid();
   late final String _repairId;
   final _photoService = RepairPhotoService();
 
@@ -103,7 +102,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
               .firstOrNull
           : null;
     } else {
-      _repairId = _uuid.v4();
+      _repairId = newId();
     }
   }
 
