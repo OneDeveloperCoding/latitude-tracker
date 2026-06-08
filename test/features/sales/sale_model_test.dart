@@ -298,13 +298,13 @@ void main() {
         buyerId: 'b1',
         buyerName: 'Test',
         items: [
-          SaleItem(
+          const SaleItem(
               id: '1',
               description: 'a',
               category: 'x',
               price: 10.0,
               assemblyStatus: AssemblyStatus.ready),
-          SaleItem(
+          const SaleItem(
               id: '2',
               description: 'b',
               category: 'x',
