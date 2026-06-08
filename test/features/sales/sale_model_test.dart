@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 ComponentItem _component(String id, {required bool available}) =>
