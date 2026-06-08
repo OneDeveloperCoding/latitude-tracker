@@ -98,7 +98,8 @@ Examples: `feat: add heat map view`, `fix: nif badge crash on empty buyer`, `doc
 | File | Purpose |
 |------|---------|
 | `features/sales/models/sale_filter.dart` | `SaleFilter` enum + `.test(sale)` predicate extension — single definition used by the sales list, dashboard stats, and any future callers |
-| `features/dashboard/models/dashboard_stats.dart` | `DashboardStats.compute(sales, start, end)` — pure function, no Flutter dependency, straightforward to unit test |
+| `features/dashboard/models/dashboard_stats.dart` | `DashboardStats.compute(sales, start, end)` — dashboard-scoped stats only (revenue, counts, action totals); pure function, no Flutter dependency |
+| `features/sales/services/sales_analytics_service.dart` | `SalesAnalyticsService` — period stats, category breakdown, payment method breakdown; pure static functions shared by `AnalyticsScreen` and `ArchiveAnalyticsScreen` |
 | `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
 | `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping; delegates geocoding to `GeocodingService` |
 | `features/heat_map/services/geocoding_service.dart` | `GeocodingService.geocode(prefix)` — Nominatim lookup with two-layer cache (in-memory L1 + 180-day SharedPreferences L2, v2 cache key); `warmUp()` pre-fetches known prefixes in the background |
@@ -177,6 +178,7 @@ Tests are also run automatically in CI on every tag push — the APK build is bl
 | `test/features/sales/sale_model_test.dart` | `Sale.deriveAssemblyStatus` — component auto-ready logic |
 | `test/features/buyers/buyer_stats_test.dart` | `BuyerStats.compute` — totals, average order value, last purchase |
 | `test/features/buyers/buyer_address_test.dart` | `BuyerAddress` model — field validation and formatting |
-| `test/features/dashboard/dashboard_stats_test.dart` | `DashboardStats.computeTopCategories` — per-category revenue ranking |
+| `test/features/dashboard/dashboard_stats_test.dart` | `DashboardStats.compute` — action counts (shipped, upcoming, overdue) |
+| `test/features/sales/sales_analytics_service_test.dart` | `SalesAnalyticsService` — period stats, category breakdown, payment method breakdown |
 | `test/features/settings/archive_service_test.dart` | `ArchiveService.toFirestoreMap` — ISO-8601 string → Firestore Timestamp conversion |
 

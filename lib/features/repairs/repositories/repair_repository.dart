@@ -15,6 +15,7 @@ abstract class RepairRepository {
   Stream<Repair?> watchRepair(String id);
   Stream<List<Repair>> watchRepairsForSale(String saleId);
   Future<void> createRepair(Repair repair);
+  Future<bool> createRepairIfNotExists(Repair repair);
   Future<void> updateRepair(Repair repair);
   Future<void> deleteRepair(String id);
   Future<List<Repair>> getRepairsForYear(int year);
@@ -55,6 +56,10 @@ class _FirestoreRepairRepository implements RepairRepository {
   @override
   Future<void> createRepair(Repair repair) =>
       _repairsRef.doc(repair.id).set(repair.toFirestore());
+
+  @override
+  Future<bool> createRepairIfNotExists(Repair repair) =>
+      createDocIfNotExists(_repairsRef.doc(repair.id), repair.toFirestore());
 
   @override
   Future<void> updateRepair(Repair repair) =>

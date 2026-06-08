@@ -60,7 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        AnalyticsScreen(initialPeriod: DashboardPeriod.monthly),
+                        const AnalyticsScreen(initialPeriod: DashboardPeriod.monthly),
                   ),
                 ),
               ),

@@ -23,16 +23,24 @@ class CategoryService {
   /// local state without a second round-trip.
   Future<List<String>> renameCategory(String oldName, String newName) async {
     final currentHidden = await _catalogueRepo.fetchHiddenCategories();
-    final updatedHidden = currentHidden.contains(oldName)
-        ? [...currentHidden.where((c) => c != oldName), newName]
-        : currentHidden;
+    final isHidden = currentHidden.contains(oldName);
 
+    // Non-atomic: if either repo fails the other may have already committed
+    // (both run concurrently). The catalogue step always runs after both
+    // succeed, so a failure there leaves Sale/Repair records consistent
+    // with each other even if the hidden-list entry is stale.
     await Future.wait([
       _saleRepo.renameCategory(oldName, newName),
       _repairRepo.renameCategory(oldName, newName),
-      _catalogueRepo.saveHiddenCategories(updatedHidden),
     ]);
 
+    if (isHidden) {
+      await _catalogueRepo.renameHiddenCategory(oldName, newName);
+    }
+
+    final updatedHidden = isHidden
+        ? [...currentHidden.where((c) => c != oldName), newName]
+        : currentHidden;
     return List<String>.from(updatedHidden);
   }
 

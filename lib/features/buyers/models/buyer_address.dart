@@ -27,6 +27,21 @@ class BuyerAddress {
     this.isDefault = false,
   });
 
+  factory BuyerAddress.fromArchiveMap(String buyerId, Map<String, dynamic> map) =>
+      BuyerAddress(
+        id: map['id'] as String? ?? '',
+        buyerId: buyerId,
+        label: map['label'] as String? ?? '',
+        street: map['street'] as String? ?? '',
+        houseNumber: map['houseNumber'] as String? ?? '',
+        fraction: map['fraction'] as String?,
+        notes: map['notes'] as String?,
+        city: map['city'] as String? ?? '',
+        postalCode: map['postalCode'] as String? ?? '',
+        country: map['country'] as String? ?? 'Portugal',
+        isDefault: map['isDefault'] as bool? ?? false,
+      );
+
   factory BuyerAddress.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return BuyerAddress(

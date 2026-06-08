@@ -142,7 +142,9 @@ class Repair {
       );
 
   static DateTime _parseArchiveDate(dynamic value) {
-    if (value is String) return DateTime.parse(value);
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
     if (value is Map && value['_seconds'] != null) {
       return DateTime.fromMillisecondsSinceEpoch(
           (value['_seconds'] as int) * 1000);

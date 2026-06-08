@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
+import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/addresses_store.dart';
@@ -21,6 +22,7 @@ import '../../repairs/models/repair.dart';
 import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+import '../services/sale_urgency_ui.dart';
 import '../widgets/photo_grid.dart';
 import 'new_sale_screen.dart';
 
@@ -175,6 +177,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 }
 
 class _SaleDetailBody extends StatelessWidget {
+  static final _dateFormat = DateFormat('dd MMM yyyy');
+
   final Sale sale;
   final SaleRepository repository;
 
@@ -214,7 +218,7 @@ class _SaleDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final dateFormat = DateFormat('dd MMM yyyy');
+    final cs = Theme.of(context).colorScheme;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -233,7 +237,7 @@ class _SaleDetailBody extends StatelessWidget {
           ),
           _InfoRow(
             icon: Icons.calendar_today,
-            text: dateFormat.format(sale.createdAt),
+            text: _dateFormat.format(sale.createdAt),
           ),
           _InfoRow(
             icon: Icons.euro,
@@ -267,8 +271,8 @@ class _SaleDetailBody extends StatelessWidget {
                         ? s.paid
                         : s.unpaid,
                     color: sale.payment.status == PaymentStatus.paid
-                        ? Colors.green
-                        : Colors.orange,
+                        ? cs.success
+                        : cs.warning,
                   ),
                 ],
               ),
@@ -289,7 +293,16 @@ class _SaleDetailBody extends StatelessWidget {
               ),
               if (sale.requiresNif) ...[
                 const Divider(height: 16),
-                _NifComplianceRow(sale: sale, repository: repository),
+                ValueListenableBuilder(
+                  valueListenable: BuyersStore.state,
+                  builder: (context, _, _) => _NifComplianceRow(
+                    sale: sale,
+                    repository: repository,
+                    buyer: BuyersStore.current
+                        ?.where((b) => b.id == sale.buyerId)
+                        .firstOrNull,
+                  ),
+                ),
               ],
             ],
           ),
@@ -324,10 +337,10 @@ class _SaleDetailBody extends StatelessWidget {
                   _StatusChip(
                     label: s.shipmentStatusLabel(sale.shipment.status),
                     color: sale.shipment.status == ShipmentStatus.delivered
-                        ? Colors.green
+                        ? cs.success
                         : sale.shipment.status == ShipmentStatus.shipped
-                            ? Colors.blue
-                            : Colors.orange,
+                            ? cs.shipped
+                            : cs.warning,
                   ),
                 ],
               ),
@@ -411,7 +424,7 @@ class _ItemSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (statusColor, _) = _assemblyColor(context, item.assemblyStatus);
+    final statusColor = item.assemblyStatus.colorOf(Theme.of(context).colorScheme);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
@@ -454,13 +467,6 @@ class _ItemSummaryTile extends StatelessWidget {
     );
   }
 
-  (Color, String) _assemblyColor(BuildContext context, AssemblyStatus s) =>
-      switch (s) {
-        AssemblyStatus.ready => (Colors.green, 'ready'),
-        AssemblyStatus.inProgress => (Colors.orange, 'in progress'),
-        AssemblyStatus.waitingForMaterials => (Colors.amber, 'waiting'),
-        AssemblyStatus.notStarted => (Colors.grey, 'not started'),
-      };
 }
 
 // Bottom sheet shown when tapping a SaleItem in the detail view.
@@ -790,6 +796,8 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
 }
 
 class _ScheduledDateField extends StatelessWidget {
+  static final _dateFormat = DateFormat('EEE, dd MMM yyyy');
+
   final DateTime? date;
   final ValueChanged<DateTime?> onChanged;
 
@@ -817,7 +825,6 @@ class _ScheduledDateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final dateFormat = DateFormat('EEE, dd MMM yyyy');
     if (date == null) {
       return TextButton.icon(
         onPressed: () => _pick(context),
@@ -829,7 +836,7 @@ class _ScheduledDateField extends StatelessWidget {
       children: [
         const Icon(Icons.event, size: 16),
         const SizedBox(width: 8),
-        Expanded(child: Text(dateFormat.format(date!))),
+        Expanded(child: Text(_dateFormat.format(date!))),
         TextButton(
           onPressed: () => _pick(context),
           child: Text(s.change),
@@ -939,8 +946,9 @@ class _InfoCard extends StatelessWidget {
 class _NifComplianceRow extends StatelessWidget {
   final Sale sale;
   final SaleRepository repository;
+  final Buyer? buyer;
 
-  const _NifComplianceRow({required this.sale, required this.repository});
+  const _NifComplianceRow({required this.sale, required this.repository, required this.buyer});
 
   Future<void> _toggleAt(BuildContext context) async {
     try {
@@ -1013,45 +1021,38 @@ class _NifComplianceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final cs = Theme.of(context).colorScheme;
     final isPaid = sale.payment.status == PaymentStatus.paid;
+    final hasNif = buyer?.nif?.isNotEmpty == true;
 
-    return ValueListenableBuilder(
-      valueListenable: BuyersStore.state,
-      builder: (context, _, _) {
-        final buyer = BuyersStore.current
-            ?.where((b) => b.id == sale.buyerId)
-            .firstOrNull;
-        final hasNif = buyer?.nif?.isNotEmpty == true;
+    final String label;
+    Widget? trailing;
 
-        final String label;
-        Widget? trailing;
+    if (!hasNif) {
+      label = s.noNifOnFile;
+      trailing = buyer != null
+          ? TextButton(
+              onPressed: () => _showAddNifDialog(context, buyer!),
+              child: Text(s.addNif),
+            )
+          : null;
+    } else if (!isPaid) {
+      label = s.nifReceiptRequiredInfo;
+    } else {
+      label = sale.atSubmissionDone ? s.atReceiptFiled : s.atReceiptPending;
+      trailing = IconButton(
+        icon: Icon(
+          sale.atSubmissionDone
+              ? Icons.check_circle
+              : Icons.check_circle_outline,
+          color: sale.atSubmissionDone ? cs.success : cs.warning,
+        ),
+        tooltip: sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
+        onPressed: () => _toggleAt(context),
+      );
+    }
 
-        if (!hasNif) {
-          label = s.noNifOnFile;
-          trailing = buyer != null
-              ? TextButton(
-                  onPressed: () => _showAddNifDialog(context, buyer),
-                  child: Text(s.addNif),
-                )
-              : null;
-        } else if (!isPaid) {
-          label = s.nifReceiptRequiredInfo;
-        } else {
-          label = sale.atSubmissionDone ? s.atReceiptFiled : s.atReceiptPending;
-          trailing = IconButton(
-            icon: Icon(
-              sale.atSubmissionDone
-                  ? Icons.check_circle
-                  : Icons.check_circle_outline,
-              color: sale.atSubmissionDone ? Colors.green : Colors.orange,
-            ),
-            tooltip:
-                sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
-            onPressed: () => _toggleAt(context),
-          );
-        }
-
-        return ListTile(
+    return ListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
           leading: Icon(kNifIcon,
@@ -1059,8 +1060,6 @@ class _NifComplianceRow extends StatelessWidget {
           title: Text(label),
           trailing: trailing,
         );
-      },
-    );
   }
 }
 

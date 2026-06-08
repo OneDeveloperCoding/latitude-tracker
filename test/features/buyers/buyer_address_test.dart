@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 
 BuyerAddress _address({
@@ -83,6 +83,60 @@ void main() {
 
     test('returns false when postalCode is empty', () {
       expect(_address(postalCode: '').hasMapsAddress, isFalse);
+    });
+  });
+
+  group('BuyerAddress.fromArchiveMap', () {
+    test('maps all fields from a well-formed archive map', () {
+      final addr = BuyerAddress.fromArchiveMap('b1', {
+        'id': 'addr-1',
+        'label': 'Casa',
+        'street': 'Rua das Flores',
+        'houseNumber': '10',
+        'fraction': '2º Dto',
+        'notes': 'Doorbell broken',
+        'city': 'Porto',
+        'postalCode': '4000-123',
+        'country': 'Portugal',
+        'isDefault': true,
+      });
+      expect(addr.id, 'addr-1');
+      expect(addr.buyerId, 'b1');
+      expect(addr.label, 'Casa');
+      expect(addr.street, 'Rua das Flores');
+      expect(addr.houseNumber, '10');
+      expect(addr.fraction, '2º Dto');
+      expect(addr.notes, 'Doorbell broken');
+      expect(addr.city, 'Porto');
+      expect(addr.postalCode, '4000-123');
+      expect(addr.country, 'Portugal');
+      expect(addr.isDefault, isTrue);
+    });
+
+    test('null optional fields default correctly', () {
+      final addr = BuyerAddress.fromArchiveMap('b1', {
+        'id': 'addr-1',
+        'label': 'Casa',
+        'street': '',
+        'houseNumber': '',
+        'city': '',
+        'postalCode': '',
+      });
+      expect(addr.fraction, isNull);
+      expect(addr.notes, isNull);
+      expect(addr.country, 'Portugal');
+      expect(addr.isDefault, isFalse);
+    });
+
+    test('missing id defaults to empty string', () {
+      final addr = BuyerAddress.fromArchiveMap('b1', {
+        'label': 'Casa',
+        'street': '',
+        'houseNumber': '',
+        'city': '',
+        'postalCode': '',
+      });
+      expect(addr.id, '');
     });
   });
 

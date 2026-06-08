@@ -329,7 +329,9 @@ class Sale {
       );
 
   static DateTime _parseArchiveDate(dynamic value) {
-    if (value is String) return DateTime.parse(value);
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
     if (value is Map && value['_seconds'] != null) {
       return DateTime.fromMillisecondsSinceEpoch(
           (value['_seconds'] as int) * 1000);
@@ -403,3 +405,9 @@ class Sale {
 }
 
 const _unset = Object();
+
+// Half-open interval [start, end): inclusive start, exclusive end.
+extension SaleInPeriod on Sale {
+  bool inPeriod(DateTime start, DateTime end) =>
+      !createdAt.isBefore(start) && createdAt.isBefore(end);
+}

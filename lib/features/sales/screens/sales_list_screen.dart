@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
@@ -52,6 +53,12 @@ class _SalesListScreenState extends State<SalesListScreen> {
   // Cached once per store/filter/sort/search change — not on every build().
   List<Sale> _filteredSales = [];
   Map<String, List<Sale>> _groupedSales = {};
+  // Years with at least one Sale, newest first — recomputed only in _rebuildCache().
+  List<int> _cachedAvailableYears = [];
+  // Months (1–12) per year — recomputed only in _rebuildCache().
+  Map<int, List<int>> _cachedMonthsByYear = {};
+  // NIF per buyerId — avoids O(n_buyers) scan per card per build.
+  Map<String, String?> _buyerNifById = {};
 
   bool get _loading => SalesStore.current == null;
 
@@ -63,27 +70,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
       (_buyerFilter != null ? 1 : 0) +
       (_sortOrder != _SortOrder.newestFirst ? 1 : 0);
 
-  // Years that have at least one Sale, newest first.
-  List<int> get _availableYears {
-    final years = (SalesStore.current ?? [])
-        .map((s) => s.createdAt.year)
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-    return years;
-  }
-
-  // Months (1–12) in [year] that have at least one Sale, chronological.
-  List<int> _availableMonths(int year) {
-    final months = (SalesStore.current ?? [])
-        .where((s) => s.createdAt.year == year)
-        .map((s) => s.createdAt.month)
-        .toSet()
-        .toList()
-      ..sort();
-    return months;
-  }
-
   String _monthLabel(int month) =>
       DateFormat('MMM').format(DateTime(2000, month));
 
@@ -92,6 +78,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     super.initState();
     _activeFilters = Set<SaleFilter>.from(widget.initialFilters);
     SalesStore.state.addListener(_onStoreChanged);
+    BuyersStore.state.addListener(_onStoreChanged);
     _rebuildCache();
   }
 
@@ -101,7 +88,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _rebuildCache() {
-    var sales = _applyFilter(SalesStore.current ?? []);
+    final allSales = SalesStore.current ?? [];
+
+    var sales = _applyFilter(allSales);
     sales = _applySearch(sales);
     sales = _applySort(sales);
     _filteredSales = sales;
@@ -110,11 +99,25 @@ class _SalesListScreenState extends State<SalesListScreen> {
     _groupedSales = _selectedYear != null
         ? SaleGrouper.byCreatedMonth(sales)
         : SaleGrouper.byWeek(sales);
+
+    final monthsMap = <int, Set<int>>{};
+    for (final s in allSales) {
+      (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
+    }
+    _cachedAvailableYears = monthsMap.keys.toList()..sort((a, b) => b.compareTo(a));
+    _cachedMonthsByYear = monthsMap.map(
+      (y, months) => MapEntry(y, months.toList()..sort()),
+    );
+
+    _buyerNifById = {
+      for (final b in BuyersStore.current ?? []) b.id: b.nif,
+    };
   }
 
   @override
   void dispose() {
     SalesStore.state.removeListener(_onStoreChanged);
+    BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -325,6 +328,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       ? Center(child: Text(s.noSalesFound))
                       : _TimelineView(
                           groups: _groupedSales,
+                          buyerNifById: _buyerNifById,
                           selectedSaleId: isTablet ? _selectedSale?.id : null,
                           onSaleTap: _selectSale,
                         ),
@@ -369,7 +373,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   void _showOptionsSheet() {
     final s = context.s;
-    final years = _availableYears;
+    final years = _cachedAvailableYears;
     final groups = [
       (
         label: s.dashboardGroupMoney,
@@ -565,7 +569,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               const EdgeInsets.fromLTRB(16, 4, 16, 8),
                           child: Wrap(
                             spacing: 8,
-                            children: _availableMonths(_selectedYear!)
+                            children: (_cachedMonthsByYear[_selectedYear] ?? [])
                                 .map((m) => FilterChip(
                                       label:
                                           Text(_monthLabel(m)),
@@ -758,8 +762,9 @@ class _CategoryChip extends StatelessWidget {
 class _ItemDescriptions extends StatelessWidget {
   final Sale sale;
   final List<UrgencyReasonType> reasons;
+  final String? buyerNif;
 
-  const _ItemDescriptions({required this.sale, required this.reasons});
+  const _ItemDescriptions({required this.sale, required this.reasons, required this.buyerNif});
 
   @override
   Widget build(BuildContext context) {
@@ -791,7 +796,7 @@ class _ItemDescriptions extends StatelessWidget {
             ],
           ),
         ),
-        _AttentionBadges(sale: sale, reasons: reasons),
+        _AttentionBadges(sale: sale, reasons: reasons, buyerNif: buyerNif),
       ],
     );
   }
@@ -819,11 +824,13 @@ class _CategoryChips extends StatelessWidget {
 
 class _TimelineView extends StatelessWidget {
   final Map<String, List<Sale>> groups;
+  final Map<String, String?> buyerNifById;
   final String? selectedSaleId;
   final void Function(Sale) onSaleTap;
 
   const _TimelineView({
     required this.groups,
+    required this.buyerNifById,
     required this.onSaleTap,
     this.selectedSaleId,
   });
@@ -855,6 +862,7 @@ class _TimelineView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: _SaleCard(
                     sale: sale,
+                    buyerNif: buyerNifById[sale.buyerId],
                     isSelected: sale.id == selectedSaleId,
                     onTap: () => onSaleTap(sale),
                   ),
@@ -870,32 +878,36 @@ class _TimelineView extends StatelessWidget {
 // Returns blocker reasons for the ⚠️ badge. Empty list = no badge.
 
 class _SaleCard extends StatelessWidget {
+  static final _dateFormat = DateFormat('dd MMM yyyy');
+
   final Sale sale;
+  final String? buyerNif;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _SaleCard({
     required this.sale,
+    required this.buyerNif,
     required this.onTap,
     this.isSelected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMM yyyy');
     final level = sale.urgencyLevel();
     final reasons = sale.urgencyReasons(level: level);
+    final cs = Theme.of(context).colorScheme;
     final accentColor = reasons.isEmpty
         ? null
         : level == UrgencyLevel.overdue
-            ? Theme.of(context).colorScheme.error
-            : Colors.amber[700]!;
+            ? cs.error
+            : cs.warning;
 
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
       color: isSelected
-          ? Theme.of(context).colorScheme.primaryContainer
+          ? cs.primaryContainer
           : null,
       child: InkWell(
         onTap: onTap,
@@ -932,13 +944,13 @@ class _SaleCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
-              _ItemDescriptions(sale: sale, reasons: reasons),
+              _ItemDescriptions(sale: sale, reasons: reasons, buyerNif: buyerNif),
               const SizedBox(height: 4),
               _CategoryChips(sale: sale),
               Row(
                 children: [
                   Text(
-                    dateFormat.format(sale.createdAt),
+                    _dateFormat.format(sale.createdAt),
                     style: Theme.of(context)
                         .textTheme
                         .labelSmall
@@ -974,17 +986,15 @@ class _SaleCard extends StatelessWidget {
 class _AttentionBadges extends StatelessWidget {
   final Sale sale;
   final List<UrgencyReasonType> reasons;
+  final String? buyerNif;
 
-  const _AttentionBadges({required this.sale, required this.reasons});
+  const _AttentionBadges({required this.sale, required this.reasons, required this.buyerNif});
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final buyerNif = (BuyersStore.current ?? [])
-        .where((b) => b.id == sale.buyerId)
-        .firstOrNull
-        ?.nif;
-    final buyerHasNif = buyerNif != null && buyerNif.isNotEmpty;
+    final cs = Theme.of(context).colorScheme;
+    final buyerHasNif = buyerNif?.isNotEmpty == true;
     final isPaid = sale.payment.status == PaymentStatus.paid;
 
     // Show NIF badge when NIF is missing or AT filing is actionable.
@@ -992,10 +1002,10 @@ class _AttentionBadges extends StatelessWidget {
     final showNifBadge =
         sale.requiresNif && (!buyerHasNif || isPaid);
     final nifBadgeColor = !buyerHasNif
-        ? Colors.orange
+        ? cs.warning
         : sale.atSubmissionDone
-            ? Colors.green
-            : Colors.purple;
+            ? cs.success
+            : cs.pending;
 
     final isReadyButUnpaid =
         sale.derivedAssemblyStatus == AssemblyStatus.ready &&
@@ -1056,7 +1066,7 @@ class _AttentionBadges extends StatelessWidget {
                 Icons.price_check,
                 size: 22,
                 semanticLabel: s.readyButUnpaidTitle,
-                color: Colors.amber,
+                color: cs.warning,
               ),
             ),
           ),
@@ -1077,8 +1087,8 @@ class _AttentionBadges extends StatelessWidget {
                     ? s.urgencyReasonLabel(reasons.first)
                     : s.urgencySheetTitle,
                 color: reasons.length == 1
-                    ? reasons.first.color
-                    : Colors.orange,
+                    ? reasons.first.colorOf(cs)
+                    : cs.warning,
               ),
             ),
           ),
@@ -1100,9 +1110,10 @@ class _AgeLabel extends StatelessWidget {
 
     if (isDelivered || days < 14) return const SizedBox.shrink();
 
+    final cs = Theme.of(context).colorScheme;
     final (icon, color) = days < 30
-        ? (Icons.hourglass_top, Colors.amber[700]!)
-        : (Icons.hourglass_bottom, Theme.of(context).colorScheme.error);
+        ? (Icons.hourglass_top, cs.warning)
+        : (Icons.hourglass_bottom, cs.error);
 
     return Icon(icon, size: 14, color: color);
   }
@@ -1127,7 +1138,7 @@ class _ScheduledDateLabel extends StatelessWidget {
     } else if (days <= 2) {
       color = Theme.of(context).colorScheme.error;
     } else if (days <= 3) {
-      color = Colors.amber[700]!;
+      color = Theme.of(context).colorScheme.warning;
     } else {
       color = Theme.of(context).colorScheme.onSurfaceVariant;
     }
@@ -1186,18 +1197,19 @@ void _showNifDetail(
   final String body;
   final Color iconColor;
 
+  final cs = Theme.of(context).colorScheme;
   if (!buyerHasNif) {
     title = s.noNifOnFile;
     body = s.nifSheetBody;
-    iconColor = Colors.orange;
+    iconColor = cs.warning;
   } else if (atSubmissionDone) {
     title = s.atFiledWithAt;
     body = s.atFiledWithAtBody;
-    iconColor = Colors.green;
+    iconColor = cs.success;
   } else {
     title = s.nifSheetTitle;
     body = s.nifSheetBody;
-    iconColor = Colors.purple;
+    iconColor = cs.pending;
   }
 
   showModalBottomSheet(
@@ -1235,7 +1247,7 @@ void _showReadyButUnpaidDetail(BuildContext context) {
         children: [
           Row(
             children: [
-              const Icon(Icons.price_check, color: Colors.amber),
+              Icon(Icons.price_check, color: Theme.of(context).colorScheme.warning),
               const SizedBox(width: 12),
               Text(
                 s.readyButUnpaidTitle,
@@ -1273,7 +1285,7 @@ void _showUrgencyDetail(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Icon(r.icon, size: 20, color: r.color),
+                  Icon(r.icon, size: 20, color: r.colorOf(Theme.of(context).colorScheme)),
                   const SizedBox(width: 12),
                   Text(s.urgencyReasonLabel(r),
                       style: Theme.of(context).textTheme.bodyMedium),
@@ -1288,6 +1300,7 @@ void _showUrgencyDetail(
 }
 
 void _showPathLegend(BuildContext context, AppStrings s) {
+  final cs = Theme.of(context).colorScheme;
   showModalBottomSheet(
     context: context,
     builder: (_) => Padding(
@@ -1299,28 +1312,23 @@ void _showPathLegend(BuildContext context, AppStrings s) {
           Text(s.legendTitle,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
-          _LegendRow(Icons.build_outlined, Colors.grey,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.notStarted)}'),
-          _LegendRow(Icons.shopping_bag_outlined, Colors.amber[700]!,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.waitingForMaterials)}'),
-          _LegendRow(Icons.build_outlined, Colors.amber[700]!,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.inProgress)}'),
-          _LegendRow(Icons.build, Colors.green,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.ready)}'),
+          for (final status in AssemblyStatus.values)
+            _LegendRow(status.icon, status.colorOf(cs),
+                '${s.assemblyLegendHeader}: ${status.labelOf(s)}'),
           const Divider(height: 20),
-          _LegendRow(Icons.payments_outlined, Colors.grey,
+          _LegendRow(Icons.payments_outlined, cs.muted,
               '${s.paymentLegendHeader}: ${s.unpaid}'),
-          _LegendRow(Icons.payments, Colors.green,
+          _LegendRow(Icons.payments, cs.success,
               '${s.paymentLegendHeader}: ${s.paid}'),
           const Divider(height: 20),
-          _LegendRow(Icons.local_shipping_outlined, Colors.grey,
+          _LegendRow(Icons.local_shipping_outlined, cs.muted,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.pending)}'),
-          _LegendRow(Icons.local_shipping, Colors.blue,
+          _LegendRow(Icons.local_shipping, cs.shipped,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.shipped)}'),
-          _LegendRow(Icons.local_shipping, Colors.green,
+          _LegendRow(Icons.local_shipping, cs.success,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.delivered)}'),
-          _LegendRow(Icons.store, Colors.green, s.pickupNoShipment),
-          _LegendRow(Icons.directions_walk, Colors.green, s.handDelivery),
+          _LegendRow(Icons.store, cs.success, s.pickupNoShipment),
+          _LegendRow(Icons.directions_walk, cs.success, s.handDelivery),
         ],
       ),
     ),
@@ -1358,63 +1366,56 @@ class _SaleProgressPath extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _assemblyNode(),
-        _line(sale.derivedAssemblyStatus == AssemblyStatus.ready),
-        _paymentNode(),
-        _line(sale.payment.status == PaymentStatus.paid),
-        _shipmentNode(),
+        _assemblyNode(cs),
+        _line(cs, sale.derivedAssemblyStatus == AssemblyStatus.ready),
+        _paymentNode(cs),
+        _line(cs, sale.payment.status == PaymentStatus.paid),
+        _shipmentNode(cs),
       ],
     );
   }
 
-  Widget _assemblyNode() {
-    final (icon, color) = switch (sale.derivedAssemblyStatus) {
-      AssemblyStatus.notStarted => (Icons.build_outlined, Colors.grey),
-      AssemblyStatus.waitingForMaterials =>
-        (Icons.shopping_bag_outlined, Colors.amber[700]!),
-      AssemblyStatus.inProgress =>
-        (Icons.build_outlined, Colors.amber[700]!),
-      AssemblyStatus.ready => (Icons.build, Colors.green),
-    };
-    return _PathNode(icon: icon, color: color);
+  Widget _assemblyNode(ColorScheme cs) {
+    final status = sale.derivedAssemblyStatus;
+    return _PathNode(icon: status.icon, color: status.colorOf(cs));
   }
 
-  Widget _paymentNode() {
+  Widget _paymentNode(ColorScheme cs) {
     final paid = sale.payment.status == PaymentStatus.paid;
     return _PathNode(
       icon: paid ? Icons.payments : Icons.payments_outlined,
-      color: paid ? Colors.green : Colors.grey,
+      color: paid ? cs.success : cs.muted,
     );
   }
 
-  Widget _shipmentNode() {
+  Widget _shipmentNode(ColorScheme cs) {
     if (sale.shipment.type == DeliveryType.pickup) {
-      return _PathNode(icon: Icons.store, color: Colors.green);
+      return _PathNode(icon: Icons.store, color: cs.success);
     }
     if (sale.shipment.type == DeliveryType.handDelivery) {
       return _PathNode(
         icon: Icons.directions_walk,
         color: sale.shipment.status == ShipmentStatus.delivered
-            ? Colors.green
-            : Colors.grey,
+            ? cs.success
+            : cs.muted,
       );
     }
     final (icon, color) = switch (sale.shipment.status) {
-      ShipmentStatus.pending =>
-        (Icons.local_shipping_outlined, Colors.grey),
-      ShipmentStatus.shipped => (Icons.local_shipping, Colors.blue),
-      ShipmentStatus.delivered => (Icons.local_shipping, Colors.green),
+      ShipmentStatus.pending => (Icons.local_shipping_outlined, cs.muted),
+      ShipmentStatus.shipped => (Icons.local_shipping, cs.shipped),
+      ShipmentStatus.delivered => (Icons.local_shipping, cs.success),
     };
     return _PathNode(icon: icon, color: color);
   }
 
-  Widget _line(bool active) => Expanded(
+  Widget _line(ColorScheme cs, bool active) => Expanded(
         child: Container(
           height: 2,
-          color: active ? Colors.green : Colors.grey[300],
+          color: active ? cs.success : cs.surfaceContainerHighest,
         ),
       );
 }

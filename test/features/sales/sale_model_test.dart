@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 ComponentItem _component(String id, {required bool available}) =>
@@ -283,6 +283,12 @@ void main() {
       final sale = Sale.fromArchiveMap(map);
       expect(sale.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
+
+    test('malformed createdAt string falls back to epoch rather than throwing', () {
+      final map = baseSaleMap()..['createdAt'] = 'not-a-date';
+      expect(() => Sale.fromArchiveMap(map), returnsNormally);
+      expect(Sale.fromArchiveMap(map).createdAt, DateTime.fromMillisecondsSinceEpoch(0));
+    });
   });
 
   group('Sale.totalPrice', () {
@@ -292,13 +298,13 @@ void main() {
         buyerId: 'b1',
         buyerName: 'Test',
         items: [
-          SaleItem(
+          const SaleItem(
               id: '1',
               description: 'a',
               category: 'x',
               price: 10.0,
               assemblyStatus: AssemblyStatus.ready),
-          SaleItem(
+          const SaleItem(
               id: '2',
               description: 'b',
               category: 'x',

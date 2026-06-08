@@ -6,6 +6,7 @@ import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
 import '../models/sale.dart';
 import '../services/sale_urgency.dart';
+import '../services/sale_urgency_ui.dart';
 import 'sale_detail_screen.dart';
 
 const _urgencyOrder = {
@@ -291,18 +292,8 @@ class _AssemblyBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final (color, label) = switch (status) {
-      AssemblyStatus.notStarted =>
-        (Colors.red, s.assemblyLabel(AssemblyStatus.notStarted)),
-      AssemblyStatus.waitingForMaterials => (
-          Colors.amber[700]!,
-          s.assemblyLabel(AssemblyStatus.waitingForMaterials)
-        ),
-      AssemblyStatus.inProgress =>
-        (Colors.orange, s.assemblyLabel(AssemblyStatus.inProgress)),
-      AssemblyStatus.ready =>
-        (Colors.green, s.assemblyLabel(AssemblyStatus.ready)),
-    };
+    final color = status.colorOf(Theme.of(context).colorScheme);
+    final label = status.labelOf(s);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
