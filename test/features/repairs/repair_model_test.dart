@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
@@ -64,6 +64,12 @@ void main() {
       final map = _baseRepairMap()..['createdAt'] = null;
       final repair = Repair.fromArchiveMap(map);
       expect(repair.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
+    });
+
+    test('malformed createdAt string falls back to epoch rather than throwing', () {
+      final map = _baseRepairMap()..['createdAt'] = 'not-a-date';
+      expect(() => Repair.fromArchiveMap(map), returnsNormally);
+      expect(Repair.fromArchiveMap(map).createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
 
     test('both buyerId and freeTextContact absent does not throw', () {

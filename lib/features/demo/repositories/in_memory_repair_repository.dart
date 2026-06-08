@@ -55,6 +55,13 @@ class InMemoryRepairRepository implements RepairRepository {
   }
 
   @override
+  Future<bool> createRepairIfNotExists(Repair repair) async {
+    if (_repairs.any((r) => r.id == repair.id)) return false;
+    await createRepair(repair);
+    return true;
+  }
+
+  @override
   Future<void> updateRepair(Repair repair) async {
     final idx = _repairs.indexWhere((r) => r.id == repair.id);
     if (idx != -1) {

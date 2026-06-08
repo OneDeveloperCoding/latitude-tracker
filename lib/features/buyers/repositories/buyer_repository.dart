@@ -18,6 +18,7 @@ abstract class BuyerRepository {
   Future<Buyer?> getBuyer(String id);
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId);
   Future<void> createBuyer(Buyer buyer);
+  Future<bool> createBuyerIfNotExists(Buyer buyer, List<BuyerAddress> addresses);
   Future<void> updateBuyer(Buyer buyer);
   Future<void> deleteBuyer(String id);
   Future<void> deleteAllBuyers();
@@ -72,6 +73,22 @@ class _FirestoreBuyerRepository implements BuyerRepository {
   @override
   Future<void> createBuyer(Buyer buyer) =>
       _buyersRef.doc(buyer.id).set(buyer.toFirestore());
+
+  @override
+  Future<bool> createBuyerIfNotExists(
+      Buyer buyer, List<BuyerAddress> addresses) async {
+    if ((await _buyersRef.doc(buyer.id).get()).exists) return false;
+    // Single batch for the buyer doc + all address docs so the write is atomic.
+    // No need to call _clearDefaultAddress here because the buyer doesn't yet
+    // exist, so there are no existing default addresses to demote.
+    final batch = _firestore.batch();
+    batch.set(_buyersRef.doc(buyer.id), buyer.toFirestore());
+    for (final address in addresses) {
+      batch.set(_addressesRef(buyer.id).doc(address.id), address.toFirestore());
+    }
+    await batch.commit();
+    return true;
+  }
 
   @override
   Future<void> updateBuyer(Buyer buyer) =>

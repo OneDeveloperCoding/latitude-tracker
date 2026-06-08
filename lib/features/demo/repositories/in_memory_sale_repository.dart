@@ -63,6 +63,13 @@ class InMemorySaleRepository implements SaleRepository {
   }
 
   @override
+  Future<bool> createSaleIfNotExists(Sale sale) async {
+    if (_sales.any((s) => s.id == sale.id)) return false;
+    await createSale(sale);
+    return true;
+  }
+
+  @override
   Future<void> updateSale(Sale sale) async {
     final idx = _sales.indexWhere((s) => s.id == sale.id);
     if (idx != -1) {

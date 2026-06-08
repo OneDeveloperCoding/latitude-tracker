@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.5.0] — 2026-06-08
+
+### Features
+- Dark mode toggle added to Settings — persists across sessions via SharedPreferences
+
+### Performance
+- `SalesListScreen`: buyer lookup, `DateFormat`, and year/month values are now computed once per build cycle instead of per-item — eliminates redundant work on large lists
+- `AnalyticsScreen`: analytics computation is cached in widget state and only re-runs when data changes
+
+### Fixes
+- `renameCategory` now runs its Firestore batch operations sequentially — reduces partial-failure blast radius when a rename touches many documents
+
+### Architecture
+- `StreamStore<T>` generic base class extracted — `SalesStore` and `BuyersStore` now share a single implementation instead of duplicating stream subscription logic
+- `BasePhotoService` extracted — removes duplication between the sale and repair photo services
+- `ArchiveService.importArchive` now routes writes through the repository layer instead of accessing Firestore directly
+- `DashboardStats` split: analytics-only methods moved to a dedicated class, keeping `DashboardStats` focused on dashboard concerns
+- Sale and buyer IDs now generated with the `uuid` package instead of `FirebaseFirestore.instance.collection().doc().id` — removes an unnecessary Firestore round-trip
+
+### Testing
+- Pure-logic test files migrated from `flutter_test` to `package:test` — faster execution and no Flutter framework dependency for tests that don't need it
+
+### Infrastructure
+- Lint rules expanded with targeted `flutter_lints` additions to catch common patterns specific to this codebase
+- Release signing, version tracking, and CI workflows unified into a single consistent pipeline
+- Naming fixes: `SaleFilterLabel` removed, `AssemblyStatusUI` centralised, `BuyerStats` updated to single-pass computation; `AssemblyStatusUI` extension applied across `SaleDetailScreen` and `ShoppingListScreen`
+
+---
+
 ## [1.4.0] — 2026-06-07
 
 ### Features

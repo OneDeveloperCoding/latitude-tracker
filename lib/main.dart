@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'core/l10n/locale_settings.dart';
+import 'core/theme/theme_settings.dart';
 import 'firebase_options.dart';
 
 void main() {
@@ -24,6 +25,7 @@ void main() {
     };
 
     await LocaleSettings.init();
+    await ThemeSettings.init();
 
     runApp(const LatitudeTrackerApp());
   }, (error, stack) => FirebaseCrashlytics.instance.recordError(error, stack, fatal: true));
