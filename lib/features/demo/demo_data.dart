@@ -122,13 +122,13 @@ class DemoData {
           buyerId: 'demo-buyer-1',
           buyerName: 'Ana Ferreira',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-1-1',
               description: 'Silver necklace with natural pearls',
               category: 'Colares',
               price: 45.00,
               assemblyStatus: AssemblyStatus.inProgress,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-1-1',
                     name: '45cm silver chain',
@@ -142,7 +142,7 @@ class DemoData {
                     name: '6mm natural pearls',
                     isAvailable: false),
               ],
-              photoUrls: const ['demo://photo1', 'demo://photo2'],
+              photoUrls: ['demo://photo1', 'demo://photo2'],
             ),
           ],
           payment: const SalePayment(
@@ -165,13 +165,13 @@ class DemoData {
           buyerId: 'demo-buyer-2',
           buyerName: 'Mariana Costa',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-2-1',
               description: 'Azulejo pattern linen tote bag',
               category: 'Tote Bags',
               price: 35.00,
               assemblyStatus: AssemblyStatus.notStarted,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-2-1',
                     name: 'Blue linen fabric 50×40cm',
@@ -185,7 +185,7 @@ class DemoData {
                     name: 'Checkered cotton lining',
                     isAvailable: false),
               ],
-              photoUrls: const ['demo://photo3'],
+              photoUrls: ['demo://photo3'],
             ),
           ],
           payment: const SalePayment(
@@ -203,13 +203,13 @@ class DemoData {
           buyerId: 'demo-buyer-3',
           buyerName: 'João Rodrigues',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-3-1',
               description: 'Custom wooden bead necklace',
               category: 'Colares',
               price: 28.00,
               assemblyStatus: AssemblyStatus.waitingForMaterials,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-3-1',
                     name: '8mm natural wood beads',
@@ -244,13 +244,13 @@ class DemoData {
           buyerId: 'demo-buyer-4',
           buyerName: 'Sofia Lopes',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-4-1',
               description: 'Macramé bracelet with semi-precious stones',
               category: 'Pins',
               price: 22.50,
               assemblyStatus: AssemblyStatus.inProgress,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-4-1',
                     name: '2mm natural cotton cord',
@@ -264,7 +264,7 @@ class DemoData {
                     name: 'Gold seed beads',
                     isAvailable: true),
               ],
-              photoUrls: const ['demo://photo4'],
+              photoUrls: ['demo://photo4'],
             ),
           ],
           payment: const SalePayment(
@@ -284,13 +284,13 @@ class DemoData {
           buyerId: 'demo-buyer-2',
           buyerName: 'Mariana Costa',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-5-1',
               description: 'Engraved vegan leather coin purse',
               category: 'Crachás',
               price: 18.00,
               assemblyStatus: AssemblyStatus.ready,
-              photoUrls: const ['demo://photo2'],
+              photoUrls: ['demo://photo2'],
             ),
           ],
           payment: const SalePayment(
@@ -314,13 +314,13 @@ class DemoData {
           buyerId: 'demo-buyer-1',
           buyerName: 'Ana Ferreira',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-6-1',
               description: 'Ocean blue resin drop earrings',
               category: 'Brincos',
               price: 24.00,
               assemblyStatus: AssemblyStatus.ready,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-6-1',
                     name: 'Clear epoxy resin',
@@ -334,7 +334,7 @@ class DemoData {
                     name: 'Hypoallergenic earring hooks',
                     isAvailable: true),
               ],
-              photoUrls: const ['demo://photo1', 'demo://photo3'],
+              photoUrls: ['demo://photo1', 'demo://photo3'],
             ),
           ],
           payment: const SalePayment(
@@ -357,7 +357,7 @@ class DemoData {
           buyerId: 'demo-buyer-3',
           buyerName: 'João Rodrigues',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-7-1',
               description: 'Gold hoop earrings 40mm',
               category: 'Brincos',
@@ -383,13 +383,13 @@ class DemoData {
           buyerId: 'demo-buyer-5',
           buyerName: 'Rita Mendes',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-8-1',
               description: 'Gold-fill layered necklace',
               category: 'Colares',
               price: 38.00,
               assemblyStatus: AssemblyStatus.inProgress,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-8-1',
                     name: '14k gold-fill cable chain 45cm',
@@ -399,15 +399,15 @@ class DemoData {
                     name: 'Gold-fill lobster clasp',
                     isAvailable: false),
               ],
-              photoUrls: const ['demo://photo1'],
+              photoUrls: ['demo://photo1'],
             ),
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-8-2',
               description: 'Matching gold-fill stud earrings',
               category: 'Brincos',
               price: 22.00,
               assemblyStatus: AssemblyStatus.ready,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-8-3',
                     name: 'Gold-fill disc blanks',
@@ -417,7 +417,7 @@ class DemoData {
                     name: 'Gold-fill earring posts',
                     isAvailable: true),
               ],
-              photoUrls: const ['demo://photo2'],
+              photoUrls: ['demo://photo2'],
             ),
           ],
           payment: const SalePayment(
@@ -438,13 +438,13 @@ class DemoData {
           buyerId: 'demo-buyer-6',
           buyerName: 'Carlos Sousa',
           items: [
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-9-1',
               description: 'Labradorite pendant necklace',
               category: 'Colares',
               price: 48.00,
               assemblyStatus: AssemblyStatus.waitingForMaterials,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-9-1',
                     name: 'Labradorite cabochon 20mm',
@@ -455,13 +455,13 @@ class DemoData {
                     isAvailable: false),
               ],
             ),
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-9-2',
               description: 'Labradorite drop earrings',
               category: 'Brincos',
               price: 32.00,
               assemblyStatus: AssemblyStatus.waitingForMaterials,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-9-3',
                     name: 'Labradorite chips 8mm',
@@ -472,13 +472,13 @@ class DemoData {
                     isAvailable: false),
               ],
             ),
-            SaleItem(
+            const SaleItem(
               id: 'demo-item-9-3',
               description: 'Linen gift pouch',
               category: 'Tote Bags',
               price: 8.00,
               assemblyStatus: AssemblyStatus.notStarted,
-              components: const [
+              components: [
                 ComponentItem(
                     id: 'dc-9-5',
                     name: 'Natural linen drawstring bag',
