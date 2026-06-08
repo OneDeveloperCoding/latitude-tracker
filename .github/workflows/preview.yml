@@ -44,6 +44,10 @@ jobs:
           RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
         run: |
           printf '%s' "$RELEASE_KEYSTORE" | base64 -d > android/release.keystore
+          if [ ! -s android/release.keystore ]; then
+            echo "ERROR: RELEASE_KEYSTORE secret is empty or base64-invalid"
+            exit 1
+          fi
 
       - name: Install dependencies
         run: flutter pub get
