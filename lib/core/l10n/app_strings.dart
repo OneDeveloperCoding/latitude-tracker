@@ -406,7 +406,7 @@ class AppStrings {
   final String repairSectionWork;
   final String repairSectionReturn;
   final String repairSectionLinked;
-  final String promoteTobuyer;
+  final String promoteToBuyer;
   final String promoteToBuyerTitle;
   final String promoteToBuyerBody;
   final String repairsOnSale;
@@ -810,7 +810,7 @@ class AppStrings {
     required this.repairSectionWork,
     required this.repairSectionReturn,
     required this.repairSectionLinked,
-    required this.promoteTobuyer,
+    required this.promoteToBuyer,
     required this.promoteToBuyerTitle,
     required this.promoteToBuyerBody,
     required this.repairsOnSale,
@@ -1613,7 +1613,7 @@ class AppStrings {
     repairSectionWork: 'Work',
     repairSectionReturn: 'Return',
     repairSectionLinked: 'Linked sale',
-    promoteTobuyer: 'Promote to Buyer',
+    promoteToBuyer: 'Promote to Buyer',
     promoteToBuyerTitle: 'Promote to Buyer?',
     promoteToBuyerBody:
         'A new Buyer profile will be created with this name. You can add contact details from the Buyer detail screen.',
@@ -2042,7 +2042,7 @@ class AppStrings {
     repairSectionWork: 'Trabalho',
     repairSectionReturn: 'Devolução',
     repairSectionLinked: 'Venda associada',
-    promoteTobuyer: 'Promover a Comprador',
+    promoteToBuyer: 'Promover a Comprador',
     promoteToBuyerTitle: 'Promover a Comprador?',
     promoteToBuyerBody:
         'Será criado um novo perfil de Comprador com este nome. Pode adicionar detalhes de contacto no ecrã do Comprador.',

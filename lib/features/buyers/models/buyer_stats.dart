@@ -25,23 +25,30 @@ class BuyerStats {
   factory BuyerStats.compute(List<Sale> sales) {
     if (sales.isEmpty) return BuyerStats.empty;
 
-    final lastSale =
-        sales.reduce((a, b) => a.createdAt.isAfter(b.createdAt) ? a : b);
-    final totalPaid = sales
-        .where((s) => s.payment.status == PaymentStatus.paid)
-        .fold(0.0, (sum, s) => sum + s.totalPrice);
-    final unpaidBalance = sales
-        .where((s) => s.payment.status == PaymentStatus.unpaid)
-        .fold(0.0, (sum, s) => sum + s.totalPrice);
-    final averageSaleValue =
-        sales.fold(0.0, (acc, s) => acc + s.totalPrice) / sales.length;
+    DateTime? lastPurchaseAt;
+    double totalPaid = 0;
+    double unpaidBalance = 0;
+    double totalValue = 0;
+
+    for (final sale in sales) {
+      if (lastPurchaseAt == null || sale.createdAt.isAfter(lastPurchaseAt)) {
+        lastPurchaseAt = sale.createdAt;
+      }
+      switch (sale.payment.status) {
+        case PaymentStatus.paid:
+          totalPaid += sale.totalPrice;
+        case PaymentStatus.unpaid:
+          unpaidBalance += sale.totalPrice;
+      }
+      totalValue += sale.totalPrice;
+    }
 
     return BuyerStats(
       saleCount: sales.length,
-      lastPurchaseAt: lastSale.createdAt,
+      lastPurchaseAt: lastPurchaseAt,
       totalPaid: totalPaid,
       unpaidBalance: unpaidBalance,
-      averageSaleValue: averageSaleValue,
+      averageSaleValue: totalValue / sales.length,
     );
   }
 }
