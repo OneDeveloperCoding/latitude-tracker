@@ -1312,14 +1312,9 @@ void _showPathLegend(BuildContext context, AppStrings s) {
           Text(s.legendTitle,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
-          _LegendRow(Icons.build_outlined, cs.muted,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.notStarted)}'),
-          _LegendRow(Icons.shopping_bag_outlined, cs.warning,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.waitingForMaterials)}'),
-          _LegendRow(Icons.build_outlined, cs.warning,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.inProgress)}'),
-          _LegendRow(Icons.build, cs.success,
-              '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.ready)}'),
+          for (final status in AssemblyStatus.values)
+            _LegendRow(status.icon, status.colorOf(cs),
+                '${s.assemblyLegendHeader}: ${s.assemblyLabel(status)}'),
           const Divider(height: 20),
           _LegendRow(Icons.payments_outlined, cs.muted,
               '${s.paymentLegendHeader}: ${s.unpaid}'),
@@ -1385,14 +1380,8 @@ class _SaleProgressPath extends StatelessWidget {
   }
 
   Widget _assemblyNode(ColorScheme cs) {
-    final (icon, color) = switch (sale.derivedAssemblyStatus) {
-      AssemblyStatus.notStarted => (Icons.build_outlined, cs.muted),
-      AssemblyStatus.waitingForMaterials =>
-        (Icons.shopping_bag_outlined, cs.warning),
-      AssemblyStatus.inProgress => (Icons.build_outlined, cs.warning),
-      AssemblyStatus.ready => (Icons.build, cs.success),
-    };
-    return _PathNode(icon: icon, color: color);
+    final status = sale.derivedAssemblyStatus;
+    return _PathNode(icon: status.icon, color: status.colorOf(cs));
   }
 
   Widget _paymentNode(ColorScheme cs) {
