@@ -52,6 +52,12 @@ class _SalesListScreenState extends State<SalesListScreen> {
   // Cached once per store/filter/sort/search change — not on every build().
   List<Sale> _filteredSales = [];
   Map<String, List<Sale>> _groupedSales = {};
+  // Years with at least one Sale, newest first — recomputed only in _rebuildCache().
+  List<int> _cachedAvailableYears = [];
+  // Months (1–12) per year — recomputed only in _rebuildCache().
+  Map<int, List<int>> _cachedMonthsByYear = {};
+  // NIF per buyerId — avoids O(n_buyers) scan per card per build.
+  Map<String, String?> _buyerNifById = {};
 
   bool get _loading => SalesStore.current == null;
 
@@ -63,27 +69,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
       (_buyerFilter != null ? 1 : 0) +
       (_sortOrder != _SortOrder.newestFirst ? 1 : 0);
 
-  // Years that have at least one Sale, newest first.
-  List<int> get _availableYears {
-    final years = (SalesStore.current ?? [])
-        .map((s) => s.createdAt.year)
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-    return years;
-  }
-
-  // Months (1–12) in [year] that have at least one Sale, chronological.
-  List<int> _availableMonths(int year) {
-    final months = (SalesStore.current ?? [])
-        .where((s) => s.createdAt.year == year)
-        .map((s) => s.createdAt.month)
-        .toSet()
-        .toList()
-      ..sort();
-    return months;
-  }
-
   String _monthLabel(int month) =>
       DateFormat('MMM').format(DateTime(2000, month));
 
@@ -92,6 +77,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     super.initState();
     _activeFilters = Set<SaleFilter>.from(widget.initialFilters);
     SalesStore.state.addListener(_onStoreChanged);
+    BuyersStore.state.addListener(_onStoreChanged);
     _rebuildCache();
   }
 
@@ -101,7 +87,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _rebuildCache() {
-    var sales = _applyFilter(SalesStore.current ?? []);
+    final allSales = SalesStore.current ?? [];
+
+    var sales = _applyFilter(allSales);
     sales = _applySearch(sales);
     sales = _applySort(sales);
     _filteredSales = sales;
@@ -110,11 +98,25 @@ class _SalesListScreenState extends State<SalesListScreen> {
     _groupedSales = _selectedYear != null
         ? SaleGrouper.byCreatedMonth(sales)
         : SaleGrouper.byWeek(sales);
+
+    final monthsMap = <int, Set<int>>{};
+    for (final s in allSales) {
+      (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
+    }
+    _cachedAvailableYears = monthsMap.keys.toList()..sort((a, b) => b.compareTo(a));
+    _cachedMonthsByYear = monthsMap.map(
+      (y, months) => MapEntry(y, months.toList()..sort()),
+    );
+
+    _buyerNifById = {
+      for (final b in BuyersStore.current ?? []) b.id: b.nif,
+    };
   }
 
   @override
   void dispose() {
     SalesStore.state.removeListener(_onStoreChanged);
+    BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -325,6 +327,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       ? Center(child: Text(s.noSalesFound))
                       : _TimelineView(
                           groups: _groupedSales,
+                          buyerNifById: _buyerNifById,
                           selectedSaleId: isTablet ? _selectedSale?.id : null,
                           onSaleTap: _selectSale,
                         ),
@@ -369,7 +372,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   void _showOptionsSheet() {
     final s = context.s;
-    final years = _availableYears;
+    final years = _cachedAvailableYears;
     final groups = [
       (
         label: s.dashboardGroupMoney,
@@ -565,7 +568,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               const EdgeInsets.fromLTRB(16, 4, 16, 8),
                           child: Wrap(
                             spacing: 8,
-                            children: _availableMonths(_selectedYear!)
+                            children: (_cachedMonthsByYear[_selectedYear] ?? [])
                                 .map((m) => FilterChip(
                                       label:
                                           Text(_monthLabel(m)),
@@ -758,8 +761,9 @@ class _CategoryChip extends StatelessWidget {
 class _ItemDescriptions extends StatelessWidget {
   final Sale sale;
   final List<UrgencyReasonType> reasons;
+  final String? buyerNif;
 
-  const _ItemDescriptions({required this.sale, required this.reasons});
+  const _ItemDescriptions({required this.sale, required this.reasons, required this.buyerNif});
 
   @override
   Widget build(BuildContext context) {
@@ -791,7 +795,7 @@ class _ItemDescriptions extends StatelessWidget {
             ],
           ),
         ),
-        _AttentionBadges(sale: sale, reasons: reasons),
+        _AttentionBadges(sale: sale, reasons: reasons, buyerNif: buyerNif),
       ],
     );
   }
@@ -819,11 +823,13 @@ class _CategoryChips extends StatelessWidget {
 
 class _TimelineView extends StatelessWidget {
   final Map<String, List<Sale>> groups;
+  final Map<String, String?> buyerNifById;
   final String? selectedSaleId;
   final void Function(Sale) onSaleTap;
 
   const _TimelineView({
     required this.groups,
+    required this.buyerNifById,
     required this.onSaleTap,
     this.selectedSaleId,
   });
@@ -855,6 +861,7 @@ class _TimelineView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: _SaleCard(
                     sale: sale,
+                    buyerNif: buyerNifById[sale.buyerId],
                     isSelected: sale.id == selectedSaleId,
                     onTap: () => onSaleTap(sale),
                   ),
@@ -870,19 +877,22 @@ class _TimelineView extends StatelessWidget {
 // Returns blocker reasons for the ⚠️ badge. Empty list = no badge.
 
 class _SaleCard extends StatelessWidget {
+  static final _dateFormat = DateFormat('dd MMM yyyy');
+
   final Sale sale;
+  final String? buyerNif;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _SaleCard({
     required this.sale,
+    required this.buyerNif,
     required this.onTap,
     this.isSelected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMM yyyy');
     final level = sale.urgencyLevel();
     final reasons = sale.urgencyReasons(level: level);
     final accentColor = reasons.isEmpty
@@ -932,13 +942,13 @@ class _SaleCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
-              _ItemDescriptions(sale: sale, reasons: reasons),
+              _ItemDescriptions(sale: sale, reasons: reasons, buyerNif: buyerNif),
               const SizedBox(height: 4),
               _CategoryChips(sale: sale),
               Row(
                 children: [
                   Text(
-                    dateFormat.format(sale.createdAt),
+                    _dateFormat.format(sale.createdAt),
                     style: Theme.of(context)
                         .textTheme
                         .labelSmall
@@ -974,17 +984,14 @@ class _SaleCard extends StatelessWidget {
 class _AttentionBadges extends StatelessWidget {
   final Sale sale;
   final List<UrgencyReasonType> reasons;
+  final String? buyerNif;
 
-  const _AttentionBadges({required this.sale, required this.reasons});
+  const _AttentionBadges({required this.sale, required this.reasons, required this.buyerNif});
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final buyerNif = (BuyersStore.current ?? [])
-        .where((b) => b.id == sale.buyerId)
-        .firstOrNull
-        ?.nif;
-    final buyerHasNif = buyerNif != null && buyerNif.isNotEmpty;
+    final buyerHasNif = buyerNif?.isNotEmpty == true;
     final isPaid = sale.payment.status == PaymentStatus.paid;
 
     // Show NIF badge when NIF is missing or AT filing is actionable.

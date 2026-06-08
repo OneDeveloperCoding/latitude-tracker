@@ -175,6 +175,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 }
 
 class _SaleDetailBody extends StatelessWidget {
+  static final _dateFormat = DateFormat('dd MMM yyyy');
+
   final Sale sale;
   final SaleRepository repository;
 
@@ -214,7 +216,6 @@ class _SaleDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final dateFormat = DateFormat('dd MMM yyyy');
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -233,7 +234,7 @@ class _SaleDetailBody extends StatelessWidget {
           ),
           _InfoRow(
             icon: Icons.calendar_today,
-            text: dateFormat.format(sale.createdAt),
+            text: _dateFormat.format(sale.createdAt),
           ),
           _InfoRow(
             icon: Icons.euro,
@@ -289,7 +290,16 @@ class _SaleDetailBody extends StatelessWidget {
               ),
               if (sale.requiresNif) ...[
                 const Divider(height: 16),
-                _NifComplianceRow(sale: sale, repository: repository),
+                ValueListenableBuilder(
+                  valueListenable: BuyersStore.state,
+                  builder: (context, _, _) => _NifComplianceRow(
+                    sale: sale,
+                    repository: repository,
+                    buyer: BuyersStore.current
+                        ?.where((b) => b.id == sale.buyerId)
+                        .firstOrNull,
+                  ),
+                ),
               ],
             ],
           ),
@@ -790,6 +800,8 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
 }
 
 class _ScheduledDateField extends StatelessWidget {
+  static final _dateFormat = DateFormat('EEE, dd MMM yyyy');
+
   final DateTime? date;
   final ValueChanged<DateTime?> onChanged;
 
@@ -817,7 +829,6 @@ class _ScheduledDateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final dateFormat = DateFormat('EEE, dd MMM yyyy');
     if (date == null) {
       return TextButton.icon(
         onPressed: () => _pick(context),
@@ -829,7 +840,7 @@ class _ScheduledDateField extends StatelessWidget {
       children: [
         const Icon(Icons.event, size: 16),
         const SizedBox(width: 8),
-        Expanded(child: Text(dateFormat.format(date!))),
+        Expanded(child: Text(_dateFormat.format(date!))),
         TextButton(
           onPressed: () => _pick(context),
           child: Text(s.change),
@@ -939,8 +950,9 @@ class _InfoCard extends StatelessWidget {
 class _NifComplianceRow extends StatelessWidget {
   final Sale sale;
   final SaleRepository repository;
+  final Buyer? buyer;
 
-  const _NifComplianceRow({required this.sale, required this.repository});
+  const _NifComplianceRow({required this.sale, required this.repository, required this.buyer});
 
   Future<void> _toggleAt(BuildContext context) async {
     try {
@@ -1014,44 +1026,36 @@ class _NifComplianceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final isPaid = sale.payment.status == PaymentStatus.paid;
+    final hasNif = buyer?.nif?.isNotEmpty == true;
 
-    return ValueListenableBuilder(
-      valueListenable: BuyersStore.state,
-      builder: (context, _, _) {
-        final buyer = BuyersStore.current
-            ?.where((b) => b.id == sale.buyerId)
-            .firstOrNull;
-        final hasNif = buyer?.nif?.isNotEmpty == true;
+    final String label;
+    Widget? trailing;
 
-        final String label;
-        Widget? trailing;
+    if (!hasNif) {
+      label = s.noNifOnFile;
+      trailing = buyer != null
+          ? TextButton(
+              onPressed: () => _showAddNifDialog(context, buyer!),
+              child: Text(s.addNif),
+            )
+          : null;
+    } else if (!isPaid) {
+      label = s.nifReceiptRequiredInfo;
+    } else {
+      label = sale.atSubmissionDone ? s.atReceiptFiled : s.atReceiptPending;
+      trailing = IconButton(
+        icon: Icon(
+          sale.atSubmissionDone
+              ? Icons.check_circle
+              : Icons.check_circle_outline,
+          color: sale.atSubmissionDone ? Colors.green : Colors.orange,
+        ),
+        tooltip: sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
+        onPressed: () => _toggleAt(context),
+      );
+    }
 
-        if (!hasNif) {
-          label = s.noNifOnFile;
-          trailing = buyer != null
-              ? TextButton(
-                  onPressed: () => _showAddNifDialog(context, buyer),
-                  child: Text(s.addNif),
-                )
-              : null;
-        } else if (!isPaid) {
-          label = s.nifReceiptRequiredInfo;
-        } else {
-          label = sale.atSubmissionDone ? s.atReceiptFiled : s.atReceiptPending;
-          trailing = IconButton(
-            icon: Icon(
-              sale.atSubmissionDone
-                  ? Icons.check_circle
-                  : Icons.check_circle_outline,
-              color: sale.atSubmissionDone ? Colors.green : Colors.orange,
-            ),
-            tooltip:
-                sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
-            onPressed: () => _toggleAt(context),
-          );
-        }
-
-        return ListTile(
+    return ListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
           leading: Icon(kNifIcon,
@@ -1059,8 +1063,6 @@ class _NifComplianceRow extends StatelessWidget {
           title: Text(label),
           trailing: trailing,
         );
-      },
-    );
   }
 }
 
