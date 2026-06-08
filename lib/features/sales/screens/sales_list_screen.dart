@@ -77,6 +77,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     super.initState();
     _activeFilters = Set<SaleFilter>.from(widget.initialFilters);
     SalesStore.state.addListener(_onStoreChanged);
+    BuyersStore.state.addListener(_onStoreChanged);
     _rebuildCache();
   }
 
@@ -98,13 +99,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
         ? SaleGrouper.byCreatedMonth(sales)
         : SaleGrouper.byWeek(sales);
 
-    final yearsSet = <int>{};
     final monthsMap = <int, Set<int>>{};
     for (final s in allSales) {
-      yearsSet.add(s.createdAt.year);
       (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
     }
-    _cachedAvailableYears = yearsSet.toList()..sort((a, b) => b.compareTo(a));
+    _cachedAvailableYears = monthsMap.keys.toList()..sort((a, b) => b.compareTo(a));
     _cachedMonthsByYear = monthsMap.map(
       (y, months) => MapEntry(y, months.toList()..sort()),
     );
@@ -117,6 +116,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
   @override
   void dispose() {
     SalesStore.state.removeListener(_onStoreChanged);
+    BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -991,7 +991,7 @@ class _AttentionBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final buyerHasNif = buyerNif != null && buyerNif!.isNotEmpty;
+    final buyerHasNif = buyerNif?.isNotEmpty == true;
     final isPaid = sale.payment.status == PaymentStatus.paid;
 
     // Show NIF badge when NIF is missing or AT filing is actionable.
