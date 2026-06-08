@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
