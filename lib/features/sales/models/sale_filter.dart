@@ -40,22 +40,6 @@ enum SaleFilter {
   upcomingScheduled,
 }
 
-extension SaleFilterLabel on SaleFilter {
-  String get label => switch (this) {
-        SaleFilter.all => 'All',
-        SaleFilter.unpaid => 'Unpaid',
-        SaleFilter.nifRequired => 'NIF required',
-        SaleFilter.scheduled => 'Scheduled',
-        SaleFilter.pendingShipment => 'Pending shipment',
-        SaleFilter.shipped => 'Shipped',
-        SaleFilter.pickup => 'Pickup',
-        SaleFilter.handDelivery => 'Hand delivery',
-        SaleFilter.assemblyNotReady => 'Assembly not ready',
-        SaleFilter.overdue => 'Overdue',
-        SaleFilter.upcomingScheduled => 'Upcoming',
-      };
-}
-
 extension SaleFilterTest on SaleFilter {
   // [now] is injectable so callers (e.g. DashboardStats) can pass a fixed
   // reference point rather than calling DateTime.now() repeatedly per-sale.

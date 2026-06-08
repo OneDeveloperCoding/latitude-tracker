@@ -170,7 +170,7 @@ class _RepairDetailBody extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.build_outlined),
-                title: _StatusChipInline(repair: repair, s: s),
+                title: _StatusLabel(repair: repair),
                 subtitle: Text(s.repairStatusLabel),
               ),
               if (repair.workDone.isNotEmpty)
@@ -325,13 +325,13 @@ class _ContactRow extends StatelessWidget {
       trailing: DemoMode.active.value
           ? null
           : TextButton(
-              onPressed: () => _promoteTobuyer(context),
-              child: Text(s.promoteTobuyer),
+              onPressed: () => _promoteToBuyer(context),
+              child: Text(s.promoteToBuyer),
             ),
     );
   }
 
-  Future<void> _promoteTobuyer(BuildContext context) async {
+  Future<void> _promoteToBuyer(BuildContext context) async {
     final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -345,7 +345,7 @@ class _ContactRow extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(s.promoteTobuyer),
+            child: Text(s.promoteToBuyer),
           ),
         ],
       ),
@@ -423,15 +423,14 @@ class _LinkedSaleRow extends StatelessWidget {
   }
 }
 
-class _StatusChipInline extends StatelessWidget {
+class _StatusLabel extends StatelessWidget {
   final Repair repair;
-  final AppStrings s;
 
-  const _StatusChipInline({required this.repair, required this.s});
+  const _StatusLabel({required this.repair});
 
   @override
   Widget build(BuildContext context) {
-    return Text(s.repairStatusLabelFor(repair.status));
+    return Text(context.s.repairStatusLabelFor(repair.status));
   }
 }
 
