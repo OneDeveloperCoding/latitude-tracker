@@ -42,7 +42,7 @@ jobs:
         env:
           RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
         run: |
-          printf '%s' "$RELEASE_KEYSTORE" | base64 -d > android/release.keystore
+          printf '%s' "$RELEASE_KEYSTORE" | tr -dc 'A-Za-z0-9+/=' | base64 -d > android/release.keystore
           if [ ! -s android/release.keystore ]; then
             echo "ERROR: RELEASE_KEYSTORE secret is empty or base64-invalid"
             exit 1
