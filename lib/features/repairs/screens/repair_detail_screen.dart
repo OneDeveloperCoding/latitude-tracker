@@ -170,7 +170,7 @@ class _RepairDetailBody extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.build_outlined),
-                title: _StatusLabel(repair: repair),
+                title: Text(s.repairStatusLabelFor(repair.status)),
                 subtitle: Text(s.repairStatusLabel),
               ),
               if (repair.workDone.isNotEmpty)
@@ -423,16 +423,6 @@ class _LinkedSaleRow extends StatelessWidget {
   }
 }
 
-class _StatusLabel extends StatelessWidget {
-  final Repair repair;
-
-  const _StatusLabel({required this.repair});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(context.s.repairStatusLabelFor(repair.status));
-  }
-}
 
 class _ReturnDeliveryActions extends StatefulWidget {
   final Repair repair;

@@ -34,10 +34,11 @@ class BuyerStats {
       if (lastPurchaseAt == null || sale.createdAt.isAfter(lastPurchaseAt)) {
         lastPurchaseAt = sale.createdAt;
       }
-      if (sale.payment.status == PaymentStatus.paid) {
-        totalPaid += sale.totalPrice;
-      } else {
-        unpaidBalance += sale.totalPrice;
+      switch (sale.payment.status) {
+        case PaymentStatus.paid:
+          totalPaid += sale.totalPrice;
+        case PaymentStatus.unpaid:
+          unpaidBalance += sale.totalPrice;
       }
       totalValue += sale.totalPrice;
     }
