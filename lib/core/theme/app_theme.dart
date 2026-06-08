@@ -12,4 +12,14 @@ class AppTheme {
       useMaterial3: true,
     );
   }
+
+  static ThemeData dark() {
+    return ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _primaryColor,
+        brightness: Brightness.dark,
+      ),
+      useMaterial3: true,
+    );
+  }
 }

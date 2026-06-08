@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/color_scheme_ext.dart';
 import 'sale_urgency.dart';
 
 extension UrgencyReasonUI on UrgencyReasonType {
-  ({IconData icon, Color color}) get _ui => switch (this) {
-        UrgencyReasonType.waitingForMaterials =>
-          (icon: Icons.shopping_bag_outlined, color: Colors.orange),
-        UrgencyReasonType.assemblyNotReady =>
-          (icon: Icons.construction, color: Colors.orange),
-        UrgencyReasonType.paymentPending =>
-          (icon: Icons.credit_card_off, color: Colors.orange),
-        UrgencyReasonType.notYetShipped =>
-          (icon: Icons.schedule, color: Colors.red),
+  IconData get icon => switch (this) {
+        UrgencyReasonType.waitingForMaterials => Icons.shopping_bag_outlined,
+        UrgencyReasonType.assemblyNotReady => Icons.construction,
+        UrgencyReasonType.paymentPending => Icons.credit_card_off,
+        UrgencyReasonType.notYetShipped => Icons.schedule,
       };
 
-  IconData get icon => _ui.icon;
-  Color get color => _ui.color;
+  Color colorOf(ColorScheme cs) => switch (this) {
+        UrgencyReasonType.waitingForMaterials => cs.warning,
+        UrgencyReasonType.assemblyNotReady => cs.warning,
+        UrgencyReasonType.paymentPending => cs.warning,
+        UrgencyReasonType.notYetShipped => cs.error,
+      };
 }

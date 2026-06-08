@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
+import '../../../core/theme/theme_settings.dart';
 import '../../demo/demo_mode.dart';
 import '../../demo/demo_tutorial_sheet.dart';
 import '../../repairs/repositories/repair_repository.dart';
@@ -86,6 +87,7 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => DemoTutorialSheet.show(context),
           ),
           _LanguageTile(),
+          _ThemeModeTile(),
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
@@ -373,6 +375,24 @@ class _LanguageTile extends StatelessWidget {
             LocaleSettings.setLocale(Locale(v.first)),
         style: const ButtonStyle(
           visualDensity: VisualDensity.compact,
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeModeTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeSettings.themeMode,
+      builder: (context, mode, _) => SwitchListTile(
+        secondary: const Icon(Icons.dark_mode_outlined),
+        title: Text(s.darkMode),
+        value: mode == ThemeMode.dark,
+        onChanged: (on) => ThemeSettings.setThemeMode(
+          on ? ThemeMode.dark : ThemeMode.light,
         ),
       ),
     );

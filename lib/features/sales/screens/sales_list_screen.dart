@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
@@ -895,11 +896,12 @@ class _SaleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final level = sale.urgencyLevel();
     final reasons = sale.urgencyReasons(level: level);
+    final cs = Theme.of(context).colorScheme;
     final accentColor = reasons.isEmpty
         ? null
         : level == UrgencyLevel.overdue
-            ? Theme.of(context).colorScheme.error
-            : Colors.amber[700]!;
+            ? cs.error
+            : cs.warning;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -991,6 +993,7 @@ class _AttentionBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final cs = Theme.of(context).colorScheme;
     final buyerHasNif = buyerNif?.isNotEmpty == true;
     final isPaid = sale.payment.status == PaymentStatus.paid;
 
@@ -999,10 +1002,10 @@ class _AttentionBadges extends StatelessWidget {
     final showNifBadge =
         sale.requiresNif && (!buyerHasNif || isPaid);
     final nifBadgeColor = !buyerHasNif
-        ? Colors.orange
+        ? cs.warning
         : sale.atSubmissionDone
-            ? Colors.green
-            : Colors.purple;
+            ? cs.success
+            : cs.pending;
 
     final isReadyButUnpaid =
         sale.derivedAssemblyStatus == AssemblyStatus.ready &&
@@ -1063,7 +1066,7 @@ class _AttentionBadges extends StatelessWidget {
                 Icons.price_check,
                 size: 22,
                 semanticLabel: s.readyButUnpaidTitle,
-                color: Colors.amber,
+                color: cs.warning,
               ),
             ),
           ),
@@ -1084,8 +1087,8 @@ class _AttentionBadges extends StatelessWidget {
                     ? s.urgencyReasonLabel(reasons.first)
                     : s.urgencySheetTitle,
                 color: reasons.length == 1
-                    ? reasons.first.color
-                    : Colors.orange,
+                    ? reasons.first.colorOf(cs)
+                    : cs.warning,
               ),
             ),
           ),
@@ -1107,9 +1110,10 @@ class _AgeLabel extends StatelessWidget {
 
     if (isDelivered || days < 14) return const SizedBox.shrink();
 
+    final cs = Theme.of(context).colorScheme;
     final (icon, color) = days < 30
-        ? (Icons.hourglass_top, Colors.amber[700]!)
-        : (Icons.hourglass_bottom, Theme.of(context).colorScheme.error);
+        ? (Icons.hourglass_top, cs.warning)
+        : (Icons.hourglass_bottom, cs.error);
 
     return Icon(icon, size: 14, color: color);
   }
@@ -1134,7 +1138,7 @@ class _ScheduledDateLabel extends StatelessWidget {
     } else if (days <= 2) {
       color = Theme.of(context).colorScheme.error;
     } else if (days <= 3) {
-      color = Colors.amber[700]!;
+      color = Theme.of(context).colorScheme.warning;
     } else {
       color = Theme.of(context).colorScheme.onSurfaceVariant;
     }
@@ -1193,18 +1197,19 @@ void _showNifDetail(
   final String body;
   final Color iconColor;
 
+  final cs = Theme.of(context).colorScheme;
   if (!buyerHasNif) {
     title = s.noNifOnFile;
     body = s.nifSheetBody;
-    iconColor = Colors.orange;
+    iconColor = cs.warning;
   } else if (atSubmissionDone) {
     title = s.atFiledWithAt;
     body = s.atFiledWithAtBody;
-    iconColor = Colors.green;
+    iconColor = cs.success;
   } else {
     title = s.nifSheetTitle;
     body = s.nifSheetBody;
-    iconColor = Colors.purple;
+    iconColor = cs.pending;
   }
 
   showModalBottomSheet(
@@ -1242,7 +1247,7 @@ void _showReadyButUnpaidDetail(BuildContext context) {
         children: [
           Row(
             children: [
-              const Icon(Icons.price_check, color: Colors.amber),
+              Icon(Icons.price_check, color: Theme.of(context).colorScheme.warning),
               const SizedBox(width: 12),
               Text(
                 s.readyButUnpaidTitle,
@@ -1280,7 +1285,7 @@ void _showUrgencyDetail(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Icon(r.icon, size: 20, color: r.color),
+                  Icon(r.icon, size: 20, color: r.colorOf(Theme.of(context).colorScheme)),
                   const SizedBox(width: 12),
                   Text(s.urgencyReasonLabel(r),
                       style: Theme.of(context).textTheme.bodyMedium),
@@ -1295,6 +1300,7 @@ void _showUrgencyDetail(
 }
 
 void _showPathLegend(BuildContext context, AppStrings s) {
+  final cs = Theme.of(context).colorScheme;
   showModalBottomSheet(
     context: context,
     builder: (_) => Padding(
@@ -1306,28 +1312,28 @@ void _showPathLegend(BuildContext context, AppStrings s) {
           Text(s.legendTitle,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
-          _LegendRow(Icons.build_outlined, Colors.grey,
+          _LegendRow(Icons.build_outlined, cs.muted,
               '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.notStarted)}'),
-          _LegendRow(Icons.shopping_bag_outlined, Colors.amber[700]!,
+          _LegendRow(Icons.shopping_bag_outlined, cs.warning,
               '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.waitingForMaterials)}'),
-          _LegendRow(Icons.build_outlined, Colors.amber[700]!,
+          _LegendRow(Icons.build_outlined, cs.warning,
               '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.inProgress)}'),
-          _LegendRow(Icons.build, Colors.green,
+          _LegendRow(Icons.build, cs.success,
               '${s.assemblyLegendHeader}: ${s.assemblyLabel(AssemblyStatus.ready)}'),
           const Divider(height: 20),
-          _LegendRow(Icons.payments_outlined, Colors.grey,
+          _LegendRow(Icons.payments_outlined, cs.muted,
               '${s.paymentLegendHeader}: ${s.unpaid}'),
-          _LegendRow(Icons.payments, Colors.green,
+          _LegendRow(Icons.payments, cs.success,
               '${s.paymentLegendHeader}: ${s.paid}'),
           const Divider(height: 20),
-          _LegendRow(Icons.local_shipping_outlined, Colors.grey,
+          _LegendRow(Icons.local_shipping_outlined, cs.muted,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.pending)}'),
-          _LegendRow(Icons.local_shipping, Colors.blue,
+          _LegendRow(Icons.local_shipping, cs.shipped,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.shipped)}'),
-          _LegendRow(Icons.local_shipping, Colors.green,
+          _LegendRow(Icons.local_shipping, cs.success,
               '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.delivered)}'),
-          _LegendRow(Icons.store, Colors.green, s.pickupNoShipment),
-          _LegendRow(Icons.directions_walk, Colors.green, s.handDelivery),
+          _LegendRow(Icons.store, cs.success, s.pickupNoShipment),
+          _LegendRow(Icons.directions_walk, cs.success, s.handDelivery),
         ],
       ),
     ),
@@ -1365,63 +1371,62 @@ class _SaleProgressPath extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _assemblyNode(),
-        _line(sale.derivedAssemblyStatus == AssemblyStatus.ready),
-        _paymentNode(),
-        _line(sale.payment.status == PaymentStatus.paid),
-        _shipmentNode(),
+        _assemblyNode(cs),
+        _line(cs, sale.derivedAssemblyStatus == AssemblyStatus.ready),
+        _paymentNode(cs),
+        _line(cs, sale.payment.status == PaymentStatus.paid),
+        _shipmentNode(cs),
       ],
     );
   }
 
-  Widget _assemblyNode() {
+  Widget _assemblyNode(ColorScheme cs) {
     final (icon, color) = switch (sale.derivedAssemblyStatus) {
-      AssemblyStatus.notStarted => (Icons.build_outlined, Colors.grey),
+      AssemblyStatus.notStarted => (Icons.build_outlined, cs.muted),
       AssemblyStatus.waitingForMaterials =>
-        (Icons.shopping_bag_outlined, Colors.amber[700]!),
-      AssemblyStatus.inProgress =>
-        (Icons.build_outlined, Colors.amber[700]!),
-      AssemblyStatus.ready => (Icons.build, Colors.green),
+        (Icons.shopping_bag_outlined, cs.warning),
+      AssemblyStatus.inProgress => (Icons.build_outlined, cs.warning),
+      AssemblyStatus.ready => (Icons.build, cs.success),
     };
     return _PathNode(icon: icon, color: color);
   }
 
-  Widget _paymentNode() {
+  Widget _paymentNode(ColorScheme cs) {
     final paid = sale.payment.status == PaymentStatus.paid;
     return _PathNode(
       icon: paid ? Icons.payments : Icons.payments_outlined,
-      color: paid ? Colors.green : Colors.grey,
+      color: paid ? cs.success : cs.muted,
     );
   }
 
-  Widget _shipmentNode() {
+  Widget _shipmentNode(ColorScheme cs) {
     if (sale.shipment.type == DeliveryType.pickup) {
-      return _PathNode(icon: Icons.store, color: Colors.green);
+      return _PathNode(icon: Icons.store, color: cs.success);
     }
     if (sale.shipment.type == DeliveryType.handDelivery) {
       return _PathNode(
         icon: Icons.directions_walk,
         color: sale.shipment.status == ShipmentStatus.delivered
-            ? Colors.green
-            : Colors.grey,
+            ? cs.success
+            : cs.muted,
       );
     }
     final (icon, color) = switch (sale.shipment.status) {
-      ShipmentStatus.pending =>
-        (Icons.local_shipping_outlined, Colors.grey),
-      ShipmentStatus.shipped => (Icons.local_shipping, Colors.blue),
-      ShipmentStatus.delivered => (Icons.local_shipping, Colors.green),
+      ShipmentStatus.pending => (Icons.local_shipping_outlined, cs.muted),
+      ShipmentStatus.shipped => (Icons.local_shipping, cs.shipped),
+      ShipmentStatus.delivered => (Icons.local_shipping, cs.success),
     };
     return _PathNode(icon: icon, color: color);
   }
 
-  Widget _line(bool active) => Expanded(
+  Widget _line(ColorScheme cs, bool active) => Expanded(
         child: Container(
           height: 2,
-          color: active ? Colors.green : Colors.grey[300],
+          color: active ? cs.success : cs.surfaceContainerHighest,
         ),
       );
 }
