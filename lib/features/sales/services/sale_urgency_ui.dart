@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/app_strings.dart';
 import '../../../core/theme/color_scheme_ext.dart';
 import '../models/sale.dart';
 import 'sale_urgency.dart';
@@ -18,6 +19,8 @@ extension AssemblyStatusUI on AssemblyStatus {
         AssemblyStatus.inProgress => cs.warning,
         AssemblyStatus.ready => cs.success,
       };
+
+  String labelOf(AppStrings s) => s.assemblyLabel(this);
 }
 
 extension UrgencyReasonUI on UrgencyReasonType {

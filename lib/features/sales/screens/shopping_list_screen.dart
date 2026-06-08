@@ -293,7 +293,7 @@ class _AssemblyBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final color = status.colorOf(Theme.of(context).colorScheme);
-    final label = s.assemblyLabel(status);
+    final label = status.labelOf(s);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
