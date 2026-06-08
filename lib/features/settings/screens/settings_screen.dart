@@ -385,29 +385,31 @@ class _ThemeModeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final mode = ThemeSettings.themeMode.value;
     return ListTile(
       leading: const Icon(Icons.contrast),
       title: Text(s.darkMode),
-      trailing: SegmentedButton<ThemeMode>(
-        segments: const [
-          ButtonSegment(
-            value: ThemeMode.light,
-            icon: Icon(Icons.light_mode_outlined),
+      trailing: ValueListenableBuilder<ThemeMode>(
+        valueListenable: ThemeSettings.themeMode,
+        builder: (context, mode, _) => SegmentedButton<ThemeMode>(
+          segments: const [
+            ButtonSegment(
+              value: ThemeMode.light,
+              icon: Icon(Icons.light_mode_outlined),
+            ),
+            ButtonSegment(
+              value: ThemeMode.system,
+              icon: Icon(Icons.brightness_auto_outlined),
+            ),
+            ButtonSegment(
+              value: ThemeMode.dark,
+              icon: Icon(Icons.dark_mode_outlined),
+            ),
+          ],
+          selected: {mode},
+          onSelectionChanged: (v) => ThemeSettings.setThemeMode(v.first),
+          style: const ButtonStyle(
+            visualDensity: VisualDensity.compact,
           ),
-          ButtonSegment(
-            value: ThemeMode.system,
-            icon: Icon(Icons.brightness_auto_outlined),
-          ),
-          ButtonSegment(
-            value: ThemeMode.dark,
-            icon: Icon(Icons.dark_mode_outlined),
-          ),
-        ],
-        selected: {mode},
-        onSelectionChanged: (v) => ThemeSettings.setThemeMode(v.first),
-        style: const ButtonStyle(
-          visualDensity: VisualDensity.compact,
         ),
       ),
     );
