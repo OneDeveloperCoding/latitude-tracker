@@ -907,7 +907,7 @@ class _SaleCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
       color: isSelected
-          ? Theme.of(context).colorScheme.primaryContainer
+          ? cs.primaryContainer
           : null,
       child: InkWell(
         onTap: onTap,

@@ -7,7 +7,8 @@ extension AppColorScheme on ColorScheme {
   Color get success =>
       brightness == Brightness.dark ? Colors.green.shade300 : Colors.green.shade600;
 
-  Color get warning => tertiary;
+  Color get warning =>
+      brightness == Brightness.dark ? Colors.orange.shade300 : Colors.orange.shade700;
 
   Color get muted => outline;
 

@@ -22,8 +22,8 @@ class LatitudeTrackerApp extends StatelessWidget {
           locale: locale,
           child: MaterialApp(
             title: 'Latitude Tracker',
-            theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
             themeMode: themeMode,
             locale: locale,
             localizationsDelegates: const [

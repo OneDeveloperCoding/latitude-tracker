@@ -11,10 +11,6 @@ extension UrgencyReasonUI on UrgencyReasonType {
         UrgencyReasonType.notYetShipped => Icons.schedule,
       };
 
-  Color colorOf(ColorScheme cs) => switch (this) {
-        UrgencyReasonType.waitingForMaterials => cs.warning,
-        UrgencyReasonType.assemblyNotReady => cs.warning,
-        UrgencyReasonType.paymentPending => cs.warning,
-        UrgencyReasonType.notYetShipped => cs.error,
-      };
+  Color colorOf(ColorScheme cs) =>
+      this == UrgencyReasonType.notYetShipped ? cs.error : cs.warning;
 }
