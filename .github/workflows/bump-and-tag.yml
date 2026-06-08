@@ -113,7 +113,9 @@ jobs:
           esac
 
           NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          VERSION_CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "Next tag: $NEW_TAG (bump: $BUMP from $LAST_TAG)"
 
       - name: Show commits included in this release
@@ -124,10 +126,7 @@ jobs:
         run: |
           NEW_TAG="${{ steps.next_version.outputs.new_tag }}"
           VERSION_NAME="${NEW_TAG#v}"
-          MAJOR=$(echo "$VERSION_NAME" | cut -d. -f1)
-          MINOR=$(echo "$VERSION_NAME" | cut -d. -f2)
-          PATCH=$(echo "$VERSION_NAME" | cut -d. -f3)
-          VERSION_CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          VERSION_CODE="${{ steps.next_version.outputs.version_code }}"
 
           sed -i "s/^version: .*/version: ${VERSION_NAME}+${VERSION_CODE}/" pubspec.yaml
           echo "Updated pubspec.yaml to version: ${VERSION_NAME}+${VERSION_CODE}"

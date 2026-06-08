@@ -17,7 +17,6 @@ jobs:
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           SAFE_BRANCH="${GITHUB_REF_NAME//\//-}"
-          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           echo "apk_name=latitude-tracker-preview-${SAFE_BRANCH}-${SHORT_SHA}.apk" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
