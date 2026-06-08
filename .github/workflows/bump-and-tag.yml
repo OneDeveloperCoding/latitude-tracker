@@ -113,7 +113,7 @@ jobs:
           esac
 
           NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
-          VERSION_CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          VERSION_CODE=$(( MAJOR * 1000000 + MINOR * 1000 + PATCH ))
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "Next tag: $NEW_TAG (bump: $BUMP from $LAST_TAG)"

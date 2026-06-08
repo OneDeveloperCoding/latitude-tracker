@@ -30,7 +30,6 @@ class StreamStore<T> {
     _sub = _streamFactory().listen(
       (items) => state.value = StoreLoaded(items),
       onError: (Object e, StackTrace st) {
-        if (_refCount > 0) _refCount--;
         _tearDown();
         if (e is AuthRevokedException ||
             (e is FirebaseException && e.code == 'permission-denied')) {

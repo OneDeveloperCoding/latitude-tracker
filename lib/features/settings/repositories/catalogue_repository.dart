@@ -13,6 +13,7 @@ abstract class CatalogueRepository {
   Future<void> saveHiddenCategories(List<String> hidden);
   Future<void> addHiddenCategory(String name);
   Future<void> removeHiddenCategory(String name);
+  Future<void> renameHiddenCategory(String oldName, String newName);
 }
 
 class _FirestoreCatalogueRepository implements CatalogueRepository {
@@ -54,6 +55,15 @@ class _FirestoreCatalogueRepository implements CatalogueRepository {
         {'hiddenCategories': FieldValue.arrayRemove([name])},
         SetOptions(merge: true),
       );
+
+  // Firestore has no atomic arrayRemove+arrayUnion on the same field, so we
+  // add the new name first: if the remove then fails, both names are hidden
+  // (cosmetic glitch) rather than neither being hidden (data loss).
+  @override
+  Future<void> renameHiddenCategory(String oldName, String newName) async {
+    await addHiddenCategory(newName);
+    await removeHiddenCategory(oldName);
+  }
 }
 
 class InMemoryCatalogueRepository implements CatalogueRepository {
@@ -75,6 +85,15 @@ class InMemoryCatalogueRepository implements CatalogueRepository {
   @override
   Future<void> removeHiddenCategory(String name) async =>
       _hidden = _hidden.where((c) => c != name).toList();
+
+  @override
+  Future<void> renameHiddenCategory(String oldName, String newName) async {
+    if (!_hidden.contains(oldName)) return;
+    _hidden = [
+      ..._hidden.where((c) => c != oldName),
+      if (!_hidden.contains(newName)) newName,
+    ];
+  }
 
   void clear() => _hidden = [];
 }

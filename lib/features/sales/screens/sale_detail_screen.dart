@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
+import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/addresses_store.dart';
@@ -217,6 +218,7 @@ class _SaleDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final cs = Theme.of(context).colorScheme;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -269,8 +271,8 @@ class _SaleDetailBody extends StatelessWidget {
                         ? s.paid
                         : s.unpaid,
                     color: sale.payment.status == PaymentStatus.paid
-                        ? Colors.green
-                        : Colors.orange,
+                        ? cs.success
+                        : cs.warning,
                   ),
                 ],
               ),
@@ -335,10 +337,10 @@ class _SaleDetailBody extends StatelessWidget {
                   _StatusChip(
                     label: s.shipmentStatusLabel(sale.shipment.status),
                     color: sale.shipment.status == ShipmentStatus.delivered
-                        ? Colors.green
+                        ? cs.success
                         : sale.shipment.status == ShipmentStatus.shipped
-                            ? Colors.blue
-                            : Colors.orange,
+                            ? cs.shipped
+                            : cs.warning,
                   ),
                 ],
               ),
@@ -1019,6 +1021,7 @@ class _NifComplianceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final cs = Theme.of(context).colorScheme;
     final isPaid = sale.payment.status == PaymentStatus.paid;
     final hasNif = buyer?.nif?.isNotEmpty == true;
 
@@ -1042,7 +1045,7 @@ class _NifComplianceRow extends StatelessWidget {
           sale.atSubmissionDone
               ? Icons.check_circle
               : Icons.check_circle_outline,
-          color: sale.atSubmissionDone ? Colors.green : Colors.orange,
+          color: sale.atSubmissionDone ? cs.success : cs.warning,
         ),
         tooltip: sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
         onPressed: () => _toggleAt(context),

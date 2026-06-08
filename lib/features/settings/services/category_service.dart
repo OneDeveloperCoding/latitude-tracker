@@ -34,11 +34,8 @@ class CategoryService {
       _repairRepo.renameCategory(oldName, newName),
     ]);
 
-    // Use arrayRemove + arrayUnion rather than a full list overwrite so a
-    // concurrent hide/unhide from a second device is not silently clobbered.
     if (isHidden) {
-      await _catalogueRepo.removeHiddenCategory(oldName);
-      await _catalogueRepo.addHiddenCategory(newName);
+      await _catalogueRepo.renameHiddenCategory(oldName, newName);
     }
 
     final updatedHidden = isHidden

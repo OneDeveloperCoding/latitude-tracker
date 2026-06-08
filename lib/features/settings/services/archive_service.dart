@@ -116,11 +116,12 @@ class ArchiveService {
     var skipped = 0;
 
     for (final buyerMap in buyers) {
-      if (buyerMap['id'] == null) continue;
+      final buyerId = buyerMap['id'] as String?;
+      if (buyerId == null || buyerId.isEmpty) continue;
       final buyer = Buyer.fromArchiveMap(buyerMap);
       final addresses = (buyerMap['addresses'] as List?)
               ?.cast<Map<String, dynamic>>()
-              .where((a) => a['id'] != null)
+              .where((a) => (a['id'] as String?) != null && (a['id'] as String).isNotEmpty)
               .map((a) => BuyerAddress.fromArchiveMap(buyer.id, a))
               .toList() ??
           [];
@@ -130,14 +131,16 @@ class ArchiveService {
     }
 
     for (final saleMap in sales) {
-      if (saleMap['id'] == null) continue;
+      final saleId = saleMap['id'] as String?;
+      if (saleId == null || saleId.isEmpty) continue;
       final sale = Sale.fromArchiveMap(saleMap);
       final created = await _salesRepo.createSaleIfNotExists(sale);
       if (created) { salesImported++; } else { skipped++; }
     }
 
     for (final repairMap in repairs) {
-      if (repairMap['id'] == null) continue;
+      final repairId = repairMap['id'] as String?;
+      if (repairId == null || repairId.isEmpty) continue;
       final repair = Repair.fromArchiveMap(repairMap);
       final created = await _repairsRepo.createRepairIfNotExists(repair);
       if (created) { repairsImported++; } else { skipped++; }
