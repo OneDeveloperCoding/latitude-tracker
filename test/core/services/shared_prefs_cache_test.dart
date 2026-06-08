@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
