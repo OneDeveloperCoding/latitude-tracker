@@ -21,6 +21,7 @@ import '../../repairs/models/repair.dart';
 import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
+import '../services/sale_urgency_ui.dart';
 import '../widgets/photo_grid.dart';
 import 'new_sale_screen.dart';
 
@@ -421,7 +422,7 @@ class _ItemSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (statusColor, _) = _assemblyColor(context, item.assemblyStatus);
+    final statusColor = item.assemblyStatus.colorOf(Theme.of(context).colorScheme);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
@@ -464,13 +465,6 @@ class _ItemSummaryTile extends StatelessWidget {
     );
   }
 
-  (Color, String) _assemblyColor(BuildContext context, AssemblyStatus s) =>
-      switch (s) {
-        AssemblyStatus.ready => (Colors.green, 'ready'),
-        AssemblyStatus.inProgress => (Colors.orange, 'in progress'),
-        AssemblyStatus.waitingForMaterials => (Colors.amber, 'waiting'),
-        AssemblyStatus.notStarted => (Colors.grey, 'not started'),
-      };
 }
 
 // Bottom sheet shown when tapping a SaleItem in the detail view.

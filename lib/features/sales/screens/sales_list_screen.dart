@@ -1314,7 +1314,7 @@ void _showPathLegend(BuildContext context, AppStrings s) {
           const SizedBox(height: 16),
           for (final status in AssemblyStatus.values)
             _LegendRow(status.icon, status.colorOf(cs),
-                '${s.assemblyLegendHeader}: ${s.assemblyLabel(status)}'),
+                '${s.assemblyLegendHeader}: ${status.labelOf(s)}'),
           const Divider(height: 20),
           _LegendRow(Icons.payments_outlined, cs.muted,
               '${s.paymentLegendHeader}: ${s.unpaid}'),
