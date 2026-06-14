@@ -163,8 +163,8 @@ class _RepairDetailBody extends StatelessWidget {
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: Text(DateFormat('d MMM y').format(repair.createdAt)),
+                leading: const Icon(Icons.calendar_today),
+                title: Text(DateFormat('dd MMM yyyy').format(repair.createdAt)),
                 subtitle: Text(s.receivedLabel),
               ),
             ],
