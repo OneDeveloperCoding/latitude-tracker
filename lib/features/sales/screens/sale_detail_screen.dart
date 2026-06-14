@@ -489,6 +489,9 @@ class _ItemDetailSheet extends StatefulWidget {
 class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   final _componentController = TextEditingController();
   final _photoService = PhotoService();
+  // Tracks URLs of component photos uploaded while this sheet is open, so
+  // orphans can be deleted if the sheet is dismissed before onChanged fires.
+  final _sessionComponentUploads = <String>{};
   late SaleItem _item;
 
   @override
@@ -500,6 +503,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   @override
   void dispose() {
     _componentController.dispose();
+    final committedUrls = {
+      for (final c in _item.components) ...c.photoUrls,
+    };
+    for (final url in _sessionComponentUploads) {
+      if (!committedUrls.contains(url)) {
+        // Upload landed in Storage but the sheet was dismissed before the
+        // Firestore write confirmed — delete the orphan best-effort.
+        _photoService.deletePhoto(url);
+      }
+    }
     super.dispose();
   }
 
@@ -514,15 +527,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     widget.onUpdateItem(updated);
   }
 
-  Future<void> _removeComponent(ComponentItem c) async {
-    for (final url in c.photoUrls) {
-      await _photoService.deletePhoto(url);
-    }
+  // Void (not async) so Dismissible.onDismissed can call it without
+  // discarding a Future. Firestore write happens first for consistency;
+  // Storage deletes follow as acknowledged fire-and-forget.
+  void _removeComponent(ComponentItem c) {
     final updated = _item.withUpdatedComponents(
       _item.components.where((ci) => ci.id != c.id).toList(),
     );
     setState(() => _item = updated);
     widget.onUpdateItem(updated);
+    for (final url in c.photoUrls) {
+      _photoService.deletePhoto(url);
+    }
   }
 
   Future<void> _openComponentSheet(ComponentItem c) async {
@@ -539,6 +555,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         );
         setState(() => _item = newItem);
         widget.onUpdateItem(newItem);
+      },
+      onPhotoAdded: (url) => _sessionComponentUploads.add(url),
+      onPhotoRemoved: (url) {
+        _sessionComponentUploads.remove(url);
+        _photoService.deletePhoto(url);
       },
     );
   }

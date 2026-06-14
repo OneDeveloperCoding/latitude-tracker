@@ -1,10 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async' show Timer;
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
 import '../models/sale.dart';
 import '../services/photo_service.dart';
 import 'photo_grid.dart';
@@ -48,7 +46,7 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
   final _photoService = PhotoService();
   late ComponentItem _component;
   late final TextEditingController _notesController;
-  int _uploadingCount = 0;
+  Timer? _notesDebounce;
 
   @override
   void initState() {
@@ -60,6 +58,7 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
 
   @override
   void dispose() {
+    _notesDebounce?.cancel();
     _notesController.dispose();
     super.dispose();
   }
@@ -71,101 +70,22 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
     widget.onChanged?.call(updated);
   }
 
+  // Debounced to avoid a Firestore write on every keystroke.
   void _saveNotes(String value) {
-    final notes = value.trim().isEmpty ? null : value.trim();
-    final updated = _component.copyWith(notes: notes);
+    _notesDebounce?.cancel();
+    _notesDebounce = Timer(const Duration(milliseconds: 600), () {
+      final trimmed = value.trim();
+      final notes = trimmed.isEmpty ? null : trimmed;
+      final updated = _component.copyWith(notes: notes);
+      setState(() => _component = updated);
+      widget.onChanged?.call(updated);
+    });
+  }
+
+  void _updatePhotos(List<String> urls) {
+    final updated = _component.copyWith(photoUrls: urls);
     setState(() => _component = updated);
     widget.onChanged?.call(updated);
-  }
-
-  Future<void> _addPhoto(ImageSource source) async {
-    setState(() => _uploadingCount++);
-    try {
-      final url = await _photoService.pickAndUploadForComponent(
-        saleId: widget.saleId,
-        itemId: widget.itemId,
-        componentId: _component.id,
-        source: source,
-      );
-      if (url != null) {
-        widget.onPhotoAdded?.call(url);
-        final updated =
-            _component.copyWith(photoUrls: [..._component.photoUrls, url]);
-        setState(() => _component = updated);
-        widget.onChanged?.call(updated);
-      }
-    } catch (e) {
-      if (e is AuthRevokedException) {
-        FirebaseAuth.instance.signOut();
-        return;
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.s.errorUploadingPhotoMsg(e))),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _uploadingCount--);
-    }
-  }
-
-  Future<void> _removePhoto(int index) async {
-    final s = context.s;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(s.removePhotoTitle),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(s.removePhoto),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    final url = _component.photoUrls[index];
-    widget.onPhotoRemoved?.call(url);
-    final updated = _component.copyWith(
-      photoUrls: [..._component.photoUrls]..removeAt(index),
-    );
-    setState(() => _component = updated);
-    widget.onChanged?.call(updated);
-  }
-
-  void _showSourcePicker() {
-    final s = context.s;
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: Text(s.takePhoto),
-              onTap: () {
-                Navigator.pop(context);
-                _addPhoto(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: Text(s.chooseFromGallery),
-              onTap: () {
-                Navigator.pop(context);
-                _addPhoto(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -242,59 +162,23 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
           if (widget.isReadOnly)
             _ReadOnlyPhotoGrid(photos: photos)
           else
-            _EditablePhotoGrid(
-              photos: photos,
-              uploadingCount: _uploadingCount,
-              onAddTap: _showSourcePicker,
-              onRemove: _removePhoto,
+            PhotoGrid(
+              saleId: widget.saleId,
+              itemId: widget.itemId,
+              photoUrls: photos,
+              uploadCallback: (source) =>
+                  _photoService.pickAndUploadForComponent(
+                saleId: widget.saleId,
+                itemId: widget.itemId,
+                componentId: _component.id,
+                source: source,
+              ),
+              onChanged: _updatePhotos,
+              onPhotoAdded: widget.onPhotoAdded,
+              onPhotoRemoved: widget.onPhotoRemoved,
             ),
         ],
       ),
-    );
-  }
-}
-
-class _EditablePhotoGrid extends StatelessWidget {
-  final List<String> photos;
-  final int uploadingCount;
-  final VoidCallback onAddTap;
-  final Future<void> Function(int index) onRemove;
-
-  const _EditablePhotoGrid({
-    required this.photos,
-    required this.uploadingCount,
-    required this.onAddTap,
-    required this.onRemove,
-  });
-
-  void _viewPhoto(BuildContext context, int index) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PhotoViewer(urls: photos, initialIndex: index),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        ...photos.asMap().entries.map(
-              (e) => _PhotoTileCompat(
-                url: e.value,
-                onTap: () => _viewPhoto(context, e.key),
-                onDelete: () => onRemove(e.key),
-              ),
-            ),
-        ...List.generate(
-          uploadingCount,
-          (_) => const _PhotoTileCompat(isUploading: true),
-        ),
-        if (!DemoMode.active.value) _AddPhotoTileCompat(onTap: onAddTap),
-      ],
     );
   }
 }
@@ -303,15 +187,6 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
   final List<String> photos;
 
   const _ReadOnlyPhotoGrid({required this.photos});
-
-  void _viewPhoto(BuildContext context, int index) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PhotoViewer(urls: photos, initialIndex: index),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -327,131 +202,18 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: photos.asMap().entries.map(
-            (e) => _PhotoTileCompat(
+            (e) => PhotoThumbnail(
               url: e.value,
-              onTap: () => _viewPhoto(context, e.key),
+              size: 96,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      PhotoViewer(urls: photos, initialIndex: e.key),
+                ),
+              ),
             ),
           ).toList(),
-    );
-  }
-}
-
-// Minimal local photo tile — mirrors _PhotoTile in photo_grid.dart but
-// without the dependency on the parent widget's state.
-class _PhotoTileCompat extends StatelessWidget {
-  static const double _size = 96;
-
-  final String? url;
-  final bool isUploading;
-  final VoidCallback? onTap;
-  final VoidCallback? onDelete;
-
-  const _PhotoTileCompat({
-    this.url,
-    this.isUploading = false,
-    this.onTap,
-    this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cacheSize = (_size * MediaQuery.devicePixelRatioOf(context)).round();
-    return SizedBox(
-      width: _size,
-      height: _size,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (isUploading)
-              Container(
-                color: Colors.grey[200],
-                child: const Center(child: CircularProgressIndicator()),
-              )
-            else
-              GestureDetector(
-                onTap: onTap,
-                child: Image.network(
-                  url!,
-                  fit: BoxFit.cover,
-                  cacheWidth: cacheSize,
-                  cacheHeight: cacheSize,
-                  loadingBuilder: (_, child, progress) => progress == null
-                      ? child
-                      : Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                              child: CircularProgressIndicator()),
-                        ),
-                  errorBuilder: (context, err, stack) => Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image),
-                  ),
-                ),
-              ),
-            if (onDelete != null && !isUploading)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: onDelete,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(8),
-                      ),
-                    ),
-                    child: const Icon(Icons.close,
-                        size: 20, color: Colors.white),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AddPhotoTileCompat extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _AddPhotoTileCompat({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline,
-            width: 1.5,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_a_photo,
-                color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 4),
-            Text(
-              context.s.addPhoto,
-              style: TextStyle(
-                fontSize: 11,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -492,7 +254,8 @@ class ComponentPhotoBadge extends StatelessWidget {
                   ),
                 ],
               )
-            : Icon(Icons.add_a_photo_outlined, size: 16, color: color.withAlpha(120)),
+            : Icon(Icons.add_a_photo_outlined,
+                size: 16, color: color.withAlpha(120)),
       ),
     );
   }

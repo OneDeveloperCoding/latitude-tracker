@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/id_gen.dart';
@@ -139,16 +141,17 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     });
   }
 
-  void _removeComponent(int index) {
+  Future<void> _removeComponent(int index) async {
     final component = _components[index];
     for (final url in component.photoUrls) {
       if (_originalComponentPhotoUrls.contains(url)) {
         _pendingDeletions.add(url);
       } else {
-        _photoService.deletePhoto(url);
         _uploadedInSession.remove(url);
+        await _photoService.deletePhoto(url);
       }
     }
+    if (!mounted) return;
     setState(() {
       final updated = List<ComponentItem>.from(_components)..removeAt(index);
       _applyComponentDerivation(updated);
@@ -174,8 +177,8 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
         if (_originalComponentPhotoUrls.contains(url)) {
           _pendingDeletions.add(url);
         } else {
-          _photoService.deletePhoto(url);
           _uploadedInSession.remove(url);
+          unawaited(_photoService.deletePhoto(url));
         }
       },
     );
