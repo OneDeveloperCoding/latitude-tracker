@@ -1143,22 +1143,31 @@ class _ScheduledDateLabel extends StatelessWidget {
       color = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
-    final String label = isDelivered
-        ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}'
-        : days < 0
-            ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)} (${s.daysOverdue(days.abs())})'
-            : days == 0
-                ? '📅 ${s.today}'
-                : days == 1
-                    ? '📅 ${s.tomorrow}'
-                    : '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}';
+    final String label;
+    if (isDelivered) {
+      label = DateFormat('dd MMM').format(sale.scheduledDate!);
+    } else if (days < 0) {
+      label = '${DateFormat('dd MMM').format(sale.scheduledDate!)} (${s.daysOverdue(days.abs())})';
+    } else if (days == 0) {
+      label = s.today;
+    } else if (days == 1) {
+      label = s.tomorrow;
+    } else {
+      label = DateFormat('dd MMM').format(sale.scheduledDate!);
+    }
 
-    return Text(
-      label,
-      style: Theme.of(context)
-          .textTheme
-          .labelSmall
-          ?.copyWith(color: color, fontWeight: FontWeight.w500),
+    final textStyle = Theme.of(context)
+        .textTheme
+        .labelSmall
+        ?.copyWith(color: color, fontWeight: FontWeight.w500);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.event, size: 12, color: color),
+        const SizedBox(width: 3),
+        Text(label, style: textStyle),
+      ],
     );
   }
 }
