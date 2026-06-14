@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0] — 2026-06-14
+
+### Features
+- ComponentChecklist items now support photos and notes — each checklist item can have an attached photo and a free-text note alongside its completion state
+
+### Fixes
+- `AddressesStore` removed — it held a `collectionGroup` query that triggered Firestore permission-denied errors on accounts without the rule, causing a silent sign-out; buyer addresses are now fetched per-buyer inside their detail screen only
+- `_AddressDisplay` converted to `StatefulWidget` — the previous stateless form recreated the Firestore listener on every parent rebuild, causing unnecessary churn
+- Repair received-date moved into the Item section card and its format and icon aligned with Sale detail conventions
+- Map icon on "Open in Maps" buttons replaced with a location-pin icon to match platform conventions
+- Scheduled-date chip on the sale card now uses `Icons.event` instead of the 📅 emoji — consistent with the rest of the icon system
+
+---
+
 ## [1.5.0] — 2026-06-08
 
 ### Features

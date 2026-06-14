@@ -198,6 +198,9 @@ class AppStrings {
   final String addComponentHint;
   final String haveIt;
   final String needToBuy;
+  final String componentNotesHint;
+  final String componentNotesLabel;
+  final String noPhotos;
   final String noReadyByDate;
   final String noScheduledDate;
   final String readyBy;
@@ -627,6 +630,9 @@ class AppStrings {
     required this.addComponentHint,
     required this.haveIt,
     required this.needToBuy,
+    required this.componentNotesHint,
+    required this.componentNotesLabel,
+    required this.noPhotos,
     required this.noReadyByDate,
     required this.noScheduledDate,
     required this.readyBy,
@@ -1413,6 +1419,9 @@ class AppStrings {
     addComponentHint: 'Add component...',
     haveIt: 'Have it',
     needToBuy: 'Need to buy',
+    componentNotesHint: 'e.g. darker blue, 45cm length',
+    componentNotesLabel: 'Notes',
+    noPhotos: 'No photos',
     noReadyByDate: 'No ready-by date',
     noScheduledDate: 'No scheduled date',
     readyBy: 'Ready by',
@@ -1841,6 +1850,9 @@ class AppStrings {
     addComponentHint: 'Adicionar material...',
     haveIt: 'Tenho',
     needToBuy: 'Preciso de comprar',
+    componentNotesHint: 'ex: azul escuro, comprimento 45cm',
+    componentNotesLabel: 'Notas',
+    noPhotos: 'Sem fotos',
     noReadyByDate: 'Sem data de preparação',
     noScheduledDate: 'Sem data agendada',
     readyBy: 'Pronto a',
