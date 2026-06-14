@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/id_gen.dart';
+
 // Seed categories shown by default in the category picker.
 // The user can add their own free-text categories on top of these.
 const kDefaultCategories = [
@@ -65,31 +67,49 @@ class ComponentItem {
   final String id;
   final String name;
   final bool isAvailable;
+  final List<String> photoUrls;
+  final String? notes;
 
   const ComponentItem({
     required this.id,
     required this.name,
     required this.isAvailable,
+    this.photoUrls = const [],
+    this.notes,
   });
 
   factory ComponentItem.fromMap(Map<String, dynamic> map) => ComponentItem(
-        id: map['id'] as String? ?? '',
+        id: map['id'] as String? ?? newId(),
         name: map['name'] as String? ?? '',
         isAvailable: map['isAvailable'] as bool? ?? false,
+        photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
+        notes: map['notes'] as String?,
       );
 
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
         'isAvailable': isAvailable,
+        'photoUrls': photoUrls,
+        if (notes != null) 'notes': notes,
       };
 
-  ComponentItem copyWith({String? name, bool? isAvailable}) => ComponentItem(
+  ComponentItem copyWith({
+    String? name,
+    bool? isAvailable,
+    List<String>? photoUrls,
+    Object? notes = _sentinel,
+  }) =>
+      ComponentItem(
         id: id,
         name: name ?? this.name,
         isAvailable: isAvailable ?? this.isAvailable,
+        photoUrls: photoUrls ?? this.photoUrls,
+        notes: notes == _sentinel ? this.notes : notes as String?,
       );
 }
+
+const _sentinel = Object();
 
 class SaleItem {
   final String id;
