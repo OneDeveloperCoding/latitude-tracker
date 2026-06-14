@@ -10,7 +10,6 @@ import '../../../core/constants.dart';
 import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
-import '../../../core/store/addresses_store.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
@@ -863,14 +862,12 @@ class _AddressDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<StoreState<List<BuyerAddress>>>(
-      valueListenable: AddressesStore.state,
-      builder: (context, storeState, _) {
-        final address = storeState is StoreLoaded<List<BuyerAddress>>
-            ? storeState.data
-                .where((a) => a.buyerId == buyerId && a.id == addressId)
-                .firstOrNull
-            : null;
+    return StreamBuilder<List<BuyerAddress>>(
+      stream: BuyerRepository().watchAddresses(buyerId),
+      builder: (context, snapshot) {
+        final address = snapshot.data
+            ?.where((a) => a.id == addressId)
+            .firstOrNull;
         if (address == null) {
           return postalCode != null
               ? _InfoRow(icon: Icons.location_on, text: postalCode!)
@@ -887,7 +884,7 @@ class _AddressDisplay extends StatelessWidget {
           ].join(', '),
           trailing: address.hasMapsAddress
               ? IconButton(
-                  icon: const Icon(Icons.map, size: 16),
+                  icon: const Icon(Icons.location_on, size: 16),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
