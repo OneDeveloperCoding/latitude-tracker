@@ -77,7 +77,7 @@ class RepairCard extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            DateFormat('d MMM y').format(repair.createdAt),
+                            DateFormat('dd MMM yyyy').format(repair.createdAt),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
