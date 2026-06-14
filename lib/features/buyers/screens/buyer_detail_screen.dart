@@ -870,7 +870,7 @@ class _AddressTile extends StatelessWidget {
           children: [
             if (onOpenMaps != null)
               IconButton(
-                icon: const Icon(Icons.map),
+                icon: const Icon(Icons.location_on),
                 onPressed: onOpenMaps,
                 tooltip: s.openInMaps,
               ),
