@@ -7,6 +7,7 @@ import '../../../core/store/store_state.dart';
 import '../models/sale.dart';
 import '../services/sale_urgency.dart';
 import '../services/sale_urgency_ui.dart';
+import '../widgets/component_detail_sheet.dart';
 import 'sale_detail_screen.dart';
 
 const _urgencyOrder = {
@@ -222,14 +223,48 @@ class _ItemMaterialsCard extends StatelessWidget {
               ...entry.needed.map(
                 (c) => Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.shopping_cart_outlined,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.error),
-                      const SizedBox(width: 8),
-                      Text(c.name,
-                          style: Theme.of(context).textTheme.bodyMedium),
+                      Row(
+                        children: [
+                          Icon(Icons.shopping_cart_outlined,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.error),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(c.name,
+                                style:
+                                    Theme.of(context).textTheme.bodyMedium),
+                          ),
+                          if (c.photoUrls.isNotEmpty)
+                            ComponentPhotoBadge(
+                              count: c.photoUrls.length,
+                              onTap: () => showComponentDetailSheet(
+                                context,
+                                component: c,
+                                saleId: entry.sale.id,
+                                itemId: entry.item.id,
+                                isReadOnly: true,
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (c.notes != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 22, top: 2),
+                          child: Text(
+                            c.notes!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

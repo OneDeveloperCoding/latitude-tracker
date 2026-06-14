@@ -20,6 +20,10 @@ class PhotoGrid extends StatefulWidget {
   /// Parent is responsible for deleting from storage when appropriate.
   final ValueChanged<String>? onPhotoRemoved;
 
+  /// When provided, replaces the default [PhotoService.pickAndUpload] call.
+  /// Lets callers supply their own upload path (e.g. component photos).
+  final Future<String?> Function(ImageSource)? uploadCallback;
+
   const PhotoGrid({
     super.key,
     required this.saleId,
@@ -28,6 +32,7 @@ class PhotoGrid extends StatefulWidget {
     required this.onChanged,
     this.onPhotoAdded,
     this.onPhotoRemoved,
+    this.uploadCallback,
   });
 
   @override
@@ -41,11 +46,13 @@ class _PhotoGridState extends State<PhotoGrid> {
   Future<void> _addPhoto(ImageSource source) async {
     setState(() => _uploadingCount++);
     try {
-      final url = await _service.pickAndUpload(
-        saleId: widget.saleId,
-        itemId: widget.itemId,
-        source: source,
-      );
+      final url = widget.uploadCallback != null
+          ? await widget.uploadCallback!(source)
+          : await _service.pickAndUpload(
+              saleId: widget.saleId,
+              itemId: widget.itemId,
+              source: source,
+            );
       if (url != null) {
         widget.onPhotoAdded?.call(url);
         widget.onChanged([...widget.photoUrls, url]);
