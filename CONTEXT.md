@@ -34,6 +34,8 @@ _Avoid_: Production status, build status
 
 **ComponentChecklist**:
 A per-SaleItem list of materials or pieces needed to make that item (e.g. "silver chain", "blue bead"). Each entry is marked as `have` or `need_to_buy`. Acts as a shopping list for that specific SaleItem.
+
+Each entry is a **ComponentItem**: a named material with a stable `id` (UUID), an `isAvailable` toggle, optional `notes` (e.g. "get the 45cm length, not 50cm"), and zero or more `photoUrls` (visual reference for shopping). The `isAvailable` toggle is tappable inline in the checklist. Photos and notes are accessed via a component detail sheet (opened by a separate photo icon on the row), which shows in edit mode (from `SaleItemScreen` / Sale detail) or read-only mode (from `ShoppingList`).
 _Avoid_: Bill of materials, inventory, stock list
 
 **Payment**:
@@ -70,7 +72,7 @@ A geographic view showing the distribution of Sales with a postal code (shipping
 _Avoid_: Geographic report, map view
 
 **ShoppingList**:
-An aggregated view of all materials still needed to complete open Sales. Shows every ComponentItem with `isAvailable: false` grouped by Sale, filtered to Sales that are not yet assembled and not yet delivered.
+An aggregated view of all materials still needed to complete open Sales. Shows every ComponentItem with `isAvailable: false` grouped by Sale, filtered to Sales that are not yet assembled and not yet delivered. Component notes are shown inline below the name when present. A photo count badge on each row opens a read-only photo viewer for visual reference; no upload or edit from this screen.
 _Avoid_: Inventory, stock, bill of materials (those imply tracked quantities)
 
 **UnpaidBalances**:
@@ -89,10 +91,10 @@ _Avoid_: Invoice, filing, tax return
 A read-only export of Sales, Buyers, and BuyerAddresses for a given year, shared via the OS share sheet (Google Drive, email, etc.). Can be re-imported into the app for historical lookup only. The JSON includes `photoUrls` for each Sale — since photos are kept in Firebase Storage after a year purge, they remain viewable in the import screen via those URLs.
 _Avoid_: Backup, dump
 
-**Archive JSON schema (version 1.2)**:
+**Archive JSON schema (version 1.3)**:
 ```json
 {
-  "version": "1.2",
+  "version": "1.3",
   "exportedAt": "<ISO-8601 string>",
   "year": 2026,
   "sales": [
@@ -100,7 +102,12 @@ _Avoid_: Backup, dump
       "id": "<uuid>",
       "buyerId": "...", "buyerName": "...",
       "items": [ { "id": "...", "description": "...", "category": "...", "price": 0.0,
-                   "assemblyStatus": "notStarted|...", "components": [...], "photoUrls": [...] } ],
+                   "assemblyStatus": "notStarted|...",
+                   "components": [
+                     { "id": "<uuid>", "name": "silver chain", "isAvailable": true,
+                       "photoUrls": ["https://..."], "notes": "45cm length" }
+                   ],
+                   "photoUrls": [...] } ],
       "payment": { "status": "paid|unpaid", "method": "mbWay|cash|sumup|bankTransfer" },
       "shipment": { "type": "shipping|pickup|handDelivery", "status": "pending|shipped|delivered",
                     "trackingCode": null, "addressId": null, "postalCode": null },
@@ -125,7 +132,7 @@ _Avoid_: Backup, dump
   ]
 }
 ```
-Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` added a `repairs` array alongside `sales`. Version `"1.2"` adds `handDelivery` as a valid `shipment.type` value. On import, all recognised versions (`"1.0"`, `"1.1"`, `"1.2"`) are accepted; an unknown `DeliveryType` string falls back to `shipping` rather than throwing. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`.
+Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` added a `repairs` array alongside `sales`. Version `"1.2"` adds `handDelivery` as a valid `shipment.type` value. Version `"1.3"` expands the `components` array schema to include `id`, `photoUrls`, and `notes` per ComponentItem. On import, all recognised versions (`"1.0"`, `"1.1"`, `"1.2"`, `"1.3"`) are accepted; an unknown `DeliveryType` string falls back to `shipping` rather than throwing. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`.
 
 ## Relationships
 
@@ -208,6 +215,8 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 **Expandability:** all Storage operations are isolated in `lib/features/sales/services/photo_service.dart`. Swapping the storage backend (e.g. to Google Drive) requires changes only to that file.
 
+**Component photos:** stored at `users/{uid}/sales/{saleId}/items/{itemId}/components/{componentId}/photos/{uuid}.jpg`. Same compression settings. Orphan prevention: cancel edit → session uploads deleted (folded into the SaleItem's `_uploadedInSession` list); delete component → session uploads deleted immediately, pre-existing URLs queued to `_pendingDeletions`; delete SaleItem or delete Sale → covered by `PhotoService.deleteAllPhotos(saleId)` which recursively deletes the entire sale folder. Year purge exception applies: photos kept, Archive JSON includes `photoUrls` per component. From the Sale detail screen, component photo changes save immediately (same pattern as SaleItem photos in the detail view). From `ShoppingList`, photos are view-only — no upload or delete.
+
 **Repair photos:** stored at `users/{uid}/repairs/{repairId}/photos/{uuid}.jpg`. Same compression settings (maxWidth: 1200px, JPEG quality: 85). Same orphan-prevention lifecycle as Sale photos: cancel new repair → delete session uploads; cancel edit → delete only session uploads; delete repair → delete all photos before Firestore doc. Year purge exception applies: photos kept, Archive JSON includes `photoUrls`.
 
 ## Screens
@@ -276,3 +285,5 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 - "components tracking" clarified: resolved to a simple **ComponentChecklist** per Sale, not a full inventory system.
 - "returned" status for Repairs clarified: RepairStatus `returned` alone does not mark a Repair as inactive — it is only removed from the default active list view when *both* RepairStatus is `returned` AND ReturnDelivery status is `delivered`. This preserves visibility during the return-shipping window.
 - Repair analytics placement clarified: Repair analytics live in the existing AnalyticsScreen (new Repairs tab), not a separate screen. This keeps analytics access unified under the Dashboard entry point.
+- ComponentItem interaction model clarified: the `isAvailable` toggle remains inline on the checklist row for fast check-off. A separate photo icon button on the row opens a component detail sheet (edit mode from `SaleItemScreen`/Sale detail; read-only from `ShoppingList`). Quantities were deferred — no `quantity` field until the need is validated (see issue #148).
+- Component photo deletion timing clarified: photos are deleted when the component is **removed**, not when toggled. Session uploads and pre-existing URLs are folded into the SaleItem's existing `_uploadedInSession` / `_pendingDeletions` lists — no separate tracking needed.

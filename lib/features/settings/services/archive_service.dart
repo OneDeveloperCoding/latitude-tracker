@@ -13,8 +13,9 @@ import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 
 // Version 1.1 adds a `repairs` array. Version 1.2 adds `handDelivery` type.
-const _kCurrentArchiveVersion = '1.2';
-const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2'};
+// Version 1.3 expands components with `photoUrls` and `notes`.
+const _kCurrentArchiveVersion = '1.3';
+const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2', '1.3'};
 
 class ImportResult {
   final int salesImported;

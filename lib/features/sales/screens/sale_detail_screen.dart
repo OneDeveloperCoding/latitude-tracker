@@ -22,6 +22,8 @@ import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../services/sale_urgency_ui.dart';
+import '../services/photo_service.dart';
+import '../widgets/component_detail_sheet.dart';
 import '../widgets/photo_grid.dart';
 import 'new_sale_screen.dart';
 
@@ -486,6 +488,7 @@ class _ItemDetailSheet extends StatefulWidget {
 
 class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   final _componentController = TextEditingController();
+  final _photoService = PhotoService();
   late SaleItem _item;
 
   @override
@@ -511,12 +514,33 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     widget.onUpdateItem(updated);
   }
 
-  void _removeComponent(ComponentItem c) {
+  Future<void> _removeComponent(ComponentItem c) async {
+    for (final url in c.photoUrls) {
+      await _photoService.deletePhoto(url);
+    }
     final updated = _item.withUpdatedComponents(
       _item.components.where((ci) => ci.id != c.id).toList(),
     );
     setState(() => _item = updated);
     widget.onUpdateItem(updated);
+  }
+
+  Future<void> _openComponentSheet(ComponentItem c) async {
+    await showComponentDetailSheet(
+      context,
+      component: c,
+      saleId: widget.saleId,
+      itemId: _item.id,
+      onChanged: (updated) {
+        final newItem = _item.withUpdatedComponents(
+          _item.components
+              .map((ci) => ci.id == updated.id ? updated : ci)
+              .toList(),
+        );
+        setState(() => _item = newItem);
+        widget.onUpdateItem(newItem);
+      },
+    );
   }
 
   void _addComponent() {
@@ -628,6 +652,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       Text(c.isAvailable ? s.haveIt : s.needToBuy),
                   value: c.isAvailable,
                   onChanged: (_) => _toggleComponent(c),
+                  secondary: ComponentPhotoBadge(
+                    count: c.photoUrls.length,
+                    onTap: () => _openComponentSheet(c),
+                  ),
                 ),
               )),
           const SizedBox(height: 8),

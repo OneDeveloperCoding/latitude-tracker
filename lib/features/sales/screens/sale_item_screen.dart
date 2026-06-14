@@ -6,6 +6,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../models/sale.dart';
 import '../services/photo_service.dart';
 import '../widgets/category_picker.dart';
+import '../widgets/component_detail_sheet.dart';
 import '../widgets/photo_grid.dart';
 
 /// Full-screen editor for adding or editing a single SaleItem.
@@ -37,6 +38,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
   late List<ComponentItem> _components;
   late List<String> _photoUrls;
   late final List<String> _originalPhotoUrls;
+  late final Set<String> _originalComponentPhotoUrls;
   final List<String> _uploadedInSession = [];
   final List<String> _pendingDeletions = [];
 
@@ -55,6 +57,9 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     _components = List.from(item?.components ?? []);
     _photoUrls = List.from(item?.photoUrls ?? []);
     _originalPhotoUrls = List.from(item?.photoUrls ?? []);
+    _originalComponentPhotoUrls = {
+      for (final c in item?.components ?? []) ...c.photoUrls,
+    };
   }
 
   @override
@@ -135,10 +140,45 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
   }
 
   void _removeComponent(int index) {
+    final component = _components[index];
+    for (final url in component.photoUrls) {
+      if (_originalComponentPhotoUrls.contains(url)) {
+        _pendingDeletions.add(url);
+      } else {
+        _photoService.deletePhoto(url);
+        _uploadedInSession.remove(url);
+      }
+    }
     setState(() {
       final updated = List<ComponentItem>.from(_components)..removeAt(index);
       _applyComponentDerivation(updated);
     });
+  }
+
+  Future<void> _openComponentSheet(int index) async {
+    final component = _components[index];
+    await showComponentDetailSheet(
+      context,
+      component: component,
+      saleId: widget.saleId,
+      itemId: _itemId,
+      onChanged: (updated) {
+        setState(() {
+          final list = List<ComponentItem>.from(_components);
+          list[index] = updated;
+          _applyComponentDerivation(list);
+        });
+      },
+      onPhotoAdded: (url) => _uploadedInSession.add(url),
+      onPhotoRemoved: (url) {
+        if (_originalComponentPhotoUrls.contains(url)) {
+          _pendingDeletions.add(url);
+        } else {
+          _photoService.deletePhoto(url);
+          _uploadedInSession.remove(url);
+        }
+      },
+    );
   }
 
   void _applyComponentDerivation(List<ComponentItem> updated) {
@@ -273,9 +313,19 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                               : s.needToBuy),
                           value: entry.value.isAvailable,
                           onChanged: (_) => _toggleComponent(entry.key),
-                          secondary: IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => _removeComponent(entry.key),
+                          secondary: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ComponentPhotoBadge(
+                                count: entry.value.photoUrls.length,
+                                onTap: () => _openComponentSheet(entry.key),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 18),
+                                onPressed: () =>
+                                    _removeComponent(entry.key),
+                              ),
+                            ],
                           ),
                         ),
                       ),
