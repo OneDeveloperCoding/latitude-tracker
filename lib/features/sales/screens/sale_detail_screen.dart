@@ -849,7 +849,7 @@ class _ScheduledDateField extends StatelessWidget {
   }
 }
 
-class _AddressDisplay extends StatelessWidget {
+class _AddressDisplay extends StatefulWidget {
   final String buyerId;
   final String addressId;
   final String? postalCode;
@@ -861,16 +861,34 @@ class _AddressDisplay extends StatelessWidget {
   });
 
   @override
+  State<_AddressDisplay> createState() => _AddressDisplayState();
+}
+
+class _AddressDisplayState extends State<_AddressDisplay> {
+  late Stream<List<BuyerAddress>> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = BuyerRepository().watchAddresses(widget.buyerId);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<BuyerAddress>>(
-      stream: BuyerRepository().watchAddresses(buyerId),
+      stream: _stream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
+              : const SizedBox.shrink();
+        }
         final address = snapshot.data
-            ?.where((a) => a.id == addressId)
+            ?.where((a) => a.id == widget.addressId)
             .firstOrNull;
         if (address == null) {
-          return postalCode != null
-              ? _InfoRow(icon: Icons.location_on, text: postalCode!)
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
               : const SizedBox.shrink();
         }
         return _InfoRow(
@@ -884,7 +902,7 @@ class _AddressDisplay extends StatelessWidget {
           ].join(', '),
           trailing: address.hasMapsAddress
               ? IconButton(
-                  icon: const Icon(Icons.location_on, size: 16),
+                  icon: const Icon(Icons.map, size: 16),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
