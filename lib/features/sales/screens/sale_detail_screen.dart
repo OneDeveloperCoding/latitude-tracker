@@ -902,7 +902,7 @@ class _AddressDisplayState extends State<_AddressDisplay> {
           ].join(', '),
           trailing: address.hasMapsAddress
               ? IconButton(
-                  icon: const Icon(Icons.map, size: 16),
+                  icon: const Icon(Icons.location_on, size: 16),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
