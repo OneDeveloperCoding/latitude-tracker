@@ -10,7 +10,6 @@ import '../../../core/constants.dart';
 import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
-import '../../../core/store/addresses_store.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
@@ -850,7 +849,7 @@ class _ScheduledDateField extends StatelessWidget {
   }
 }
 
-class _AddressDisplay extends StatelessWidget {
+class _AddressDisplay extends StatefulWidget {
   final String buyerId;
   final String addressId;
   final String? postalCode;
@@ -862,18 +861,34 @@ class _AddressDisplay extends StatelessWidget {
   });
 
   @override
+  State<_AddressDisplay> createState() => _AddressDisplayState();
+}
+
+class _AddressDisplayState extends State<_AddressDisplay> {
+  late Stream<List<BuyerAddress>> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = BuyerRepository().watchAddresses(widget.buyerId);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<StoreState<List<BuyerAddress>>>(
-      valueListenable: AddressesStore.state,
-      builder: (context, storeState, _) {
-        final address = storeState is StoreLoaded<List<BuyerAddress>>
-            ? storeState.data
-                .where((a) => a.buyerId == buyerId && a.id == addressId)
-                .firstOrNull
-            : null;
+    return StreamBuilder<List<BuyerAddress>>(
+      stream: _stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
+              : const SizedBox.shrink();
+        }
+        final address = snapshot.data
+            ?.where((a) => a.id == widget.addressId)
+            .firstOrNull;
         if (address == null) {
-          return postalCode != null
-              ? _InfoRow(icon: Icons.location_on, text: postalCode!)
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
               : const SizedBox.shrink();
         }
         return _InfoRow(
