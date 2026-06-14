@@ -161,6 +161,12 @@ class _RepairDetailBody extends StatelessWidget {
                 title: Text(repair.problemDescription),
                 subtitle: Text(s.repairProblemLabel),
               ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today),
+                title: Text(DateFormat('dd MMM yyyy').format(repair.createdAt)),
+                subtitle: Text(s.receivedLabel),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -278,16 +284,6 @@ class _RepairDetailBody extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              '${s.receivedLabel}: ${DateFormat('d MMM y').format(repair.createdAt)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ),
         ],
       ),
     );

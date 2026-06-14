@@ -964,7 +964,10 @@ class _SaleCard extends StatelessWidget {
                   _AgeLabel(sale: sale),
                   const Spacer(),
                   if (sale.scheduledDate != null)
-                    _ScheduledDateLabel(sale: sale),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: _ScheduledDateLabel(sale: sale),
+                    ),
                 ],
               ),
               Column(
@@ -1120,6 +1123,8 @@ class _AgeLabel extends StatelessWidget {
 }
 
 class _ScheduledDateLabel extends StatelessWidget {
+  static final _dateFormat = DateFormat('dd MMM');
+
   final Sale sale;
 
   const _ScheduledDateLabel({required this.sale});
@@ -1143,22 +1148,39 @@ class _ScheduledDateLabel extends StatelessWidget {
       color = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
-    final String label = isDelivered
-        ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}'
-        : days < 0
-            ? '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)} (${s.daysOverdue(days.abs())})'
-            : days == 0
-                ? '📅 ${s.today}'
-                : days == 1
-                    ? '📅 ${s.tomorrow}'
-                    : '📅 ${DateFormat('dd MMM').format(sale.scheduledDate!)}';
+    final formattedDate = _dateFormat.format(sale.scheduledDate!);
+    final String label;
+    if (isDelivered) {
+      label = formattedDate;
+    } else if (days < 0) {
+      label = '$formattedDate (${s.daysOverdue(days.abs())})';
+    } else if (days == 0) {
+      label = s.today;
+    } else if (days == 1) {
+      label = s.tomorrow;
+    } else {
+      label = formattedDate;
+    }
 
-    return Text(
-      label,
-      style: Theme.of(context)
-          .textTheme
-          .labelSmall
-          ?.copyWith(color: color, fontWeight: FontWeight.w500),
+    final textStyle = Theme.of(context)
+        .textTheme
+        .labelSmall
+        ?.copyWith(color: color, fontWeight: FontWeight.w500);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.event, size: 12, color: color, semanticLabel: ''),
+        const SizedBox(width: 3),
+        Flexible(
+          child: Text(
+            label,
+            style: textStyle,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+          ),
+        ),
+      ],
     );
   }
 }

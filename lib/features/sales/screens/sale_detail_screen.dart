@@ -10,7 +10,6 @@ import '../../../core/constants.dart';
 import '../../../core/theme/color_scheme_ext.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
-import '../../../core/store/addresses_store.dart';
 import '../../../core/store/buyers_store.dart';
 import '../../buyers/models/buyer.dart';
 import '../../buyers/models/buyer_address.dart';
@@ -23,6 +22,8 @@ import '../../repairs/screens/repair_detail_screen.dart';
 import '../models/sale.dart';
 import '../repositories/sale_repository.dart';
 import '../services/sale_urgency_ui.dart';
+import '../services/photo_service.dart';
+import '../widgets/component_detail_sheet.dart';
 import '../widgets/photo_grid.dart';
 import 'new_sale_screen.dart';
 
@@ -487,6 +488,10 @@ class _ItemDetailSheet extends StatefulWidget {
 
 class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   final _componentController = TextEditingController();
+  final _photoService = PhotoService();
+  // Tracks URLs of component photos uploaded while this sheet is open, so
+  // orphans can be deleted if the sheet is dismissed before onChanged fires.
+  final _sessionComponentUploads = <String>{};
   late SaleItem _item;
 
   @override
@@ -498,6 +503,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   @override
   void dispose() {
     _componentController.dispose();
+    final committedUrls = {
+      for (final c in _item.components) ...c.photoUrls,
+    };
+    for (final url in _sessionComponentUploads) {
+      if (!committedUrls.contains(url)) {
+        // Upload landed in Storage but the sheet was dismissed before the
+        // Firestore write confirmed — delete the orphan best-effort.
+        _photoService.deletePhoto(url);
+      }
+    }
     super.dispose();
   }
 
@@ -512,12 +527,41 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     widget.onUpdateItem(updated);
   }
 
+  // Void (not async) so Dismissible.onDismissed can call it without
+  // discarding a Future. Firestore write happens first for consistency;
+  // Storage deletes follow as acknowledged fire-and-forget.
   void _removeComponent(ComponentItem c) {
     final updated = _item.withUpdatedComponents(
       _item.components.where((ci) => ci.id != c.id).toList(),
     );
     setState(() => _item = updated);
     widget.onUpdateItem(updated);
+    for (final url in c.photoUrls) {
+      _photoService.deletePhoto(url);
+    }
+  }
+
+  Future<void> _openComponentSheet(ComponentItem c) async {
+    await showComponentDetailSheet(
+      context,
+      component: c,
+      saleId: widget.saleId,
+      itemId: _item.id,
+      onChanged: (updated) {
+        final newItem = _item.withUpdatedComponents(
+          _item.components
+              .map((ci) => ci.id == updated.id ? updated : ci)
+              .toList(),
+        );
+        setState(() => _item = newItem);
+        widget.onUpdateItem(newItem);
+      },
+      onPhotoAdded: (url) => _sessionComponentUploads.add(url),
+      onPhotoRemoved: (url) {
+        _sessionComponentUploads.remove(url);
+        _photoService.deletePhoto(url);
+      },
+    );
   }
 
   void _addComponent() {
@@ -629,6 +673,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       Text(c.isAvailable ? s.haveIt : s.needToBuy),
                   value: c.isAvailable,
                   onChanged: (_) => _toggleComponent(c),
+                  secondary: ComponentPhotoBadge(
+                    count: c.photoUrls.length,
+                    onTap: () => _openComponentSheet(c),
+                  ),
                 ),
               )),
           const SizedBox(height: 8),
@@ -850,7 +898,7 @@ class _ScheduledDateField extends StatelessWidget {
   }
 }
 
-class _AddressDisplay extends StatelessWidget {
+class _AddressDisplay extends StatefulWidget {
   final String buyerId;
   final String addressId;
   final String? postalCode;
@@ -862,18 +910,34 @@ class _AddressDisplay extends StatelessWidget {
   });
 
   @override
+  State<_AddressDisplay> createState() => _AddressDisplayState();
+}
+
+class _AddressDisplayState extends State<_AddressDisplay> {
+  late Stream<List<BuyerAddress>> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = BuyerRepository().watchAddresses(widget.buyerId);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<StoreState<List<BuyerAddress>>>(
-      valueListenable: AddressesStore.state,
-      builder: (context, storeState, _) {
-        final address = storeState is StoreLoaded<List<BuyerAddress>>
-            ? storeState.data
-                .where((a) => a.buyerId == buyerId && a.id == addressId)
-                .firstOrNull
-            : null;
+    return StreamBuilder<List<BuyerAddress>>(
+      stream: _stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
+              : const SizedBox.shrink();
+        }
+        final address = snapshot.data
+            ?.where((a) => a.id == widget.addressId)
+            .firstOrNull;
         if (address == null) {
-          return postalCode != null
-              ? _InfoRow(icon: Icons.location_on, text: postalCode!)
+          return widget.postalCode != null
+              ? _InfoRow(icon: Icons.location_on, text: widget.postalCode!)
               : const SizedBox.shrink();
         }
         return _InfoRow(
@@ -887,7 +951,7 @@ class _AddressDisplay extends StatelessWidget {
           ].join(', '),
           trailing: address.hasMapsAddress
               ? IconButton(
-                  icon: const Icon(Icons.map, size: 16),
+                  icon: const Icon(Icons.location_on, size: 16),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
