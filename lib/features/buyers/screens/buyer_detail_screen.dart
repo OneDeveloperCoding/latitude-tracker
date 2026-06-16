@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/error_reporter.dart';
 import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
@@ -34,6 +35,7 @@ class BuyerDetailScreen extends StatefulWidget {
 class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
   late final BuyerRepository _buyerRepo;
   late final Stream<Buyer?> _buyerStream;
+  bool _popping = false;
 
   @override
   void initState() {
@@ -58,10 +60,16 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
         final buyer = snapshot.data;
 
         if (buyer == null) {
-          if (snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
             // Buyer deleted on another device — navigate back after this frame.
+            // Direct assignment without setState: setState is forbidden inside a
+            // builder callback. The Dart single-thread model guarantees subsequent
+            // builder calls see the updated value before another callback is queued.
+            _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (context.mounted) Navigator.of(context).pop();
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
             });
           }
           return Scaffold(
@@ -131,8 +139,12 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
     if (confirmed != true || !context.mounted) return;
     try {
       await _buyerRepo.deleteBuyer(buyer.id);
-      if (context.mounted) Navigator.pop(context);
-    } catch (e) {
+      if (context.mounted) {
+        _popping = true;
+        Navigator.pop(context);
+      }
+    } catch (e, st) {
+      logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorDeletingBuyerMsg(e))),
