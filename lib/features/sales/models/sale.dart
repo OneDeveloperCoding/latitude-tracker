@@ -63,6 +63,8 @@ extension ShipmentStatusLabel on ShipmentStatus {
       };
 }
 
+const kMaxComponentQuantity = 9999;
+
 class ComponentItem {
   final String id;
   final String name;
@@ -83,7 +85,7 @@ class ComponentItem {
   factory ComponentItem.fromMap(Map<String, dynamic> map) => ComponentItem(
         id: map['id'] as String? ?? newId(),
         name: map['name'] as String? ?? '',
-        quantity: map['quantity'] as int? ?? 1,
+        quantity: (map['quantity'] as num?)?.toInt() ?? 1,
         isAvailable: map['isAvailable'] as bool? ?? false,
         photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
         notes: map['notes'] as String?,
@@ -113,6 +115,9 @@ class ComponentItem {
         photoUrls: photoUrls ?? this.photoUrls,
         notes: notes == _sentinel ? this.notes : notes as String?,
       );
+
+  ComponentItem adjustedQuantity(int delta) =>
+      copyWith(quantity: (quantity + delta).clamp(1, kMaxComponentQuantity));
 }
 
 const _sentinel = Object();

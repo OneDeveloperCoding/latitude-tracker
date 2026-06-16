@@ -1,3 +1,5 @@
+import 'dart:async' show Timer;
+
 import '../../../core/id_gen.dart';
 import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
@@ -492,6 +494,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   // Tracks URLs of component photos uploaded while this sheet is open, so
   // orphans can be deleted if the sheet is dismissed before onChanged fires.
   final _sessionComponentUploads = <String>{};
+  Timer? _quantityDebounce;
   late SaleItem _item;
 
   @override
@@ -502,6 +505,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   @override
   void dispose() {
+    _quantityDebounce?.cancel();
     _componentController.dispose();
     final committedUrls = {
       for (final c in _item.components) ...c.photoUrls,
@@ -530,13 +534,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   void _adjustQuantity(ComponentItem c, int delta) {
     final updated = _item.copyWith(
       components: _item.components
-          .map((ci) => ci.id == c.id
-              ? ci.copyWith(quantity: (c.quantity + delta).clamp(1, 99))
-              : ci)
+          .map((ci) => ci.id == c.id ? ci.adjustedQuantity(delta) : ci)
           .toList(),
     );
     setState(() => _item = updated);
-    widget.onUpdateItem(updated);
+    _quantityDebounce?.cancel();
+    _quantityDebounce = Timer(const Duration(milliseconds: 600), () {
+      widget.onUpdateItem(updated);
+    });
   }
 
   // Void (not async) so Dismissible.onDismissed can call it without

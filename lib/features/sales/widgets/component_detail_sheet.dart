@@ -295,7 +295,9 @@ class ComponentQuantityStepper extends StatelessWidget {
         _StepButton(
           icon: Icons.add,
           color: color,
-          onPressed: () => onChanged(quantity + 1),
+          onPressed: quantity < kMaxComponentQuantity
+              ? () => onChanged(quantity + 1)
+              : null,
         ),
       ],
     );

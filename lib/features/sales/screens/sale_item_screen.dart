@@ -144,8 +144,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
   void _adjustQuantity(int index, int delta) {
     setState(() {
       final updated = List<ComponentItem>.from(_components);
-      final current = updated[index].quantity;
-      updated[index] = updated[index].copyWith(quantity: (current + delta).clamp(1, 99));
+      updated[index] = updated[index].adjustedQuantity(delta);
       _components = updated;
     });
   }
