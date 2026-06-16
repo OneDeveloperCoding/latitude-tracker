@@ -15,6 +15,7 @@ import '../../sales/screens/sale_detail_screen.dart';
 import '../../sales/widgets/photo_grid.dart';
 import '../models/repair.dart';
 import '../repositories/repair_repository.dart';
+import '../widgets/repair_status_colors.dart';
 import 'new_repair_screen.dart';
 
 class RepairDetailScreen extends StatefulWidget {
@@ -173,12 +174,7 @@ class _RepairDetailBody extends StatelessWidget {
           _SectionCard(
             title: s.repairSectionWork,
             children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.build_outlined),
-                title: Text(s.repairStatusLabelFor(repair.status)),
-                subtitle: Text(s.repairStatusLabel),
-              ),
+              _RepairStatusPicker(repair: repair),
               if (repair.workDone.isNotEmpty)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -419,6 +415,96 @@ class _LinkedSaleRow extends StatelessWidget {
   }
 }
 
+
+class _RepairStatusPicker extends StatefulWidget {
+  final Repair repair;
+
+  const _RepairStatusPicker({required this.repair});
+
+  @override
+  State<_RepairStatusPicker> createState() => _RepairStatusPickerState();
+}
+
+class _RepairStatusPickerState extends State<_RepairStatusPicker> {
+  bool _isUpdating = false;
+  RepairStatus? _optimisticStatus;
+
+  Future<void> _select(RepairStatus status) async {
+    final repair = widget.repair;
+    if (status == repair.status) return;
+
+    setState(() {
+      _optimisticStatus = status;
+      _isUpdating = true;
+    });
+    try {
+      await RepairRepository().updateRepair(repair.copyWith(status: status));
+    } catch (e, st) {
+      logError(e, st);
+      if (mounted) {
+        setState(() => _optimisticStatus = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.errorSavingRepair)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final cs = Theme.of(context).colorScheme;
+    final selectedStatus = _optimisticStatus ?? widget.repair.status;
+    final isDemoMode = DemoMode.active.value;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              Text(s.repairStatusLabel, style: Theme.of(context).textTheme.bodySmall),
+              if (_isUpdating) ...[
+                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: RepairStatus.values.map((status) {
+              final (color, onColor) =
+                  repairStatusContainerColors(status, cs);
+              final isSelected = status == selectedStatus;
+              return ChoiceChip(
+                label: Text(s.repairStatusLabelFor(status)),
+                selected: isSelected,
+                onSelected: (isDemoMode || _isUpdating)
+                    ? null
+                    : (_) => _select(status),
+                selectedColor: color,
+                labelStyle: isSelected
+                    ? TextStyle(color: onColor)
+                    : null,
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _ReturnDeliveryActions extends StatefulWidget {
   final Repair repair;
