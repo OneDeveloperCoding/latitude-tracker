@@ -35,7 +35,7 @@ _Avoid_: Production status, build status
 **ComponentChecklist**:
 A per-SaleItem list of materials or pieces needed to make that item (e.g. "silver chain", "blue bead"). Each entry is marked as `have` or `need_to_buy`. Acts as a shopping list for that specific SaleItem.
 
-Each entry is a **ComponentItem**: a named material with a stable `id` (UUID), an `isAvailable` toggle, optional `notes` (e.g. "get the 45cm length, not 50cm"), and zero or more `photoUrls` (visual reference for shopping). The `isAvailable` toggle is tappable inline in the checklist. Photos and notes are accessed via a component detail sheet (opened by a separate photo icon on the row), which shows in edit mode (from `SaleItemScreen` / Sale detail) or read-only mode (from `ShoppingList`).
+Each entry is a **ComponentItem**: a named material with a stable `id` (UUID), a `quantity: int` (how many are needed, default 1), an `isAvailable` toggle, optional `notes` (e.g. "get the 45cm length, not 50cm"), and zero or more `photoUrls` (visual reference for shopping). The `isAvailable` toggle is all-or-nothing — toggling means "I have all N" / "I still need all N"; partial acquisition is not tracked. The `isAvailable` toggle and a `−/+` quantity stepper are both inline on the checklist row. Photos and notes are accessed via a component detail sheet (opened by a separate photo icon on the row), which shows in edit mode (from `SaleItemScreen` / Sale detail) or read-only mode (from `ShoppingList`). The ShoppingList shows `× N` next to the component name only when `quantity > 1`.
 _Avoid_: Bill of materials, inventory, stock list
 
 **Payment**:
@@ -104,7 +104,7 @@ _Avoid_: Backup, dump
       "items": [ { "id": "...", "description": "...", "category": "...", "price": 0.0,
                    "assemblyStatus": "notStarted|...",
                    "components": [
-                     { "id": "<uuid>", "name": "silver chain", "isAvailable": true,
+                     { "id": "<uuid>", "name": "silver chain", "quantity": 1, "isAvailable": true,
                        "photoUrls": ["https://..."], "notes": "45cm length" }
                    ],
                    "photoUrls": [...] } ],
@@ -132,7 +132,7 @@ _Avoid_: Backup, dump
   ]
 }
 ```
-Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` added a `repairs` array alongside `sales`. Version `"1.2"` adds `handDelivery` as a valid `shipment.type` value. Version `"1.3"` expands the `components` array schema to include `id`, `photoUrls`, and `notes` per ComponentItem. On import, all recognised versions (`"1.0"`, `"1.1"`, `"1.2"`, `"1.3"`) are accepted; an unknown `DeliveryType` string falls back to `shipping` rather than throwing. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`.
+Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and converted back to Firestore Timestamps on import. Version `"1.1"` added a `repairs` array alongside `sales`. Version `"1.2"` adds `handDelivery` as a valid `shipment.type` value. Version `"1.3"` expands the `components` array schema to include `id`, `photoUrls`, and `notes` per ComponentItem. On import, all recognised versions (`"1.0"`, `"1.1"`, `"1.2"`, `"1.3"`, `"1.4"`) are accepted; an unknown `DeliveryType` string falls back to `shipping` rather than throwing. `ArchiveService` rejects archives whose `version` field is not a recognised version with a `FormatException`. Version `"1.4"` adds `quantity: int` to each ComponentItem entry; archives from earlier versions default `quantity` to `1` on import.
 
 ## Relationships
 
@@ -285,5 +285,6 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 - "components tracking" clarified: resolved to a simple **ComponentChecklist** per Sale, not a full inventory system.
 - "returned" status for Repairs clarified: RepairStatus `returned` alone does not mark a Repair as inactive — it is only removed from the default active list view when *both* RepairStatus is `returned` AND ReturnDelivery status is `delivered`. This preserves visibility during the return-shipping window.
 - Repair analytics placement clarified: Repair analytics live in the existing AnalyticsScreen (new Repairs tab), not a separate screen. This keeps analytics access unified under the Dashboard entry point.
-- ComponentItem interaction model clarified: the `isAvailable` toggle remains inline on the checklist row for fast check-off. A separate photo icon button on the row opens a component detail sheet (edit mode from `SaleItemScreen`/Sale detail; read-only from `ShoppingList`). Quantities were deferred — no `quantity` field until the need is validated (see issue #148).
+- ComponentItem interaction model clarified: the `isAvailable` toggle and `−/+` quantity stepper are both inline on the checklist row. A separate photo icon button opens a component detail sheet (edit mode from `SaleItemScreen`/Sale detail; read-only from `ShoppingList`). Toggle is all-or-nothing regardless of quantity — "I have all N" / "I still need all N"; partial acquisition is not tracked.
+- `AssemblyStatus` is fully manual — toggling ComponentItem availability has no effect on AssemblyStatus. The ComponentChecklist is the materials signal; AssemblyStatus is the assembly signal. Cross-SaleItem component aggregation (summing quantities of same-named components across SaleItems) is deferred to a future issue.
 - Component photo deletion timing clarified: photos are deleted when the component is **removed**, not when toggled. Session uploads and pre-existing URLs are folded into the SaleItem's existing `_uploadedInSession` / `_pendingDeletions` lists — no separate tracking needed.

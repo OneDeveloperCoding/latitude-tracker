@@ -1,73 +1,34 @@
 import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
-ComponentItem _component(String id, {required bool available}) =>
-    ComponentItem(id: id, name: id, isAvailable: available);
+ComponentItem _component(String id, {required bool available, int quantity = 1}) =>
+    ComponentItem(id: id, name: id, quantity: quantity, isAvailable: available);
 
 void main() {
-  group('SaleItem.deriveAssemblyStatus', () {
-    test('waitingForMaterials is never changed', () {
-      final allAvailable = [_component('a', available: true)];
-      expect(
-        SaleItem.deriveAssemblyStatus(
-            allAvailable, AssemblyStatus.waitingForMaterials),
-        AssemblyStatus.waitingForMaterials,
-      );
+  group('ComponentItem.quantity', () {
+    test('defaults to 1 when not provided', () {
+      const c = ComponentItem(id: 'x', name: 'x', isAvailable: false);
+      expect(c.quantity, 1);
     });
 
-    test('notStarted + all available → ready', () {
-      final components = [
-        _component('a', available: true),
-        _component('b', available: true),
-      ];
-      expect(
-        SaleItem.deriveAssemblyStatus(components, AssemblyStatus.notStarted),
-        AssemblyStatus.ready,
-      );
+    test('round-trips through toMap / fromMap', () {
+      final original = _component('a', available: false, quantity: 3);
+      final restored = ComponentItem.fromMap(original.toMap());
+      expect(restored.quantity, 3);
+      expect(restored.isAvailable, false);
     });
 
-    test('inProgress + all available → ready', () {
-      final components = [_component('a', available: true)];
-      expect(
-        SaleItem.deriveAssemblyStatus(components, AssemblyStatus.inProgress),
-        AssemblyStatus.ready,
-      );
+    test('fromMap defaults quantity to 1 when field is absent', () {
+      final map = {'id': 'a', 'name': 'a', 'isAvailable': false};
+      expect(ComponentItem.fromMap(map).quantity, 1);
     });
 
-    test('ready + some unavailable → inProgress', () {
-      final components = [
-        _component('a', available: true),
-        _component('b', available: false),
-      ];
-      expect(
-        SaleItem.deriveAssemblyStatus(components, AssemblyStatus.ready),
-        AssemblyStatus.inProgress,
-      );
-    });
-
-    test('notStarted + some unavailable stays notStarted', () {
-      final components = [_component('a', available: false)];
-      expect(
-        SaleItem.deriveAssemblyStatus(components, AssemblyStatus.notStarted),
-        AssemblyStatus.notStarted,
-      );
-    });
-
-    test('empty components + notStarted stays notStarted', () {
-      // allAvailable requires isNotEmpty — empty list is treated as not ready.
-      expect(
-        SaleItem.deriveAssemblyStatus(const [], AssemblyStatus.notStarted),
-        AssemblyStatus.notStarted,
-      );
-    });
-
-    test('empty components + ready → inProgress', () {
-      // If all components were removed after the assembly was marked ready,
-      // it reverts to inProgress.
-      expect(
-        SaleItem.deriveAssemblyStatus(const [], AssemblyStatus.ready),
-        AssemblyStatus.inProgress,
-      );
+    test('copyWith updates quantity independently', () {
+      final original = _component('a', available: false, quantity: 2);
+      final updated = original.copyWith(quantity: 5);
+      expect(updated.quantity, 5);
+      expect(updated.isAvailable, false);
+      expect(updated.name, 'a');
     });
   });
 

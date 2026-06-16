@@ -517,10 +517,22 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   void _toggleComponent(ComponentItem c) {
-    final updated = _item.withUpdatedComponents(
-      _item.components
+    final updated = _item.copyWith(
+      components: _item.components
           .map((ci) =>
               ci.id == c.id ? ci.copyWith(isAvailable: !c.isAvailable) : ci)
+          .toList(),
+    );
+    setState(() => _item = updated);
+    widget.onUpdateItem(updated);
+  }
+
+  void _adjustQuantity(ComponentItem c, int delta) {
+    final updated = _item.copyWith(
+      components: _item.components
+          .map((ci) => ci.id == c.id
+              ? ci.copyWith(quantity: (c.quantity + delta).clamp(1, 99))
+              : ci)
           .toList(),
     );
     setState(() => _item = updated);
@@ -531,8 +543,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   // discarding a Future. Firestore write happens first for consistency;
   // Storage deletes follow as acknowledged fire-and-forget.
   void _removeComponent(ComponentItem c) {
-    final updated = _item.withUpdatedComponents(
-      _item.components.where((ci) => ci.id != c.id).toList(),
+    final updated = _item.copyWith(
+      components: _item.components.where((ci) => ci.id != c.id).toList(),
     );
     setState(() => _item = updated);
     widget.onUpdateItem(updated);
@@ -548,8 +560,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       saleId: widget.saleId,
       itemId: _item.id,
       onChanged: (updated) {
-        final newItem = _item.withUpdatedComponents(
-          _item.components
+        final newItem = _item.copyWith(
+          components: _item.components
               .map((ci) => ci.id == updated.id ? updated : ci)
               .toList(),
         );
@@ -567,14 +579,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   void _addComponent() {
     final name = _componentController.text.trim();
     if (name.isEmpty) return;
-    final updated = _item.withUpdatedComponents([
-      ..._item.components,
-      ComponentItem(
-        id: newId(),
-        name: name,
-        isAvailable: false,
-      ),
-    ]);
+    final updated = _item.copyWith(
+      components: [
+        ..._item.components,
+        ComponentItem(id: newId(), name: name, isAvailable: false),
+      ],
+    );
     setState(() {
       _item = updated;
       _componentController.clear();
@@ -668,7 +678,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 child: CheckboxListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(c.name),
+                  title: Row(
+                    children: [
+                      Expanded(child: Text(c.name)),
+                      ComponentQuantityStepper(
+                        quantity: c.quantity,
+                        onChanged: (q) => _adjustQuantity(c, q - c.quantity),
+                      ),
+                    ],
+                  ),
                   subtitle:
                       Text(c.isAvailable ? s.haveIt : s.needToBuy),
                   value: c.isAvailable,
