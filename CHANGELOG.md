@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0] — 2026-06-17
+
+### Features
+- Inline RepairStatus picker on Repair detail screen — status can be changed directly in the detail view without navigating away; stale optimistic state is cleared on external Firestore update
+- Buyer detail screen now shows the buyer's full repair history alongside their sale history; sales filter state is preserved across tab switches
+- `ComponentItem` now has a quantity field; `AssemblyStatus` is set manually rather than derived from checklist completion
+
+### Fixes
+- `BuyerDetailScreen` pop guarded against a double-pop race condition that could crash navigation when the screen was dismissed while a stream update was in flight
+- `SafeArea` added to `SalesRepairsTabScreen` so content clears the status bar correctly
+
+---
+
 ## [1.6.0] — 2026-06-14
 
 ### Features
