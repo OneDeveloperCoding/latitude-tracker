@@ -5,6 +5,34 @@ ComponentItem _component(String id, {required bool available, int quantity = 1})
     ComponentItem(id: id, name: id, quantity: quantity, isAvailable: available);
 
 void main() {
+  group('AssemblyStatus is fully manual', () {
+    test('updating components via copyWith never changes assemblyStatus', () {
+      final item = SaleItem(
+        id: 'i1',
+        description: 'test',
+        category: 'x',
+        price: 10,
+        assemblyStatus: AssemblyStatus.notStarted,
+        components: [_component('a', available: false)],
+      );
+      final allAvailable = item.copyWith(
+        components: [_component('a', available: true)],
+      );
+      expect(allAvailable.assemblyStatus, AssemblyStatus.notStarted,
+          reason: 'assemblyStatus must not auto-derive from component availability');
+    });
+
+    test('adjustedQuantity clamps to [1, kMaxComponentQuantity]', () {
+      final c = _component('a', available: false, quantity: 2);
+      expect(c.adjustedQuantity(1).quantity, 3);
+      expect(c.adjustedQuantity(-1).quantity, 1);
+      expect(c.adjustedQuantity(-5).quantity, 1);
+      expect(c.adjustedQuantity(148).quantity, 150);
+      final atMax = _component('a', available: false, quantity: kMaxComponentQuantity);
+      expect(atMax.adjustedQuantity(1).quantity, kMaxComponentQuantity);
+    });
+  });
+
   group('ComponentItem.quantity', () {
     test('defaults to 1 when not provided', () {
       const c = ComponentItem(id: 'x', name: 'x', isAvailable: false);
