@@ -233,9 +233,10 @@ class _ItemMaterialsCard extends StatelessWidget {
                               color: Theme.of(context).colorScheme.error),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(c.name,
-                                style:
-                                    Theme.of(context).textTheme.bodyMedium),
+                            child: Text(
+                              c.quantity > 1 ? '${c.name} × ${c.quantity}' : c.name,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ),
                           if (c.photoUrls.isNotEmpty)
                             ComponentPhotoBadge(

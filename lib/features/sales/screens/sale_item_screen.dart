@@ -137,7 +137,15 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
       final updated = List<ComponentItem>.from(_components);
       updated[index] =
           updated[index].copyWith(isAvailable: !updated[index].isAvailable);
-      _applyComponentDerivation(updated);
+      _components = updated;
+    });
+  }
+
+  void _adjustQuantity(int index, int delta) {
+    setState(() {
+      final updated = List<ComponentItem>.from(_components);
+      updated[index] = updated[index].adjustedQuantity(delta);
+      _components = updated;
     });
   }
 
@@ -152,10 +160,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
       }
     }
     if (!mounted) return;
-    setState(() {
-      final updated = List<ComponentItem>.from(_components)..removeAt(index);
-      _applyComponentDerivation(updated);
-    });
+    setState(() => _components = List<ComponentItem>.from(_components)..removeAt(index));
   }
 
   Future<void> _openComponentSheet(int index) async {
@@ -169,7 +174,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
         setState(() {
           final list = List<ComponentItem>.from(_components);
           list[index] = updated;
-          _applyComponentDerivation(list);
+          _components = list;
         });
       },
       onPhotoAdded: (url) => _uploadedInSession.add(url),
@@ -182,12 +187,6 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
         }
       },
     );
-  }
-
-  void _applyComponentDerivation(List<ComponentItem> updated) {
-    _components = updated;
-    _assemblyStatus =
-        SaleItem.deriveAssemblyStatus(updated, _assemblyStatus);
   }
 
   @override
@@ -310,7 +309,15 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                   ..._components.asMap().entries.map(
                         (entry) => CheckboxListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(entry.value.name),
+                          title: Row(
+                            children: [
+                              Expanded(child: Text(entry.value.name)),
+                              ComponentQuantityStepper(
+                                quantity: entry.value.quantity,
+                                onChanged: (q) => _adjustQuantity(entry.key, q - entry.value.quantity),
+                              ),
+                            ],
+                          ),
                           subtitle: Text(entry.value.isAvailable
                               ? s.haveIt
                               : s.needToBuy),

@@ -157,7 +157,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 80),
+                              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
                               itemCount: repairs.length,
                               itemBuilder: (context, i) {
                                 final repair = repairs[i];
@@ -199,37 +199,34 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
         if (!_isWide) {
           return Scaffold(
             floatingActionButton: fab,
-            body: SafeArea(bottom: false, child: listPanel),
+            body: listPanel,
           );
         }
 
         return Scaffold(
           floatingActionButton: fab,
-          body: SafeArea(
-            bottom: false,
-            child: Row(
-              children: [
-                SizedBox(width: 380, child: listPanel),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: isError || _selectedRepair == null
-                      ? Center(
-                          child: Text(
-                            s.noRepairsFound,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        )
-                      : Navigator(
-                          key: _rightPanelKey,
-                          onGenerateRoute: (_) => MaterialPageRoute(
-                            builder: (_) => RepairDetailScreen(
-                              repairId: _selectedRepair!.id,
-                            ),
+          body: Row(
+            children: [
+              SizedBox(width: 380, child: listPanel),
+              const VerticalDivider(width: 1),
+              Expanded(
+                child: isError || _selectedRepair == null
+                    ? Center(
+                        child: Text(
+                          s.noRepairsFound,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      )
+                    : Navigator(
+                        key: _rightPanelKey,
+                        onGenerateRoute: (_) => MaterialPageRoute(
+                          builder: (_) => RepairDetailScreen(
+                            repairId: _selectedRepair!.id,
                           ),
                         ),
-                ),
-              ],
-            ),
+                      ),
+              ),
+            ],
           ),
         );
       },

@@ -63,9 +63,12 @@ extension ShipmentStatusLabel on ShipmentStatus {
       };
 }
 
+const kMaxComponentQuantity = 9999;
+
 class ComponentItem {
   final String id;
   final String name;
+  final int quantity;
   final bool isAvailable;
   final List<String> photoUrls;
   final String? notes;
@@ -73,6 +76,7 @@ class ComponentItem {
   const ComponentItem({
     required this.id,
     required this.name,
+    this.quantity = 1,
     required this.isAvailable,
     this.photoUrls = const [],
     this.notes,
@@ -81,6 +85,7 @@ class ComponentItem {
   factory ComponentItem.fromMap(Map<String, dynamic> map) => ComponentItem(
         id: map['id'] as String? ?? newId(),
         name: map['name'] as String? ?? '',
+        quantity: (map['quantity'] as num?)?.toInt() ?? 1,
         isAvailable: map['isAvailable'] as bool? ?? false,
         photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
         notes: map['notes'] as String?,
@@ -89,6 +94,7 @@ class ComponentItem {
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
+        'quantity': quantity,
         'isAvailable': isAvailable,
         'photoUrls': photoUrls,
         if (notes != null) 'notes': notes,
@@ -96,6 +102,7 @@ class ComponentItem {
 
   ComponentItem copyWith({
     String? name,
+    int? quantity,
     bool? isAvailable,
     List<String>? photoUrls,
     Object? notes = _sentinel,
@@ -103,10 +110,14 @@ class ComponentItem {
       ComponentItem(
         id: id,
         name: name ?? this.name,
+        quantity: quantity ?? this.quantity,
         isAvailable: isAvailable ?? this.isAvailable,
         photoUrls: photoUrls ?? this.photoUrls,
         notes: notes == _sentinel ? this.notes : notes as String?,
       );
+
+  ComponentItem adjustedQuantity(int delta) =>
+      copyWith(quantity: (quantity + delta).clamp(1, kMaxComponentQuantity));
 }
 
 const _sentinel = Object();
@@ -173,29 +184,6 @@ class SaleItem {
         photoUrls: photoUrls ?? this.photoUrls,
       );
 
-  // waitingForMaterials is never auto-changed — the user controls it manually.
-  static AssemblyStatus deriveAssemblyStatus(
-    List<ComponentItem> components,
-    AssemblyStatus current,
-  ) {
-    if (current == AssemblyStatus.waitingForMaterials) return current;
-    final allAvailable =
-        components.isNotEmpty && components.every((c) => c.isAvailable);
-    if (allAvailable &&
-        (current == AssemblyStatus.notStarted ||
-            current == AssemblyStatus.inProgress)) {
-      return AssemblyStatus.ready;
-    }
-    if (!allAvailable && current == AssemblyStatus.ready) {
-      return AssemblyStatus.inProgress;
-    }
-    return current;
-  }
-
-  SaleItem withUpdatedComponents(List<ComponentItem> updated) => copyWith(
-        components: updated,
-        assemblyStatus: deriveAssemblyStatus(updated, assemblyStatus),
-      );
 }
 
 class SalePayment {
