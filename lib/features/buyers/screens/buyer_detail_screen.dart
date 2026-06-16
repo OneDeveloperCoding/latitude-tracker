@@ -8,6 +8,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
 import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
 import '../../repairs/models/repair.dart';
 import '../../repairs/screens/repair_detail_screen.dart';
 import '../../repairs/widgets/repair_card.dart';
@@ -252,7 +253,14 @@ class _BuyerHistorySectionState extends State<_BuyerHistorySection> {
   }
 
   void _onRepairsChanged() {
-    final repairs = (RepairsStore.current ?? [])
+    // Only react to a successfully loaded snapshot — a transient loading or
+    // error state must not be mistaken for "this buyer has zero repairs",
+    // which would otherwise hide the toggle or bounce the user back to
+    // Sales while they're looking at the Repairs tab.
+    final state = RepairsStore.state.value;
+    if (state is! StoreLoaded<List<Repair>>) return;
+
+    final repairs = state.data
         .where((r) => r.buyerId == widget.buyerId)
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -293,9 +301,14 @@ class _BuyerHistorySectionState extends State<_BuyerHistorySection> {
           ),
           const SizedBox(height: 12),
         ],
-        if (_view == _HistoryView.sales)
-          _BuyerSalesSection(buyerId: widget.buyerId)
-        else
+        // Offstage (not if/else) keeps _BuyerSalesSection mounted across
+        // toggles so its year/month filter selection survives switching
+        // to Repairs and back.
+        Offstage(
+          offstage: _view != _HistoryView.sales,
+          child: _BuyerSalesSection(buyerId: widget.buyerId),
+        ),
+        if (_view == _HistoryView.repairs)
           _BuyerRepairsSection(repairs: _repairs),
       ],
     );
