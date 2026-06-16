@@ -42,25 +42,28 @@ class _SalesRepairsTabScreenState extends State<SalesRepairsTabScreen>
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Column(
-      children: [
-        TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: s.navSales),
-            Tab(text: s.repairs),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          TabBar(
             controller: _tabController,
-            children: [
-              SalesListScreen(initialFilters: widget.initialSaleFilters),
-              const RepairsListScreen(),
+            tabs: [
+              Tab(text: s.navSales),
+              Tab(text: s.repairs),
             ],
           ),
-        ),
-      ],
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                SalesListScreen(initialFilters: widget.initialSaleFilters),
+                const RepairsListScreen(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
