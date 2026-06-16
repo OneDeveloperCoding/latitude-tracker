@@ -261,6 +261,71 @@ class ComponentPhotoBadge extends StatelessWidget {
   }
 }
 
+/// Compact inline stepper (− count +) for a [ComponentItem] quantity.
+/// Enforces a minimum of 1. Only the buttons trigger [onChanged].
+class ComponentQuantityStepper extends StatelessWidget {
+  final int quantity;
+  final ValueChanged<int> onChanged;
+
+  const ComponentQuantityStepper({
+    super.key,
+    required this.quantity,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _StepButton(
+          icon: Icons.remove,
+          color: color,
+          onPressed: quantity > 1 ? () => onChanged(quantity - 1) : null,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            '$quantity',
+            style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600, color: color),
+          ),
+        ),
+        _StepButton(
+          icon: Icons.add,
+          color: color,
+          onPressed: quantity < kMaxComponentQuantity
+              ? () => onChanged(quantity + 1)
+              : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
+
+  const _StepButton(
+      {required this.icon, required this.color, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(icon,
+            size: 16, color: onPressed != null ? color : color.withAlpha(60)),
+      ),
+    );
+  }
+}
+
 /// Opens [ComponentDetailSheet] as a modal bottom sheet.
 Future<void> showComponentDetailSheet(
   BuildContext context, {

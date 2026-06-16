@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../sales/models/sale.dart';
 import '../models/repair.dart';
+import 'repair_status_colors.dart';
 
 const _kDeliveryStatuses = {RepairStatus.done, RepairStatus.returned};
 
@@ -172,16 +173,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final (color, onColor) = switch (status) {
-      RepairStatus.received => (cs.tertiaryContainer, cs.onTertiaryContainer),
-      RepairStatus.waitingForMaterials =>
-        (cs.errorContainer, cs.onErrorContainer),
-      RepairStatus.inProgress =>
-        (cs.primaryContainer, cs.onPrimaryContainer),
-      RepairStatus.done => (Colors.green.shade100, Colors.green.shade900),
-      RepairStatus.returned =>
-        (cs.surfaceContainerHighest, cs.onSurfaceVariant),
-    };
+    final (color, onColor) = repairStatusContainerColors(status, cs);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
