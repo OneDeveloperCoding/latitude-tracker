@@ -6,7 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/url_launch_service.dart';
+import '../../../core/store/repairs_store.dart';
 import '../../../core/store/sales_store.dart';
+import '../../../core/store/store_state.dart';
+import '../../repairs/models/repair.dart';
+import '../../repairs/screens/repair_detail_screen.dart';
+import '../../repairs/widgets/repair_card.dart';
 import '../../sales/models/sale.dart';
 import '../../sales/repositories/sale_repository.dart';
 import '../../sales/screens/sale_detail_screen.dart';
@@ -220,7 +225,115 @@ class _HistoryTab extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
         16, 16, 16, 16 + MediaQuery.of(context).padding.bottom,
       ),
-      child: _BuyerSalesSection(buyerId: buyerId),
+      child: _BuyerHistorySection(buyerId: buyerId),
+    );
+  }
+}
+
+enum _HistoryView { sales, repairs }
+
+class _BuyerHistorySection extends StatefulWidget {
+  final String buyerId;
+
+  const _BuyerHistorySection({required this.buyerId});
+
+  @override
+  State<_BuyerHistorySection> createState() => _BuyerHistorySectionState();
+}
+
+class _BuyerHistorySectionState extends State<_BuyerHistorySection> {
+  _HistoryView _view = _HistoryView.sales;
+  List<Repair> _repairs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    RepairsStore.state.addListener(_onRepairsChanged);
+    _onRepairsChanged();
+  }
+
+  void _onRepairsChanged() {
+    // Only react to a successfully loaded snapshot — a transient loading or
+    // error state must not be mistaken for "this buyer has zero repairs",
+    // which would otherwise hide the toggle or bounce the user back to
+    // Sales while they're looking at the Repairs tab.
+    final state = RepairsStore.state.value;
+    if (state is! StoreLoaded<List<Repair>>) return;
+
+    final repairs = state.data
+        .where((r) => r.buyerId == widget.buyerId)
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    setState(() {
+      _repairs = repairs;
+      if (repairs.isEmpty) _view = _HistoryView.sales;
+    });
+  }
+
+  @override
+  void dispose() {
+    RepairsStore.state.removeListener(_onRepairsChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_repairs.isNotEmpty) ...[
+          SegmentedButton<_HistoryView>(
+            segments: [
+              ButtonSegment(
+                value: _HistoryView.sales,
+                label: Text(s.navSales),
+              ),
+              ButtonSegment(
+                value: _HistoryView.repairs,
+                label: Text(s.repairs),
+              ),
+            ],
+            selected: {_view},
+            onSelectionChanged: (selection) =>
+                setState(() => _view = selection.first),
+          ),
+          const SizedBox(height: 12),
+        ],
+        // Offstage (not if/else) keeps _BuyerSalesSection mounted across
+        // toggles so its year/month filter selection survives switching
+        // to Repairs and back.
+        Offstage(
+          offstage: _view != _HistoryView.sales,
+          child: _BuyerSalesSection(buyerId: widget.buyerId),
+        ),
+        if (_view == _HistoryView.repairs)
+          _BuyerRepairsSection(repairs: _repairs),
+      ],
+    );
+  }
+}
+
+class _BuyerRepairsSection extends StatelessWidget {
+  final List<Repair> repairs;
+
+  const _BuyerRepairsSection({required this.repairs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: repairs
+          .map((repair) => RepairCard(
+                repair: repair,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RepairDetailScreen(repairId: repair.id),
+                  ),
+                ),
+              ))
+          .toList(),
     );
   }
 }
