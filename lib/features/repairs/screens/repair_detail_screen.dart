@@ -429,6 +429,18 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
   bool _isUpdating = false;
   RepairStatus? _optimisticStatus;
 
+  @override
+  void didUpdateWidget(_RepairStatusPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Once the stream confirms any status change, the optimistic guess is no
+    // longer needed — trust widget.repair.status again so later changes from
+    // other flows (auto-advance on delivery, the edit form, another device)
+    // aren't masked by a stale local override.
+    if (widget.repair.status != oldWidget.repair.status) {
+      _optimisticStatus = null;
+    }
+  }
+
   Future<void> _select(RepairStatus status) async {
     final repair = widget.repair;
     if (status == repair.status) return;
@@ -452,54 +464,58 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
     }
   }
 
+  Widget _statusLabelRow(AppStrings s) {
+    return Row(
+      children: [
+        Text(s.repairStatusLabel, style: Theme.of(context).textTheme.bodySmall),
+        if (_isUpdating) ...[
+          const SizedBox(width: 8),
+          const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _statusChipsWrap(AppStrings s, ColorScheme cs) {
+    final selectedStatus = _optimisticStatus ?? widget.repair.status;
+    final chipsDisabled = DemoMode.active.value || _isUpdating;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: RepairStatus.values.map((status) {
+        final (color, onColor) = repairStatusContainerColors(status, cs);
+        final isSelected = status == selectedStatus;
+        return ChoiceChip(
+          label: Text(s.repairStatusLabelFor(status)),
+          selected: isSelected,
+          onSelected: chipsDisabled ? null : (_) => _select(status),
+          selectedColor: color,
+          labelStyle: isSelected ? TextStyle(color: onColor) : null,
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final cs = Theme.of(context).colorScheme;
-    final selectedStatus = _optimisticStatus ?? widget.repair.status;
-    final isDemoMode = DemoMode.active.value;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Row(
-            children: [
-              Text(s.repairStatusLabel, style: Theme.of(context).textTheme.bodySmall),
-              if (_isUpdating) ...[
-                const SizedBox(width: 8),
-                const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ],
-            ],
-          ),
+          child: _statusLabelRow(s),
         ),
         Padding(
           padding: const EdgeInsets.only(top: 4, bottom: 8),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: RepairStatus.values.map((status) {
-              final (color, onColor) =
-                  repairStatusContainerColors(status, cs);
-              final isSelected = status == selectedStatus;
-              return ChoiceChip(
-                label: Text(s.repairStatusLabelFor(status)),
-                selected: isSelected,
-                onSelected: (isDemoMode || _isUpdating)
-                    ? null
-                    : (_) => _select(status),
-                selectedColor: color,
-                labelStyle: isSelected
-                    ? TextStyle(color: onColor)
-                    : null,
-              );
-            }).toList(),
-          ),
+          child: _statusChipsWrap(s, cs),
         ),
       ],
     );
