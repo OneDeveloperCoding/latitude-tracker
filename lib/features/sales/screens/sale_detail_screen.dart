@@ -101,7 +101,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     try {
       await _repository.deleteSale(sale.id);
       if (context.mounted) {
-        setState(() => _popping = true);
+        _popping = true;
         Navigator.of(context).pop();
       }
     } catch (e, st) {
@@ -127,6 +127,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         final sale = snapshot.data;
         if (sale == null) {
           if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+            // Sale deleted on another device — navigate back after this frame.
+            // Direct assignment without setState: setState is forbidden inside a
+            // builder callback. The Dart single-thread model guarantees subsequent
+            // builder calls see the updated value before another callback is queued.
             _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (context.mounted && Navigator.of(context).canPop()) {
