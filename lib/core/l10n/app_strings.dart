@@ -880,6 +880,13 @@ class AppStrings {
       ? '${nItems(items)} em ${nSales(sales)}'
       : '${nItems(items)} across ${nSales(sales)}';
 
+  String materialsAcrossItems(int materials, int items) {
+    final mat = _pt
+        ? '$materials ${materials == 1 ? 'material' : 'materiais'}'
+        : '$materials ${materials == 1 ? 'material' : 'materials'}';
+    return _pt ? '$mat em ${nItems(items)}' : '$mat across ${nItems(items)}';
+  }
+
   String nUrgent(int n) => _pt ? '$n urgente${n == 1 ? '' : 's'}' : '$n urgent';
   String andXMore(int n) => _pt ? 'e mais $n' : 'and $n more';
 

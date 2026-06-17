@@ -6,25 +6,9 @@ import '../../../core/store/sales_store.dart';
 import '../../../core/store/store_state.dart';
 import '../models/sale.dart';
 import '../services/sale_urgency.dart';
-import '../services/sale_urgency_ui.dart';
+import '../services/shopping_list_aggregator.dart';
 import '../widgets/component_detail_sheet.dart';
 import 'sale_detail_screen.dart';
-
-const _urgencyOrder = {
-  UrgencyLevel.overdue: 0,
-  UrgencyLevel.thisWeek: 1,
-  UrgencyLevel.none: 2
-};
-
-// Flat view entry: one SaleItem with its parent Sale context.
-class _ShoppingEntry {
-  final Sale sale;
-  final SaleItem item;
-  final List<ComponentItem> needed;
-
-  _ShoppingEntry({required this.sale, required this.item})
-      : needed = item.components.where((c) => !c.isAvailable).toList();
-}
 
 class ShoppingListScreen extends StatelessWidget {
   const ShoppingListScreen({super.key});
@@ -44,27 +28,9 @@ class ShoppingListScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Build flat list of SaleItems with unacquired components, from
-          // sales that are not assembled and not yet delivered.
-          final entries = <_ShoppingEntry>[];
-          for (final sale in storeState.data) {
-            if (sale.shipment.status == ShipmentStatus.delivered) continue;
-            if (sale.derivedAssemblyStatus == AssemblyStatus.ready) continue;
-            for (final item in sale.items) {
-              if (item.assemblyStatus == AssemblyStatus.ready) continue;
-              if (item.components.any((c) => !c.isAvailable)) {
-                entries.add(_ShoppingEntry(sale: sale, item: item));
-              }
-            }
-          }
+          final aggregated = aggregateShoppingList(storeState.data);
 
-          entries.sort((a, b) {
-            final au = _urgencyOrder[a.sale.urgencyLevel()]!;
-            final bu = _urgencyOrder[b.sale.urgencyLevel()]!;
-            return au.compareTo(bu);
-          });
-
-          if (entries.isEmpty) {
+          if (aggregated.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -79,10 +45,10 @@ class ShoppingListScreen extends StatelessWidget {
             );
           }
 
-          final totalNeeded =
-              entries.fold(0, (sum, e) => sum + e.needed.length);
-          final urgentCount = entries
-              .where((e) => e.sale.urgencyLevel() != UrgencyLevel.none)
+          final totalSources =
+              aggregated.fold(0, (sum, a) => sum + a.sources.length);
+          final urgentCount = aggregated
+              .where((a) => a.worstUrgency != UrgencyLevel.none)
               .length;
 
           return ListView(
@@ -90,15 +56,13 @@ class ShoppingListScreen extends StatelessWidget {
                 16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
             children: [
               _ShoppingListHeader(
-                totalNeeded: totalNeeded,
-                totalItems: entries.length,
+                totalMaterials: aggregated.length,
+                totalSources: totalSources,
                 urgentCount: urgentCount,
               ),
               const SizedBox(height: 16),
-              ...entries.map((entry) => _ItemMaterialsCard(
-                    entry: entry,
-                    urgency: entry.sale.urgencyLevel(),
-                  )),
+              ...aggregated
+                  .map((a) => _AggregatedComponentTile(aggregated: a)),
             ],
           );
         },
@@ -108,13 +72,13 @@ class ShoppingListScreen extends StatelessWidget {
 }
 
 class _ShoppingListHeader extends StatelessWidget {
-  final int totalNeeded;
-  final int totalItems;
+  final int totalMaterials;
+  final int totalSources;
   final int urgentCount;
 
   const _ShoppingListHeader({
-    required this.totalNeeded,
-    required this.totalItems,
+    required this.totalMaterials,
+    required this.totalSources,
     required this.urgentCount,
   });
 
@@ -124,7 +88,7 @@ class _ShoppingListHeader extends StatelessWidget {
     return Row(
       children: [
         Text(
-          s.itemsAcrossSales(totalNeeded, totalItems),
+          s.materialsAcrossItems(totalMaterials, totalSources),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -154,13 +118,21 @@ class _ShoppingListHeader extends StatelessWidget {
   }
 }
 
-class _ItemMaterialsCard extends StatelessWidget {
-  final _ShoppingEntry entry;
-  final UrgencyLevel urgency;
+class _AggregatedComponentTile extends StatefulWidget {
+  final AggregatedComponent aggregated;
 
-  const _ItemMaterialsCard({required this.entry, required this.urgency});
+  const _AggregatedComponentTile({required this.aggregated});
 
-  Color? _accentColor(BuildContext context) => switch (urgency) {
+  @override
+  State<_AggregatedComponentTile> createState() =>
+      _AggregatedComponentTileState();
+}
+
+class _AggregatedComponentTileState extends State<_AggregatedComponentTile> {
+  bool _expanded = false;
+
+  Color? _accentColor(BuildContext context) =>
+      switch (widget.aggregated.worstUrgency) {
         UrgencyLevel.overdue => Theme.of(context).colorScheme.error,
         UrgencyLevel.thisWeek => Colors.amber[700],
         UrgencyLevel.none => null,
@@ -168,110 +140,155 @@ class _ItemMaterialsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final a = widget.aggregated;
     final accent = _accentColor(context);
-    final item = entry.item;
-    final sale = entry.sale;
 
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => SaleDetailScreen(saleId: sale.id)),
-        ),
-        child: Container(
-          decoration: accent != null
-              ? BoxDecoration(
-                  border: Border(left: BorderSide(color: accent, width: 4)))
-              : null,
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      sale.buyerName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (sale.scheduledDate != null) ...[
+      child: Container(
+        decoration: accent != null
+            ? BoxDecoration(
+                border: Border(left: BorderSide(color: accent, width: 4)))
+            : null,
+        child: Column(
+          children: [
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(Icons.shopping_cart_outlined,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.error),
                     const SizedBox(width: 8),
-                    _DueDateLabel(sale: sale, urgency: urgency),
-                  ],
-                  const SizedBox(width: 8),
-                  _AssemblyBadge(status: item.assemblyStatus),
-                ],
-              ),
-              Text(
-                '${item.description} · ${item.category}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color:
-                          Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              ...entry.needed.map(
-                (c) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.shopping_cart_outlined,
-                              size: 14,
-                              color: Theme.of(context).colorScheme.error),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              c.quantity > 1 ? '${c.name} × ${c.quantity}' : c.name,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                          if (c.photoUrls.isNotEmpty)
-                            ComponentPhotoBadge(
-                              count: c.photoUrls.length,
-                              onTap: () => showComponentDetailSheet(
-                                context,
-                                component: c,
-                                saleId: entry.sale.id,
-                                itemId: entry.item.id,
-                                isReadOnly: true,
-                              ),
-                            ),
-                        ],
+                    Expanded(
+                      child: Text(
+                        a.totalQuantity > 1
+                            ? '${a.name} × ${a.totalQuantity}'
+                            : a.name,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      if (c.notes != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 22, top: 2),
-                          child: Text(
-                            c.notes!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                    AnimatedRotation(
+                      turns: _expanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.expand_more,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: _expanded
+                  ? Column(
+                      children: [
+                        const Divider(height: 1),
+                        ...a.sources.map((src) => _SourceRow(source: src)),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceRow extends StatelessWidget {
+  final ComponentSource source;
+
+  const _SourceRow({required this.source});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = source.component;
+    final item = source.item;
+    final sale = source.sale;
+
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => SaleDetailScreen(saleId: sale.id)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(36, 8, 12, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${sale.buyerName} · ${item.description}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (c.quantity > 1) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '× ${c.quantity}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+                if (c.photoUrls.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  ComponentPhotoBadge(
+                    count: c.photoUrls.length,
+                    onTap: () => showComponentDetailSheet(
+                      context,
+                      component: c,
+                      saleId: sale.id,
+                      itemId: item.id,
+                      isReadOnly: true,
+                    ),
+                  ),
+                ],
+                Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+            if (sale.scheduledDate != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: _DueDateLabel(sale: sale),
+              ),
+            if (c.notes != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  c.notes!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withAlpha(180),
+                        fontStyle: FontStyle.italic,
+                      ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -280,13 +297,13 @@ class _ItemMaterialsCard extends StatelessWidget {
 
 class _DueDateLabel extends StatelessWidget {
   final Sale sale;
-  final UrgencyLevel urgency;
 
-  const _DueDateLabel({required this.sale, required this.urgency});
+  const _DueDateLabel({required this.sale});
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final urgency = sale.urgencyLevel();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final scheduled = DateTime(
@@ -316,29 +333,6 @@ class _DueDateLabel extends StatelessWidget {
             color: color,
             fontWeight: FontWeight.w500,
           ),
-    );
-  }
-}
-
-class _AssemblyBadge extends StatelessWidget {
-  final AssemblyStatus status;
-
-  const _AssemblyBadge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    final color = status.colorOf(Theme.of(context).colorScheme);
-    final label = status.labelOf(s);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withAlpha(100)),
-      ),
-      child: Text(label, style: TextStyle(fontSize: 10, color: color)),
     );
   }
 }
