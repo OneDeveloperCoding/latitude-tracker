@@ -244,9 +244,13 @@ class AppStrings {
 
   // ── Sales list ────────────────────────────────────────────────────────────
   final String viewMap;
-  final String salesHeatMapTitle;
+  final String geographicSalesTitle;
   final String allYears;
   final String locatingPostalCodes;
+  final String geoSalesPortugal;
+  final String geoSalesInternational;
+  final String geoSalesSwitchToMap;
+  final String geoSalesSwitchToList;
   final String timelineOverdue;
   final String timelineThisWeek;
   final String timelineNextWeek;
@@ -671,9 +675,13 @@ class AppStrings {
     required this.atFiledWithAtBody,
     required this.nifAtSection,
     required this.viewMap,
-    required this.salesHeatMapTitle,
+    required this.geographicSalesTitle,
     required this.allYears,
     required this.locatingPostalCodes,
+    required this.geoSalesPortugal,
+    required this.geoSalesInternational,
+    required this.geoSalesSwitchToMap,
+    required this.geoSalesSwitchToList,
     required this.timelineOverdue,
     required this.timelineThisWeek,
     required this.timelineNextWeek,
@@ -1467,9 +1475,13 @@ class AppStrings {
     atFiledWithAtBody: 'This receipt has been filed with AT.',
     nifAtSection: 'NIF / AT',
     viewMap: 'Map',
-    salesHeatMapTitle: 'Sales Heat Map',
+    geographicSalesTitle: 'Sales by Location',
     allYears: 'All',
     locatingPostalCodes: 'Locating postal codes...',
+    geoSalesPortugal: 'Portugal',
+    geoSalesInternational: 'International',
+    geoSalesSwitchToMap: 'Map view',
+    geoSalesSwitchToList: 'List view',
     timelineOverdue: 'Overdue',
     timelineThisWeek: 'This week',
     timelineNextWeek: 'Next week',
@@ -1898,9 +1910,13 @@ class AppStrings {
     atFiledWithAtBody: 'Este recibo foi submetido na AT.',
     nifAtSection: 'NIF / AT',
     viewMap: 'Mapa',
-    salesHeatMapTitle: 'Mapa de Calor de Vendas',
+    geographicSalesTitle: 'Vendas por Localização',
     allYears: 'Todos',
     locatingPostalCodes: 'A localizar códigos postais...',
+    geoSalesPortugal: 'Portugal',
+    geoSalesInternational: 'Internacional',
+    geoSalesSwitchToMap: 'Vista de mapa',
+    geoSalesSwitchToList: 'Vista de lista',
     timelineOverdue: 'Em atraso',
     timelineThisWeek: 'Esta semana',
     timelineNextWeek: 'Próxima semana',
