@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BuyerAddress {
+  static const defaultCountry = 'Portugal';
+
   final String id;
   final String buyerId;
   final String label;
@@ -23,7 +25,7 @@ class BuyerAddress {
     this.notes,
     required this.city,
     required this.postalCode,
-    this.country = 'Portugal',
+    this.country = defaultCountry,
     this.isDefault = false,
   });
 
