@@ -20,12 +20,20 @@ class HeatMapPoint {
 class HeatMapService {
   static final _kPostalPattern = RegExp(r'^(\d{4})-\d{3}$');
 
+  /// Extracts the 4-digit CP4 prefix from a full Portuguese postal code
+  /// (e.g. "3000-550" → "3000"). Returns null for non-PT or invalid codes.
+  static String? localityPrefix(String? code) {
+    if (code == null) return null;
+    final match = _kPostalPattern.firstMatch(code.trim());
+    return match?.group(1);
+  }
+
   // Groups shipped sales by 4-digit locality prefix (e.g. "3000-550" → "3000").
   // Sales without a valid Portuguese postal code are excluded.
   static Map<String, int> postalCounts(List<Sale> sales) {
     final counts = <String, int>{};
     for (final sale in sales) {
-      final prefix = _localityPrefix(sale.shipment.postalCode);
+      final prefix = localityPrefix(sale.shipment.postalCode);
       if ((sale.shipment.type == DeliveryType.shipping ||
               sale.shipment.type == DeliveryType.handDelivery) &&
           prefix != null) {
@@ -65,9 +73,4 @@ class HeatMapService {
     return points;
   }
 
-  static String? _localityPrefix(String? code) {
-    if (code == null) return null;
-    final match = _kPostalPattern.firstMatch(code.trim());
-    return match?.group(1);
-  }
 }

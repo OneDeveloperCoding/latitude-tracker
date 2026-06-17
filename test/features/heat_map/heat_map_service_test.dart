@@ -35,6 +35,24 @@ Sale _pickupSale(String? postalCode) => makeSale(
     );
 
 void main() {
+  group('HeatMapService.localityPrefix', () {
+    test('valid 7-digit postal code returns 4-digit prefix', () {
+      expect(HeatMapService.localityPrefix('3000-550'), '3000');
+    });
+
+    test('null returns null', () {
+      expect(HeatMapService.localityPrefix(null), isNull);
+    });
+
+    test('non-Portuguese format returns null', () {
+      expect(HeatMapService.localityPrefix('75001'), isNull);
+    });
+
+    test('whitespace is trimmed before matching', () {
+      expect(HeatMapService.localityPrefix(' 3000-550 '), '3000');
+    });
+  });
+
   group('HeatMapService.postalCounts — prefix extraction', () {
     test('valid 7-digit postal code maps to 4-digit prefix', () {
       final counts = HeatMapService.postalCounts([_shippingSale('3000-550')]);

@@ -10,7 +10,7 @@ import '../../../core/store/store_state.dart';
 import '../../../core/widgets/sheet_section_label.dart';
 import '../../../core/widgets/store_error_widget.dart';
 import '../../buyers/models/buyer.dart';
-import '../../heat_map/screens/heat_map_screen.dart';
+import '../../heat_map/screens/geographic_sales_screen.dart';
 import '../models/sale.dart';
 import '../models/sale_filter.dart';
 import '../services/sale_grouper.dart';
@@ -21,10 +21,16 @@ import 'sale_detail_screen.dart';
 
 class SalesListScreen extends StatefulWidget {
   final Set<SaleFilter> initialFilters;
+  /// When set, filters the list to sales with this CP4 postal prefix and
+  /// overrides the active-only default so delivered sales are also shown.
+  final String? postalCodePrefix;
+  final String? appBarTitle;
 
   const SalesListScreen({
     super.key,
     this.initialFilters = const <SaleFilter>{},
+    this.postalCodePrefix,
+    this.appBarTitle,
   });
 
   @override
@@ -125,11 +131,19 @@ class _SalesListScreenState extends State<SalesListScreen> {
   List<Sale> _applyFilter(List<Sale> sales) {
     var result = List<Sale>.from(sales);
 
-    // Active-only default: hide delivered unless a year is explicitly selected.
-    if (_selectedYear == null) {
+    // Active-only default: hide delivered unless a year is selected or a
+    // postal prefix scope is active (geographic view shows all time).
+    if (_selectedYear == null && widget.postalCodePrefix == null) {
       result = result
           .where((s) => s.shipment.status != ShipmentStatus.delivered)
           .toList();
+    }
+
+    if (widget.postalCodePrefix != null) {
+      result = result.where((s) {
+        final pc = s.shipment.postalCode;
+        return pc != null && pc.startsWith('${widget.postalCodePrefix}-');
+      }).toList();
     }
 
     // Year + optional month scope. Selecting a year lifts the delivered default.
@@ -290,7 +304,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 onSelected: (action) => switch (action) {
                   _OverflowAction.map => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const HeatMapScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const GeographicSalesScreen()),
                     ),
                   _OverflowAction.legend => _showPathLegend(context, s),
                 },
@@ -342,14 +357,20 @@ class _SalesListScreenState extends State<SalesListScreen> {
       child: const Icon(Icons.add),
     );
 
+    final appBar = widget.appBarTitle != null
+        ? AppBar(title: Text(widget.appBarTitle!))
+        : null;
+
     if (!isTablet) {
       return Scaffold(
+        appBar: appBar,
         floatingActionButton: fab,
         body: SafeArea(bottom: false, child: listPanel),
       );
     }
 
     return Scaffold(
+      appBar: appBar,
       floatingActionButton: fab,
       body: SafeArea(
         bottom: false,
