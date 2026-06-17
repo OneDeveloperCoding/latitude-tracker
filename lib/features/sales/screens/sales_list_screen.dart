@@ -31,7 +31,10 @@ class SalesListScreen extends StatefulWidget {
     this.initialFilters = const <SaleFilter>{},
     this.postalCodePrefix,
     this.appBarTitle,
-  });
+  }) : assert(
+          postalCodePrefix == null || appBarTitle != null,
+          'appBarTitle is required when postalCodePrefix is set',
+        );
 
   @override
   State<SalesListScreen> createState() => _SalesListScreenState();

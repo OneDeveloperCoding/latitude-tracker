@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/error_reporter.dart';
 import '../../../core/store/sales_store.dart';
 import '../../buyers/repositories/buyer_repository.dart';
 import '../../dashboard/widgets/analytics_widgets.dart';
@@ -20,8 +21,6 @@ class GeographicSalesScreen extends StatefulWidget {
 }
 
 class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
-  static final _kPostalPattern = RegExp(r'^(\d{4})-\d{3}$');
-
   bool _mapMode = false;
   bool _includeHandDelivery = true;
   AnalyticsMetric _metric = AnalyticsMetric.revenue;
@@ -37,6 +36,10 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
 
   bool _loading = true;
   String _status = '';
+
+  // Incremented on every _load call; each future captures its own value and
+  // only applies its result if the counter hasn't advanced (cancels stale loads).
+  int _loadGeneration = 0;
 
   late final NetworkTileProvider _tileProvider;
 
@@ -78,6 +81,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
   }
 
   Future<void> _load(List<Sale> sales, int? year) async {
+    final generation = ++_loadGeneration;
     final filtered =
         year == null ? sales : sales.where((s) => s.createdAt.year == year).toList();
 
@@ -86,24 +90,34 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       _status = context.s.locatingPostalCodes;
     });
 
-    if (_mapMode) {
-      final points = await HeatMapService.buildPoints(
-        filtered,
-        onProgress: (status, done, total) {
-          if (mounted) setState(() => _status = '$status ($done/$total)...');
-        },
-      );
-      if (mounted) setState(() { _mapPoints = points; _loading = false; });
-    } else {
-      final addressCountries = await _fetchAddressCountries(filtered);
-      final ranking = await GeographicSalesService.buildRanking(
-        filtered,
-        addressCountries,
-        onProgress: (status, done, total) {
-          if (mounted) setState(() => _status = '$status ($done/$total)...');
-        },
-      );
-      if (mounted) setState(() { _ranking = ranking; _loading = false; });
+    void applyIfCurrent(VoidCallback fn) {
+      if (mounted && generation == _loadGeneration) fn();
+    }
+
+    try {
+      if (_mapMode) {
+        final points = await HeatMapService.buildPoints(
+          filtered,
+          onProgress: (status, done, total) {
+            applyIfCurrent(() => setState(() => _status = '$status ($done/$total)...'));
+          },
+        );
+        applyIfCurrent(() => setState(() { _mapPoints = points; _loading = false; }));
+      } else {
+        final addressCountries = await _fetchAddressCountries(filtered);
+        if (generation != _loadGeneration) return;
+        final ranking = await GeographicSalesService.buildRanking(
+          filtered,
+          addressCountries,
+          onProgress: (status, done, total) {
+            applyIfCurrent(() => setState(() => _status = '$status ($done/$total)...'));
+          },
+        );
+        applyIfCurrent(() => setState(() { _ranking = ranking; _loading = false; }));
+      }
+    } catch (e, st) {
+      logError(e, st);
+      applyIfCurrent(() => setState(() => _loading = false));
     }
   }
 
@@ -112,7 +126,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       final pc = s.shipment.postalCode;
       return pc != null &&
           pc.isNotEmpty &&
-          !_kPostalPattern.hasMatch(pc.trim()) &&
+          HeatMapService.localityPrefix(pc) == null &&
           s.shipment.addressId != null;
     }).toList();
 

@@ -1,3 +1,4 @@
+import '../../buyers/models/buyer_address.dart';
 import '../../sales/models/sale.dart';
 import 'geocoding_service.dart';
 import 'heat_map_service.dart';
@@ -63,7 +64,10 @@ class GeographicSalesService {
         final addressId = sale.shipment.addressId;
         if (addressId == null) continue;
         final country = addressCountries[addressId];
-        if (country == null || country.toLowerCase() == 'portugal') continue;
+        if (country == null ||
+            country.toLowerCase() == BuyerAddress.defaultCountry.toLowerCase()) {
+          continue;
+        }
         intlCounts[country] = (intlCounts[country] ?? 0) + 1;
         intlRevenue[country] = (intlRevenue[country] ?? 0.0) + sale.totalPrice;
       }
