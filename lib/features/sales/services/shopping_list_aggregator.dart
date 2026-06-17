@@ -1,12 +1,6 @@
 import '../models/sale.dart';
 import 'sale_urgency.dart';
 
-const _urgencyOrder = {
-  UrgencyLevel.overdue: 0,
-  UrgencyLevel.thisWeek: 1,
-  UrgencyLevel.none: 2,
-};
-
 /// One contributing SaleItem for an [AggregatedComponent].
 class ComponentSource {
   final Sale sale;
@@ -77,9 +71,8 @@ List<AggregatedComponent> aggregateShoppingList(
   }
 
   return byKey.values.toList()
-    ..sort((a, b) =>
-        _urgencyOrder[a.worstUrgency]!.compareTo(_urgencyOrder[b.worstUrgency]!));
+    ..sort((a, b) => a.worstUrgency.index.compareTo(b.worstUrgency.index));
 }
 
 UrgencyLevel _worstUrgency(UrgencyLevel a, UrgencyLevel b) =>
-    _urgencyOrder[a]! <= _urgencyOrder[b]! ? a : b;
+    a.index <= b.index ? a : b;

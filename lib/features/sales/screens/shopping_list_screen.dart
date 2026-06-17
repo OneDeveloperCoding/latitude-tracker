@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/store/sales_store.dart';
@@ -268,6 +269,11 @@ class _SourceRow extends StatelessWidget {
                 ),
               ],
             ),
+            if (sale.scheduledDate != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: _DueDateLabel(sale: sale),
+              ),
             if (c.notes != null)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
@@ -289,3 +295,44 @@ class _SourceRow extends StatelessWidget {
   }
 }
 
+class _DueDateLabel extends StatelessWidget {
+  final Sale sale;
+
+  const _DueDateLabel({required this.sale});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final urgency = sale.urgencyLevel();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduled = DateTime(
+      sale.scheduledDate!.year,
+      sale.scheduledDate!.month,
+      sale.scheduledDate!.day,
+    );
+    final days = scheduled.difference(today).inDays;
+
+    final Color color = switch (urgency) {
+      UrgencyLevel.overdue => Theme.of(context).colorScheme.error,
+      UrgencyLevel.thisWeek => Colors.amber[700]!,
+      UrgencyLevel.none => Theme.of(context).colorScheme.onSurfaceVariant,
+    };
+
+    final String label = urgency == UrgencyLevel.overdue
+        ? s.daysOverdue(days.abs())
+        : days == 0
+            ? s.today
+            : days == 1
+                ? s.tomorrow
+                : DateFormat('dd MMM').format(sale.scheduledDate!);
+
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+    );
+  }
+}

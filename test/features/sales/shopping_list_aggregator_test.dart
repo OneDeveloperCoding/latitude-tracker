@@ -247,7 +247,10 @@ void main() {
         ],
       );
 
-      final result = aggregateShoppingList([saleNoUrgency, saleOverdue]);
+      final result = aggregateShoppingList(
+        [saleNoUrgency, saleOverdue],
+        now: DateTime(2026, 6, 4),
+      );
       expect(result, hasLength(1));
       expect(result.first.worstUrgency, UrgencyLevel.overdue);
       expect(result.first.totalQuantity, 5);
