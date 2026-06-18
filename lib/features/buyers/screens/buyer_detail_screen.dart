@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -146,7 +147,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
         _popping = true;
         Navigator.pop(context);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -218,7 +219,7 @@ class _BuyerDetailBody extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
     try {
       await buyerRepo.deleteAddress(buyer.id, address.id);
-    } catch (e) {
+    } on Object catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errGeneric)),
@@ -730,7 +731,7 @@ class _SaleTile extends StatelessWidget {
 
 void _showNotePreview(BuildContext context, String notes) {
   final s = context.s;
-  showModalBottomSheet<void>(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -756,7 +757,7 @@ void _showNotePreview(BuildContext context, String notes) {
         ],
       ),
     ),
-  );
+  ));
 }
 
 // ── Addresses list
@@ -888,7 +889,7 @@ class _InfoSection extends StatelessWidget {
                         ),
                       );
                     }
-                  } catch (_) {
+                  } on Object catch (_) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

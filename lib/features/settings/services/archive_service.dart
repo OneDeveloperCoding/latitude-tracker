@@ -187,7 +187,7 @@ class ArchiveService {
   static Map<String, dynamic>? parseArchive(String jsonContent) {
     try {
       return jsonDecode(jsonContent) as Map<String, dynamic>;
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

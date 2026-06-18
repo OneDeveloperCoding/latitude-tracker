@@ -197,7 +197,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        if (!didPop) unawaited(_cancel());
       },
       child: Scaffold(
         appBar: AppBar(
@@ -296,7 +296,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                   if (_originalPhotoUrls.contains(url)) {
                     _pendingDeletions.add(url);
                   } else {
-                    _photoService.deletePhoto(url);
+                    unawaited(_photoService.deletePhoto(url));
                     _uploadedInSession.remove(url);
                   }
                 },

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -144,7 +145,7 @@ class SettingsScreen extends StatelessWidget {
     if (confirmed == true) {
       try {
         await FirebaseAuth.instance.signOut();
-      } catch (e, st) {
+      } on Object catch (e, st) {
         logError(e, st);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +191,7 @@ class SettingsScreen extends StatelessWidget {
         s.resettingApp,
         () => ResetAppService().resetApp(deletePhotos: deletePhotos),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -212,7 +213,7 @@ class SettingsScreen extends StatelessWidget {
       await _runWithProgress(context, s.exportingYear(year), () async {
         file = await service.exportYear(year);
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -245,7 +246,7 @@ class SettingsScreen extends StatelessWidget {
     final String content;
     try {
       content = await File(path).readAsString();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -265,12 +266,12 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    Navigator.push(
+    unawaited(Navigator.push(
       context,
       MaterialPageRoute<void>(
         builder: (_) => ArchiveImportScreen(archive: archive),
       ),
-    );
+    ));
   }
 
   Future<void> _deleteYear(BuildContext context) async {
@@ -288,7 +289,7 @@ class SettingsScreen extends StatelessWidget {
     try {
       await _runWithProgress(
         context,
-        s.deletingYear(year, deletePhotos),
+        s.deletingYear(year, deletePhotos: deletePhotos),
         () async {
           await SaleRepository().deleteAllSalesForYear(
             year,
@@ -301,7 +302,7 @@ class SettingsScreen extends StatelessWidget {
           );
         },
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         final message = salesDeleted
@@ -347,7 +348,7 @@ class SettingsScreen extends StatelessWidget {
     Future<void> Function() action,
   ) async {
     if (!context.mounted) return;
-    showDialog<void>(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -359,7 +360,7 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
     try {
       await action();
     } finally {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -41,9 +42,9 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
         source: source,
       );
       if (url != null) widget.onUploaded(url);
-    } catch (e) {
+    } on Object catch (e) {
       if (e is AuthRevokedException) {
-        FirebaseAuth.instance.signOut();
+        unawaited(FirebaseAuth.instance.signOut());
         return;
       }
       if (mounted) {
@@ -80,7 +81,7 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
 
   void _showSourcePicker() {
     final s = context.s;
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       builder: (_) => SafeArea(
         child: Column(
@@ -91,7 +92,7 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
               title: Text(s.takePhoto),
               onTap: () {
                 Navigator.pop(context);
-                _addPhoto(ImageSource.camera);
+                unawaited(_addPhoto(ImageSource.camera));
               },
             ),
             ListTile(
@@ -99,13 +100,13 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
               title: Text(s.chooseFromGallery),
               onTap: () {
                 Navigator.pop(context);
-                _addPhoto(ImageSource.gallery);
+                unawaited(_addPhoto(ImageSource.gallery));
               },
             ),
           ],
         ),
       ),
-    );
+    ));
   }
 
   @override

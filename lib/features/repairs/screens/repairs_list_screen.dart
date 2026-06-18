@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
@@ -170,19 +171,21 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                           onTap: () {
                             if (_isWide) {
                               setState(() => _selectedRepair = repair);
-                              _rightPanelKey.currentState?.pushReplacement(
-                                MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      RepairDetailScreen(repairId: repair.id),
-                                ),
+                              unawaited(
+                                _rightPanelKey.currentState?.pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        RepairDetailScreen(repairId: repair.id),
+                                  ),
+                                ) ?? Future<void>.value(),
                               );
                             } else {
-                              Navigator.of(context).push(
+                              unawaited(Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) =>
                                       RepairDetailScreen(repairId: repair.id),
                                 ),
-                              );
+                              ));
                             }
                           },
                         );
@@ -240,7 +243,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
 
   void _showOptionsSheet() {
     final s = context.s;
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
@@ -337,6 +340,6 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           );
         },
       ),
-    );
+    ));
   }
 }

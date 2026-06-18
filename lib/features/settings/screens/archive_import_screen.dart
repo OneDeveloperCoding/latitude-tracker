@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -45,7 +46,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
     );
 
     if (confirmed != true || !context.mounted) return;
-    _runImport();
+    unawaited(_runImport());
   }
 
   Future<void> _runImport() async {
@@ -59,9 +60,9 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
         _importing = false;
       });
       _showResult(result);
-    } catch (e) {
+    } on Object catch (e) {
       if (e is AuthRevokedException) {
-        FirebaseAuth.instance.signOut();
+        unawaited(FirebaseAuth.instance.signOut());
         return;
       }
       if (!mounted) return;

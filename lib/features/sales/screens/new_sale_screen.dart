@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/id_gen.dart';
@@ -104,7 +105,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       _originalItemIds = {for (final item in _items) item.id};
     }
 
-    if (widget.sale != null) _loadBuyerForEdit();
+    if (widget.sale != null) unawaited(_loadBuyerForEdit());
   }
 
   Future<void> _loadBuyerForEdit() async {
@@ -239,7 +240,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         // New sale — wipe everything under this sale's storage folder.
         await _photoService.deleteAllPhotos(_saleId);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
     } finally {
       if (mounted) Navigator.of(context).pop();
@@ -310,7 +311,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         await _saleRepository.createSale(sale);
       }
       if (mounted) Navigator.pop(context);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(
@@ -330,7 +331,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        if (!didPop) unawaited(_cancel());
       },
       child: Scaffold(
         appBar: AppBar(

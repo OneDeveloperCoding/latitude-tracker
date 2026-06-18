@@ -23,7 +23,7 @@ class StreamStore<T> {
   List<T> get currentOrEmpty => current ?? [];
 
   void _tearDown() {
-    _sub?.cancel();
+    if (_sub != null) unawaited(_sub!.cancel());
     _sub = null;
   }
 
@@ -36,7 +36,7 @@ class StreamStore<T> {
         if (e is AuthRevokedException ||
             (e is FirebaseException && e.code == 'permission-denied')) {
           _reset();
-          FirebaseAuth.instance.signOut();
+          unawaited(FirebaseAuth.instance.signOut());
           return;
         }
         logError(e, st);

@@ -30,7 +30,7 @@ abstract class BasePhotoService {
     if (photoUrl.startsWith('demo://')) return;
     try {
       await storage.refFromURL(photoUrl).delete();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       // Photo may already be deleted — best-effort, but track unexpected
       // errors.
       logError(e, st);
@@ -44,7 +44,7 @@ abstract class BasePhotoService {
     if (_auth.currentUser == null) return;
     try {
       await _deleteFolder(rootPathBuilder());
-    } catch (e, st) {
+    } on Object catch (e, st) {
       if (e is AuthRevokedException) rethrow;
       // Folder may not exist — best-effort, but track unexpected errors.
       logError(e, st);
@@ -64,7 +64,7 @@ abstract class BasePhotoService {
   Future<void> _deleteItem(Reference item) async {
     try {
       await item.delete();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       // object-not-found is expected when the other device already deleted the
       // file — treat it as success. Log everything else.
       if (e is FirebaseException && e.code == 'object-not-found') return;

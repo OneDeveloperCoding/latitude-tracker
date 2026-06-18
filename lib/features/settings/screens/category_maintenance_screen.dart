@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/services/error_reporter.dart';
@@ -24,7 +25,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
   @override
   void initState() {
     super.initState();
-    _loadHidden();
+    unawaited(_loadHidden());
   }
 
   Future<void> _loadHidden() async {
@@ -36,7 +37,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
           _loading = false;
         });
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         setState(() {
@@ -183,7 +184,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
       await _runWithProgress(s.renamingCategory, () async {
         updatedHidden = await _service.renameCategory(entry.name, newName);
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -208,7 +209,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
         await _service.hideCategory(entry.name);
         if (mounted) setState(() => _hidden = [..._hidden, entry.name]);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -241,7 +242,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
     if (confirmed != true || !mounted) return;
     try {
       await _service.deleteCategory(entry.name);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -260,7 +261,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
     Future<void> Function() action,
   ) async {
     if (!mounted) return;
-    showDialog<void>(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -272,7 +273,7 @@ class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
           ],
         ),
       ),
-    );
+    ));
     try {
       await action();
     } finally {

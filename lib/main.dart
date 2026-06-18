@@ -10,8 +10,8 @@ import 'package:latitude_tracker/core/l10n/locale_settings.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/firebase_options.dart';
 
-void main() {
-  runZonedGuarded(
+Future<void> main() async {
+  await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       await Firebase.initializeApp(
@@ -26,7 +26,9 @@ void main() {
       // e.g. uncaught exceptions in platform-channel callbacks (map library
       // crashes).
       PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        unawaited(FirebaseCrashlytics.instance.recordError(
+          error, stack, fatal: true,
+        ));
         return true;
       };
 

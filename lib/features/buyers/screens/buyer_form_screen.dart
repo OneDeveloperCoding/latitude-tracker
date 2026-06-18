@@ -139,7 +139,7 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
 
         if (mounted) Navigator.pop(context, buyer);
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorSavingBuyerMsg(e))),
