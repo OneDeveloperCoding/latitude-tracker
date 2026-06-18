@@ -9,8 +9,8 @@ import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/screens/new_repair_screen.dart';
 import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
 import 'package:latitude_tracker/features/repairs/widgets/repair_card.dart';
-
-enum _SortOrder { newestFirst, oldestFirst }
+import 'package:latitude_tracker/features/sales/models/sales_list_filters.dart'
+    show SortOrder;
 
 class RepairsListScreen extends StatefulWidget {
   const RepairsListScreen({super.key});
@@ -26,13 +26,13 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _searchExpanded = false;
-  _SortOrder _sortOrder = _SortOrder.newestFirst;
+  SortOrder _sortOrder = SortOrder.newestFirst;
   Set<RepairStatus> _statusFilters = {};
 
   bool get _isWide => MediaQuery.sizeOf(context).width >= 700;
 
   int get _activeFilterCount =>
-      _statusFilters.length + (_sortOrder != _SortOrder.newestFirst ? 1 : 0);
+      _statusFilters.length + (_sortOrder != SortOrder.newestFirst ? 1 : 0);
 
   @override
   void dispose() {
@@ -60,7 +60,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
   }
 
   List<Repair> _applySort(List<Repair> repairs) {
-    if (_sortOrder == _SortOrder.newestFirst) return repairs;
+    if (_sortOrder == SortOrder.newestFirst) return repairs;
     final sorted = List<Repair>.from(repairs)
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return sorted;
@@ -254,13 +254,13 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           }
 
           void clearAll() {
-            _sortOrder = _SortOrder.newestFirst;
+            _sortOrder = SortOrder.newestFirst;
             _statusFilters = {};
             refresh();
           }
 
           final hasAnyActive =
-              _sortOrder != _SortOrder.newestFirst || _statusFilters.isNotEmpty;
+              _sortOrder != SortOrder.newestFirst || _statusFilters.isNotEmpty;
 
           return SafeArea(
             child: DraggableScrollableSheet(
@@ -296,16 +296,16 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: FilterChip(
                         label: Text(s.sortDimensionDate),
-                        avatar: _sortOrder == _SortOrder.oldestFirst
+                        avatar: _sortOrder == SortOrder.oldestFirst
                             ? const Icon(Icons.arrow_upward, size: 16)
                             : null,
-                        selected: _sortOrder == _SortOrder.oldestFirst,
+                        selected: _sortOrder == SortOrder.oldestFirst,
                         showCheckmark: false,
                         visualDensity: VisualDensity.compact,
                         onSelected: (_) {
-                          _sortOrder = _sortOrder == _SortOrder.oldestFirst
-                              ? _SortOrder.newestFirst
-                              : _SortOrder.oldestFirst;
+                          _sortOrder = _sortOrder == SortOrder.oldestFirst
+                              ? SortOrder.newestFirst
+                              : SortOrder.oldestFirst;
                           refresh();
                         },
                       ),
