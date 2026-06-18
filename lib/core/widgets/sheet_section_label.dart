@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class SheetSectionLabel extends StatelessWidget {
-  final String text;
   const SheetSectionLabel(this.text, {super.key});
+  final String text;
 
   @override
   Widget build(BuildContext context) {

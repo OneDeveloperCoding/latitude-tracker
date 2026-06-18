@@ -2,22 +2,21 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/theme/theme_settings.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/settings/screens/archive_import_screen.dart';
+import 'package:latitude_tracker/features/settings/screens/category_maintenance_screen.dart';
+import 'package:latitude_tracker/features/settings/services/archive_service.dart';
+import 'package:latitude_tracker/features/settings/services/reset_app_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
-import '../../../core/theme/theme_settings.dart';
-import '../../demo/demo_mode.dart';
-import '../../demo/demo_tutorial_sheet.dart';
-import '../../repairs/repositories/repair_repository.dart';
-import '../../sales/repositories/sale_repository.dart';
-import '../services/archive_service.dart';
-import '../services/reset_app_service.dart';
-import 'archive_import_screen.dart';
-import 'category_maintenance_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -53,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: Text(s.categoriesSubtitle),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
+              MaterialPageRoute<void>(
                 builder: (_) => const CategoryMaintenanceScreen(),
               ),
             ),
@@ -261,7 +260,7 @@ class SettingsScreen extends StatelessWidget {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => ArchiveImportScreen(archive: archive),
       ),
     );
@@ -335,7 +334,7 @@ class SettingsScreen extends StatelessWidget {
     Future<void> Function() action,
   ) async {
     if (!context.mounted) return;
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -417,9 +416,9 @@ class _ThemeModeTile extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String title;
 
   const _SectionHeader(this.title);
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -437,9 +436,9 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _DeleteYearDialog extends StatefulWidget {
-  final int year;
 
   const _DeleteYearDialog({required this.year});
+  final int year;
 
   @override
   State<_DeleteYearDialog> createState() => _DeleteYearDialogState();

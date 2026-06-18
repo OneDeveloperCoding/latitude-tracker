@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/id_gen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/widgets/discard_dialog.dart';
-import '../models/buyer_address.dart';
-import '../repositories/buyer_repository.dart';
-import '../widgets/address_form_fields.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/widgets/discard_dialog.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/widgets/address_form_fields.dart';
 
 class BuyerAddressFormScreen extends StatefulWidget {
-  final String buyerId;
-  final BuyerAddress? address;
 
   const BuyerAddressFormScreen({
-    super.key,
-    required this.buyerId,
+    required this.buyerId, super.key,
     this.address,
   });
+  final String buyerId;
+  final BuyerAddress? address;
 
   @override
   State<BuyerAddressFormScreen> createState() => _BuyerAddressFormScreenState();

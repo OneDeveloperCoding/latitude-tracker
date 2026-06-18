@@ -1,12 +1,12 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/dashboard/models/dashboard_stats.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
 void main() {
-  final jan = DateTime(2026, 1, 1);
-  final feb = DateTime(2026, 2, 1);
+  final jan = DateTime(2026);
+  final feb = DateTime(2026, 2);
 
   group('DashboardStats.compute action counts', () {
     final now = DateTime(2026, 6, 4);
@@ -15,7 +15,7 @@ void main() {
       final sales = [
         makeSale(shipmentStatus: ShipmentStatus.shipped),
         makeSale(shipmentStatus: ShipmentStatus.shipped),
-        makeSale(shipmentStatus: ShipmentStatus.pending),
+        makeSale(),
         makeSale(shipmentStatus: ShipmentStatus.delivered),
       ];
 
@@ -26,7 +26,7 @@ void main() {
 
     test('upcomingCount counts sales with a future scheduled date', () {
       final sales = [
-        makeSale(scheduledDate: DateTime(2026, 7, 1)),
+        makeSale(scheduledDate: DateTime(2026, 7)),
         makeSale(scheduledDate: DateTime(2026, 6, 4)), // today — counts as upcoming
         makeSale(scheduledDate: DateTime(2026, 6, 3)), // yesterday — overdue, not upcoming
         makeSale(), // no date
@@ -40,10 +40,10 @@ void main() {
     test('upcomingCount excludes delivered sales', () {
       final sales = [
         makeSale(
-          scheduledDate: DateTime(2026, 7, 1),
+          scheduledDate: DateTime(2026, 7),
           shipmentStatus: ShipmentStatus.delivered,
         ),
-        makeSale(scheduledDate: DateTime(2026, 7, 1)),
+        makeSale(scheduledDate: DateTime(2026, 7)),
       ];
 
       final stats = DashboardStats.compute(sales, jan, feb, now: now);

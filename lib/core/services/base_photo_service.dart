@@ -2,12 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'auth_revoked_exception.dart';
-import 'error_reporter.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
 
 abstract class BasePhotoService {
-  final storage = FirebaseStorage.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseStorage storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final _picker = ImagePicker();
 
   String get userId =>

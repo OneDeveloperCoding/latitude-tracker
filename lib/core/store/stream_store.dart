@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
-import '../services/auth_revoked_exception.dart';
-import '../services/error_reporter.dart';
-import 'store_state.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
 
 class StreamStore<T> {
   StreamStore(this._streamFactory);
@@ -19,6 +19,8 @@ class StreamStore<T> {
     StoreLoaded(:final data) => data,
     _ => null,
   };
+
+  List<T> get currentOrEmpty => current ?? [];
 
   void _tearDown() {
     _sub?.cancel();

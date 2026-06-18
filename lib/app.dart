@@ -2,12 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'core/l10n/locale_settings.dart';
-import 'core/navigation/main_nav.dart';
-import 'core/theme/app_theme.dart';
-import 'core/theme/theme_settings.dart';
-import 'features/auth/screens/login_screen.dart';
-import 'features/demo/demo_mode.dart';
+import 'package:latitude_tracker/core/l10n/locale_settings.dart';
+import 'package:latitude_tracker/core/navigation/main_nav.dart';
+import 'package:latitude_tracker/core/theme/app_theme.dart';
+import 'package:latitude_tracker/core/theme/theme_settings.dart';
+import 'package:latitude_tracker/features/auth/screens/login_screen.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
 
 class LatitudeTrackerApp extends StatelessWidget {
   const LatitudeTrackerApp({super.key});

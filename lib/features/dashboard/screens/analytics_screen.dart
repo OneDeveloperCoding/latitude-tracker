@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../repairs/models/repair.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/services/sales_analytics_service.dart';
-import '../models/dashboard_stats.dart';
-import '../widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/dashboard/models/dashboard_stats.dart';
+import 'package:latitude_tracker/features/dashboard/widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sales_analytics_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  final DashboardPeriod initialPeriod;
-  final bool startOnRepairs;
 
   const AnalyticsScreen({
-    super.key,
-    required this.initialPeriod,
+    required this.initialPeriod, super.key,
     this.startOnRepairs = false,
   });
+  final DashboardPeriod initialPeriod;
+  final bool startOnRepairs;
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -179,7 +177,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     return List.generate(periodCount, (i) {
       final offset = i - (periodCount - 1);
       return switch (_period) {
-        DashboardPeriod.yearly => '\'${(_year + offset) % 100}',
+        DashboardPeriod.yearly => "'${(_year + offset) % 100}",
         DashboardPeriod.monthly =>
           DateFormat('MMM')
               .format(DateTime(_month.year, _month.month + offset)),

@@ -1,8 +1,8 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_buyer_repository.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_repair_repository.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_sale_repository.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
+import 'package:test/test.dart';
 
 Map<String, dynamic> _saleMap({
   String id = 's1',
@@ -237,16 +237,16 @@ void main() {
 
       final archive = {
         'version': '1.2',
-        'sales': [_saleMap(id: 's1'), _saleMap(id: 's2')],
-        'repairs': [_repairMap(id: 'r1')],
-        'buyers': [_buyerMap(id: 'b1')],
+        'sales': [_saleMap(), _saleMap(id: 's2')],
+        'repairs': [_repairMap()],
+        'buyers': [_buyerMap()],
       };
       await service.importArchive(archive);
 
       final archiveWithDuplicate = {
         'version': '1.2',
-        'sales': [_saleMap(id: 's1'), _saleMap(id: 's3')],
-        'repairs': [_repairMap(id: 'r1')],
+        'sales': [_saleMap(), _saleMap(id: 's3')],
+        'repairs': [_repairMap()],
         'buyers': [_buyerMap(id: 'b2')],
       };
       final result = await service.importArchive(archiveWithDuplicate);

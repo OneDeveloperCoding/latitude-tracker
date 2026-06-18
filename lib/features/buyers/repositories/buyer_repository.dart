@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
-import '../models/buyer.dart';
-import '../models/buyer_address.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
 
 abstract class BuyerRepository {
   factory BuyerRepository() =>
@@ -28,8 +27,8 @@ abstract class BuyerRepository {
 }
 
 class _FirestoreBuyerRepository implements BuyerRepository {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String get _userId =>
       _auth.currentUser?.uid ?? (throw const AuthRevokedException());
@@ -81,8 +80,8 @@ class _FirestoreBuyerRepository implements BuyerRepository {
     // Single batch for the buyer doc + all address docs so the write is atomic.
     // No need to call _clearDefaultAddress here because the buyer doesn't yet
     // exist, so there are no existing default addresses to demote.
-    final batch = _firestore.batch();
-    batch.set(_buyersRef.doc(buyer.id), buyer.toFirestore());
+    final batch = _firestore.batch()
+      ..set(_buyersRef.doc(buyer.id), buyer.toFirestore());
     for (final address in addresses) {
       batch.set(_addressesRef(buyer.id).doc(address.id), address.toFirestore());
     }

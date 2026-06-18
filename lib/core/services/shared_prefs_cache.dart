@@ -4,13 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Thin SharedPreferences-backed TTL cache.
 ///
-/// Each instance owns a key namespace via [prefix]. The [ttlDays] callback
+/// Each instance owns a key namespace via [prefix]. The `ttlDays` callback
 /// receives the stored map so callers can vary TTL on the entry's content
 /// (e.g. different TTLs for cache hits vs. misses).
 class SharedPrefsCache {
-  final String prefix;
 
   SharedPrefsCache(this.prefix);
+  final String prefix;
 
   SharedPreferences? _prefs;
 
@@ -46,7 +46,7 @@ class SharedPrefsCache {
     return map..remove('cachedAt');
   }
 
-  /// Writes [data] under [key], adding a [cachedAt] timestamp automatically.
+  /// Writes [data] under [key], adding a `cachedAt` timestamp automatically.
   ///
   /// [data] must not contain a `'cachedAt'` key — that key is reserved for
   /// internal TTL bookkeeping and will be injected automatically.

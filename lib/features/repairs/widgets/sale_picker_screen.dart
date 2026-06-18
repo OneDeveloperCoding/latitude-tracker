@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/services/sale_grouper.dart';
-import '../../sales/widgets/photo_grid.dart' show PhotoViewer;
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart' show PhotoViewer;
 
 class SalePickerScreen extends StatefulWidget {
-  final String buyerId;
-  final String buyerName;
 
   const SalePickerScreen({
-    super.key,
-    required this.buyerId,
-    required this.buyerName,
+    required this.buyerId, required this.buyerName, super.key,
   });
+  final String buyerId;
+  final String buyerName;
 
   @override
   State<SalePickerScreen> createState() => _SalePickerScreenState();
@@ -39,7 +37,7 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
   void _onStoreChanged() => setState(() {});
 
   List<Sale> get _filteredSales {
-    final all = SalesStore.current ?? [];
+    final all = SalesStore.currentOrEmpty;
     final byBuyer = all
         .where((s) => s.buyerId == widget.buyerId)
         .toList()
@@ -142,10 +140,10 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
 }
 
 class _SalePickerCard extends StatelessWidget {
-  final Sale sale;
-  final VoidCallback onTap;
 
   const _SalePickerCard({required this.sale, required this.onTap});
+  final Sale sale;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -187,16 +185,15 @@ class _SalePickerCard extends StatelessWidget {
 }
 
 class _ItemRow extends StatelessWidget {
-  final SaleItem item;
 
   const _ItemRow({required this.item});
+  final SaleItem item;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _Thumbnail(item: item),
           const SizedBox(width: 8),
@@ -215,9 +212,9 @@ class _ItemRow extends StatelessWidget {
 }
 
 class _Thumbnail extends StatelessWidget {
-  final SaleItem item;
 
   const _Thumbnail({required this.item});
+  final SaleItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +237,7 @@ class _Thumbnail extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (_) => PhotoViewer(urls: item.photoUrls, initialIndex: 0),
         ),
       ),

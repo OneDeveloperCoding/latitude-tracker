@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 ComponentItem _component(String id, {required bool available, int quantity = 1}) =>
     ComponentItem(id: id, name: id, quantity: quantity, isAvailable: available);
@@ -79,7 +79,7 @@ void main() {
           shipment: const SaleShipment(
               type: DeliveryType.shipping, status: ShipmentStatus.pending),
           requiresNif: false,
-          createdAt: DateTime(2026, 1, 1),
+          createdAt: DateTime(2026),
         );
 
     test('all ready → ready', () {
@@ -291,7 +291,7 @@ void main() {
               id: '1',
               description: 'a',
               category: 'x',
-              price: 10.0,
+              price: 10,
               assemblyStatus: AssemblyStatus.ready),
           const SaleItem(
               id: '2',
@@ -305,7 +305,7 @@ void main() {
         shipment: const SaleShipment(
             type: DeliveryType.shipping, status: ShipmentStatus.pending),
         requiresNif: false,
-        createdAt: DateTime(2026, 1, 1),
+        createdAt: DateTime(2026),
       );
       expect(sale.totalPrice, 35.50);
     });
@@ -321,7 +321,7 @@ void main() {
         shipment: const SaleShipment(
             type: DeliveryType.shipping, status: ShipmentStatus.pending),
         requiresNif: false,
-        createdAt: DateTime(2026, 1, 1),
+        createdAt: DateTime(2026),
       );
       expect(sale.totalPrice, 0.0);
     });

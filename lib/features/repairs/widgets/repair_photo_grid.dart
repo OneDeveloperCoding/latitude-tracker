@@ -1,14 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
-import '../../sales/widgets/photo_grid.dart' show PhotoViewer;
-import '../services/repair_photo_service.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/repairs/services/repair_photo_service.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart' show PhotoViewer;
 
 class RepairPhotoGrid extends StatefulWidget {
+
+  const RepairPhotoGrid({
+    required this.repairId, required this.photoUrls, required this.onUploaded, required this.onRemoved, super.key,
+  });
   final String repairId;
   final List<String> photoUrls;
 
@@ -17,14 +20,6 @@ class RepairPhotoGrid extends StatefulWidget {
 
   /// Called with the URL when the user confirms removing a photo.
   final ValueChanged<String> onRemoved;
-
-  const RepairPhotoGrid({
-    super.key,
-    required this.repairId,
-    required this.photoUrls,
-    required this.onUploaded,
-    required this.onRemoved,
-  });
 
   @override
   State<RepairPhotoGrid> createState() => _RepairPhotoGridState();
@@ -81,7 +76,7 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
 
   void _showSourcePicker() {
     final s = context.s;
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => SafeArea(
         child: Column(
@@ -124,7 +119,7 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
                     url: entry.value,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (_) => PhotoViewer(
                           urls: photos,
                           initialIndex: entry.key,
@@ -148,17 +143,17 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
 }
 
 class _DeletablePhotoTile extends StatelessWidget {
-  static const double _displaySize = 96;
-
-  final String url;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
 
   const _DeletablePhotoTile({
     required this.url,
     required this.onTap,
     required this.onDelete,
   });
+  static const double _displaySize = 96;
+
+  final String url;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -213,8 +208,8 @@ class _DeletablePhotoTile extends StatelessWidget {
 }
 
 class _DemoPlaceholder extends StatelessWidget {
-  final String url;
   const _DemoPlaceholder({required this.url});
+  final String url;
 
   @override
   Widget build(BuildContext context) {
@@ -261,9 +256,9 @@ class _UploadingTile extends StatelessWidget {
 }
 
 class _AddPhotoTile extends StatelessWidget {
-  final VoidCallback onTap;
 
   const _AddPhotoTile({required this.onTap});
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {

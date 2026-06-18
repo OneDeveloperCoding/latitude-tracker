@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
@@ -22,17 +22,17 @@ void main() {
 
     test('totalPaid sums only paid sales', () {
       final sales = [
-        makeSale(price: 100, payment: PaymentStatus.paid),
-        makeSale(price: 50, payment: PaymentStatus.unpaid),
-        makeSale(price: 30, payment: PaymentStatus.paid),
+        makeSale(price: 100),
+        makeSale(payment: PaymentStatus.unpaid),
+        makeSale(price: 30),
       ];
       expect(BuyerStats.compute(sales).totalPaid, 130);
     });
 
     test('unpaidBalance sums only unpaid sales', () {
       final sales = [
-        makeSale(price: 100, payment: PaymentStatus.paid),
-        makeSale(price: 50, payment: PaymentStatus.unpaid),
+        makeSale(price: 100),
+        makeSale(payment: PaymentStatus.unpaid),
         makeSale(price: 20, payment: PaymentStatus.unpaid),
       ];
       expect(BuyerStats.compute(sales).unpaidBalance, 70);
@@ -40,15 +40,15 @@ void main() {
 
     test('averageSaleValue uses all sales regardless of payment status', () {
       final sales = [
-        makeSale(price: 100, payment: PaymentStatus.paid),
-        makeSale(price: 50, payment: PaymentStatus.unpaid),
+        makeSale(price: 100),
+        makeSale(payment: PaymentStatus.unpaid),
       ];
       expect(BuyerStats.compute(sales).averageSaleValue, 75);
     });
 
     test('lastPurchaseAt is the most recent createdAt', () {
-      final older = DateTime(2026, 1, 1);
-      final newer = DateTime(2026, 6, 1);
+      final older = DateTime(2026);
+      final newer = DateTime(2026, 6);
       final sales = [
         makeSale(createdAt: older),
         makeSale(createdAt: newer),
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('single sale sets all fields correctly', () {
-      final sale = makeSale(price: 80, payment: PaymentStatus.paid);
+      final sale = makeSale(price: 80);
       final stats = BuyerStats.compute([sale]);
       expect(stats.saleCount, 1);
       expect(stats.totalPaid, 80);

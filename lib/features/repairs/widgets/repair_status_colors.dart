@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/repair.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
 
 /// Maps a [RepairStatus] to its (background, foreground) container colors.
 /// Shared between the list card badge and the detail screen status picker.

@@ -2,12 +2,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
-import '../services/photo_service.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 
 class PhotoGrid extends StatefulWidget {
+
+  const PhotoGrid({
+    required this.saleId, required this.itemId, required this.photoUrls, required this.onChanged, super.key,
+    this.onPhotoAdded,
+    this.onPhotoRemoved,
+    this.uploadCallback,
+  });
   final String saleId;
   final String itemId;
   final List<String> photoUrls;
@@ -23,17 +30,6 @@ class PhotoGrid extends StatefulWidget {
   /// When provided, replaces the default [PhotoService.pickAndUpload] call.
   /// Lets callers supply their own upload path (e.g. component photos).
   final Future<String?> Function(ImageSource)? uploadCallback;
-
-  const PhotoGrid({
-    super.key,
-    required this.saleId,
-    required this.itemId,
-    required this.photoUrls,
-    required this.onChanged,
-    this.onPhotoAdded,
-    this.onPhotoRemoved,
-    this.uploadCallback,
-  });
 
   @override
   State<PhotoGrid> createState() => _PhotoGridState();
@@ -100,7 +96,7 @@ class _PhotoGridState extends State<PhotoGrid> {
 
   void _showSourcePicker() {
     final s = context.s;
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => SafeArea(
         child: Column(
@@ -131,7 +127,7 @@ class _PhotoGridState extends State<PhotoGrid> {
   void _viewPhoto(BuildContext context, int index) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => PhotoViewer(
           urls: widget.photoUrls,
           initialIndex: index,
@@ -181,19 +177,18 @@ class _PhotoGridState extends State<PhotoGrid> {
 }
 
 class _PhotoTile extends StatelessWidget {
+
+  const _PhotoTile({
+    required this.isUploading, this.url,
+    this.onTap,
+    this.onDelete,
+  });
   static const double _displaySize = 96;
 
   final String? url;
   final bool isUploading;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
-
-  const _PhotoTile({
-    this.url,
-    required this.isUploading,
-    this.onTap,
-    this.onDelete,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,10 +264,10 @@ class _PhotoTile extends StatelessWidget {
 }
 
 class _DemoPhotoPlaceholder extends StatelessWidget {
-  final String url;
-  final bool large;
 
   const _DemoPhotoPlaceholder({required this.url, this.large = false});
+  final String url;
+  final bool large;
 
   static const _palettes = [
     [Color(0xFFE1BEE7), Color(0xFFF8BBD9)], // purple/pink
@@ -281,7 +276,7 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
     [Color(0xFFC8E6C9), Color(0xFFB2DFDB)], // green/teal
   ];
 
-  static const _icons = [
+  static const List<IconData> _icons = [
     Icons.diamond_outlined,
     Icons.auto_awesome,
     Icons.shopping_bag_outlined,
@@ -314,9 +309,9 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
 }
 
 class _AddPhotoTile extends StatelessWidget {
-  final VoidCallback onTap;
 
   const _AddPhotoTile({required this.onTap});
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -353,22 +348,21 @@ class _AddPhotoTile extends StatelessWidget {
 }
 
 class PhotoThumbnail extends StatelessWidget {
-  final String url;
-  final double size;
-  final VoidCallback? onTap;
 
   const PhotoThumbnail({
-    super.key,
-    required this.url,
+    required this.url, super.key,
     this.size = 48,
     this.onTap,
   });
+  final String url;
+  final double size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final cacheSize =
         (size * MediaQuery.devicePixelRatioOf(context)).round();
-    final Widget image = url.startsWith('demo://')
+    final image = url.startsWith('demo://')
         ? _DemoPhotoPlaceholder(url: url)
         : Image.network(
             url,
@@ -398,10 +392,10 @@ class PhotoThumbnail extends StatelessWidget {
 }
 
 class PhotoViewer extends StatefulWidget {
+
+  const PhotoViewer({required this.urls, required this.initialIndex, super.key});
   final List<String> urls;
   final int initialIndex;
-
-  const PhotoViewer({super.key, required this.urls, required this.initialIndex});
 
   @override
   State<PhotoViewer> createState() => _PhotoViewerState();

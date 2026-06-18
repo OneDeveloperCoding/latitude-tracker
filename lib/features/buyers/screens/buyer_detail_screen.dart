@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/url_launch_service.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_address_form_screen.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_form_screen.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_card.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/constants.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/error_reporter.dart';
-import '../../../core/services/url_launch_service.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../repairs/models/repair.dart';
-import '../../repairs/screens/repair_detail_screen.dart';
-import '../../repairs/widgets/repair_card.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
-import '../../sales/screens/sale_detail_screen.dart';
-import '../models/buyer.dart';
-import '../models/buyer_address.dart';
-import '../models/buyer_stats.dart';
-import '../repositories/buyer_repository.dart';
-import 'buyer_address_form_screen.dart';
-import 'buyer_form_screen.dart';
-
 class BuyerDetailScreen extends StatefulWidget {
-  final String buyerId;
 
-  const BuyerDetailScreen({super.key, required this.buyerId});
+  const BuyerDetailScreen({required this.buyerId, super.key});
+  final String buyerId;
 
   @override
   State<BuyerDetailScreen> createState() => _BuyerDetailScreenState();
@@ -89,7 +88,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
                   tooltip: s.editBuyer,
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                         builder: (_) => BuyerFormScreen(buyer: buyer)),
                   ),
                 ),
@@ -155,10 +154,10 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
 }
 
 class _BuyerDetailBody extends StatelessWidget {
-  final Buyer buyer;
-  final BuyerRepository buyerRepo;
 
   const _BuyerDetailBody({required this.buyer, required this.buyerRepo});
+  final Buyer buyer;
+  final BuyerRepository buyerRepo;
 
   @override
   Widget build(BuildContext context) {
@@ -227,9 +226,9 @@ class _BuyerDetailBody extends StatelessWidget {
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
 class _HistoryTab extends StatelessWidget {
-  final String buyerId;
 
   const _HistoryTab({required this.buyerId});
+  final String buyerId;
 
   @override
   Widget build(BuildContext context) {
@@ -245,9 +244,9 @@ class _HistoryTab extends StatelessWidget {
 enum _HistoryView { sales, repairs }
 
 class _BuyerHistorySection extends StatefulWidget {
-  final String buyerId;
 
   const _BuyerHistorySection({required this.buyerId});
+  final String buyerId;
 
   @override
   State<_BuyerHistorySection> createState() => _BuyerHistorySectionState();
@@ -328,9 +327,9 @@ class _BuyerHistorySectionState extends State<_BuyerHistorySection> {
 }
 
 class _BuyerRepairsSection extends StatelessWidget {
-  final List<Repair> repairs;
 
   const _BuyerRepairsSection({required this.repairs});
+  final List<Repair> repairs;
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +339,7 @@ class _BuyerRepairsSection extends StatelessWidget {
                 repair: repair,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => RepairDetailScreen(repairId: repair.id),
                   ),
                 ),
@@ -351,15 +350,15 @@ class _BuyerRepairsSection extends StatelessWidget {
 }
 
 class _AddressesTab extends StatelessWidget {
-  final Buyer buyer;
-  final BuyerRepository buyerRepo;
-  final void Function(BuyerAddress) onDelete;
 
   const _AddressesTab({
     required this.buyer,
     required this.buyerRepo,
     required this.onDelete,
   });
+  final Buyer buyer;
+  final BuyerRepository buyerRepo;
+  final void Function(BuyerAddress) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +373,7 @@ class _AddressesTab extends StatelessWidget {
             child: TextButton.icon(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => BuyerAddressFormScreen(buyerId: buyer.id),
                 ),
               ),
@@ -394,7 +393,7 @@ class _AddressesTab extends StatelessWidget {
               buyerRepo: buyerRepo,
               onEdit: (a) => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) =>
                       BuyerAddressFormScreen(buyerId: buyer.id, address: a),
                 ),
@@ -411,9 +410,9 @@ class _AddressesTab extends StatelessWidget {
 // ── Purchase history ──────────────────────────────────────────────────────────
 
 class _BuyerSalesSection extends StatefulWidget {
-  final String buyerId;
 
   const _BuyerSalesSection({required this.buyerId});
+  final String buyerId;
 
   @override
   State<_BuyerSalesSection> createState() => _BuyerSalesSectionState();
@@ -585,9 +584,9 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
 }
 
 class _PurchaseSummary extends StatelessWidget {
-  final BuyerStats stats;
 
   const _PurchaseSummary({required this.stats});
+  final BuyerStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -627,11 +626,11 @@ class _PurchaseSummary extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
+
+  const _StatRow({required this.label, required this.value, this.valueColor});
   final String label;
   final String value;
   final Color? valueColor;
-
-  const _StatRow({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -650,9 +649,9 @@ class _StatRow extends StatelessWidget {
 }
 
 class _SaleTile extends StatelessWidget {
-  final Sale sale;
 
   const _SaleTile({required this.sale});
+  final Sale sale;
 
   @override
   Widget build(BuildContext context) {
@@ -707,7 +706,7 @@ class _SaleTile extends StatelessWidget {
         ),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
+          MaterialPageRoute<void>(
               builder: (_) => SaleDetailScreen(saleId: sale.id)),
         ),
       ),
@@ -717,7 +716,7 @@ class _SaleTile extends StatelessWidget {
 
 void _showNotePreview(BuildContext context, String notes) {
   final s = context.s;
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -745,11 +744,6 @@ void _showNotePreview(BuildContext context, String notes) {
 // ── Addresses list ────────────────────────────────────────────────────────────
 
 class _AddressesList extends StatefulWidget {
-  final String buyerId;
-  final String buyerName;
-  final BuyerRepository buyerRepo;
-  final void Function(BuyerAddress) onEdit;
-  final void Function(BuyerAddress) onDelete;
 
   const _AddressesList({
     required this.buyerId,
@@ -758,6 +752,11 @@ class _AddressesList extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
   });
+  final String buyerId;
+  final String buyerName;
+  final BuyerRepository buyerRepo;
+  final void Function(BuyerAddress) onEdit;
+  final void Function(BuyerAddress) onDelete;
 
   @override
   State<_AddressesList> createState() => _AddressesListState();
@@ -837,9 +836,9 @@ class _AddressesListState extends State<_AddressesList> {
 // ── Info section ──────────────────────────────────────────────────────────────
 
 class _InfoSection extends StatelessWidget {
-  final Buyer buyer;
 
   const _InfoSection({required this.buyer});
+  final Buyer buyer;
 
   @override
   Widget build(BuildContext context) {
@@ -929,10 +928,10 @@ class _InfoSection extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String text;
 
   const _InfoRow({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -952,11 +951,6 @@ class _InfoRow extends StatelessWidget {
 // ── Address tile ──────────────────────────────────────────────────────────────
 
 class _AddressTile extends StatelessWidget {
-  final BuyerAddress address;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onCopy;
-  final VoidCallback? onOpenMaps;
 
   const _AddressTile({
     required this.address,
@@ -965,6 +959,11 @@ class _AddressTile extends StatelessWidget {
     required this.onCopy,
     this.onOpenMaps,
   });
+  final BuyerAddress address;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onCopy;
+  final VoidCallback? onOpenMaps;
 
   @override
   Widget build(BuildContext context) {

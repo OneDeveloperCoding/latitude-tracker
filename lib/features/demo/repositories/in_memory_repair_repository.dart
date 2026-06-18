@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import '../../repairs/models/repair.dart';
-import '../../repairs/repositories/repair_repository.dart';
-import '../demo_data.dart';
+import 'package:latitude_tracker/features/demo/demo_data.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
 
 class InMemoryRepairRepository implements RepairRepository {
   final _repairs = <Repair>[];

@@ -1,30 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BuyerAddress {
-  static const defaultCountry = 'Portugal';
-
-  final String id;
-  final String buyerId;
-  final String label;
-  final String street;
-  final String houseNumber;
-  final String? fraction;
-  final String? notes;
-  final String city;
-  final String postalCode;
-  final String country;
-  final bool isDefault;
 
   const BuyerAddress({
     required this.id,
-    this.buyerId = '',
-    required this.label,
-    required this.street,
-    required this.houseNumber,
+    required this.label, required this.street, required this.houseNumber, required this.city, required this.postalCode, this.buyerId = '',
     this.fraction,
     this.notes,
-    required this.city,
-    required this.postalCode,
     this.country = defaultCountry,
     this.isDefault = false,
   });
@@ -60,6 +42,19 @@ class BuyerAddress {
       isDefault: data['isDefault'] as bool? ?? false,
     );
   }
+  static const defaultCountry = 'Portugal';
+
+  final String id;
+  final String buyerId;
+  final String label;
+  final String street;
+  final String houseNumber;
+  final String? fraction;
+  final String? notes;
+  final String city;
+  final String postalCode;
+  final String country;
+  final bool isDefault;
 
   Map<String, dynamic> toFirestore() => {
         'label': label,

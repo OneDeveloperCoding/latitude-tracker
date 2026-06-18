@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('scheduledDate exactly at startOfThisWeek → This week', () {
-      final sale = saleWithScheduled(DateTime(2026, 6, 1));
+      final sale = saleWithScheduled(DateTime(2026, 6));
       final groups = SaleGrouper.byWeek([sale], now: _kNow);
       expect(groups.keys.first, 'This week');
     });
@@ -85,9 +85,9 @@ void main() {
   group('SaleGrouper.byWeek — bucket ordering', () {
     test('fixed buckets appear before month buckets', () {
       final sales = [
-        makeSale(createdAt: DateTime(2026, 3, 1)),   // month bucket
+        makeSale(createdAt: DateTime(2026, 3)),   // month bucket
         makeSale(scheduledDate: DateTime(2026, 6, 8)), // Next week
-        makeSale(scheduledDate: DateTime(2026, 5, 1)), // Overdue
+        makeSale(scheduledDate: DateTime(2026, 5)), // Overdue
         makeSale(scheduledDate: DateTime(2026, 6, 4)), // This week
         makeSale(scheduledDate: DateTime(2026, 6, 20)), // Later
       ];

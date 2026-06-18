@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../core/id_gen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
 
 // Seed categories shown by default in the category picker.
 // The user can add their own free-text categories on top of these.
@@ -18,7 +18,7 @@ const kDefaultCategories = [
 enum PaymentMethod { mbWay, revolut, paypal, cash, sumup, bankTransfer }
 
 // Display order for pickers — most common digital wallets first.
-const kPaymentMethodOrder = [
+const List<PaymentMethod> kPaymentMethodOrder = [
   PaymentMethod.mbWay,
   PaymentMethod.revolut,
   PaymentMethod.paypal,
@@ -66,18 +66,11 @@ extension ShipmentStatusLabel on ShipmentStatus {
 const kMaxComponentQuantity = 9999;
 
 class ComponentItem {
-  final String id;
-  final String name;
-  final int quantity;
-  final bool isAvailable;
-  final List<String> photoUrls;
-  final String? notes;
 
   const ComponentItem({
     required this.id,
     required this.name,
-    this.quantity = 1,
-    required this.isAvailable,
+    required this.isAvailable, this.quantity = 1,
     this.photoUrls = const [],
     this.notes,
   });
@@ -90,6 +83,12 @@ class ComponentItem {
         photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
         notes: map['notes'] as String?,
       );
+  final String id;
+  final String name;
+  final int quantity;
+  final bool isAvailable;
+  final List<String> photoUrls;
+  final String? notes;
 
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -123,13 +122,6 @@ class ComponentItem {
 const _sentinel = Object();
 
 class SaleItem {
-  final String id;
-  final String description;
-  final String category;
-  final double price;
-  final AssemblyStatus assemblyStatus;
-  final List<ComponentItem> components;
-  final List<String> photoUrls;
 
   const SaleItem({
     required this.id,
@@ -155,6 +147,13 @@ class SaleItem {
             .toList(),
         photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
       );
+  final String id;
+  final String description;
+  final String category;
+  final double price;
+  final AssemblyStatus assemblyStatus;
+  final List<ComponentItem> components;
+  final List<String> photoUrls;
 
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -187,8 +186,6 @@ class SaleItem {
 }
 
 class SalePayment {
-  final PaymentStatus status;
-  final PaymentMethod method;
 
   const SalePayment({required this.status, required this.method});
 
@@ -202,6 +199,8 @@ class SalePayment {
           orElse: () => PaymentMethod.cash,
         ),
       );
+  final PaymentStatus status;
+  final PaymentMethod method;
 
   Map<String, dynamic> toMap() => {
         'status': status.name,
@@ -216,11 +215,6 @@ class SalePayment {
 }
 
 class SaleShipment {
-  final DeliveryType type;
-  final ShipmentStatus status;
-  final String? trackingCode;
-  final String? addressId;
-  final String? postalCode;
 
   const SaleShipment({
     required this.type,
@@ -243,6 +237,11 @@ class SaleShipment {
         addressId: map['addressId'] as String?,
         postalCode: map['postalCode'] as String?,
       );
+  final DeliveryType type;
+  final ShipmentStatus status;
+  final String? trackingCode;
+  final String? addressId;
+  final String? postalCode;
 
   Map<String, dynamic> toMap() => {
         'type': type.name,
@@ -268,17 +267,6 @@ class SaleShipment {
 }
 
 class Sale {
-  final String id;
-  final String buyerId;
-  final String buyerName;
-  final List<SaleItem> items;
-  final SalePayment payment;
-  final SaleShipment shipment;
-  final bool requiresNif;
-  final bool atSubmissionDone;
-  final DateTime createdAt;
-  final DateTime? scheduledDate;
-  final String? notes;
 
   const Sale({
     required this.id,
@@ -288,33 +276,10 @@ class Sale {
     required this.payment,
     required this.shipment,
     required this.requiresNif,
-    this.atSubmissionDone = false,
-    required this.createdAt,
+    required this.createdAt, this.atSubmissionDone = false,
     this.scheduledDate,
     this.notes,
   });
-
-  double get totalPrice => items.fold(0.0, (acc, item) => acc + item.price);
-
-  // Worst-case across all items: waitingForMaterials > inProgress > notStarted > ready.
-  // A Sale is only ready when every SaleItem is ready.
-  AssemblyStatus get derivedAssemblyStatus {
-    if (items.isEmpty) return AssemblyStatus.notStarted;
-    AssemblyStatus worst = AssemblyStatus.ready;
-    for (final item in items) {
-      final s = item.assemblyStatus;
-      if (s == AssemblyStatus.waitingForMaterials) {
-        return AssemblyStatus.waitingForMaterials;
-      }
-      if (s == AssemblyStatus.inProgress) {
-        worst = AssemblyStatus.inProgress;
-      } else if (s == AssemblyStatus.notStarted &&
-          worst != AssemblyStatus.inProgress) {
-        worst = AssemblyStatus.notStarted;
-      }
-    }
-    return worst;
-  }
 
   factory Sale.fromArchiveMap(Map<String, dynamic> map) => Sale(
         id: map['id'] as String? ?? '',
@@ -336,19 +301,6 @@ class Sale {
         notes: map['notes'] as String?,
       );
 
-  static DateTime _parseArchiveDate(dynamic value) {
-    if (value is String) {
-      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
-    }
-    if (value is Map && value['_seconds'] != null) {
-      return DateTime.fromMillisecondsSinceEpoch(
-          (value['_seconds'] as int) * 1000);
-    }
-    // Sentinel for unrecognised/missing dates — keeps corrupt docs out of
-    // current-period aggregations without losing them from the list entirely.
-    return DateTime.fromMillisecondsSinceEpoch(0);
-  }
-
   factory Sale.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Sale(
@@ -369,6 +321,52 @@ class Sale {
       scheduledDate: (data['scheduledDate'] as Timestamp?)?.toDate(),
       notes: data['notes'] as String?,
     );
+  }
+  final String id;
+  final String buyerId;
+  final String buyerName;
+  final List<SaleItem> items;
+  final SalePayment payment;
+  final SaleShipment shipment;
+  final bool requiresNif;
+  final bool atSubmissionDone;
+  final DateTime createdAt;
+  final DateTime? scheduledDate;
+  final String? notes;
+
+  double get totalPrice => items.fold(0, (acc, item) => acc + item.price);
+
+  // Worst-case across all items: waitingForMaterials > inProgress > notStarted > ready.
+  // A Sale is only ready when every SaleItem is ready.
+  AssemblyStatus get derivedAssemblyStatus {
+    if (items.isEmpty) return AssemblyStatus.notStarted;
+    var worst = AssemblyStatus.ready;
+    for (final item in items) {
+      final s = item.assemblyStatus;
+      if (s == AssemblyStatus.waitingForMaterials) {
+        return AssemblyStatus.waitingForMaterials;
+      }
+      if (s == AssemblyStatus.inProgress) {
+        worst = AssemblyStatus.inProgress;
+      } else if (s == AssemblyStatus.notStarted &&
+          worst != AssemblyStatus.inProgress) {
+        worst = AssemblyStatus.notStarted;
+      }
+    }
+    return worst;
+  }
+
+  static DateTime _parseArchiveDate(dynamic value) {
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    if (value is Map && value['_seconds'] != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+          (value['_seconds'] as int) * 1000);
+    }
+    // Sentinel for unrecognised/missing dates — keeps corrupt docs out of
+    // current-period aggregations without losing them from the list entirely.
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Map<String, dynamic> toFirestore() => {

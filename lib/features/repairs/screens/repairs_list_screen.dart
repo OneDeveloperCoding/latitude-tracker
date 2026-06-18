@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/sheet_section_label.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../models/repair.dart';
-import '../widgets/repair_card.dart';
-import 'new_repair_screen.dart';
-import 'repair_detail_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/sheet_section_label.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/screens/new_repair_screen.dart';
+import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_card.dart';
 
 enum _SortOrder { newestFirst, oldestFirst }
 
@@ -123,7 +122,6 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                     FilterChip(
                       avatar: const Icon(Icons.search, size: 18),
                       label: Text(s.searchRepairs),
-                      selected: false,
                       onSelected: (_) => setState(() => _searchExpanded = true),
                       visualDensity: VisualDensity.compact,
                     ),
@@ -168,13 +166,13 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                                     if (_isWide) {
                                       setState(() => _selectedRepair = repair);
                                       _rightPanelKey.currentState
-                                          ?.pushReplacement(MaterialPageRoute(
+                                          ?.pushReplacement(MaterialPageRoute<void>(
                                         builder: (_) => RepairDetailScreen(
                                             repairId: repair.id),
                                       ));
                                     } else {
                                       Navigator.of(context)
-                                          .push(MaterialPageRoute(
+                                          .push(MaterialPageRoute<void>(
                                         builder: (_) => RepairDetailScreen(
                                             repairId: repair.id),
                                       ));
@@ -190,7 +188,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
         final fab = FloatingActionButton(
           heroTag: 'repair-fab',
           onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const NewRepairScreen()),
+            MaterialPageRoute<void>(builder: (_) => const NewRepairScreen()),
           ),
           tooltip: s.newRepair,
           child: const Icon(Icons.add),
@@ -219,7 +217,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                       )
                     : Navigator(
                         key: _rightPanelKey,
-                        onGenerateRoute: (_) => MaterialPageRoute(
+                        onGenerateRoute: (_) => MaterialPageRoute<void>(
                           builder: (_) => RepairDetailScreen(
                             repairId: _selectedRepair!.id,
                           ),
@@ -257,7 +255,6 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           return SafeArea(
             child: DraggableScrollableSheet(
               expand: false,
-              initialChildSize: 0.5,
               minChildSize: 0.3,
               maxChildSize: 0.85,
               builder: (_, scrollController) => SingleChildScrollView(
@@ -334,4 +331,3 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
     );
   }
 }
-

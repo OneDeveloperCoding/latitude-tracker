@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../sales/screens/sales_list_screen.dart';
-import '../../sales/models/sale_filter.dart';
-import 'repairs_list_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/repairs/screens/repairs_list_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
+import 'package:latitude_tracker/features/sales/screens/sales_list_screen.dart';
 
 class SalesRepairsTabScreen extends StatefulWidget {
-  final Set<SaleFilter> initialSaleFilters;
-  final bool startOnRepairs;
 
   const SalesRepairsTabScreen({
     super.key,
     this.initialSaleFilters = const {},
     this.startOnRepairs = false,
   });
+  final Set<SaleFilter> initialSaleFilters;
+  final bool startOnRepairs;
 
   @override
   State<SalesRepairsTabScreen> createState() => _SalesRepairsTabScreenState();

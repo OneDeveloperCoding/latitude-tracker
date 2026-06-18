@@ -1,19 +1,17 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/id_gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/widgets/discard_dialog.dart';
-import '../models/buyer.dart';
-import '../repositories/buyer_repository.dart';
-import '../widgets/address_form_fields.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/widgets/discard_dialog.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/widgets/address_form_fields.dart';
 
 class BuyerFormScreen extends StatefulWidget {
-  final Buyer? buyer;
 
   const BuyerFormScreen({super.key, this.buyer});
+  final Buyer? buyer;
 
   @override
   State<BuyerFormScreen> createState() => _BuyerFormScreenState();
@@ -256,7 +254,6 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
                 Expanded(
                   child: TextField(
                     controller: _tagInputController,
-                    textCapitalization: TextCapitalization.none,
                     decoration: InputDecoration(
                       hintText: s.addTagHint,
                       border: const OutlineInputBorder(),
@@ -305,4 +302,3 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   );
   }
 }
-

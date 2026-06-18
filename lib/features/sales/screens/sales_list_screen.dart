@@ -1,30 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/constants.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/theme/color_scheme_ext.dart';
-import '../../../core/store/buyers_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/sheet_section_label.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../buyers/models/buyer.dart';
-import '../../heat_map/screens/geographic_sales_screen.dart';
-import '../models/sale.dart';
-import '../models/sale_filter.dart';
-import '../services/sale_grouper.dart';
-import '../services/sale_urgency.dart';
-import '../services/sale_urgency_ui.dart';
-import 'new_sale_screen.dart';
-import 'sale_detail_screen.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/core/widgets/sheet_section_label.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/heat_map/screens/geographic_sales_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
+import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
+import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
+import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 
 class SalesListScreen extends StatefulWidget {
-  final Set<SaleFilter> initialFilters;
-  /// When set, filters the list to sales with this CP4 postal prefix and
-  /// overrides the active-only default so delivered sales are also shown.
-  final String? postalCodePrefix;
-  final String? appBarTitle;
 
   const SalesListScreen({
     super.key,
@@ -35,6 +29,11 @@ class SalesListScreen extends StatefulWidget {
           postalCodePrefix == null || appBarTitle != null,
           'appBarTitle is required when postalCodePrefix is set',
         );
+  final Set<SaleFilter> initialFilters;
+  /// When set, filters the list to sales with this CP4 postal prefix and
+  /// overrides the active-only default so delivered sales are also shown.
+  final String? postalCodePrefix;
+  final String? appBarTitle;
 
   @override
   State<SalesListScreen> createState() => _SalesListScreenState();
@@ -97,7 +96,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _rebuildCache() {
-    final allSales = SalesStore.current ?? [];
+    final allSales = SalesStore.currentOrEmpty;
 
     var sales = _applyFilter(allSales);
     sales = _applySearch(sales);
@@ -119,7 +118,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     );
 
     _buyerNifById = {
-      for (final b in BuyersStore.current ?? []) b.id: b.nif,
+      for (final b in BuyersStore.currentOrEmpty) b.id: b.nif,
     };
   }
 
@@ -213,7 +212,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     if (!_isTablet()) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+        MaterialPageRoute<void>(builder: (_) => SaleDetailScreen(saleId: sale.id)),
       );
       return;
     }
@@ -221,10 +220,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
     setState(() => _selectedSale = sale);
     final nav = _rightPanelKey.currentState;
     if (nav != null) {
-      nav.popUntil((r) => r.isFirst);
-      nav.push(MaterialPageRoute(
-        builder: (_) => SaleDetailScreen(saleId: sale.id),
-      ));
+      nav
+        ..popUntil((r) => r.isFirst)
+        ..push(MaterialPageRoute<void>(
+          builder: (_) => SaleDetailScreen(saleId: sale.id),
+        ));
     }
   }
 
@@ -232,15 +232,16 @@ class _SalesListScreenState extends State<SalesListScreen> {
     if (!_isTablet()) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+        MaterialPageRoute<void>(builder: (_) => const NewSaleScreen()),
       );
       return;
     }
     setState(() => _selectedSale = null);
     final nav = _rightPanelKey.currentState;
     if (nav != null) {
-      nav.popUntil((r) => r.isFirst);
-      nav.push(MaterialPageRoute(builder: (_) => const NewSaleScreen()));
+      nav
+        ..popUntil((r) => r.isFirst)
+        ..push(MaterialPageRoute<void>(builder: (_) => const NewSaleScreen()));
     }
   }
 
@@ -287,7 +288,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 FilterChip(
                   avatar: const Icon(Icons.search, size: 18),
                   label: Text(s.searchSales),
-                  selected: false,
                   onSelected: (_) => setState(() => _searchExpanded = true),
                   visualDensity: VisualDensity.compact,
                 ),
@@ -307,7 +307,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 onSelected: (action) => switch (action) {
                   _OverflowAction.map => Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                           builder: (_) => const GeographicSalesScreen()),
                     ),
                   _OverflowAction.legend => _showPathLegend(context, s),
@@ -384,7 +384,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
             Expanded(
               child: Navigator(
                 key: _rightPanelKey,
-                onGenerateRoute: (_) => MaterialPageRoute(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
                   builder: (_) => const _RightPanelPlaceholder(),
                 ),
               ),
@@ -465,7 +465,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
               buyerSearchController.text.trim().toLowerCase();
           final buyerResults = buyerQuery.isEmpty
               ? <Buyer>[]
-              : (BuyersStore.current ?? [])
+              : BuyersStore.currentOrEmpty
                   .where((b) =>
                       b.name.toLowerCase().contains(buyerQuery))
                   .take(6)
@@ -555,7 +555,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
                             children: years
                                 .map((y) => FilterChip(
                                       label: Text('$y'),
-                                      selected: false,
                                       onSelected: (_) {
                                         _selectedYear = y;
                                         _selectedMonth = null;
@@ -618,7 +617,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: Builder(
                         builder: (_) {
-                          final allCats = (SalesStore.current ?? [])
+                          final allCats = (SalesStore.currentOrEmpty)
                               .expand((s) => s.items.map((i) => i.category))
                               .toSet()
                               .toList()
@@ -734,10 +733,6 @@ class _RightPanelPlaceholder extends StatelessWidget {
 // ── Compact sort chip ─────────────────────────────────────────────────────────
 
 class _SortChip extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final bool isActive;
-  final VoidCallback onTap;
 
   const _SortChip({
     required this.label,
@@ -745,12 +740,16 @@ class _SortChip extends StatelessWidget {
     required this.onTap,
     this.icon,
   });
+  final String label;
+  final IconData? icon;
+  final bool isActive;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return FilterChip(
       label: Text(label),
-      avatar: icon != null ? Icon(icon!, size: 16) : null,
+      avatar: icon != null ? Icon(icon, size: 16) : null,
       selected: isActive,
       showCheckmark: false,
       onSelected: (_) => onTap(),
@@ -760,8 +759,8 @@ class _SortChip extends StatelessWidget {
 }
 
 class _CategoryChip extends StatelessWidget {
-  final String category;
   const _CategoryChip({required this.category});
+  final String category;
 
   @override
   Widget build(BuildContext context) {
@@ -784,11 +783,11 @@ class _CategoryChip extends StatelessWidget {
 
 // Shows item descriptions (up to 3) plus "and X more" if needed.
 class _ItemDescriptions extends StatelessWidget {
+
+  const _ItemDescriptions({required this.sale, required this.reasons, required this.buyerNif});
   final Sale sale;
   final List<UrgencyReasonType> reasons;
   final String? buyerNif;
-
-  const _ItemDescriptions({required this.sale, required this.reasons, required this.buyerNif});
 
   @override
   Widget build(BuildContext context) {
@@ -828,9 +827,9 @@ class _ItemDescriptions extends StatelessWidget {
 
 // Shows one chip per unique category across all SaleItems.
 class _CategoryChips extends StatelessWidget {
-  final Sale sale;
 
   const _CategoryChips({required this.sale});
+  final Sale sale;
 
   @override
   Widget build(BuildContext context) {
@@ -847,10 +846,6 @@ class _CategoryChips extends StatelessWidget {
 }
 
 class _TimelineView extends StatelessWidget {
-  final Map<String, List<Sale>> groups;
-  final Map<String, String?> buyerNifById;
-  final String? selectedSaleId;
-  final void Function(Sale) onSaleTap;
 
   const _TimelineView({
     required this.groups,
@@ -858,6 +853,10 @@ class _TimelineView extends StatelessWidget {
     required this.onSaleTap,
     this.selectedSaleId,
   });
+  final Map<String, List<Sale>> groups;
+  final Map<String, String?> buyerNifById;
+  final String? selectedSaleId;
+  final void Function(Sale) onSaleTap;
 
   @override
   Widget build(BuildContext context) {
@@ -902,12 +901,6 @@ class _TimelineView extends StatelessWidget {
 // Returns blocker reasons for the ⚠️ badge. Empty list = no badge.
 
 class _SaleCard extends StatelessWidget {
-  static final _dateFormat = DateFormat('dd MMM yyyy');
-
-  final Sale sale;
-  final String? buyerNif;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _SaleCard({
     required this.sale,
@@ -915,6 +908,12 @@ class _SaleCard extends StatelessWidget {
     required this.onTap,
     this.isSelected = false,
   });
+  static final _dateFormat = DateFormat('dd MMM yyyy');
+
+  final Sale sale;
+  final String? buyerNif;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -989,7 +988,6 @@ class _SaleCard extends StatelessWidget {
                   const Spacer(),
                   if (sale.scheduledDate != null)
                     Flexible(
-                      fit: FlexFit.loose,
                       child: _ScheduledDateLabel(sale: sale),
                     ),
                 ],
@@ -1011,11 +1009,11 @@ class _SaleCard extends StatelessWidget {
 }
 
 class _AttentionBadges extends StatelessWidget {
+
+  const _AttentionBadges({required this.sale, required this.reasons, required this.buyerNif});
   final Sale sale;
   final List<UrgencyReasonType> reasons;
   final String? buyerNif;
-
-  const _AttentionBadges({required this.sale, required this.reasons, required this.buyerNif});
 
   @override
   Widget build(BuildContext context) {
@@ -1126,9 +1124,9 @@ class _AttentionBadges extends StatelessWidget {
 }
 
 class _AgeLabel extends StatelessWidget {
-  final Sale sale;
 
   const _AgeLabel({required this.sale});
+  final Sale sale;
 
   @override
   Widget build(BuildContext context) {
@@ -1147,11 +1145,11 @@ class _AgeLabel extends StatelessWidget {
 }
 
 class _ScheduledDateLabel extends StatelessWidget {
+
+  const _ScheduledDateLabel({required this.sale});
   static final _dateFormat = DateFormat('dd MMM');
 
   final Sale sale;
-
-  const _ScheduledDateLabel({required this.sale});
 
   @override
   Widget build(BuildContext context) {
@@ -1211,7 +1209,7 @@ class _ScheduledDateLabel extends StatelessWidget {
 
 void _showNotePreview(BuildContext context, String notes) {
   final s = context.s;
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1258,7 +1256,7 @@ void _showNifDetail(
     iconColor = cs.pending;
   }
 
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1283,7 +1281,7 @@ void _showNifDetail(
 
 void _showReadyButUnpaidDetail(BuildContext context) {
   final s = context.s;
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1315,7 +1313,7 @@ void _showReadyButUnpaidDetail(BuildContext context) {
 void _showUrgencyDetail(
     BuildContext context, List<UrgencyReasonType> reasons) {
   final s = context.s;
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1347,7 +1345,7 @@ void _showUrgencyDetail(
 
 void _showPathLegend(BuildContext context, AppStrings s) {
   final cs = Theme.of(context).colorScheme;
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1382,11 +1380,11 @@ void _showPathLegend(BuildContext context, AppStrings s) {
 }
 
 class _LegendRow extends StatelessWidget {
+
+  const _LegendRow(this.icon, this.color, this.label);
   final IconData icon;
   final Color color;
   final String label;
-
-  const _LegendRow(this.icon, this.color, this.label);
 
   @override
   Widget build(BuildContext context) {
@@ -1406,15 +1404,14 @@ class _LegendRow extends StatelessWidget {
 }
 
 class _SaleProgressPath extends StatelessWidget {
-  final Sale sale;
 
   const _SaleProgressPath({required this.sale});
+  final Sale sale;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _assemblyNode(cs),
         _line(cs, sale.derivedAssemblyStatus == AssemblyStatus.ready),
@@ -1467,10 +1464,10 @@ class _SaleProgressPath extends StatelessWidget {
 }
 
 class _PathNode extends StatelessWidget {
-  final IconData icon;
-  final Color color;
 
   const _PathNode({required this.icon, required this.color});
+  final IconData icon;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {

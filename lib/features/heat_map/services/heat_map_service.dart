@@ -1,13 +1,8 @@
+import 'package:latitude_tracker/features/heat_map/services/geocoding_service.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../sales/models/sale.dart';
-import 'geocoding_service.dart';
-
 class HeatMapPoint {
-  final String postalCode;
-  final String locality;
-  final LatLng position;
-  final int count;
 
   const HeatMapPoint({
     required this.postalCode,
@@ -15,6 +10,10 @@ class HeatMapPoint {
     required this.position,
     required this.count,
   });
+  final String postalCode;
+  final String locality;
+  final LatLng position;
+  final int count;
 }
 
 class HeatMapService {
