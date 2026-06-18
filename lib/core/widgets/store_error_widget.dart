@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
 class StoreErrorWidget extends StatelessWidget {
-
   const StoreErrorWidget({
-    required this.message, required this.onRetry, super.key,
+    required this.message,
+    required this.onRetry,
+    super.key,
   });
   final String message;
   final VoidCallback onRetry;

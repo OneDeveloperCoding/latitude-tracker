@@ -12,7 +12,8 @@ class DemoMode {
 
   static final active = ValueNotifier<bool>(false);
 
-  // Fires once each time demo mode is entered; MainNav listens and shows the tutorial.
+  // Fires once each time demo mode is entered; MainNav listens and shows the
+  // tutorial.
   static final pendingTutorial = ValueNotifier<bool>(false);
 
   static final InMemorySaleRepository saleRepo = InMemorySaleRepository();

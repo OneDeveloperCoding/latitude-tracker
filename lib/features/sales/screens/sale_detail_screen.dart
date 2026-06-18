@@ -66,8 +66,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final statusLabel = sale.shipment.status == ShipmentStatus.delivered
           ? s.delivered
           : s.shippedStatus;
-      message =
-          s.deleteShippedSaleBody(statusLabel, sale.atSubmissionDone, totalPhotos);
+      message = s.deleteShippedSaleBody(
+        statusLabel, sale.atSubmissionDone, totalPhotos,
+      );
     } else if (paid) {
       title = s.deletePaidSaleTitle;
       message = s.deletePaidSaleBody(sale.totalPrice, totalPhotos);
@@ -125,11 +126,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         }
         final sale = snapshot.data;
         if (sale == null) {
-          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping &&
+              snapshot.connectionState != ConnectionState.waiting) {
             // Sale deleted on another device — navigate back after this frame.
-            // Direct assignment without setState: setState is forbidden inside a
-            // builder callback. The Dart single-thread model guarantees subsequent
-            // builder calls see the updated value before another callback is queued.
+            // Direct assignment without setState: setState is forbidden inside
+            // a
+            // builder callback. The Dart single-thread model guarantees
+            // subsequent
+            // builder calls see the updated value before another callback is
+            // queued.
             _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (context.mounted && Navigator.of(context).canPop()) {
@@ -247,7 +252,11 @@ class _SaleDetailBody extends StatelessWidget {
           ),
           _InfoRow(
             icon: Icons.euro,
-            text: '€${sale.totalPrice.toStringAsFixed(2)} · ${sale.items.length} ${sale.items.length == 1 ? 'item' : 'items'}',
+            text: () {
+              final price = sale.totalPrice.toStringAsFixed(2);
+              final n = sale.items.length;
+              return '€$price · $n ${n == 1 ? 'item' : 'items'}';
+            }(),
           ),
         ]),
         const SizedBox(height: 16),
@@ -430,7 +439,8 @@ class _ItemSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = item.assemblyStatus.colorOf(Theme.of(context).colorScheme);
+    final statusColor =
+        item.assemblyStatus.colorOf(Theme.of(context).colorScheme);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
@@ -1033,7 +1043,11 @@ class _InfoCard extends StatelessWidget {
 
 class _NifComplianceRow extends StatelessWidget {
 
-  const _NifComplianceRow({required this.sale, required this.repository, required this.buyer});
+  const _NifComplianceRow({
+    required this.sale,
+    required this.repository,
+    required this.buyer,
+  });
   final Sale sale;
   final SaleRepository repository;
   final Buyer? buyer;
@@ -1153,7 +1167,12 @@ class _NifComplianceRow extends StatelessWidget {
 
 class _InfoRow extends StatelessWidget {
 
-  const _InfoRow({required this.icon, required this.text, this.onTap, this.trailing});
+  const _InfoRow({
+    required this.icon,
+    required this.text,
+    this.onTap,
+    this.trailing,
+  });
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
@@ -1338,7 +1357,9 @@ class _RepairsSection extends StatelessWidget {
                       leading: const Icon(Icons.build_outlined),
                       title: Text(repair.itemDescription),
                       subtitle: Text(
-                          '${repair.contactName} · ${s.repairStatusLabelFor(repair.status)}'),
+                        '${repair.contactName}'
+                        ' · ${s.repairStatusLabelFor(repair.status)}',
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(

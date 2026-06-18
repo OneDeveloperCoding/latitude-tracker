@@ -144,8 +144,8 @@ class _DemoBanner extends StatelessWidget {
                 child: Text(
                   s.demoBanner,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: onContainer,
-                      ),
+                    color: onContainer,
+                  ),
                 ),
               ),
               IconButton(

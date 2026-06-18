@@ -30,7 +30,8 @@ class SalesAnalyticsService {
     return (revenue: revenue, count: count);
   }
 
-  // Per-category revenue breakdown for paid sales in the period (for stacked chart).
+  // Per-category revenue breakdown for paid sales in the period (for stacked
+  // chart).
   static List<({String category, double revenue})> computeCategoryBreakdown(
     List<Sale> all,
     DateTime start,
@@ -45,12 +46,12 @@ class SalesAnalyticsService {
       }
     }
     return (map.entries.map((e) => (category: e.key, revenue: e.value)).toList()
-          ..sort((a, b) => b.revenue.compareTo(a.revenue)));
+      ..sort((a, b) => b.revenue.compareTo(a.revenue)));
   }
 
   // Revenue and sale count per payment method for paid sales in the period.
   static Map<PaymentMethod, ({double revenue, int count})>
-      computePaymentMethodBreakdown(
+  computePaymentMethodBreakdown(
     List<Sale> all,
     DateTime start,
     DateTime end,

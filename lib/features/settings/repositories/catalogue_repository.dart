@@ -39,22 +39,25 @@ class _FirestoreCatalogueRepository implements CatalogueRepository {
   }
 
   @override
-  Future<void> saveHiddenCategories(List<String> hidden) =>
-      _docRef.set({'hiddenCategories': hidden.toSet().toList()}, SetOptions(merge: true));
+  Future<void> saveHiddenCategories(List<String> hidden) => _docRef.set({
+    'hiddenCategories': hidden.toSet().toList(),
+  }, SetOptions(merge: true));
 
   @override
-  Future<void> addHiddenCategory(String name) =>
-      _docRef.set(
-        {'hiddenCategories': FieldValue.arrayUnion([name])},
-        SetOptions(merge: true),
-      );
+  Future<void> addHiddenCategory(String name) => _docRef.set(
+    {
+      'hiddenCategories': FieldValue.arrayUnion([name]),
+    },
+    SetOptions(merge: true),
+  );
 
   @override
-  Future<void> removeHiddenCategory(String name) =>
-      _docRef.set(
-        {'hiddenCategories': FieldValue.arrayRemove([name])},
-        SetOptions(merge: true),
-      );
+  Future<void> removeHiddenCategory(String name) => _docRef.set(
+    {
+      'hiddenCategories': FieldValue.arrayRemove([name]),
+    },
+    SetOptions(merge: true),
+  );
 
   // Firestore has no atomic arrayRemove+arrayUnion on the same field, so we
   // add the new name first: if the remove then fails, both names are hidden

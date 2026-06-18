@@ -7,8 +7,9 @@ import 'package:latitude_tracker/features/repairs/repositories/repair_repository
 class RepairsStore {
   RepairsStore._();
 
-  static final _store =
-      StreamStore<Repair>(() => RepairRepository().watchRepairs());
+  static final _store = StreamStore<Repair>(
+    () => RepairRepository().watchRepairs(),
+  );
 
   static ValueNotifier<StoreState<List<Repair>>> get state => _store.state;
   static List<Repair>? get current => _store.current;

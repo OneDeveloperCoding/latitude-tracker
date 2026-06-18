@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// receives the stored map so callers can vary TTL on the entry's content
 /// (e.g. different TTLs for cache hits vs. misses).
 class SharedPrefsCache {
-
   SharedPrefsCache(this.prefix);
   final String prefix;
 

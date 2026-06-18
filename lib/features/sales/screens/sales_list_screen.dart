@@ -61,7 +61,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
   // Cached once per store/filter/sort/search change — not on every build().
   List<Sale> _filteredSales = [];
   Map<String, List<Sale>> _groupedSales = {};
-  // Years with at least one Sale, newest first — recomputed only in _rebuildCache().
+  // Years with at least one Sale, newest first — recomputed only in
+  // _rebuildCache().
   List<int> _cachedAvailableYears = [];
   // Months (1–12) per year — recomputed only in _rebuildCache().
   Map<int, List<int>> _cachedMonthsByYear = {};
@@ -112,7 +113,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
     for (final s in allSales) {
       (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
     }
-    _cachedAvailableYears = monthsMap.keys.toList()..sort((a, b) => b.compareTo(a));
+    _cachedAvailableYears = monthsMap.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
     _cachedMonthsByYear = monthsMap.map(
       (y, months) => MapEntry(y, months.toList()..sort()),
     );
@@ -148,7 +150,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
       }).toList();
     }
 
-    // Year + optional month scope. Selecting a year lifts the delivered default.
+    // Year + optional month scope. Selecting a year lifts the delivered
+    // default.
     if (_selectedYear != null) {
       result =
           result.where((s) => s.createdAt.year == _selectedYear).toList();
@@ -166,7 +169,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
     if (_categoryFilters.isNotEmpty) {
       result = result
-          .where((s) => s.items.any((i) => _categoryFilters.contains(i.category)))
+          .where(
+            (s) => s.items.any((i) => _categoryFilters.contains(i.category)),
+          )
           .toList();
     }
 
@@ -212,7 +217,9 @@ class _SalesListScreenState extends State<SalesListScreen> {
     if (!_isTablet()) {
       Navigator.push(
         context,
-        MaterialPageRoute<void>(builder: (_) => SaleDetailScreen(saleId: sale.id)),
+        MaterialPageRoute<void>(
+          builder: (_) => SaleDetailScreen(saleId: sale.id),
+        ),
       );
       return;
     }
@@ -730,7 +737,8 @@ class _RightPanelPlaceholder extends StatelessWidget {
   }
 }
 
-// ── Compact sort chip ─────────────────────────────────────────────────────────
+// ── Compact sort chip
+// ─────────────────────────────────────────────────────────
 
 class _SortChip extends StatelessWidget {
 
@@ -784,7 +792,11 @@ class _CategoryChip extends StatelessWidget {
 // Shows item descriptions (up to 3) plus "and X more" if needed.
 class _ItemDescriptions extends StatelessWidget {
 
-  const _ItemDescriptions({required this.sale, required this.reasons, required this.buyerNif});
+  const _ItemDescriptions({
+    required this.sale,
+    required this.reasons,
+    required this.buyerNif,
+  });
   final Sale sale;
   final List<UrgencyReasonType> reasons;
   final String? buyerNif;
@@ -967,7 +979,9 @@ class _SaleCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
-              _ItemDescriptions(sale: sale, reasons: reasons, buyerNif: buyerNif),
+              _ItemDescriptions(
+                sale: sale, reasons: reasons, buyerNif: buyerNif,
+              ),
               const SizedBox(height: 4),
               _CategoryChips(sale: sale),
               Row(
@@ -1010,7 +1024,11 @@ class _SaleCard extends StatelessWidget {
 
 class _AttentionBadges extends StatelessWidget {
 
-  const _AttentionBadges({required this.sale, required this.reasons, required this.buyerNif});
+  const _AttentionBadges({
+    required this.sale,
+    required this.reasons,
+    required this.buyerNif,
+  });
   final Sale sale;
   final List<UrgencyReasonType> reasons;
   final String? buyerNif;
@@ -1023,7 +1041,8 @@ class _AttentionBadges extends StatelessWidget {
     final isPaid = sale.payment.status == PaymentStatus.paid;
 
     // Show NIF badge when NIF is missing or AT filing is actionable.
-    // Hidden only when buyer has NIF but sale is not yet paid (nothing to act on).
+    // Hidden only when buyer has NIF but sale is not yet paid (nothing to act
+    // on).
     final showNifBadge =
         sale.requiresNif && (!buyerHasNif || isPaid);
     final nifBadgeColor = !buyerHasNif
@@ -1044,7 +1063,8 @@ class _AttentionBadges extends StatelessWidget {
     }
 
     // Order: note → NIF → ready-but-unpaid → urgency warnings.
-    // Warnings are rightmost so they catch the eye first when scanning right-to-left.
+    // Warnings are rightmost so they catch the eye first when scanning
+    // right-to-left.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1067,7 +1087,9 @@ class _AttentionBadges extends StatelessWidget {
         if (showNifBadge) ...[
           const SizedBox(width: 4),
           InkWell(
-            onTap: () => _showNifDetail(context, buyerHasNif, sale.atSubmissionDone),
+            onTap: () => _showNifDetail(
+              context, buyerHasNif, sale.atSubmissionDone,
+            ),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
               padding: const EdgeInsets.all(11),
@@ -1291,7 +1313,10 @@ void _showReadyButUnpaidDetail(BuildContext context) {
         children: [
           Row(
             children: [
-              Icon(Icons.price_check, color: Theme.of(context).colorScheme.warning),
+              Icon(
+                Icons.price_check,
+                color: Theme.of(context).colorScheme.warning,
+              ),
               const SizedBox(width: 12),
               Text(
                 s.readyButUnpaidTitle,
@@ -1329,7 +1354,11 @@ void _showUrgencyDetail(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Icon(r.icon, size: 20, color: r.colorOf(Theme.of(context).colorScheme)),
+                  Icon(
+                    r.icon,
+                    size: 20,
+                    color: r.colorOf(Theme.of(context).colorScheme),
+                  ),
                   const SizedBox(width: 12),
                   Text(s.urgencyReasonLabel(r),
                       style: Theme.of(context).textTheme.bodyMedium),
@@ -1365,12 +1394,24 @@ void _showPathLegend(BuildContext context, AppStrings s) {
           _LegendRow(Icons.payments, cs.success,
               '${s.paymentLegendHeader}: ${s.paid}'),
           const Divider(height: 20),
-          _LegendRow(Icons.local_shipping_outlined, cs.muted,
-              '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.pending)}'),
-          _LegendRow(Icons.local_shipping, cs.shipped,
-              '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.shipped)}'),
-          _LegendRow(Icons.local_shipping, cs.success,
-              '${s.shipmentLegendHeader}: ${s.shipmentStatusLabel(ShipmentStatus.delivered)}'),
+          _LegendRow(
+            Icons.local_shipping_outlined,
+            cs.muted,
+            '${s.shipmentLegendHeader}: '
+            '${s.shipmentStatusLabel(ShipmentStatus.pending)}',
+          ),
+          _LegendRow(
+            Icons.local_shipping,
+            cs.shipped,
+            '${s.shipmentLegendHeader}: '
+            '${s.shipmentStatusLabel(ShipmentStatus.shipped)}',
+          ),
+          _LegendRow(
+            Icons.local_shipping,
+            cs.success,
+            '${s.shipmentLegendHeader}: '
+            '${s.shipmentStatusLabel(ShipmentStatus.delivered)}',
+          ),
           _LegendRow(Icons.store, cs.success, s.pickupNoShipment),
           _LegendRow(Icons.directions_walk, cs.success, s.handDelivery),
         ],

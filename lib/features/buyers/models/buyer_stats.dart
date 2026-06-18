@@ -1,7 +1,6 @@
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 class BuyerStats {
-
   const BuyerStats({
     required this.saleCount,
     required this.totalPaid,

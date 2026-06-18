@@ -8,8 +8,9 @@ import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/services/repair_photo_service.dart';
 
 abstract class RepairRepository {
-  factory RepairRepository() =>
-      DemoMode.active.value ? DemoMode.repairRepo : _FirestoreRepairRepository();
+  factory RepairRepository() => DemoMode.active.value
+      ? DemoMode.repairRepo
+      : _FirestoreRepairRepository();
 
   Stream<List<Repair>> watchRepairs();
   Stream<Repair?> watchRepair(String id);
@@ -50,8 +51,11 @@ class _FirestoreRepairRepository implements RepairRepository {
   Stream<List<Repair>> watchRepairsForSale(String saleId) => _repairsRef
       .where('linkedSaleId', isEqualTo: saleId)
       .snapshots()
-      .map((snap) => snap.docs.map(Repair.fromFirestore).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+      .map(
+        (snap) =>
+            snap.docs.map(Repair.fromFirestore).toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+      );
 
   @override
   Future<void> createRepair(Repair repair) =>
@@ -73,8 +77,10 @@ class _FirestoreRepairRepository implements RepairRepository {
 
   @override
   Future<List<Repair>> getRepairsForYear(int year) => _repairsRef
-      .where('createdAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(year)))
+      .where(
+        'createdAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(year)),
+      )
       .where('createdAt', isLessThan: Timestamp.fromDate(DateTime(year + 1)))
       .get()
       .then((snap) => snap.docs.map(Repair.fromFirestore).toList());
@@ -82,8 +88,10 @@ class _FirestoreRepairRepository implements RepairRepository {
   // By default keeps photos in Storage so archive JSON URLs stay valid.
   // Pass deletePhotos: true for a full wipe (e.g. reset).
   @override
-  Future<void> deleteAllRepairsForYear(int year,
-      {bool deletePhotos = false}) async {
+  Future<void> deleteAllRepairsForYear(
+    int year, {
+    bool deletePhotos = false,
+  }) async {
     final repairs = await getRepairsForYear(year);
     if (repairs.isEmpty) return;
     if (deletePhotos) {

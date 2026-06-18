@@ -24,8 +24,7 @@ class LocaleSettings {
     await prefs.setString(_key, l.languageCode);
   }
 
-  static String _intlLocale(String code) =>
-      code == 'pt' ? 'pt_PT' : 'en_US';
+  static String _intlLocale(String code) => code == 'pt' ? 'pt_PT' : 'en_US';
 }
 
 /// Propagates the active [Locale] down the widget tree via InheritedWidget so
@@ -33,9 +32,10 @@ class LocaleSettings {
 /// automatically when the locale changes — without needing explicit
 /// ValueListenableBuilder wrappers at each call site.
 class AppLocaleScope extends InheritedWidget {
-
   const AppLocaleScope({
-    required this.locale, required super.child, super.key,
+    required this.locale,
+    required super.child,
+    super.key,
   });
   final Locale locale;
 

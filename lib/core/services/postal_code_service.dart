@@ -5,7 +5,6 @@ import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 
 class PostalCodeResult {
-
   const PostalCodeResult({required this.streets, required this.city});
   final List<String> streets;
   final String city;
@@ -36,7 +35,10 @@ class PostalCodeService {
     );
   }
 
-  static Future<void> _toCache(String postalCode, PostalCodeResult result) async {
+  static Future<void> _toCache(
+    String postalCode,
+    PostalCodeResult result,
+  ) async {
     await _cache.set(postalCode, {
       'streets': result.streets,
       'city': result.city,
@@ -53,16 +55,19 @@ class PostalCodeService {
 
       final parts = data['partes'] as List<dynamic>? ?? [];
       final streets = parts
-          .map((p) =>
-              ((p as Map<String, dynamic>)['Artéria'] as String? ?? '').trim())
+          .map(
+            (p) => ((p as Map<String, dynamic>)['Artéria'] as String? ?? '')
+                .trim(),
+          )
           .where((s) => s.isNotEmpty)
           .toSet()
           .toList();
 
-      final city = ((data['Localidade'] as String?)?.trim().isNotEmpty == true
-              ? data['Localidade'] as String
-              : data['Concelho'] as String? ?? '')
-          .trim();
+      final city =
+          ((data['Localidade'] as String?)?.trim().isNotEmpty == true
+                  ? data['Localidade'] as String
+                  : data['Concelho'] as String? ?? '')
+              .trim();
 
       if (city.isEmpty) return null;
       return PostalCodeResult(streets: streets, city: city);

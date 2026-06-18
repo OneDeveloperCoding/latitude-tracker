@@ -15,8 +15,7 @@ class CategoryMaintenanceScreen extends StatefulWidget {
       _CategoryMaintenanceScreenState();
 }
 
-class _CategoryMaintenanceScreenState
-    extends State<CategoryMaintenanceScreen> {
+class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
   final _service = CategoryService();
 
   List<String> _hidden = [];
@@ -31,11 +30,19 @@ class _CategoryMaintenanceScreenState
   Future<void> _loadHidden() async {
     try {
       final hidden = await _service.fetchHiddenCategories();
-      if (mounted) setState(() { _hidden = hidden; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _hidden = hidden;
+          _loading = false;
+        });
+      }
     } catch (e, st) {
       logError(e, st);
       if (mounted) {
-        setState(() { _hidden = []; _loading = false; });
+        setState(() {
+          _hidden = [];
+          _loading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorMsg(e))),
         );
@@ -52,8 +59,7 @@ class _CategoryMaintenanceScreenState
       }
     }
     for (final repair in RepairsStore.currentOrEmpty) {
-      counts[repair.itemCategory] =
-          (counts[repair.itemCategory] ?? 0) + 1;
+      counts[repair.itemCategory] = (counts[repair.itemCategory] ?? 0) + 1;
     }
 
     final known = {
@@ -63,11 +69,13 @@ class _CategoryMaintenanceScreenState
     };
 
     return known
-        .map((name) => _CategoryEntry(
-              name: name,
-              useCount: counts[name] ?? 0,
-              isHidden: _hidden.contains(name),
-            ))
+        .map(
+          (name) => _CategoryEntry(
+            name: name,
+            useCount: counts[name] ?? 0,
+            isHidden: _hidden.contains(name),
+          ),
+        )
         .toList()
       ..sort((a, b) {
         final cmp = b.useCount.compareTo(a.useCount);
@@ -93,16 +101,21 @@ class _CategoryMaintenanceScreenState
                     child: Text(
                       s.demoBanner,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ...entries.map((e) => _CategoryTile(
-                      entry: e,
-                      onRename: () => isDemo ? _showDemoBlocked() : _showRenameDialog(e),
-                      onToggleHide: () => isDemo ? _showDemoBlocked() : _toggleHide(e),
-                      onDelete: () => isDemo ? _showDemoBlocked() : _confirmDelete(e),
-                    )),
+                ...entries.map(
+                  (e) => _CategoryTile(
+                    entry: e,
+                    onRename: () =>
+                        isDemo ? _showDemoBlocked() : _showRenameDialog(e),
+                    onToggleHide: () =>
+                        isDemo ? _showDemoBlocked() : _toggleHide(e),
+                    onDelete: () =>
+                        isDemo ? _showDemoBlocked() : _confirmDelete(e),
+                  ),
+                ),
               ],
             ),
     );
@@ -148,8 +161,7 @@ class _CategoryMaintenanceScreenState
                   setDialogState(() => error = s.renameCategoryEmpty);
                   return;
                 }
-                if (newName != entry.name &&
-                    allNames.contains(newName)) {
+                if (newName != entry.name && allNames.contains(newName)) {
                   setDialogState(() => error = s.renameCategoryDuplicate);
                   return;
                 }
@@ -187,7 +199,11 @@ class _CategoryMaintenanceScreenState
     try {
       if (entry.isHidden) {
         await _service.unhideCategory(entry.name);
-        if (mounted) setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
+        if (mounted) {
+          setState(
+            () => _hidden = _hidden.where((c) => c != entry.name).toList(),
+          );
+        }
       } else {
         await _service.hideCategory(entry.name);
         if (mounted) setState(() => _hidden = [..._hidden, entry.name]);
@@ -234,7 +250,9 @@ class _CategoryMaintenanceScreenState
       }
       return;
     }
-    if (mounted) setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
+    if (mounted) {
+      setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
+    }
   }
 
   Future<void> _runWithProgress(
@@ -264,7 +282,6 @@ class _CategoryMaintenanceScreenState
 }
 
 class _CategoryEntry {
-
   const _CategoryEntry({
     required this.name,
     required this.useCount,
@@ -278,7 +295,6 @@ class _CategoryEntry {
 enum _CategoryAction { rename, toggleHide, delete }
 
 class _CategoryTile extends StatelessWidget {
-
   const _CategoryTile({
     required this.entry,
     required this.onRename,
@@ -312,39 +328,39 @@ class _CategoryTile extends StatelessWidget {
             : null,
       ),
       trailing: PopupMenuButton<_CategoryAction>(
-              onSelected: (action) {
-                switch (action) {
-                  case _CategoryAction.rename:
-                    onRename();
-                  case _CategoryAction.toggleHide:
-                    onToggleHide();
-                  case _CategoryAction.delete:
-                    onDelete();
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: _CategoryAction.rename,
-                  child: Text(s.rename),
-                ),
-                PopupMenuItem(
-                  value: _CategoryAction.toggleHide,
-                  child: Text(entry.isHidden ? s.unhide : s.hide),
-                ),
-                PopupMenuItem(
-                  enabled: canDelete,
-                  value: _CategoryAction.delete,
-                  child: Text(
-                    s.delete,
-                    style: TextStyle(
-                      color: canDelete
-                          ? Colors.red
-                          : colorScheme.onSurface.withAlpha(97),
-                    ),
-                  ),
-                ),
-              ],
+        onSelected: (action) {
+          switch (action) {
+            case _CategoryAction.rename:
+              onRename();
+            case _CategoryAction.toggleHide:
+              onToggleHide();
+            case _CategoryAction.delete:
+              onDelete();
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: _CategoryAction.rename,
+            child: Text(s.rename),
+          ),
+          PopupMenuItem(
+            value: _CategoryAction.toggleHide,
+            child: Text(entry.isHidden ? s.unhide : s.hide),
+          ),
+          PopupMenuItem(
+            enabled: canDelete,
+            value: _CategoryAction.delete,
+            child: Text(
+              s.delete,
+              style: TextStyle(
+                color: canDelete
+                    ? Colors.red
+                    : colorScheme.onSurface.withAlpha(97),
+              ),
             ),
+          ),
+        ],
+      ),
     );
   }
 }

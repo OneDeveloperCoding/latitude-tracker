@@ -8,17 +8,16 @@ BuyerAddress _address({
   String postalCode = '4000-123',
   String city = 'Porto',
   String country = 'Portugal',
-}) =>
-    BuyerAddress(
-      id: 'test-id',
-      label: 'Casa',
-      street: street,
-      houseNumber: houseNumber,
-      fraction: fraction,
-      city: city,
-      postalCode: postalCode,
-      country: country,
-    );
+}) => BuyerAddress(
+  id: 'test-id',
+  label: 'Casa',
+  street: street,
+  houseNumber: houseNumber,
+  fraction: fraction,
+  city: city,
+  postalCode: postalCode,
+  country: country,
+);
 
 void main() {
   group('BuyerAddress.formattedAddress', () {
@@ -41,7 +40,9 @@ void main() {
     });
 
     test('omits country line for portugal (case-insensitive)', () {
-      final result = _address(country: 'portugal').formattedAddress('Ana Silva');
+      final result = _address(
+        country: 'portugal',
+      ).formattedAddress('Ana Silva');
       expect(result.split('\n').length, 3);
     });
 

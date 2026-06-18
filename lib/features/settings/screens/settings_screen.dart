@@ -4,7 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
-import 'package:latitude_tracker/core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
+import 'package:latitude_tracker/core/l10n/locale_settings.dart'
+    show AppLocaleScope, LocaleSettings;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
@@ -31,87 +32,93 @@ class SettingsScreen extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-        children: [
-          _SectionHeader(s.account),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(s.signedInAs),
-            subtitle: Text(isDemo ? s.demoUser : (user?.email ?? '')),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom,
           ),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: Text(s.signOut),
-            onTap: () => isDemo ? DemoMode.exit() : _confirmSignOut(context),
-          ),
-          const Divider(),
-          _SectionHeader(s.catalogueSection),
-          ListTile(
-            leading: const Icon(Icons.label_outline),
-            title: Text(s.categoriesTitle),
-            subtitle: Text(s.categoriesSubtitle),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => const CategoryMaintenanceScreen(),
+          children: [
+            _SectionHeader(s.account),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: Text(s.signedInAs),
+              subtitle: Text(isDemo ? s.demoUser : (user?.email ?? '')),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: Text(s.signOut),
+              onTap: () => isDemo ? DemoMode.exit() : _confirmSignOut(context),
+            ),
+            const Divider(),
+            _SectionHeader(s.catalogueSection),
+            ListTile(
+              leading: const Icon(Icons.label_outline),
+              title: Text(s.categoriesTitle),
+              subtitle: Text(s.categoriesSubtitle),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const CategoryMaintenanceScreen(),
+                ),
               ),
             ),
-          ),
-          const Divider(),
-          _SectionHeader(s.archive),
-          ListTile(
-            leading: const Icon(Icons.upload),
-            title: Text(s.exportYear),
-            subtitle: Text(s.exportYearSubtitle),
-            onTap: () => _exportYear(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.download),
-            title: Text(s.importArchive),
-            subtitle: Text(s.importArchiveSubtitle),
-            onTap: () => _importArchive(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: Text(s.deleteArchivedYear,
-                style: const TextStyle(color: Colors.red)),
-            subtitle: Text(s.deleteArchivedYearSubtitle),
-            onTap: () => _deleteYear(context),
-          ),
-          const Divider(),
-          _SectionHeader(s.app),
-          ListTile(
-            leading: const Icon(Icons.explore_outlined),
-            title: Text(s.appTour),
-            onTap: () => DemoTutorialSheet.show(context),
-          ),
-          _LanguageTile(),
-          _ThemeModeTile(),
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              final version = snapshot.data?.version ?? '—';
-              final build = snapshot.data?.buildNumber ?? '';
-              return ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: Text(s.version),
-                trailing: Text('$version ($build)'),
-              );
-            },
-          ),
-          if (!isDemo) ...[
             const Divider(),
-            _SectionHeader(s.dangerZone),
+            _SectionHeader(s.archive),
             ListTile(
-              leading: const Icon(Icons.delete_sweep, color: Colors.red),
-              title: Text(s.resetApp,
-                  style: const TextStyle(color: Colors.red)),
-              subtitle: Text(s.resetAppSubtitle),
-              onTap: () => _resetApp(context),
+              leading: const Icon(Icons.upload),
+              title: Text(s.exportYear),
+              subtitle: Text(s.exportYearSubtitle),
+              onTap: () => _exportYear(context),
             ),
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: Text(s.importArchive),
+              subtitle: Text(s.importArchiveSubtitle),
+              onTap: () => _importArchive(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: Text(
+                s.deleteArchivedYear,
+                style: const TextStyle(color: Colors.red),
+              ),
+              subtitle: Text(s.deleteArchivedYearSubtitle),
+              onTap: () => _deleteYear(context),
+            ),
+            const Divider(),
+            _SectionHeader(s.app),
+            ListTile(
+              leading: const Icon(Icons.explore_outlined),
+              title: Text(s.appTour),
+              onTap: () => DemoTutorialSheet.show(context),
+            ),
+            _LanguageTile(),
+            _ThemeModeTile(),
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.data?.version ?? '—';
+                final build = snapshot.data?.buildNumber ?? '';
+                return ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(s.version),
+                  trailing: Text('$version ($build)'),
+                );
+              },
+            ),
+            if (!isDemo) ...[
+              const Divider(),
+              _SectionHeader(s.dangerZone),
+              ListTile(
+                leading: const Icon(Icons.delete_sweep, color: Colors.red),
+                title: Text(
+                  s.resetApp,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                subtitle: Text(s.resetAppSubtitle),
+                onTap: () => _resetApp(context),
+              ),
+            ],
           ],
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -283,11 +290,15 @@ class SettingsScreen extends StatelessWidget {
         context,
         s.deletingYear(year, deletePhotos),
         () async {
-          await SaleRepository()
-              .deleteAllSalesForYear(year, deletePhotos: deletePhotos);
+          await SaleRepository().deleteAllSalesForYear(
+            year,
+            deletePhotos: deletePhotos,
+          );
           salesDeleted = true;
-          await RepairRepository()
-              .deleteAllRepairsForYear(year, deletePhotos: deletePhotos);
+          await RepairRepository().deleteAllRepairsForYear(
+            year,
+            deletePhotos: deletePhotos,
+          );
         },
       );
     } catch (e, st) {
@@ -319,10 +330,12 @@ class SettingsScreen extends StatelessWidget {
       builder: (_) => SimpleDialog(
         title: Text(title),
         children: years
-            .map((y) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(context, y),
-                  child: Text('$y'),
-                ))
+            .map(
+              (y) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, y),
+                child: Text('$y'),
+              ),
+            )
             .toList(),
       ),
     );
@@ -370,8 +383,7 @@ class _LanguageTile extends StatelessWidget {
           ButtonSegment(value: 'en', label: Text('EN')),
         ],
         selected: {currentCode},
-        onSelectionChanged: (v) =>
-            LocaleSettings.setLocale(Locale(v.first)),
+        onSelectionChanged: (v) => LocaleSettings.setLocale(Locale(v.first)),
         style: const ButtonStyle(
           visualDensity: VisualDensity.compact,
         ),
@@ -416,7 +428,6 @@ class _ThemeModeTile extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-
   const _SectionHeader(this.title);
   final String title;
 
@@ -427,16 +438,15 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 1.2,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
 }
 
 class _DeleteYearDialog extends StatefulWidget {
-
   const _DeleteYearDialog({required this.year});
   final int year;
 

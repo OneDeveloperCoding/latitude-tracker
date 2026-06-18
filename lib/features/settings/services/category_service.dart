@@ -3,14 +3,13 @@ import 'package:latitude_tracker/features/sales/repositories/sale_repository.dar
 import 'package:latitude_tracker/features/settings/repositories/catalogue_repository.dart';
 
 class CategoryService {
-
   CategoryService({
     SaleRepository? saleRepo,
     RepairRepository? repairRepo,
     CatalogueRepository? catalogueRepo,
-  })  : _saleRepo = saleRepo ?? SaleRepository(),
-        _repairRepo = repairRepo ?? RepairRepository(),
-        _catalogueRepo = catalogueRepo ?? CatalogueRepository();
+  }) : _saleRepo = saleRepo ?? SaleRepository(),
+       _repairRepo = repairRepo ?? RepairRepository(),
+       _catalogueRepo = catalogueRepo ?? CatalogueRepository();
   final SaleRepository _saleRepo;
   final RepairRepository _repairRepo;
   final CatalogueRepository _catalogueRepo;

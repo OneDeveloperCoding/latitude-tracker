@@ -11,9 +11,9 @@ class SheetSectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 0.8,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }

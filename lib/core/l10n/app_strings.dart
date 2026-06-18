@@ -21,7 +21,8 @@ enum AppStrings {
     ok: 'OK',
     discard: 'Discard',
     discardChanges: 'Discard changes?',
-    discardChangesMessage: 'You have unsaved changes. Are you sure you want to discard them?',
+    discardChangesMessage: 'You have unsaved changes. Are you sure you want to'
+    ' discard them?',
     navDashboard: 'Dashboard',
     navSales: 'Sales',
     navBuyers: 'Buyers',
@@ -47,36 +48,55 @@ enum AppStrings {
     tutorialGetStarted: 'Get started',
     tourWelcomeTitle: 'Welcome to Latitude Tracker',
     tourWelcomeBody:
-        'Your private sales journal for handmade accessories. Track every sale — from Instagram DM or market stall — through assembly, payment, and shipment, all in one place.',
+        'Your private sales journal for handmade accessories. Track every sale'
+        ' — from Instagram DM or market stall — through assembly, payment, and'
+        ' shipment, all in one place.',
     tourCreateSaleTitle: 'Creating a sale',
     tourCreateSaleBody:
-        'Tap + on the Sales tab to start. Pick or create a buyer, then add one or more items — each with its own description, category, price, assembly status, and photos. Finish with payment method, delivery details, and any special notes.',
+        'Tap + on the Sales tab to start. Pick or create a buyer, then add one'
+        ' or more items — each with its own description, category, price,'
+        ' assembly status, and photos. Finish with payment method, delivery'
+        ' details, and any special notes.',
     tourSaleDetailTitle: 'Managing a sale',
     tourSaleDetailBody:
         'Tap any sale card to open its detail. Toggle payment with one tap, advance assembly per item, record a CTT tracking code when you ship, and follow the NIF/AT compliance row from "receipt requested" to "filed".',
     tourDashboardTitle: 'Your dashboard',
     tourDashboardBody:
-        'See revenue for any period — scroll the month chips or switch between weekly, monthly, and yearly. Tap the insights icon to explore analytics by category. Below the revenue card, action rows for Money, Production, and Planning show exactly what needs attention; tap any row to jump to the filtered sales list.',
+        'See revenue for any period — scroll the month chips or switch between'
+        ' weekly, monthly, and yearly. Tap the insights icon to explore'
+        ' analytics by category. Below the revenue card, action rows for Money,'
+        ' Production, and Planning show exactly what needs attention; tap any'
+        ' row to jump to the filtered sales list.',
     tourBuyersTitle: 'Buyer profiles',
     tourBuyersBody:
-        'Every buyer builds a profile over time: saved addresses with Portuguese postal-code auto-fill, NIF for fiscal receipts, and a full purchase history you can drill into by year and month. Returning buyers get a hint when you create a new sale.',
+        'Every buyer builds a profile over time: saved addresses with'
+        ' Portuguese postal-code auto-fill, NIF for fiscal receipts, and a full'
+        ' purchase history you can drill into by year and month. Returning'
+        ' buyers get a hint when you create a new sale.',
     tourAnalyticsTitle: 'Analytics',
     tourAnalyticsBody:
-        'Tap the insights icon on the revenue card to open the Analytics screen. A stacked bar chart shows revenue by category across 6 periods. Filter by category, toggle between revenue and count, and check the payment method breakdown to see how buyers prefer to pay.',
+        'Tap the insights icon on the revenue card to open the Analytics'
+        ' screen. A stacked bar chart shows revenue by category across 6'
+        ' periods. Filter by category, toggle between revenue and count, and'
+        ' check the payment method breakdown to see how buyers prefer to pay.',
     tourDiscoverTitle: 'More to explore',
     tourDiscoverBody: 'Four screens worth knowing:',
     tourGemShoppingTitle: 'Shopping list',
     tourGemShoppingBody:
-        'Every component still needed across open sales, grouped by sale — so you know exactly what to buy on your next supply run.',
+        'Every component still needed across open sales, grouped by sale — so'
+        ' you know exactly what to buy on your next supply run.',
     tourGemMapTitle: 'Sales heat map',
     tourGemMapBody:
-        'A geographic view of where your shipped sales go, grouped by postal code on a map of Portugal.',
+        'A geographic view of where your shipped sales go, grouped by postal'
+        ' code on a map of Portugal.',
     tourGemUnpaidTitle: 'Unpaid balances',
     tourGemUnpaidBody:
-        'Outstanding payments grouped by buyer, sorted by total amount owed — your go-to for follow-ups.',
+        'Outstanding payments grouped by buyer, sorted by total amount owed —'
+        ' your go-to for follow-ups.',
     tourGemNifTitle: 'NIF receipts',
     tourGemNifBody:
-        'All pending AT submissions in one place, with a one-tap toggle to mark each one filed.',
+        'All pending AT submissions in one place, with a one-tap toggle to mark'
+        ' each one filed.',
     dashboard: 'Dashboard',
     actionNeeded: 'Action needed',
     pending: 'Pending',
@@ -119,10 +139,12 @@ enum AppStrings {
     legendTitle: 'Sale progress',
     nifSheetTitle: 'NIF receipt required',
     nifSheetBody:
-        "Payment received — file this sale's receipt with AT. The buyer's NIF is available on their profile.",
+        "Payment received — file this sale's receipt with AT."
+        " The buyer's NIF is available on their profile.",
     readyButUnpaidTitle: 'Ready but unpaid',
     readyButUnpaidBody:
-        'Everything is assembled and ready to go, but payment has not been received yet.',
+        'Everything is assembled and ready to go, but payment has not been'
+        ' received yet.',
     urgencySheetTitle: 'Action needed',
     urgencyWaitingForMaterials: 'Waiting for materials',
     urgencyAssemblyNotReady: 'Assembly not ready',
@@ -348,7 +370,8 @@ enum AppStrings {
     deleteWhichYear: 'Delete which year?',
     alsoDeletePhotos: 'Also delete photos',
     alsoDeletePhotosSubtitle:
-        'Removes photos from Storage — archive photo previews will no longer work',
+        'Removes photos from Storage — archive photo previews will no longer'
+        ' work',
     deletePermanently: 'Delete permanently',
     invalidArchive: 'Invalid archive file',
     continueAction: 'Continue',
@@ -400,7 +423,8 @@ enum AppStrings {
     promoteToBuyer: 'Promote to Buyer',
     promoteToBuyerTitle: 'Promote to Buyer?',
     promoteToBuyerBody:
-        'A new Buyer profile will be created with this name. You can add contact details from the Buyer detail screen.',
+        'A new Buyer profile will be created with this name. You can add'
+        ' contact details from the Buyer detail screen.',
     repairsOnSale: 'Repairs',
     noLinkedRepairs: 'No repairs linked to this sale.',
     errorSavingRepair: 'Error saving repair',
@@ -455,7 +479,8 @@ enum AppStrings {
     ok: 'OK',
     discard: 'Descartar',
     discardChanges: 'Descartar alterações?',
-    discardChangesMessage: 'Tens alterações não guardadas. Tens a certeza que queres descartá-las?',
+    discardChangesMessage: 'Tens alterações não guardadas. Tens a certeza que'
+    ' queres descartá-las?',
     navDashboard: 'Painel',
     navSales: 'Vendas',
     navBuyers: 'Compradores',
@@ -481,36 +506,55 @@ enum AppStrings {
     tutorialGetStarted: 'Começar',
     tourWelcomeTitle: 'Bem-vindo ao Latitude Tracker',
     tourWelcomeBody:
-        'O seu diário privado de vendas de acessórios artesanais. Acompanhe cada venda — do DM do Instagram ou mercado — da montagem ao pagamento e envio, tudo num só lugar.',
+        'O seu diário privado de vendas de acessórios artesanais. Acompanhe'
+        ' cada venda — do DM do Instagram ou mercado — da montagem ao pagamento'
+        ' e envio, tudo num só lugar.',
     tourCreateSaleTitle: 'Criar uma venda',
     tourCreateSaleBody:
-        'Toque em + no separador Vendas para começar. Selecione ou crie um comprador, depois adicione um ou mais artigos — cada um com descrição, categoria, preço, estado de montagem e fotos. Termine com o método de pagamento, detalhes de entrega e notas.',
+        'Toque em + no separador Vendas para começar. Selecione ou crie um'
+        ' comprador, depois adicione um ou mais artigos — cada um com'
+        ' descrição, categoria, preço, estado de montagem e fotos. Termine com'
+        ' o método de pagamento, detalhes de entrega e notas.',
     tourSaleDetailTitle: 'Gerir uma venda',
     tourSaleDetailBody:
         'Toque num cartão de venda para abrir o detalhe. Marque o pagamento com um toque, avance o estado de montagem por artigo, registe o código CTT ao enviar, e siga a linha NIF/AT de "recibo solicitado" até "submetido".',
     tourDashboardTitle: 'O seu painel',
     tourDashboardBody:
-        'Veja a receita de qualquer período — deslize os chips de mês ou mude entre semanal, mensal e anual. Toque no ícone de insights para explorar análises por categoria. Abaixo do cartão de receita, as linhas de Finanças, Produção e Planeamento mostram o que precisa de atenção; toque numa linha para ver as vendas filtradas.',
+        'Veja a receita de qualquer período — deslize os chips de mês ou mude'
+        ' entre semanal, mensal e anual. Toque no ícone de insights para'
+        ' explorar análises por categoria. Abaixo do cartão de receita, as'
+        ' linhas de Finanças, Produção e Planeamento mostram o que precisa de'
+        ' atenção; toque numa linha para ver as vendas filtradas.',
     tourBuyersTitle: 'Perfis de compradores',
     tourBuyersBody:
-        'Cada comprador constrói um perfil ao longo do tempo: moradas guardadas com preenchimento automático de código postal português, NIF para recibos fiscais, e histórico completo de compras por ano e mês. Compradores recorrentes recebem uma dica ao criar nova venda.',
+        'Cada comprador constrói um perfil ao longo do tempo: moradas guardadas'
+        ' com preenchimento automático de código postal português, NIF para'
+        ' recibos fiscais, e histórico completo de compras por ano e mês.'
+        ' Compradores recorrentes recebem uma dica ao criar nova venda.',
     tourAnalyticsTitle: 'Análises',
     tourAnalyticsBody:
-        'Toque no ícone de insights no cartão de receita para abrir as Análises. Um gráfico de barras empilhadas mostra a receita por categoria ao longo de 6 períodos. Filtre por categoria, alterne entre receita e contagem, e veja como os compradores preferem pagar.',
+        'Toque no ícone de insights no cartão de receita para abrir as'
+        ' Análises. Um gráfico de barras empilhadas mostra a receita por'
+        ' categoria ao longo de 6 períodos. Filtre por categoria, alterne entre'
+        ' receita e contagem, e veja como os compradores preferem pagar.',
     tourDiscoverTitle: 'Mais para explorar',
     tourDiscoverBody: 'Quatro ecrãs que vale a pena conhecer:',
     tourGemShoppingTitle: 'Lista de compras',
     tourGemShoppingBody:
-        'Todos os componentes em falta nas vendas ativas, agrupados por venda — para saber exatamente o que comprar na próxima ida à loja.',
+        'Todos os componentes em falta nas vendas ativas, agrupados por venda —'
+        ' para saber exatamente o que comprar na próxima ida à loja.',
     tourGemMapTitle: 'Mapa de calor',
     tourGemMapBody:
-        'Vista geográfica de onde vão os seus envios, agrupados por código postal num mapa de Portugal.',
+        'Vista geográfica de onde vão os seus envios, agrupados por código'
+        ' postal num mapa de Portugal.',
     tourGemUnpaidTitle: 'Saldos em dívida',
     tourGemUnpaidBody:
-        'Pagamentos em falta agrupados por comprador, ordenados por valor — ideal para acompanhamento.',
+        'Pagamentos em falta agrupados por comprador, ordenados por valor —'
+        ' ideal para acompanhamento.',
     tourGemNifTitle: 'Recibos NIF',
     tourGemNifBody:
-        'Todas as submissões AT pendentes num só lugar, com toggle para marcar cada uma como submetida.',
+        'Todas as submissões AT pendentes num só lugar, com toggle para marcar'
+        ' cada uma como submetida.',
     dashboard: 'Painel',
     actionNeeded: 'Ações necessárias',
     pending: 'Pendente',
@@ -553,10 +597,12 @@ enum AppStrings {
     legendTitle: 'Progresso da venda',
     nifSheetTitle: 'Recibo NIF necessário',
     nifSheetBody:
-        'Pagamento recebido — submeta o recibo desta venda na AT. O NIF do comprador está disponível no seu perfil.',
+        'Pagamento recebido — submeta o recibo desta venda na AT. O NIF do'
+        ' comprador está disponível no seu perfil.',
     readyButUnpaidTitle: 'Pronto mas não pago',
     readyButUnpaidBody:
-        'Tudo está montado e pronto para envio, mas o pagamento ainda não foi recebido.',
+        'Tudo está montado e pronto para envio, mas o pagamento ainda não foi'
+        ' recebido.',
     urgencySheetTitle: 'Ações necessárias',
     urgencyWaitingForMaterials: 'A aguardar materiais',
     urgencyAssemblyNotReady: 'Montagem não pronta',
@@ -762,7 +808,8 @@ enum AppStrings {
     addressFraction: 'Fração / andar',
     addressFractionHint: 'ex. 2º Dto, R/C, Loja',
     addressNotes: 'Notas de entrega',
-    addressNotesHint: 'ex. Código do intercomunicador 4521, deixar com o porteiro',
+    addressNotesHint: 'ex. Código do intercomunicador 4521, deixar com o'
+    ' porteiro',
     selectBuyer: 'Selecionar Comprador',
     noBuyersFound: 'Sem compradores. Toque em + para adicionar.',
     account: 'Conta',
@@ -783,7 +830,8 @@ enum AppStrings {
     deleteWhichYear: 'Eliminar qual ano?',
     alsoDeletePhotos: 'Também eliminar fotos',
     alsoDeletePhotosSubtitle:
-        'Remove fotos do armazenamento — as pré-visualizações do arquivo deixarão de funcionar',
+        'Remove fotos do armazenamento — as pré-visualizações do arquivo'
+        ' deixarão de funcionar',
     deletePermanently: 'Eliminar permanentemente',
     invalidArchive: 'Ficheiro de arquivo inválido',
     continueAction: 'Continuar',
@@ -792,7 +840,8 @@ enum AppStrings {
     resetAppSubtitle: 'Eliminar todos os dados e começar do zero',
     resetAppConfirmTitle: 'Repor a app?',
     resetAppConfirmBody:
-        'Isto eliminará permanentemente todas as Vendas, Compradores e Moradas. '
+        'Isto eliminará permanentemente todas as Vendas, Compradores e Moradas.'
+        ' '
         'Exporta uma cópia de segurança primeiro se quiseres guardar os dados.',
     resetAppFinalTitle: 'Esta ação é irreversível',
     resetAppFinalBody:
@@ -835,7 +884,8 @@ enum AppStrings {
     promoteToBuyer: 'Promover a Comprador',
     promoteToBuyerTitle: 'Promover a Comprador?',
     promoteToBuyerBody:
-        'Será criado um novo perfil de Comprador com este nome. Pode adicionar detalhes de contacto no ecrã do Comprador.',
+        'Será criado um novo perfil de Comprador com este nome. Pode adicionar'
+        ' detalhes de contacto no ecrã do Comprador.',
     repairsOnSale: 'Reparações',
     noLinkedRepairs: 'Sem reparações associadas a esta venda.',
     errorSavingRepair: 'Erro ao guardar reparação',
@@ -1771,15 +1821,22 @@ enum AppStrings {
 
   String daysOverdue(int n) => _pt ? '${n}d em atraso' : '${n}d overdue';
 
-  String nPending(int pending, int filed) => _pt
-      ? '$pending pendente${pending == 1 ? '' : 's'} · $filed submetido${filed == 1 ? '' : 's'}'
-      : '$pending pending · $filed filed';
+  String nPending(int pending, int filed) {
+    if (_pt) {
+      final ps = pending == 1 ? '' : 's';
+      final fs = filed == 1 ? '' : 's';
+      return '$pending pendente$ps · $filed submetido$fs';
+    }
+    return '$pending pending · $filed filed';
+  }
 
   String previousSales(int n, String lastDate) {
     final base = _pt
         ? '${nSales(n)} anteriores'
         : '${nSales(n)} previous';
-    return lastDate.isNotEmpty ? '$base · ${_pt ? 'última' : 'last'}: $lastDate' : base;
+    if (lastDate.isEmpty) return base;
+    final label = _pt ? 'última' : 'last';
+    return '$base · $label: $lastDate';
   }
 
   // ── Enum label helpers ────────────────────────────────────────────────────
@@ -1892,7 +1949,8 @@ enum AppStrings {
       final photoClause = photoCount > 0
           ? ', junto com ${nPhotos(photoCount)}'
           : '';
-      return 'Esta venda tem um pagamento registado de €${price.toStringAsFixed(2)}. '
+      return 'Esta venda tem um pagamento registado de'
+      ' €${price.toStringAsFixed(2)}. '
           'Eliminar remove todos os registos financeiros desta transação'
           '$photoClause. '
           'Esta ação não pode ser desfeita.';
@@ -2010,8 +2068,9 @@ enum AppStrings {
   String importFailedMsg(Object error) =>
       _pt ? 'Falha na importação: $error' : 'Import failed: $error';
 
-  String errorDeletingBuyerMsg(Object error) =>
-      _pt ? 'Erro ao eliminar comprador: $error' : 'Error deleting buyer: $error';
+  String errorDeletingBuyerMsg(Object error) => _pt
+      ? 'Erro ao eliminar comprador: $error'
+      : 'Error deleting buyer: $error';
 
   String promotedToBuyerMsg(String name) =>
       _pt ? '$name promovido a Comprador' : '$name promoted to Buyer';
@@ -2046,8 +2105,9 @@ enum AppStrings {
     return parts.join(' · ');
   }
 
-  String archiveSalesImportedMsg(int n) =>
-      _pt ? '${nSales(n)} importada${n == 1 ? '' : 's'}' : '${nSales(n)} imported';
+  String archiveSalesImportedMsg(int n) => _pt
+      ? '${nSales(n)} importada${n == 1 ? '' : 's'}'
+      : '${nSales(n)} imported';
 
   String archiveBuyersImportedMsg(int n) => _pt
       ? '${_nBuyers(n)} importado${n == 1 ? '' : 's'}'
@@ -2069,7 +2129,8 @@ enum AppStrings {
       ? '$n reparaç${n == 1 ? 'ão' : 'ões'}'
       : '$n repair${n == 1 ? '' : 's'}';
 
-  // Maps English timeline keys (used for ordering) to translated display labels.
+  // Maps English timeline keys (used for ordering) to translated display
+  // labels.
   String urgencyReasonLabel(UrgencyReasonType type) => switch (type) {
         UrgencyReasonType.waitingForMaterials => urgencyWaitingForMaterials,
         UrgencyReasonType.assemblyNotReady => urgencyAssemblyNotReady,
@@ -2111,8 +2172,10 @@ enum AppStrings {
             ? ['Semana anterior', 'Há 4 semanas', 'Mesma semana do ano passado']
             : ['Previous week', '4 weeks ago', 'Same week last year'],
         DashboardPeriod.monthly => _pt
-            ? ['Mês anterior', 'Há 3 meses', 'Há 6 meses', 'Mesmo mês do ano passado']
-            : ['Previous month', '3 months ago', '6 months ago', 'Same month last year'],
+            ? ['Mês anterior', 'Há 3 meses', 'Há 6 meses',
+                'Mesmo mês do ano passado']
+            : ['Previous month', '3 months ago', '6 months ago',
+                'Same month last year'],
         DashboardPeriod.yearly => _pt
             ? ['Ano anterior', 'Há 3 anos', 'Há 5 anos']
             : ['Previous year', '3 years ago', '5 years ago'],

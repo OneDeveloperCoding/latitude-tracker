@@ -3,17 +3,17 @@ import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:test/test.dart';
 
 Map<String, dynamic> _baseRepairMap() => {
-      'id': 'r1',
-      'buyerId': 'b1',
-      'buyerName': 'Ana',
-      'itemDescription': 'Necklace',
-      'itemCategory': 'Colares',
-      'problemDescription': 'Broken clasp',
-      'status': 'received',
-      'payment': {'status': 'unpaid', 'method': 'cash'},
-      'returnDelivery': {'type': 'shipping', 'status': 'pending'},
-      'createdAt': '2026-01-01T00:00:00.000',
-    };
+  'id': 'r1',
+  'buyerId': 'b1',
+  'buyerName': 'Ana',
+  'itemDescription': 'Necklace',
+  'itemCategory': 'Colares',
+  'problemDescription': 'Broken clasp',
+  'status': 'received',
+  'payment': {'status': 'unpaid', 'method': 'cash'},
+  'returnDelivery': {'type': 'shipping', 'status': 'pending'},
+  'createdAt': '2026-01-01T00:00:00.000',
+};
 
 void main() {
   group('Repair.fromArchiveMap — unknown enum falls back to default', () {
@@ -66,11 +66,17 @@ void main() {
       expect(repair.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
 
-    test('malformed createdAt string falls back to epoch rather than throwing', () {
-      final map = _baseRepairMap()..['createdAt'] = 'not-a-date';
-      expect(() => Repair.fromArchiveMap(map), returnsNormally);
-      expect(Repair.fromArchiveMap(map).createdAt, DateTime.fromMillisecondsSinceEpoch(0));
-    });
+    test(
+      'malformed createdAt string falls back to epoch rather than throwing',
+      () {
+        final map = _baseRepairMap()..['createdAt'] = 'not-a-date';
+        expect(() => Repair.fromArchiveMap(map), returnsNormally);
+        expect(
+          Repair.fromArchiveMap(map).createdAt,
+          DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      },
+    );
 
     test('both buyerId and freeTextContact absent does not throw', () {
       final map = _baseRepairMap()
@@ -81,23 +87,26 @@ void main() {
     });
   });
 
-  group('RepairReturnDelivery.fromMap — unknown enum falls back to default', () {
-    test('unknown status falls back to pending', () {
-      final map = {'type': 'shipping', 'status': 'legacyStatus'};
-      expect(
-        RepairReturnDelivery.fromMap(map).status,
-        ShipmentStatus.pending,
-      );
-    });
+  group(
+    'RepairReturnDelivery.fromMap — unknown enum falls back to default',
+    () {
+      test('unknown status falls back to pending', () {
+        final map = {'type': 'shipping', 'status': 'legacyStatus'};
+        expect(
+          RepairReturnDelivery.fromMap(map).status,
+          ShipmentStatus.pending,
+        );
+      });
 
-    test('null status falls back to pending', () {
-      final map = {'type': 'shipping', 'status': null};
-      expect(
-        RepairReturnDelivery.fromMap(map).status,
-        ShipmentStatus.pending,
-      );
-    });
-  });
+      test('null status falls back to pending', () {
+        final map = {'type': 'shipping', 'status': null};
+        expect(
+          RepairReturnDelivery.fromMap(map).status,
+          ShipmentStatus.pending,
+        );
+      });
+    },
+  );
 
   group('RepairReturnDelivery — toMap / fromMap round-trip', () {
     test('all fields survive toMap → fromMap', () {
@@ -165,22 +174,25 @@ void main() {
       String? buyerId = 'b1',
       String? buyerName = 'Ana',
       String? freeTextContact,
-    }) =>
-        Repair(
-          id: 'r1',
-          buyerId: buyerId,
-          buyerName: buyerName,
-          freeTextContact: freeTextContact,
-          itemDescription: 'Necklace',
-          itemCategory: 'Colares',
-          problemDescription: 'Broken clasp',
-          status: status,
-          payment: const SalePayment(
-              status: PaymentStatus.unpaid, method: PaymentMethod.cash),
-          returnDelivery: RepairReturnDelivery(
-              type: DeliveryType.shipping, status: returnStatus),
-          createdAt: DateTime(2026),
-        );
+    }) => Repair(
+      id: 'r1',
+      buyerId: buyerId,
+      buyerName: buyerName,
+      freeTextContact: freeTextContact,
+      itemDescription: 'Necklace',
+      itemCategory: 'Colares',
+      problemDescription: 'Broken clasp',
+      status: status,
+      payment: const SalePayment(
+        status: PaymentStatus.unpaid,
+        method: PaymentMethod.cash,
+      ),
+      returnDelivery: RepairReturnDelivery(
+        type: DeliveryType.shipping,
+        status: returnStatus,
+      ),
+      createdAt: DateTime(2026),
+    );
 
     group('isActive', () {
       test('not returned → active', () {
@@ -223,11 +235,14 @@ void main() {
         );
       });
 
-      test('returns empty string when buyerName is null and buyerId is set', () {
-        // freeTextContact stays null here because buyerId is non-null, which
-        // satisfies the constructor assert without needing freeTextContact.
-        expect(makeRepair(buyerName: null).contactName, '');
-      });
+      test(
+        'returns empty string when buyerName is null and buyerId is set',
+        () {
+          // freeTextContact stays null here because buyerId is non-null, which
+          // satisfies the constructor assert without needing freeTextContact.
+          expect(makeRepair(buyerName: null).contactName, '');
+        },
+      );
     });
 
     group('isLinkedToBuyer', () {
@@ -254,9 +269,13 @@ void main() {
       problemDescription: 'Broken clasp',
       status: RepairStatus.inProgress,
       payment: const SalePayment(
-          status: PaymentStatus.unpaid, method: PaymentMethod.cash),
+        status: PaymentStatus.unpaid,
+        method: PaymentMethod.cash,
+      ),
       returnDelivery: const RepairReturnDelivery(
-          type: DeliveryType.shipping, status: ShipmentStatus.pending),
+        type: DeliveryType.shipping,
+        status: ShipmentStatus.pending,
+      ),
       createdAt: DateTime(2026),
     );
 

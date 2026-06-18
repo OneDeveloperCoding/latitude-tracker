@@ -7,7 +7,6 @@ import 'package:latitude_tracker/features/settings/screens/archive_analytics_scr
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 
 class ArchiveImportScreen extends StatefulWidget {
-
   const ArchiveImportScreen({required this.archive, super.key});
   final Map<String, dynamic> archive;
 
@@ -53,8 +52,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
     setState(() => _importing = true);
 
     try {
-      final result =
-          await ArchiveService().importArchive(widget.archive);
+      final result = await ArchiveService().importArchive(widget.archive);
       if (!mounted) return;
       setState(() {
         _lastResult = result;
@@ -109,7 +107,9 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
           (saleMap['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       return sale +
           items.fold<double>(
-              0, (iSum, i) => iSum + ((i['price'] as num?)?.toDouble() ?? 0));
+            0,
+            (iSum, i) => iSum + ((i['price'] as num?)?.toDouble() ?? 0),
+          );
     });
     final paidCount = _sales
         .where((sale) => (sale['payment'] as Map?)?['status'] == 'paid')
@@ -127,8 +127,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) =>
-                    ArchiveAnalyticsScreen(archive: widget.archive),
+                builder: (_) => ArchiveAnalyticsScreen(archive: widget.archive),
               ),
             ),
           ),
@@ -165,28 +164,21 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
                   Text(
                     _lastResult != null ? s.archiveImported : s.archiveReadOnly,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: _lastResult != null
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                        ),
+                      color: _lastResult != null
+                          ? Theme.of(context).colorScheme.onSecondaryContainer
+                          : Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                   ),
                   if (exportedAt != null)
                     Text(
                       s.archiveExportedAt(
-                          dateFormat.format(DateTime.parse(exportedAt))),
+                        dateFormat.format(DateTime.parse(exportedAt)),
+                      ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: _lastResult != null
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .onSecondaryContainer
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                          ),
+                        color: _lastResult != null
+                            ? Theme.of(context).colorScheme.onSecondaryContainer
+                            : Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
                     ),
                   if (_lastResult != null) ...[
                     const SizedBox(height: 4),
@@ -198,10 +190,10 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
                         _lastResult!.skipped,
                       ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSecondaryContainer,
-                          ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
+                      ),
                     ),
                   ],
                 ],
@@ -212,15 +204,16 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
           _StatRow(label: s.totalSalesLabel, value: '${_sales.length}'),
           _StatRow(label: s.paid, value: '$paidCount / ${_sales.length}'),
           _StatRow(
-              label: s.archiveTotalRevenue,
-              value: currencyFormat.format(totalRevenue)),
+            label: s.archiveTotalRevenue,
+            value: currencyFormat.format(totalRevenue),
+          ),
           _StatRow(label: s.buyers, value: '${_buyers.length}'),
           const SizedBox(height: 24),
           Text(
             s.navSales,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 8),
           if (_sales.isEmpty)
@@ -234,7 +227,6 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
 }
 
 class _StatRow extends StatelessWidget {
-
   const _StatRow({required this.label, required this.value});
   final String label;
   final String value;
@@ -247,11 +239,12 @@ class _StatRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
@@ -259,7 +252,6 @@ class _StatRow extends StatelessWidget {
 }
 
 class _ArchivedSaleTile extends StatelessWidget {
-
   const _ArchivedSaleTile({required this.sale});
   final Map<String, dynamic> sale;
 
@@ -268,10 +260,13 @@ class _ArchivedSaleTile extends StatelessWidget {
     final s = context.s;
     final items = (sale['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final totalPrice = items.fold<double>(
-        0, (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0));
+      0,
+      (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0),
+    );
     final isPaid = (sale['payment'] as Map?)?['status'] == 'paid';
     final allPhotoUrls = items.expand(
-        (i) => (i['photoUrls'] as List?)?.cast<String>() ?? <String>[]);
+      (i) => (i['photoUrls'] as List?)?.cast<String>() ?? <String>[],
+    );
     final photoUrls = allPhotoUrls.take(4).toList();
 
     final createdAt = sale['createdAt'];
@@ -280,7 +275,8 @@ class _ArchivedSaleTile extends StatelessWidget {
       dateStr = DateFormat('dd MMM yyyy').format(DateTime.parse(createdAt));
     } else if (createdAt is Map && createdAt['_seconds'] != null) {
       final dt = DateTime.fromMillisecondsSinceEpoch(
-          (createdAt['_seconds'] as int) * 1000);
+        (createdAt['_seconds'] as int) * 1000,
+      );
       dateStr = DateFormat('dd MMM yyyy').format(dt);
     }
 
@@ -295,8 +291,8 @@ class _ArchivedSaleTile extends StatelessWidget {
               items.isEmpty
                   ? '—'
                   : items.length == 1
-                      ? (items.first['description'] as String? ?? '—')
-                      : '${items.length} items',
+                  ? (items.first['description'] as String? ?? '—')
+                  : '${items.length} items',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -313,8 +309,7 @@ class _ArchivedSaleTile extends StatelessWidget {
                   ),
                 ),
                 if (dateStr.isNotEmpty)
-                  Text(dateStr,
-                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(dateStr, style: Theme.of(context).textTheme.labelSmall),
               ],
             ),
           ),
@@ -325,8 +320,7 @@ class _ArchivedSaleTile extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 itemCount: photoUrls.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(width: 8),
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, i) => ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
@@ -337,9 +331,9 @@ class _ArchivedSaleTile extends StatelessWidget {
                     errorBuilder: (context, error, stack) => Container(
                       width: 64,
                       height: 64,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       child: Icon(
                         Icons.image_not_supported_outlined,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,

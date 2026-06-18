@@ -4,7 +4,8 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 /// Brand-inspired colours for each payment method.
-/// Chosen for visual distinctiveness within the app — not exact brand hex codes.
+// / Chosen for visual distinctiveness within the app — not exact brand hex
+// codes.
 Color paymentMethodColor(PaymentMethod m) => switch (m) {
       PaymentMethod.mbWay => const Color(0xFF0080C9),
       PaymentMethod.revolut => const Color(0xFF7C3AED),
