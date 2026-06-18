@@ -13,11 +13,12 @@ import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/heat_map/screens/geographic_sales_screen.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
+import 'package:latitude_tracker/features/sales/models/sales_list_filters.dart';
 import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
-import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
+import 'package:latitude_tracker/features/sales/services/sales_list_presenter.dart';
 
 class SalesListScreen extends StatefulWidget {
 
@@ -40,45 +41,27 @@ class SalesListScreen extends StatefulWidget {
   State<SalesListScreen> createState() => _SalesListScreenState();
 }
 
-enum _SortOrder { newestFirst, oldestFirst, priceHigh, priceLow }
-
 enum _OverflowAction { map, legend }
 
 class _SalesListScreenState extends State<SalesListScreen> {
-  Set<SaleFilter> _activeFilters = {};
-  Set<String> _categoryFilters = {};
-  int? _selectedYear;
-  int? _selectedMonth;
-  Buyer? _buyerFilter;
-  _SortOrder _sortOrder = _SortOrder.newestFirst;
+  late SalesListFilters _filters;
+  late SalesListResult _result;
 
   final _searchController = TextEditingController();
-  String _searchQuery = '';
   bool _searchExpanded = false;
 
   Sale? _selectedSale;
   final _rightPanelKey = GlobalKey<NavigatorState>();
 
-  // Cached once per store/filter/sort/search change — not on every build().
-  List<Sale> _filteredSales = [];
-  Map<String, List<Sale>> _groupedSales = {};
-  // Years with at least one Sale, newest first — recomputed only in
-  // _rebuildCache().
-  List<int> _cachedAvailableYears = [];
-  // Months (1–12) per year — recomputed only in _rebuildCache().
-  Map<int, List<int>> _cachedMonthsByYear = {};
-  // NIF per buyerId — avoids O(n_buyers) scan per card per build.
-  Map<String, String?> _buyerNifById = {};
-
   bool get _loading => SalesStore.current == null;
 
   // Counts active filter/sort constraints for the tune-icon badge.
   int get _activeFilterCount =>
-      _activeFilters.length +
-      _categoryFilters.length +
-      (_selectedYear != null ? 1 : 0) +
-      (_buyerFilter != null ? 1 : 0) +
-      (_sortOrder != _SortOrder.newestFirst ? 1 : 0);
+      _filters.activeFilters.length +
+      _filters.categoryFilters.length +
+      (_filters.selectedYear != null ? 1 : 0) +
+      (_filters.buyerFilter != null ? 1 : 0) +
+      (_filters.sortOrder != SortOrder.newestFirst ? 1 : 0);
 
   String _monthLabel(int month) =>
       DateFormat('MMM').format(DateTime(2000, month));
@@ -86,7 +69,10 @@ class _SalesListScreenState extends State<SalesListScreen> {
   @override
   void initState() {
     super.initState();
-    _activeFilters = Set<SaleFilter>.from(widget.initialFilters);
+    _filters = SalesListFilters(
+      activeFilters: Set<SaleFilter>.from(widget.initialFilters),
+      postalCodePrefix: widget.postalCodePrefix,
+    );
     SalesStore.state.addListener(_onStoreChanged);
     BuyersStore.state.addListener(_onStoreChanged);
     _rebuildCache();
@@ -98,31 +84,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _rebuildCache() {
-    final allSales = SalesStore.currentOrEmpty;
-
-    var sales = _applyFilter(allSales);
-    sales = _applySearch(sales);
-    sales = _applySort(sales);
-    _filteredSales = sales;
-    // Historical mode: group by creation month so the grouping matches the
-    // year/month filter. Active queue: group by scheduled/creation date.
-    _groupedSales = _selectedYear != null
-        ? SaleGrouper.byCreatedMonth(sales)
-        : SaleGrouper.byWeek(sales);
-
-    final monthsMap = <int, Set<int>>{};
-    for (final s in allSales) {
-      (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
-    }
-    _cachedAvailableYears = monthsMap.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
-    _cachedMonthsByYear = monthsMap.map(
-      (y, months) => MapEntry(y, months.toList()..sort()),
+    _result = SalesListPresenter.compute(
+      SalesStore.currentOrEmpty,
+      BuyersStore.currentOrEmpty,
+      _filters,
     );
-
-    _buyerNifById = {
-      for (final b in BuyersStore.currentOrEmpty) b.id: b.nif,
-    };
   }
 
   @override
@@ -131,85 +97,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
     BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     super.dispose();
-  }
-
-  List<Sale> _applyFilter(List<Sale> sales) {
-    var result = List<Sale>.from(sales);
-
-    // Active-only default: hide delivered unless a year is selected or a
-    // postal prefix scope is active (geographic view shows all time).
-    if (_selectedYear == null && widget.postalCodePrefix == null) {
-      result = result
-          .where((s) => s.shipment.status != ShipmentStatus.delivered)
-          .toList();
-    }
-
-    if (widget.postalCodePrefix != null) {
-      result = result.where((s) {
-        final pc = s.shipment.postalCode;
-        return pc != null && pc.startsWith('${widget.postalCodePrefix}-');
-      }).toList();
-    }
-
-    // Year + optional month scope. Selecting a year lifts the delivered
-    // default.
-    if (_selectedYear != null) {
-      result =
-          result.where((s) => s.createdAt.year == _selectedYear).toList();
-      if (_selectedMonth != null) {
-        result = result
-            .where((s) => s.createdAt.month == _selectedMonth)
-            .toList();
-      }
-    }
-
-    if (_buyerFilter != null) {
-      result =
-          result.where((s) => s.buyerId == _buyerFilter!.id).toList();
-    }
-
-    if (_categoryFilters.isNotEmpty) {
-      result = result
-          .where(
-            (s) => s.items.any((i) => _categoryFilters.contains(i.category)),
-          )
-          .toList();
-    }
-
-    if (_activeFilters.isNotEmpty) {
-      final now = DateTime.now();
-      result = result
-          .where((s) => testSaleFilters(s, _activeFilters, now: now))
-          .toList();
-    }
-
-    return result;
-  }
-
-  List<Sale> _applySearch(List<Sale> sales) {
-    if (_searchQuery.isEmpty) return sales;
-    final q = _searchQuery.toLowerCase();
-    return sales
-        .where((s) =>
-            s.buyerName.toLowerCase().contains(q) ||
-            s.items.any((i) => i.description.toLowerCase().contains(q)))
-        .toList();
-  }
-
-  List<Sale> _applySort(List<Sale> sales) {
-    if (_sortOrder == _SortOrder.newestFirst) return sales;
-    final sorted = List<Sale>.from(sales);
-    switch (_sortOrder) {
-      case _SortOrder.oldestFirst:
-        sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      case _SortOrder.priceHigh:
-        sorted.sort((a, b) => b.totalPrice.compareTo(a.totalPrice));
-      case _SortOrder.priceLow:
-        sorted.sort((a, b) => a.totalPrice.compareTo(b.totalPrice));
-      case _SortOrder.newestFirst:
-        break;
-    }
-    return sorted;
   }
 
   bool _isTablet() => MediaQuery.sizeOf(context).width >= 600;
@@ -277,7 +164,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                         icon: const Icon(Icons.close),
                         onPressed: () {
                           _searchController.clear();
-                          _searchQuery = '';
+                          _filters = _filters.copyWith(searchQuery: '');
                           _rebuildCache();
                           setState(() => _searchExpanded = false);
                         },
@@ -286,7 +173,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       isDense: true,
                     ),
                     onChanged: (v) {
-                      _searchQuery = v;
+                      _filters = _filters.copyWith(searchQuery: v);
                       _rebuildCache();
                       setState(() {});
                     },
@@ -350,11 +237,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                 )
               : _loading
                   ? const Center(child: CircularProgressIndicator())
-                  : _filteredSales.isEmpty
+                  : _result.filteredSales.isEmpty
                       ? Center(child: Text(s.noSalesFound))
                       : _TimelineView(
-                          groups: _groupedSales,
-                          buyerNifById: _buyerNifById,
+                          groups: _result.groupedSales,
+                          buyerNifById: _result.buyerNifById,
                           selectedSaleId: isTablet ? _selectedSale?.id : null,
                           onSaleTap: _selectSale,
                         ),
@@ -405,7 +292,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   void _showOptionsSheet() {
     final s = context.s;
-    final years = _cachedAvailableYears;
+    final years = _result.availableYears;
     final groups = [
       (
         label: s.dashboardGroupMoney,
@@ -436,21 +323,20 @@ class _SalesListScreenState extends State<SalesListScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) {
           void updateFilter(SaleFilter f, {bool? checked}) {
-            _activeFilters = checked == true
-                ? {..._activeFilters, f}
-                : ({..._activeFilters}..remove(f));
+            final updated = checked == true
+                ? {..._filters.activeFilters, f}
+                : ({..._filters.activeFilters}..remove(f));
+            _filters = _filters.copyWith(activeFilters: updated);
             _rebuildCache();
             setState(() {});
             setSheetState(() {});
           }
 
           void clearAll() {
-            _activeFilters = {};
-            _categoryFilters = {};
-            _selectedYear = null;
-            _selectedMonth = null;
-            _buyerFilter = null;
-            _sortOrder = _SortOrder.newestFirst;
+            _filters = SalesListFilters(
+              postalCodePrefix: _filters.postalCodePrefix,
+              searchQuery: _filters.searchQuery,
+            );
             buyerSearchController.clear();
             _rebuildCache();
             setState(() {});
@@ -463,11 +349,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
             setSheetState(() {});
           }
 
-          final hasAnyActive = _activeFilters.isNotEmpty ||
-              _categoryFilters.isNotEmpty ||
-              _selectedYear != null ||
-              _buyerFilter != null ||
-              _sortOrder != _SortOrder.newestFirst;
+          final hasAnyActive = _filters.activeFilters.isNotEmpty ||
+              _filters.categoryFilters.isNotEmpty ||
+              _filters.selectedYear != null ||
+              _filters.buyerFilter != null ||
+              _filters.sortOrder != SortOrder.newestFirst;
 
           final buyerQuery =
               buyerSearchController.text.trim().toLowerCase();
@@ -518,33 +404,40 @@ class _SalesListScreenState extends State<SalesListScreen> {
                         children: [
                           _SortChip(
                             label: s.sortDimensionDate,
-                            icon: _sortOrder == _SortOrder.oldestFirst
+                            icon: _filters.sortOrder == SortOrder.oldestFirst
                                 ? Icons.arrow_upward
                                 : Icons.arrow_downward,
-                            isActive: _sortOrder == _SortOrder.oldestFirst,
+                            isActive:
+                                _filters.sortOrder == SortOrder.oldestFirst,
                             onTap: () {
-                              _sortOrder = _sortOrder == _SortOrder.oldestFirst
-                                  ? _SortOrder.newestFirst
-                                  : _SortOrder.oldestFirst;
+                              _filters = _filters.copyWith(
+                                sortOrder:
+                                    _filters.sortOrder == SortOrder.oldestFirst
+                                        ? SortOrder.newestFirst
+                                        : SortOrder.oldestFirst,
+                              );
                               refresh();
                             },
                           ),
                           const SizedBox(width: 8),
                           _SortChip(
                             label: s.sortDimensionPrice,
-                            icon: _sortOrder == _SortOrder.priceHigh
+                            icon: _filters.sortOrder == SortOrder.priceHigh
                                 ? Icons.arrow_downward
-                                : _sortOrder == _SortOrder.priceLow
+                                : _filters.sortOrder == SortOrder.priceLow
                                     ? Icons.arrow_upward
                                     : null,
-                            isActive: _sortOrder == _SortOrder.priceHigh ||
-                                _sortOrder == _SortOrder.priceLow,
+                            isActive:
+                                _filters.sortOrder == SortOrder.priceHigh ||
+                                    _filters.sortOrder == SortOrder.priceLow,
                             onTap: () {
-                              _sortOrder = switch (_sortOrder) {
-                                _SortOrder.priceHigh => _SortOrder.priceLow,
-                                _SortOrder.priceLow => _SortOrder.newestFirst,
-                                _ => _SortOrder.priceHigh,
-                              };
+                              _filters = _filters.copyWith(
+                                sortOrder: switch (_filters.sortOrder) {
+                                  SortOrder.priceHigh => SortOrder.priceLow,
+                                  SortOrder.priceLow => SortOrder.newestFirst,
+                                  _ => SortOrder.priceHigh,
+                                },
+                              );
                               refresh();
                             },
                           ),
@@ -553,7 +446,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     ),
                     // ── Year / month drill-down ────────────────────────────
                     if (years.isNotEmpty) ...[
-                      if (_selectedYear == null) ...[
+                      if (_filters.selectedYear == null) ...[
                         SheetSectionLabel(s.year.toUpperCase()),
                         Padding(
                           padding:
@@ -564,8 +457,10 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                 .map((y) => FilterChip(
                                       label: Text('$y'),
                                       onSelected: (_) {
-                                        _selectedYear = y;
-                                        _selectedMonth = null;
+                                        _filters = _filters.copyWith(
+                                          selectedYear: y,
+                                          clearMonth: true,
+                                        );
                                         refresh();
                                       },
                                     ))
@@ -581,13 +476,15 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               IconButton(
                                 icon: const Icon(Icons.arrow_back),
                                 onPressed: () {
-                                  _selectedYear = null;
-                                  _selectedMonth = null;
+                                  _filters = _filters.copyWith(
+                                    clearYear: true,
+                                    clearMonth: true,
+                                  );
                                   refresh();
                                 },
                               ),
                               Text(
-                                '$_selectedYear',
+                                '${_filters.selectedYear}',
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleSmall,
@@ -600,16 +497,21 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               const EdgeInsets.fromLTRB(16, 4, 16, 8),
                           child: Wrap(
                             spacing: 8,
-                            children: (_cachedMonthsByYear[_selectedYear] ?? [])
+                            children: (_result
+                                        .monthsByYear[_filters.selectedYear] ??
+                                    [])
                                 .map((m) => FilterChip(
-                                      label:
-                                          Text(_monthLabel(m)),
-                                      selected: _selectedMonth == m,
+                                      label: Text(_monthLabel(m)),
+                                      selected: _filters.selectedMonth == m,
                                       onSelected: (_) {
-                                        _selectedMonth =
-                                            _selectedMonth == m
-                                                ? null
-                                                : m;
+                                        _filters = _filters.copyWith(
+                                          selectedMonth:
+                                              _filters.selectedMonth == m
+                                                  ? null
+                                                  : m,
+                                          clearMonth:
+                                              _filters.selectedMonth == m,
+                                        );
                                         refresh();
                                       },
                                     ))
@@ -636,13 +538,19 @@ class _SalesListScreenState extends State<SalesListScreen> {
                             children: allCats
                                 .map((cat) => FilterChip(
                                       label: Text(cat),
-                                      selected:
-                                          _categoryFilters.contains(cat),
+                                      selected: _filters.categoryFilters
+                                          .contains(cat),
                                       onSelected: (on) {
-                                        _categoryFilters = on
-                                            ? {..._categoryFilters, cat}
-                                            : ({..._categoryFilters}
+                                        final updated = on
+                                            ? {
+                                                ..._filters.categoryFilters,
+                                                cat
+                                              }
+                                            : ({..._filters.categoryFilters}
                                               ..remove(cat));
+                                        _filters = _filters.copyWith(
+                                          categoryFilters: updated,
+                                        );
                                         refresh();
                                       },
                                     ))
@@ -654,14 +562,14 @@ class _SalesListScreenState extends State<SalesListScreen> {
                     // ── Buyer ──────────────────────────────────────────────
                     const Divider(height: 24),
                     SheetSectionLabel(s.buyer.toUpperCase()),
-                    if (_buyerFilter != null)
+                    if (_filters.buyerFilter != null)
                       ListTile(
                         leading: const Icon(Icons.person),
-                        title: Text(_buyerFilter!.name),
+                        title: Text(_filters.buyerFilter!.name),
                         trailing: IconButton(
                           icon: const Icon(Icons.clear, size: 20),
                           onPressed: () {
-                            _buyerFilter = null;
+                            _filters = _filters.copyWith(clearBuyer: true);
                             buyerSearchController.clear();
                             refresh();
                           },
@@ -686,7 +594,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
                             title: Text(b.name),
                             dense: true,
                             onTap: () {
-                              _buyerFilter = b;
+                              _filters =
+                                  _filters.copyWith(buyerFilter: b);
                               buyerSearchController.clear();
                               refresh();
                             },
@@ -698,7 +607,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           SheetSectionLabel(group.label.toUpperCase()),
                           ...group.filters.map((f) => CheckboxListTile(
                                 title: Text(s.filterLabel(f)),
-                                value: _activeFilters.contains(f),
+                                value: _filters.activeFilters.contains(f),
                                 onChanged: (v) => updateFilter(f, checked: v),
                                 controlAffinity:
                                     ListTileControlAffinity.leading,
