@@ -67,6 +67,7 @@ class SalesListResult {
     required this.groupedSales,
     required this.availableYears,
     required this.monthsByYear,
+    required this.availableCategories,
     required this.buyerNifById,
   });
 
@@ -78,6 +79,9 @@ class SalesListResult {
 
   /// Months (1–12) present per year, sorted ascending.
   final Map<int, List<int>> monthsByYear;
+
+  /// Distinct item categories across all sales, sorted ascending.
+  final List<String> availableCategories;
 
   /// NIF per buyerId — avoids O(n_buyers) scan per card per build.
   final Map<String, String?> buyerNifById;
