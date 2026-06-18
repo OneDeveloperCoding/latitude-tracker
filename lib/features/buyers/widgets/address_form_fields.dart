@@ -20,7 +20,6 @@ const kAddressCountries = [
 final _ptPostalCodeRegex = RegExp(r'^\d{4}-\d{3}$');
 
 class AddressFormFields extends StatefulWidget {
-
   const AddressFormFields({
     super.key,
     this.initial,
@@ -67,10 +66,12 @@ class AddressFormFieldsState extends State<AddressFormFields> {
           _notesController.text.trim().isNotEmpty ||
           _isDefault;
     }
-    final fraction =
-        _fractionController.text.trim().isEmpty ? null : _fractionController.text.trim();
-    final notes =
-        _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    final fraction = _fractionController.text.trim().isEmpty
+        ? null
+        : _fractionController.text.trim();
+    final notes = _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim();
     return _labelController.text.trim() != a.label ||
         _postalCodeController.text.trim() != a.postalCode ||
         _cityController.text.trim() != a.city ||
@@ -83,23 +84,23 @@ class AddressFormFieldsState extends State<AddressFormFields> {
   }
 
   BuyerAddress buildAddress(String id) => BuyerAddress(
-        id: id,
-        label: _labelController.text.trim().isEmpty
-            ? context.s.addressDefaultLabel
-            : _labelController.text.trim(),
-        street: _streetController.text.trim(),
-        houseNumber: _houseNumberController.text.trim(),
-        fraction: _fractionController.text.trim().isEmpty
-            ? null
-            : _fractionController.text.trim(),
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-        city: _cityController.text.trim(),
-        postalCode: _postalCodeController.text.trim(),
-        country: _country,
-        isDefault: _isDefault,
-      );
+    id: id,
+    label: _labelController.text.trim().isEmpty
+        ? context.s.addressDefaultLabel
+        : _labelController.text.trim(),
+    street: _streetController.text.trim(),
+    houseNumber: _houseNumberController.text.trim(),
+    fraction: _fractionController.text.trim().isEmpty
+        ? null
+        : _fractionController.text.trim(),
+    notes: _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim(),
+    city: _cityController.text.trim(),
+    postalCode: _postalCodeController.text.trim(),
+    country: _country,
+    isDefault: _isDefault,
+  );
 
   @override
   void initState() {
@@ -222,10 +223,12 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             border: const OutlineInputBorder(),
           ),
           items: kAddressCountries
-              .map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(s.countryDisplayNames[c] ?? c),
-                  ))
+              .map(
+                (c) => DropdownMenuItem(
+                  value: c,
+                  child: Text(s.countryDisplayNames[c] ?? c),
+                ),
+              )
               .toList(),
           onChanged: (v) => setState(() {
             _country = v!;
@@ -333,7 +336,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
 }
 
 class _StreetPickerSheet extends StatelessWidget {
-
   const _StreetPickerSheet({required this.streets});
   final List<String> streets;
 

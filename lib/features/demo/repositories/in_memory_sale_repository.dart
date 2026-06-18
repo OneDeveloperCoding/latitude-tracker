@@ -34,8 +34,9 @@ class InMemorySaleRepository implements SaleRepository {
   @override
   Stream<Sale?> watchSale(String id) async* {
     yield _sales.where((s) => s.id == id).firstOrNull;
-    yield* _controller.stream
-        .map((_) => _sales.where((s) => s.id == id).firstOrNull);
+    yield* _controller.stream.map(
+      (_) => _sales.where((s) => s.id == id).firstOrNull,
+    );
   }
 
   @override
@@ -85,8 +86,10 @@ class InMemorySaleRepository implements SaleRepository {
   }
 
   @override
-  Future<void> deleteAllSalesForYear(int year,
-      {bool deletePhotos = false}) async {
+  Future<void> deleteAllSalesForYear(
+    int year, {
+    bool deletePhotos = false,
+  }) async {
     _sales.removeWhere((s) => s.createdAt.year == year);
     _emit();
   }
@@ -104,9 +107,11 @@ class InMemorySaleRepository implements SaleRepository {
       if (!sale.items.any((item) => item.category == oldName)) continue;
       _sales[i] = sale.copyWith(
         items: sale.items
-            .map((item) => item.category == oldName
-                ? item.copyWith(category: newName)
-                : item)
+            .map(
+              (item) => item.category == oldName
+                  ? item.copyWith(category: newName)
+                  : item,
+            )
             .toList(),
       );
     }

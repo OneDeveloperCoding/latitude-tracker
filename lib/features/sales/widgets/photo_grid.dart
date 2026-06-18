@@ -8,9 +8,12 @@ import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 
 class PhotoGrid extends StatefulWidget {
-
   const PhotoGrid({
-    required this.saleId, required this.itemId, required this.photoUrls, required this.onChanged, super.key,
+    required this.saleId,
+    required this.itemId,
+    required this.photoUrls,
+    required this.onChanged,
+    super.key,
     this.onPhotoAdded,
     this.onPhotoRemoved,
     this.uploadCallback,
@@ -148,26 +151,26 @@ class _PhotoGridState extends State<PhotoGrid> {
           runSpacing: 8,
           children: [
             ...photos.asMap().entries.map(
-                  (entry) => _PhotoTile(
-                    url: entry.value,
-                    isUploading: false,
-                    onTap: () => _viewPhoto(context, entry.key),
-                    onDelete: () => _removePhoto(entry.key),
-                  ),
-                ),
+              (entry) => _PhotoTile(
+                url: entry.value,
+                isUploading: false,
+                onTap: () => _viewPhoto(context, entry.key),
+                onDelete: () => _removePhoto(entry.key),
+              ),
+            ),
             ...List.generate(
               _uploadingCount,
               (_) => const _PhotoTile(isUploading: true),
             ),
-            if (!DemoMode.active.value)
-              _AddPhotoTile(onTap: _showSourcePicker),
+            if (!DemoMode.active.value) _AddPhotoTile(onTap: _showSourcePicker),
           ],
         ),
         if (photos.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              '${photos.length} photo${photos.length == 1 ? '' : 's'} — tap to view',
+              '${photos.length} photo${photos.length == 1 ? '' : 's'} — tap to'
+              ' view',
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),
@@ -177,9 +180,9 @@ class _PhotoGridState extends State<PhotoGrid> {
 }
 
 class _PhotoTile extends StatelessWidget {
-
   const _PhotoTile({
-    required this.isUploading, this.url,
+    required this.isUploading,
+    this.url,
     this.onTap,
     this.onDelete,
   });
@@ -192,8 +195,8 @@ class _PhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cacheSize =
-        (_displaySize * MediaQuery.devicePixelRatioOf(context)).round();
+    final cacheSize = (_displaySize * MediaQuery.devicePixelRatioOf(context))
+        .round();
     return SizedBox(
       width: _displaySize,
       height: _displaySize,
@@ -225,7 +228,8 @@ class _PhotoTile extends StatelessWidget {
                       : Container(
                           color: Colors.grey[200],
                           child: const Center(
-                              child: CircularProgressIndicator()),
+                            child: CircularProgressIndicator(),
+                          ),
                         ),
                   errorBuilder: (context, error, stack) => Container(
                     color: Colors.grey[200],
@@ -264,7 +268,6 @@ class _PhotoTile extends StatelessWidget {
 }
 
 class _DemoPhotoPlaceholder extends StatelessWidget {
-
   const _DemoPhotoPlaceholder({required this.url, this.large = false});
   final String url;
   final bool large;
@@ -286,7 +289,8 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final match = RegExp(r'\d+$').firstMatch(url);
-    final idx = ((match != null ? int.parse(match.group(0)!) : 1) - 1) %
+    final idx =
+        ((match != null ? int.parse(match.group(0)!) : 1) - 1) %
         _palettes.length;
     final size = large ? 200.0 : 96.0;
     return Container(
@@ -301,15 +305,13 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
         borderRadius: large ? null : BorderRadius.circular(8),
       ),
       child: Center(
-        child: Icon(_icons[idx],
-            size: large ? 64 : 32, color: Colors.white70),
+        child: Icon(_icons[idx], size: large ? 64 : 32, color: Colors.white70),
       ),
     );
   }
 }
 
 class _AddPhotoTile extends StatelessWidget {
-
   const _AddPhotoTile({required this.onTap});
   final VoidCallback onTap;
 
@@ -330,8 +332,10 @@ class _AddPhotoTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_a_photo,
-                color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.add_a_photo,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 4),
             Text(
               context.s.addPhoto,
@@ -348,9 +352,9 @@ class _AddPhotoTile extends StatelessWidget {
 }
 
 class PhotoThumbnail extends StatelessWidget {
-
   const PhotoThumbnail({
-    required this.url, super.key,
+    required this.url,
+    super.key,
     this.size = 48,
     this.onTap,
   });
@@ -360,8 +364,7 @@ class PhotoThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cacheSize =
-        (size * MediaQuery.devicePixelRatioOf(context)).round();
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     final image = url.startsWith('demo://')
         ? _DemoPhotoPlaceholder(url: url)
         : Image.network(
@@ -392,8 +395,11 @@ class PhotoThumbnail extends StatelessWidget {
 }
 
 class PhotoViewer extends StatefulWidget {
-
-  const PhotoViewer({required this.urls, required this.initialIndex, super.key});
+  const PhotoViewer({
+    required this.urls,
+    required this.initialIndex,
+    super.key,
+  });
   final List<String> urls;
   final int initialIndex;
 
@@ -444,9 +450,14 @@ class _PhotoViewerState extends State<PhotoViewer> {
                 loadingBuilder: (_, child, progress) => progress == null
                     ? child
                     : const Center(
-                        child: CircularProgressIndicator(color: Colors.white)),
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
                 errorBuilder: (_, err, stack) => const Center(
-                  child: Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Colors.white54,
+                    size: 64,
+                  ),
                 ),
               ),
             ),

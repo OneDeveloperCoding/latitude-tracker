@@ -31,7 +31,8 @@ abstract class BasePhotoService {
     try {
       await storage.refFromURL(photoUrl).delete();
     } catch (e, st) {
-      // Photo may already be deleted — best-effort, but track unexpected errors.
+      // Photo may already be deleted — best-effort, but track unexpected
+      // errors.
       logError(e, st);
     }
   }

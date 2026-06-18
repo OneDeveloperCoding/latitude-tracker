@@ -1,7 +1,11 @@
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:test/test.dart';
 
-ComponentItem _component(String id, {required bool available, int quantity = 1}) =>
+ComponentItem _component(
+  String id, {
+  required bool available,
+  int quantity = 1,
+}) =>
     ComponentItem(id: id, name: id, quantity: quantity, isAvailable: available);
 
 void main() {
@@ -18,8 +22,12 @@ void main() {
       final allAvailable = item.copyWith(
         components: [_component('a', available: true)],
       );
-      expect(allAvailable.assemblyStatus, AssemblyStatus.notStarted,
-          reason: 'assemblyStatus must not auto-derive from component availability');
+      expect(
+        allAvailable.assemblyStatus,
+        AssemblyStatus.notStarted,
+        reason:
+            'assemblyStatus must not auto-derive from component availability',
+      );
     });
 
     test('adjustedQuantity clamps to [1, kMaxComponentQuantity]', () {
@@ -28,7 +36,11 @@ void main() {
       expect(c.adjustedQuantity(-1).quantity, 1);
       expect(c.adjustedQuantity(-5).quantity, 1);
       expect(c.adjustedQuantity(148).quantity, 150);
-      final atMax = _component('a', available: false, quantity: kMaxComponentQuantity);
+      final atMax = _component(
+        'a',
+        available: false,
+        quantity: kMaxComponentQuantity,
+      );
       expect(atMax.adjustedQuantity(1).quantity, kMaxComponentQuantity);
     });
   });
@@ -62,54 +74,68 @@ void main() {
 
   group('Sale.derivedAssemblyStatus', () {
     Sale saleWith(List<AssemblyStatus> statuses) => Sale(
-          id: 'test',
-          buyerId: 'b1',
-          buyerName: 'Test',
-          items: statuses
-              .map((s) => SaleItem(
-                    id: s.name,
-                    description: s.name,
-                    category: 'x',
-                    price: 1,
-                    assemblyStatus: s,
-                  ))
-              .toList(),
-          payment: const SalePayment(
-              status: PaymentStatus.paid, method: PaymentMethod.mbWay),
-          shipment: const SaleShipment(
-              type: DeliveryType.shipping, status: ShipmentStatus.pending),
-          requiresNif: false,
-          createdAt: DateTime(2026),
-        );
+      id: 'test',
+      buyerId: 'b1',
+      buyerName: 'Test',
+      items: statuses
+          .map(
+            (s) => SaleItem(
+              id: s.name,
+              description: s.name,
+              category: 'x',
+              price: 1,
+              assemblyStatus: s,
+            ),
+          )
+          .toList(),
+      payment: const SalePayment(
+        status: PaymentStatus.paid,
+        method: PaymentMethod.mbWay,
+      ),
+      shipment: const SaleShipment(
+        type: DeliveryType.shipping,
+        status: ShipmentStatus.pending,
+      ),
+      requiresNif: false,
+      createdAt: DateTime(2026),
+    );
 
     test('all ready → ready', () {
       expect(
-        saleWith([AssemblyStatus.ready, AssemblyStatus.ready])
-            .derivedAssemblyStatus,
+        saleWith([
+          AssemblyStatus.ready,
+          AssemblyStatus.ready,
+        ]).derivedAssemblyStatus,
         AssemblyStatus.ready,
       );
     });
 
     test('one waitingForMaterials → waitingForMaterials (worst)', () {
       expect(
-        saleWith([AssemblyStatus.ready, AssemblyStatus.waitingForMaterials])
-            .derivedAssemblyStatus,
+        saleWith([
+          AssemblyStatus.ready,
+          AssemblyStatus.waitingForMaterials,
+        ]).derivedAssemblyStatus,
         AssemblyStatus.waitingForMaterials,
       );
     });
 
     test('inProgress beats notStarted', () {
       expect(
-        saleWith([AssemblyStatus.notStarted, AssemblyStatus.inProgress])
-            .derivedAssemblyStatus,
+        saleWith([
+          AssemblyStatus.notStarted,
+          AssemblyStatus.inProgress,
+        ]).derivedAssemblyStatus,
         AssemblyStatus.inProgress,
       );
     });
 
     test('notStarted wins over ready', () {
       expect(
-        saleWith([AssemblyStatus.ready, AssemblyStatus.notStarted])
-            .derivedAssemblyStatus,
+        saleWith([
+          AssemblyStatus.ready,
+          AssemblyStatus.notStarted,
+        ]).derivedAssemblyStatus,
         AssemblyStatus.notStarted,
       );
     });
@@ -125,8 +151,10 @@ void main() {
   group('SalePayment round-trip serialisation', () {
     for (final method in PaymentMethod.values) {
       test('${method.name} survives toMap → fromMap', () {
-        final original =
-            SalePayment(status: PaymentStatus.paid, method: method);
+        final original = SalePayment(
+          status: PaymentStatus.paid,
+          method: method,
+        );
         final restored = SalePayment.fromMap(original.toMap());
         expect(restored.method, method);
         expect(restored.status, PaymentStatus.paid);
@@ -136,12 +164,12 @@ void main() {
 
   group('SaleItem.fromMap — unknown enum falls back to default', () {
     Map<String, dynamic> baseItemMap() => {
-          'id': 'i1',
-          'description': 'Test',
-          'category': 'Colares',
-          'price': 10.0,
-          'assemblyStatus': 'notStarted',
-        };
+      'id': 'i1',
+      'description': 'Test',
+      'category': 'Colares',
+      'price': 10.0,
+      'assemblyStatus': 'notStarted',
+    };
 
     test('unknown assemblyStatus falls back to notStarted', () {
       final map = baseItemMap()..['assemblyStatus'] = 'obsoleteStatus';
@@ -187,8 +215,10 @@ void main() {
   });
 
   group('SaleShipment.fromMap — unknown enum falls back to default', () {
-    Map<String, dynamic> baseShipmentMap() =>
-        {'type': 'shipping', 'status': 'pending'};
+    Map<String, dynamic> baseShipmentMap() => {
+      'type': 'shipping',
+      'status': 'pending',
+    };
 
     test('unknown status falls back to pending', () {
       final map = baseShipmentMap()..['status'] = 'legacyStatus';
@@ -232,16 +262,16 @@ void main() {
 
   group('Sale.fromArchiveMap — null-safe string and enum fields', () {
     Map<String, dynamic> baseSaleMap() => {
-          'id': 's1',
-          'buyerId': 'b1',
-          'buyerName': 'Ana',
-          'items': <dynamic>[],
-          'payment': {'status': 'paid', 'method': 'mbWay'},
-          'shipment': {'type': 'shipping', 'status': 'pending'},
-          'requiresNif': false,
-          'atSubmissionDone': false,
-          'createdAt': '2026-01-01T00:00:00.000',
-        };
+      'id': 's1',
+      'buyerId': 'b1',
+      'buyerName': 'Ana',
+      'items': <dynamic>[],
+      'payment': {'status': 'paid', 'method': 'mbWay'},
+      'shipment': {'type': 'shipping', 'status': 'pending'},
+      'requiresNif': false,
+      'atSubmissionDone': false,
+      'createdAt': '2026-01-01T00:00:00.000',
+    };
 
     test('null buyerId falls back to empty string', () {
       final map = baseSaleMap()..['buyerId'] = null;
@@ -273,11 +303,17 @@ void main() {
       expect(sale.createdAt, DateTime.fromMillisecondsSinceEpoch(0));
     });
 
-    test('malformed createdAt string falls back to epoch rather than throwing', () {
-      final map = baseSaleMap()..['createdAt'] = 'not-a-date';
-      expect(() => Sale.fromArchiveMap(map), returnsNormally);
-      expect(Sale.fromArchiveMap(map).createdAt, DateTime.fromMillisecondsSinceEpoch(0));
-    });
+    test(
+      'malformed createdAt string falls back to epoch rather than throwing',
+      () {
+        final map = baseSaleMap()..['createdAt'] = 'not-a-date';
+        expect(() => Sale.fromArchiveMap(map), returnsNormally);
+        expect(
+          Sale.fromArchiveMap(map).createdAt,
+          DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      },
+    );
   });
 
   group('Sale.totalPrice', () {
@@ -288,22 +324,28 @@ void main() {
         buyerName: 'Test',
         items: [
           const SaleItem(
-              id: '1',
-              description: 'a',
-              category: 'x',
-              price: 10,
-              assemblyStatus: AssemblyStatus.ready),
+            id: '1',
+            description: 'a',
+            category: 'x',
+            price: 10,
+            assemblyStatus: AssemblyStatus.ready,
+          ),
           const SaleItem(
-              id: '2',
-              description: 'b',
-              category: 'x',
-              price: 25.50,
-              assemblyStatus: AssemblyStatus.ready),
+            id: '2',
+            description: 'b',
+            category: 'x',
+            price: 25.50,
+            assemblyStatus: AssemblyStatus.ready,
+          ),
         ],
         payment: const SalePayment(
-            status: PaymentStatus.paid, method: PaymentMethod.mbWay),
+          status: PaymentStatus.paid,
+          method: PaymentMethod.mbWay,
+        ),
         shipment: const SaleShipment(
-            type: DeliveryType.shipping, status: ShipmentStatus.pending),
+          type: DeliveryType.shipping,
+          status: ShipmentStatus.pending,
+        ),
         requiresNif: false,
         createdAt: DateTime(2026),
       );
@@ -317,9 +359,13 @@ void main() {
         buyerName: 'Test',
         items: const [],
         payment: const SalePayment(
-            status: PaymentStatus.paid, method: PaymentMethod.mbWay),
+          status: PaymentStatus.paid,
+          method: PaymentMethod.mbWay,
+        ),
         shipment: const SaleShipment(
-            type: DeliveryType.shipping, status: ShipmentStatus.pending),
+          type: DeliveryType.shipping,
+          status: ShipmentStatus.pending,
+        ),
         requiresNif: false,
         createdAt: DateTime(2026),
       );

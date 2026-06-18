@@ -56,8 +56,7 @@ extension SaleFilterTest on SaleFilter {
         (sale.shipment.type == DeliveryType.shipping ||
                 sale.shipment.type == DeliveryType.handDelivery) &&
             sale.shipment.status == ShipmentStatus.pending,
-      SaleFilter.shipped =>
-        sale.shipment.status == ShipmentStatus.shipped,
+      SaleFilter.shipped => sale.shipment.status == ShipmentStatus.shipped,
       SaleFilter.pickup => sale.shipment.type == DeliveryType.pickup,
       SaleFilter.handDelivery =>
         sale.shipment.type == DeliveryType.handDelivery,

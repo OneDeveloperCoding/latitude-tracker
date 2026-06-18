@@ -5,16 +5,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/sale_factory.dart';
 
-Sale _shippingSale(String? postalCode, {double price = 100.0, String? addressId}) =>
-    makeSale().copyWith(
-      shipment: SaleShipment(
-        type: DeliveryType.shipping,
-        status: ShipmentStatus.delivered,
-        postalCode: postalCode,
-        addressId: addressId,
-      ),
-      items: [makeSaleItem(price: price)],
-    );
+Sale _shippingSale(
+  String? postalCode, {
+  double price = 100.0,
+  String? addressId,
+}) => makeSale().copyWith(
+  shipment: SaleShipment(
+    type: DeliveryType.shipping,
+    status: ShipmentStatus.delivered,
+    postalCode: postalCode,
+    addressId: addressId,
+  ),
+  items: [makeSaleItem(price: price)],
+);
 
 Sale _handDeliverySale(String? postalCode, {double price = 100.0}) =>
     makeSale(delivery: DeliveryType.handDelivery).copyWith(
@@ -27,11 +30,11 @@ Sale _handDeliverySale(String? postalCode, {double price = 100.0}) =>
     );
 
 Sale _pickupSale() => makeSale(delivery: DeliveryType.pickup).copyWith(
-      shipment: const SaleShipment(
-        type: DeliveryType.pickup,
-        status: ShipmentStatus.delivered,
-      ),
-    );
+  shipment: const SaleShipment(
+    type: DeliveryType.pickup,
+    status: ShipmentStatus.delivered,
+  ),
+);
 
 void main() {
   setUpAll(() {
@@ -88,13 +91,16 @@ void main() {
       expect(ranking.localities, isEmpty);
     });
 
-    test('locality name falls back to CP4 when geocoding unavailable', () async {
-      final ranking = await GeographicSalesService.buildRanking(
-        [_shippingSale('9999-001')],
-        {},
-      );
-      expect(ranking.localities.first.locality, '9999');
-    });
+    test(
+      'locality name falls back to CP4 when geocoding unavailable',
+      () async {
+        final ranking = await GeographicSalesService.buildRanking(
+          [_shippingSale('9999-001')],
+          {},
+        );
+        expect(ranking.localities.first.locality, '9999');
+      },
+    );
   });
 
   group('GeographicSalesService.buildRanking — International section', () {
@@ -124,13 +130,16 @@ void main() {
       expect(ranking.countries.first.revenue, closeTo(120.0, 0.01));
     });
 
-    test('excludes non-PT sales whose addressId is absent from the lookup', () async {
-      final ranking = await GeographicSalesService.buildRanking(
-        [_shippingSale('75001', addressId: 'unknown-addr')],
-        {},
-      );
-      expect(ranking.countries, isEmpty);
-    });
+    test(
+      'excludes non-PT sales whose addressId is absent from the lookup',
+      () async {
+        final ranking = await GeographicSalesService.buildRanking(
+          [_shippingSale('75001', addressId: 'unknown-addr')],
+          {},
+        );
+        expect(ranking.countries, isEmpty);
+      },
+    );
 
     test('excludes non-PT sales with no addressId', () async {
       final ranking = await GeographicSalesService.buildRanking(
@@ -140,13 +149,17 @@ void main() {
       expect(ranking.countries, isEmpty);
     });
 
-    test('excludes "Portugal" entries even if postal code does not match PT format', () async {
-      final ranking = await GeographicSalesService.buildRanking(
-        [_shippingSale('75001', addressId: 'addr-pt')],
-        {'addr-pt': 'Portugal'},
-      );
-      expect(ranking.countries, isEmpty);
-    });
+    test(
+      'excludes "Portugal" entries even if postal code does not match PT'
+      ' format',
+      () async {
+        final ranking = await GeographicSalesService.buildRanking(
+          [_shippingSale('75001', addressId: 'addr-pt')],
+          {'addr-pt': 'Portugal'},
+        );
+        expect(ranking.countries, isEmpty);
+      },
+    );
   });
 
   group('GeographicSalesService.buildRanking — isEmpty', () {

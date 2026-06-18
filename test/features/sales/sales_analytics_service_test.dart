@@ -52,8 +52,11 @@ void main() {
       );
 
       final result = SalesAnalyticsService.computePeriodStats(
-          [sale], jan, feb,
-          category: 'Colares');
+        [sale],
+        jan,
+        feb,
+        category: 'Colares',
+      );
 
       expect(result.revenue, 60);
       expect(result.count, 1);
@@ -66,8 +69,11 @@ void main() {
       ];
 
       final result = SalesAnalyticsService.computePeriodStats(
-          sales, jan, feb,
-          category: 'Chapéus');
+        sales,
+        jan,
+        feb,
+        category: 'Chapéus',
+      );
 
       expect(result.revenue, 0);
       expect(result.count, 0);
@@ -76,15 +82,19 @@ void main() {
     test('with category filter ignores unpaid sales', () {
       final sales = [
         makeSale(
-            category: 'Colares',
-            price: 100,
-            createdAt: jan,
-            payment: PaymentStatus.unpaid),
+          category: 'Colares',
+          price: 100,
+          createdAt: jan,
+          payment: PaymentStatus.unpaid,
+        ),
       ];
 
       final result = SalesAnalyticsService.computePeriodStats(
-          sales, jan, feb,
-          category: 'Colares');
+        sales,
+        jan,
+        feb,
+        category: 'Colares',
+      );
 
       expect(result.revenue, 0);
       expect(result.count, 0);
@@ -101,8 +111,11 @@ void main() {
         ],
       );
 
-      final result =
-          SalesAnalyticsService.computeCategoryBreakdown([sale], jan, feb);
+      final result = SalesAnalyticsService.computeCategoryBreakdown(
+        [sale],
+        jan,
+        feb,
+      );
 
       expect(result.length, 2);
       expect(result[0].category, 'Colares');
@@ -114,14 +127,18 @@ void main() {
     test('excludes unpaid sales', () {
       final sales = [
         makeSale(
-            category: 'Colares',
-            price: 80,
-            createdAt: jan,
-            payment: PaymentStatus.unpaid),
+          category: 'Colares',
+          price: 80,
+          createdAt: jan,
+          payment: PaymentStatus.unpaid,
+        ),
       ];
 
-      final result =
-          SalesAnalyticsService.computeCategoryBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computeCategoryBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
       expect(result, isEmpty);
     });
@@ -131,8 +148,11 @@ void main() {
         makeSale(category: 'Colares', price: 80, createdAt: mar),
       ];
 
-      final result =
-          SalesAnalyticsService.computeCategoryBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computeCategoryBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
       expect(result, isEmpty);
     });
@@ -144,11 +164,17 @@ void main() {
         makeSale(category: 'Chapéus', createdAt: jan),
       ];
 
-      final result =
-          SalesAnalyticsService.computeCategoryBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computeCategoryBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
-      expect(result.map((e) => e.category).toList(),
-          ['Colares', 'Chapéus', 'Brincos']);
+      expect(result.map((e) => e.category).toList(), [
+        'Colares',
+        'Chapéus',
+        'Brincos',
+      ]);
     });
   });
 
@@ -160,8 +186,11 @@ void main() {
         makeSale(price: 30, createdAt: jan),
       ];
 
-      final result =
-          SalesAnalyticsService.computePaymentMethodBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computePaymentMethodBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
       expect(result[PaymentMethod.mbWay]?.revenue, 90);
       expect(result[PaymentMethod.mbWay]?.count, 2);
@@ -171,14 +200,14 @@ void main() {
 
     test('excludes unpaid sales', () {
       final sales = [
-        makeSale(
-            price: 100,
-            createdAt: jan,
-            payment: PaymentStatus.unpaid),
+        makeSale(price: 100, createdAt: jan, payment: PaymentStatus.unpaid),
       ];
 
-      final result =
-          SalesAnalyticsService.computePaymentMethodBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computePaymentMethodBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
       expect(result, isEmpty);
     });
@@ -188,8 +217,11 @@ void main() {
         makeSale(price: 100, createdAt: mar),
       ];
 
-      final result =
-          SalesAnalyticsService.computePaymentMethodBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computePaymentMethodBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
       expect(result, isEmpty);
     });
@@ -200,8 +232,11 @@ void main() {
         makeSale(method: PaymentMethod.paypal, price: 40, createdAt: jan),
       ];
 
-      final result =
-          SalesAnalyticsService.computePaymentMethodBreakdown(sales, jan, feb);
+      final result = SalesAnalyticsService.computePaymentMethodBreakdown(
+        sales,
+        jan,
+        feb,
+      );
 
       expect(result[PaymentMethod.revolut]?.revenue, 60);
       expect(result[PaymentMethod.revolut]?.count, 1);

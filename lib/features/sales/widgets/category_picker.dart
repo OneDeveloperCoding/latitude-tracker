@@ -24,8 +24,10 @@ Future<String?> showCategoryPicker(
   );
 }
 
-/// Returns deduplicated, visible categories sorted by usage frequency descending.
-/// Seeds from [kDefaultCategories] so the list is never empty on a fresh install.
+// / Returns deduplicated, visible categories sorted by usage frequency
+// descending.
+// / Seeds from [kDefaultCategories] so the list is never empty on a fresh
+// install.
 List<String> _buildSortedCategories(Set<String> hidden) {
   final counts = <String, int>{};
   for (final sale in SalesStore.currentOrEmpty) {
@@ -36,9 +38,7 @@ List<String> _buildSortedCategories(Set<String> hidden) {
   for (final cat in kDefaultCategories) {
     counts.putIfAbsent(cat, () => 0);
   }
-  return counts.keys
-      .where((cat) => !hidden.contains(cat))
-      .toList()
+  return counts.keys.where((cat) => !hidden.contains(cat)).toList()
     ..sort((a, b) {
       final cmp = counts[b]!.compareTo(counts[a]!);
       return cmp != 0 ? cmp : a.compareTo(b);
@@ -46,7 +46,6 @@ List<String> _buildSortedCategories(Set<String> hidden) {
 }
 
 class _CategoryPickerSheet extends StatefulWidget {
-
   const _CategoryPickerSheet({
     required this.allCategories,
     this.current,
@@ -77,12 +76,16 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
         .where((c) => c.toLowerCase().contains(_query.toLowerCase()))
         .toList();
 
-    final showAddNew = _query.isNotEmpty &&
-        !widget.allCategories
-            .any((c) => c.toLowerCase() == _query.toLowerCase().trim());
+    final showAddNew =
+        _query.isNotEmpty &&
+        !widget.allCategories.any(
+          (c) => c.toLowerCase() == _query.toLowerCase().trim(),
+        );
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SafeArea(
         child: DraggableScrollableSheet(
           expand: false,
@@ -124,15 +127,13 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                       ListTile(
                         leading: const Icon(Icons.add_circle_outline),
                         title: Text(s.addCategoryLabel(_query.trim())),
-                        onTap: () =>
-                            Navigator.pop(context, _query.trim()),
+                        onTap: () => Navigator.pop(context, _query.trim()),
                       ),
                     ...filtered.map(
                       (cat) => ListTile(
                         title: Text(cat),
                         trailing: cat == widget.current
-                            ? Icon(Icons.check,
-                                color: colorScheme.primary)
+                            ? Icon(Icons.check, color: colorScheme.primary)
                             : null,
                         onTap: () => Navigator.pop(context, cat),
                       ),

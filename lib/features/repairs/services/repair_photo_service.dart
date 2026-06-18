@@ -11,8 +11,7 @@ class RepairPhotoService extends BasePhotoService {
   Future<String?> pickAndUpload({
     required String repairId,
     required ImageSource source,
-  }) =>
-      uploadImage(_photoRef(repairId, newId()), source);
+  }) => uploadImage(_photoRef(repairId, newId()), source);
 
   Future<void> deleteAllPhotos(String repairId) =>
       deleteAllInFolder(() => 'users/$userId/repairs/$repairId');

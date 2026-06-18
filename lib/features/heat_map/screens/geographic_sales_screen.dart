@@ -37,7 +37,8 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
   String _status = '';
 
   // Incremented on every _load call; each future captures its own value and
-  // only applies its result if the counter hasn't advanced (cancels stale loads).
+  // only applies its result if the counter hasn't advanced (cancels stale
+  // loads).
   int _loadGeneration = 0;
 
   late final NetworkTileProvider _tileProvider;
@@ -70,8 +71,9 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
     final all = _salesForView(SalesStore.currentOrEmpty);
     final years = all.map((s) => s.createdAt.year).toSet().toList()
       ..sort((a, b) => b.compareTo(a));
-    final year =
-        (_selectedYear != null && years.contains(_selectedYear)) ? _selectedYear : null;
+    final year = (_selectedYear != null && years.contains(_selectedYear))
+        ? _selectedYear
+        : null;
     setState(() {
       _years = years;
       _selectedYear = year;
@@ -81,8 +83,9 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
 
   Future<void> _load(List<Sale> sales, int? year) async {
     final generation = ++_loadGeneration;
-    final filtered =
-        year == null ? sales : sales.where((s) => s.createdAt.year == year).toList();
+    final filtered = year == null
+        ? sales
+        : sales.where((s) => s.createdAt.year == year).toList();
 
     setState(() {
       _loading = true;
@@ -98,10 +101,17 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
         final points = await HeatMapService.buildPoints(
           filtered,
           onProgress: (status, done, total) {
-            applyIfCurrent(() => setState(() => _status = '$status ($done/$total)...'));
+            applyIfCurrent(
+              () => setState(() => _status = '$status ($done/$total)...'),
+            );
           },
         );
-        applyIfCurrent(() => setState(() { _mapPoints = points; _loading = false; }));
+        applyIfCurrent(
+          () => setState(() {
+            _mapPoints = points;
+            _loading = false;
+          }),
+        );
       } else {
         final addressCountries = await _fetchAddressCountries(filtered);
         if (generation != _loadGeneration) return;
@@ -109,10 +119,17 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
           filtered,
           addressCountries,
           onProgress: (status, done, total) {
-            applyIfCurrent(() => setState(() => _status = '$status ($done/$total)...'));
+            applyIfCurrent(
+              () => setState(() => _status = '$status ($done/$total)...'),
+            );
           },
         );
-        applyIfCurrent(() => setState(() { _ranking = ranking; _loading = false; }));
+        applyIfCurrent(
+          () => setState(() {
+            _ranking = ranking;
+            _loading = false;
+          }),
+        );
       }
     } catch (e, st) {
       logError(e, st);
@@ -142,7 +159,8 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
           result[addr.id] = addr.country;
         }
       } catch (_) {
-        // Skip — that buyer's sales just won't appear in the international section.
+        // Skip — that buyer's sales just won't appear in the international
+        // section.
       }
     }
 
@@ -151,42 +169,62 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
 
   void _selectYear(int? year) {
     if (year == _selectedYear) return;
-    setState(() { _selectedYear = year; _ranking = null; _mapPoints = []; });
+    setState(() {
+      _selectedYear = year;
+      _ranking = null;
+      _mapPoints = [];
+    });
     _load(_salesForView(SalesStore.currentOrEmpty), year);
   }
 
   void _toggleMode() {
     final newMapMode = !_mapMode;
-    setState(() { _mapMode = newMapMode; _loading = true; });
+    setState(() {
+      _mapMode = newMapMode;
+      _loading = true;
+    });
     _load(_salesForView(SalesStore.currentOrEmpty), _selectedYear);
   }
 
   void _toggleHandDelivery() {
-    setState(() { _includeHandDelivery = !_includeHandDelivery; _ranking = null; _mapPoints = []; });
+    setState(() {
+      _includeHandDelivery = !_includeHandDelivery;
+      _ranking = null;
+      _mapPoints = [];
+    });
     _load(_salesForView(SalesStore.currentOrEmpty), _selectedYear);
   }
 
   List<Sale> _salesForView(List<Sale> sales) => sales.where((s) {
-        if (s.shipment.postalCode == null || s.shipment.postalCode!.isEmpty) return false;
-        if (s.shipment.type == DeliveryType.shipping) return true;
-        if (_includeHandDelivery && s.shipment.type == DeliveryType.handDelivery) return true;
-        return false;
-      }).toList();
+    if (s.shipment.postalCode == null || s.shipment.postalCode!.isEmpty) {
+      return false;
+    }
+    if (s.shipment.type == DeliveryType.shipping) return true;
+    if (_includeHandDelivery && s.shipment.type == DeliveryType.handDelivery) {
+      return true;
+    }
+    return false;
+  }).toList();
 
-  int _compareByMetric(double aRevenue, int aCount, double bRevenue, int bCount) =>
-      _metric == AnalyticsMetric.revenue
-          ? bRevenue.compareTo(aRevenue)
-          : bCount.compareTo(aCount);
+  int _compareByMetric(
+    double aRevenue,
+    int aCount,
+    double bRevenue,
+    int bCount,
+  ) => _metric == AnalyticsMetric.revenue
+      ? bRevenue.compareTo(aRevenue)
+      : bCount.compareTo(aCount);
 
-  List<LocalityRow> get _sortedLocalities =>
-      (List<LocalityRow>.from(_ranking?.localities ?? []))
-        ..sort((a, b) => _compareByMetric(a.revenue, a.count, b.revenue, b.count));
+  List<LocalityRow> get _sortedLocalities => (List<LocalityRow>.from(
+    _ranking?.localities ?? [],
+  ))..sort((a, b) => _compareByMetric(a.revenue, a.count, b.revenue, b.count));
 
-  List<CountryRow> get _sortedCountries =>
-      (List<CountryRow>.from(_ranking?.countries ?? []))
-        ..sort((a, b) => _compareByMetric(a.revenue, a.count, b.revenue, b.count));
+  List<CountryRow> get _sortedCountries => (List<CountryRow>.from(
+    _ranking?.countries ?? [],
+  ))..sort((a, b) => _compareByMetric(a.revenue, a.count, b.revenue, b.count));
 
-  double _markerSize(int count) => (32 + (count - 1) * 8).clamp(32, 80).toDouble();
+  double _markerSize(int count) =>
+      (32 + (count - 1) * 8).clamp(32, 80).toDouble();
 
   @override
   Widget build(BuildContext context) {
@@ -244,25 +282,28 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
             ),
             MarkerLayer(
               markers: _mapPoints
-                  .map((p) => Marker(
-                        point: p.position,
-                        width: _markerSize(p.count),
-                        height: _markerSize(p.count),
-                        child: GestureDetector(
-                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${p.locality} (${p.postalCode}) — ${s.nSales(p.count)}',
-                              ),
-                              duration: const Duration(seconds: 2),
+                  .map(
+                    (p) => Marker(
+                      point: p.position,
+                      width: _markerSize(p.count),
+                      height: _markerSize(p.count),
+                      child: GestureDetector(
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${p.locality} (${p.postalCode}) —'
+                              ' ${s.nSales(p.count)}',
                             ),
-                          ),
-                          child: _MapMarker(
-                            count: p.count,
-                            size: _markerSize(p.count),
+                            duration: const Duration(seconds: 2),
                           ),
                         ),
-                      ))
+                        child: _MapMarker(
+                          count: p.count,
+                          size: _markerSize(p.count),
+                        ),
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -335,10 +376,10 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
   }
 }
 
-// ─── Shared year filter bar ───────────────────────────────────────────────────
+// ─── Shared year filter bar
+// ───────────────────────────────────────────────────
 
 class _YearFilterBar extends StatelessWidget {
-
   const _YearFilterBar({
     required this.years,
     required this.selected,
@@ -365,7 +406,11 @@ class _YearFilterBar extends StatelessWidget {
     );
   }
 
-  Widget _chip(BuildContext context, {required String label, required int? value}) {
+  Widget _chip(
+    BuildContext context, {
+    required String label,
+    required int? value,
+  }) {
     final isSelected = value == selected;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -379,10 +424,10 @@ class _YearFilterBar extends StatelessWidget {
   }
 }
 
-// ─── List view widgets ────────────────────────────────────────────────────────
+// ─── List view widgets
+// ────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-
   const _SectionHeader({required this.label});
   final String label;
 
@@ -393,17 +438,16 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }
 }
 
 class _LocalityTile extends StatelessWidget {
-
   const _LocalityTile({
     required this.rank,
     required this.row,
@@ -423,10 +467,9 @@ class _LocalityTile extends StatelessWidget {
         width: 28,
         child: Text(
           '$rank',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
           textAlign: TextAlign.center,
         ),
       ),
@@ -434,15 +477,15 @@ class _LocalityTile extends StatelessWidget {
       subtitle: Text(row.postalCode),
       trailing: Text(
         metric == AnalyticsMetric.revenue
-            ? NumberFormat.currency(symbol: '€', decimalDigits: 0).format(row.revenue)
+            ? NumberFormat.currency(
+                symbol: '€',
+                decimalDigits: 0,
+              ).format(row.revenue)
             : context.s.nSales(row.count),
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
       onTap: onTap,
     );
@@ -450,7 +493,6 @@ class _LocalityTile extends StatelessWidget {
 }
 
 class _CountryTile extends StatelessWidget {
-
   const _CountryTile({
     required this.rank,
     required this.row,
@@ -468,34 +510,33 @@ class _CountryTile extends StatelessWidget {
         width: 28,
         child: Text(
           '$rank',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
           textAlign: TextAlign.center,
         ),
       ),
       title: Text(row.country),
       trailing: Text(
         metric == AnalyticsMetric.revenue
-            ? NumberFormat.currency(symbol: '€', decimalDigits: 0).format(row.revenue)
+            ? NumberFormat.currency(
+                symbol: '€',
+                decimalDigits: 0,
+              ).format(row.revenue)
             : context.s.nSales(row.count),
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }
 }
 
-// ─── Map sub-mode widgets ─────────────────────────────────────────────────────
+// ─── Map sub-mode widgets
+// ─────────────────────────────────────────────────────
 
 class _MapMarker extends StatelessWidget {
-
   const _MapMarker({required this.count, required this.size});
   final int count;
   final double size;
@@ -528,7 +569,6 @@ class _MapMarker extends StatelessWidget {
 }
 
 class _MapLegend extends StatelessWidget {
-
   const _MapLegend({required this.points, required this.s});
   final List<HeatMapPoint> points;
   final AppStrings s;
@@ -543,9 +583,14 @@ class _MapLegend extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(s.nPostalCodes(points.length),
-                style: Theme.of(context).textTheme.labelSmall),
-            Text(s.nSales(total), style: Theme.of(context).textTheme.labelSmall),
+            Text(
+              s.nPostalCodes(points.length),
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            Text(
+              s.nSales(total),
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ],
         ),
       ),
@@ -553,10 +598,10 @@ class _MapLegend extends StatelessWidget {
   }
 }
 
-// ─── Shared overlays ──────────────────────────────────────────────────────────
+// ─── Shared overlays
+// ──────────────────────────────────────────────────────────
 
 class _LoadingOverlay extends StatelessWidget {
-
   const _LoadingOverlay({required this.status});
   final String status;
 
@@ -584,7 +629,6 @@ class _LoadingOverlay extends StatelessWidget {
 }
 
 class _EmptyOverlay extends StatelessWidget {
-
   const _EmptyOverlay({required this.s});
   final AppStrings s;
 
@@ -597,8 +641,11 @@ class _EmptyOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.location_off,
-                  size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.location_off,
+                size: 48,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(height: 8),
               Text(s.noShippedSalesWithPostalCode),
             ],

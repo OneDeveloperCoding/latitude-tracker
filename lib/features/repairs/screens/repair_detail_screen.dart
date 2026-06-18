@@ -84,7 +84,8 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
         }
         final repair = snapshot.data;
         if (repair == null) {
-          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping &&
+              snapshot.connectionState != ConnectionState.waiting) {
             _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (context.mounted && Navigator.of(context).canPop()) {
@@ -532,7 +533,8 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
   bool _isUpdating = false;
 
   Future<void> _advance() async {
-    // Snapshot before any await so the write is consistent with what was rendered.
+    // Snapshot before any await so the write is consistent with what was
+    // rendered.
     final repair = widget.repair;
     final delivery = repair.returnDelivery;
     final nextStatus = delivery.type == DeliveryType.shipping &&
@@ -572,7 +574,9 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
     }
 
     final delivery = repair.returnDelivery;
-    if (delivery.status == ShipmentStatus.delivered) return const SizedBox.shrink();
+    if (delivery.status == ShipmentStatus.delivered) {
+      return const SizedBox.shrink();
+    }
 
     final s = context.s;
     final isShippingPending = delivery.type == DeliveryType.shipping &&

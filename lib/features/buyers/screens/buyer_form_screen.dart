@@ -9,7 +9,6 @@ import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.d
 import 'package:latitude_tracker/features/buyers/widgets/address_form_fields.dart';
 
 class BuyerFormScreen extends StatefulWidget {
-
   const BuyerFormScreen({super.key, this.buyer});
   final Buyer? buyer;
 
@@ -39,8 +38,9 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.buyer?.name);
-    _instagramController =
-        TextEditingController(text: widget.buyer?.instagramHandle);
+    _instagramController = TextEditingController(
+      text: widget.buyer?.instagramHandle,
+    );
     _phoneController = TextEditingController(text: widget.buyer?.phone);
     _nifController = TextEditingController(text: widget.buyer?.nif);
     _notesController = TextEditingController(text: widget.buyer?.notes ?? '');
@@ -75,7 +75,8 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
     if (_isEditing) {
       final b = widget.buyer!;
       return _nameController.text.trim() != b.name ||
-          (_nullIfEmpty(_instagramController.text) ?? '') != (b.instagramHandle ?? '') ||
+          (_nullIfEmpty(_instagramController.text) ?? '') !=
+              (b.instagramHandle ?? '') ||
           (_nullIfEmpty(_phoneController.text) ?? '') != (b.phone ?? '') ||
           (_nullIfEmpty(_nifController.text) ?? '') != (b.nif ?? '') ||
           (_nullIfEmpty(_notesController.text) ?? '') != (b.notes ?? '') ||
@@ -158,147 +159,147 @@ class _BuyerFormScreenState extends State<BuyerFormScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(_isEditing ? s.editBuyer : s.newBuyer),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _save,
-            child: _isLoading
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(s.save),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(
-                labelText: '${s.buyerNameLabel} *',
-                border: const OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? s.buyerNameRequired : null,
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : _save,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(s.save),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _instagramController,
-              decoration: InputDecoration(
-                labelText: s.instagramHandleLabel,
-                prefixText: '@',
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: s.phoneNumberLabel,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _nifController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                labelText: s.nifLabel,
-                border: const OutlineInputBorder(),
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return null;
-                if (v.trim().length != 9) return s.nifInvalid;
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                s.tagsLabel,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-            ),
-            if (_tags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: _tags
-                      .map(
-                        (tag) => Chip(
-                          label: Text(tag),
-                          onDeleted: () =>
-                              setState(() => _tags.remove(tag)),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _tagInputController,
-                    decoration: InputDecoration(
-                      hintText: s.addTagHint,
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) => _addTag(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _addTag,
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _notesController,
-              textCapitalization: TextCapitalization.sentences,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: s.buyerNotesHint,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            if (!_isEditing) ...[
-              const SizedBox(height: 24),
-              const Divider(),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(s.addShippingAddress),
-                subtitle: Text(s.addShippingAddressSubtitle),
-                value: _addAddress,
-                onChanged: (v) => setState(() => _addAddress = v),
-              ),
-              if (_addAddress) ...[
-                const SizedBox(height: 8),
-                AddressFormFields(key: _addressFormKey),
-              ],
-            ],
-            const SizedBox(height: 32),
           ],
         ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: '${s.buyerNameLabel} *',
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? s.buyerNameRequired
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _instagramController,
+                decoration: InputDecoration(
+                  labelText: s.instagramHandleLabel,
+                  prefixText: '@',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: s.phoneNumberLabel,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nifController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: s.nifLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  if (v.trim().length != 9) return s.nifInvalid;
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  s.tagsLabel,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              if (_tags.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: _tags
+                        .map(
+                          (tag) => Chip(
+                            label: Text(tag),
+                            onDeleted: () => setState(() => _tags.remove(tag)),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _tagInputController,
+                      decoration: InputDecoration(
+                        hintText: s.addTagHint,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _addTag(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _addTag,
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notesController,
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: s.buyerNotesHint,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              if (!_isEditing) ...[
+                const SizedBox(height: 24),
+                const Divider(),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(s.addShippingAddress),
+                  subtitle: Text(s.addShippingAddressSubtitle),
+                  value: _addAddress,
+                  onChanged: (v) => setState(() => _addAddress = v),
+                ),
+                if (_addAddress) ...[
+                  const SizedBox(height: 8),
+                  AddressFormFields(key: _addressFormKey),
+                ],
+              ],
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
   }
 }

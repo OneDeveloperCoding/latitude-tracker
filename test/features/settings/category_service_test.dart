@@ -28,33 +28,32 @@ class _ThrowingRepairRepo extends InMemoryRepairRepository {
 Sale _saleWithCategory(String category) => makeSale(category: category);
 
 Repair _repairWithCategory(String category) => Repair(
-      id: const Uuid().v4(),
-      itemCategory: category,
-      itemDescription: 'Test item',
-      problemDescription: 'Test problem',
-      status: RepairStatus.received,
-      payment: const SalePayment(
-        status: PaymentStatus.unpaid,
-        method: PaymentMethod.mbWay,
-      ),
-      returnDelivery: const RepairReturnDelivery(
-        type: DeliveryType.pickup,
-        status: ShipmentStatus.pending,
-      ),
-      freeTextContact: 'Test contact',
-      createdAt: DateTime(2026),
-    );
+  id: const Uuid().v4(),
+  itemCategory: category,
+  itemDescription: 'Test item',
+  problemDescription: 'Test problem',
+  status: RepairStatus.received,
+  payment: const SalePayment(
+    status: PaymentStatus.unpaid,
+    method: PaymentMethod.mbWay,
+  ),
+  returnDelivery: const RepairReturnDelivery(
+    type: DeliveryType.pickup,
+    status: ShipmentStatus.pending,
+  ),
+  freeTextContact: 'Test contact',
+  createdAt: DateTime(2026),
+);
 
 CategoryService _makeService({
   InMemorySaleRepository? saleRepo,
   InMemoryRepairRepository? repairRepo,
   InMemoryCatalogueRepository? catalogueRepo,
-}) =>
-    CategoryService(
-      saleRepo: saleRepo ?? InMemorySaleRepository(),
-      repairRepo: repairRepo ?? InMemoryRepairRepository(),
-      catalogueRepo: catalogueRepo ?? InMemoryCatalogueRepository(),
-    );
+}) => CategoryService(
+  saleRepo: saleRepo ?? InMemorySaleRepository(),
+  repairRepo: repairRepo ?? InMemoryRepairRepository(),
+  catalogueRepo: catalogueRepo ?? InMemoryCatalogueRepository(),
+);
 
 void main() {
   group('renameCategory', () {
@@ -68,8 +67,9 @@ void main() {
       await service.renameCategory('Colares', 'Colares de Prata');
 
       final sales = await saleRepo.getSalesForYear(2026);
-      final categories =
-          sales.expand((s) => s.items.map((i) => i.category)).toSet();
+      final categories = sales
+          .expand((s) => s.items.map((i) => i.category))
+          .toSet();
       expect(categories, containsAll(['Colares de Prata', 'Brincos']));
       expect(categories, isNot(contains('Colares')));
     });
@@ -122,51 +122,55 @@ void main() {
     // always commits — its async body executes synchronously at call time,
     // before Future.wait propagates any error. The catalogue is the only
     // step that is deterministically skipped on any repo failure.
-    test('saleRepo failure — repairRepo still runs, catalogue not updated',
-        () async {
-      final repairRepo = InMemoryRepairRepository();
-      final catalogueRepo = InMemoryCatalogueRepository();
-      await repairRepo.createRepair(_repairWithCategory('Colares'));
-      await catalogueRepo.saveHiddenCategories(['Colares']);
-      final service = _makeService(
-        saleRepo: _ThrowingSaleRepo(),
-        repairRepo: repairRepo,
-        catalogueRepo: catalogueRepo,
-      );
+    test(
+      'saleRepo failure — repairRepo still runs, catalogue not updated',
+      () async {
+        final repairRepo = InMemoryRepairRepository();
+        final catalogueRepo = InMemoryCatalogueRepository();
+        await repairRepo.createRepair(_repairWithCategory('Colares'));
+        await catalogueRepo.saveHiddenCategories(['Colares']);
+        final service = _makeService(
+          saleRepo: _ThrowingSaleRepo(),
+          repairRepo: repairRepo,
+          catalogueRepo: catalogueRepo,
+        );
 
-      await expectLater(
-        service.renameCategory('Colares', 'Colares Novos'),
-        throwsException,
-      );
+        await expectLater(
+          service.renameCategory('Colares', 'Colares Novos'),
+          throwsException,
+        );
 
-      final repairs = await repairRepo.getRepairsForYear(2026);
-      expect(repairs.first.itemCategory, 'Colares Novos');
-      final hidden = await catalogueRepo.fetchHiddenCategories();
-      expect(hidden, ['Colares']);
-    });
+        final repairs = await repairRepo.getRepairsForYear(2026);
+        expect(repairs.first.itemCategory, 'Colares Novos');
+        final hidden = await catalogueRepo.fetchHiddenCategories();
+        expect(hidden, ['Colares']);
+      },
+    );
 
-    test('repairRepo failure — saleRepo still runs, catalogue not updated',
-        () async {
-      final saleRepo = InMemorySaleRepository();
-      final catalogueRepo = InMemoryCatalogueRepository();
-      await saleRepo.createSale(_saleWithCategory('Colares'));
-      await catalogueRepo.saveHiddenCategories(['Colares']);
-      final service = _makeService(
-        saleRepo: saleRepo,
-        repairRepo: _ThrowingRepairRepo(),
-        catalogueRepo: catalogueRepo,
-      );
+    test(
+      'repairRepo failure — saleRepo still runs, catalogue not updated',
+      () async {
+        final saleRepo = InMemorySaleRepository();
+        final catalogueRepo = InMemoryCatalogueRepository();
+        await saleRepo.createSale(_saleWithCategory('Colares'));
+        await catalogueRepo.saveHiddenCategories(['Colares']);
+        final service = _makeService(
+          saleRepo: saleRepo,
+          repairRepo: _ThrowingRepairRepo(),
+          catalogueRepo: catalogueRepo,
+        );
 
-      await expectLater(
-        service.renameCategory('Colares', 'Colares Novos'),
-        throwsException,
-      );
+        await expectLater(
+          service.renameCategory('Colares', 'Colares Novos'),
+          throwsException,
+        );
 
-      final sales = await saleRepo.getSalesForYear(2026);
-      expect(sales.first.items.first.category, 'Colares Novos');
-      final hidden = await catalogueRepo.fetchHiddenCategories();
-      expect(hidden, ['Colares']);
-    });
+        final sales = await saleRepo.getSalesForYear(2026);
+        expect(sales.first.items.first.category, 'Colares Novos');
+        final hidden = await catalogueRepo.fetchHiddenCategories();
+        expect(hidden, ['Colares']);
+      },
+    );
 
     test('hidden list unchanged when renamed category is not hidden', () async {
       final catalogueRepo = InMemoryCatalogueRepository();

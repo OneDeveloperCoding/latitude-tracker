@@ -160,7 +160,9 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
       }
     }
     if (!mounted) return;
-    setState(() => _components = List<ComponentItem>.from(_components)..removeAt(index));
+    setState(() {
+      _components = List<ComponentItem>.from(_components)..removeAt(index);
+    });
   }
 
   Future<void> _openComponentSheet(int index) async {
@@ -314,7 +316,10 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                               Expanded(child: Text(entry.value.name)),
                               ComponentQuantityStepper(
                                 quantity: entry.value.quantity,
-                                onChanged: (q) => _adjustQuantity(entry.key, q - entry.value.quantity),
+                                onChanged: (q) => _adjustQuantity(
+                                  entry.key,
+                                  q - entry.value.quantity,
+                                ),
                               ),
                             ],
                           ),

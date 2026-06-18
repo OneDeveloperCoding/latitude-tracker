@@ -61,36 +61,40 @@ void main() {
     group('pendingShipment', () {
       test('passes for shipping + pending', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            
-          )),
+          SaleFilter.pendingShipment.test(makeSale()),
           isTrue,
         );
       });
 
       test('passes for handDelivery + pending', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            delivery: DeliveryType.handDelivery,
-          )),
+          SaleFilter.pendingShipment.test(
+            makeSale(
+              delivery: DeliveryType.handDelivery,
+            ),
+          ),
           isTrue,
         );
       });
 
       test('fails for pickup even if pending', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            delivery: DeliveryType.pickup,
-          )),
+          SaleFilter.pendingShipment.test(
+            makeSale(
+              delivery: DeliveryType.pickup,
+            ),
+          ),
           isFalse,
         );
       });
 
       test('fails for shipped status', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            shipmentStatus: ShipmentStatus.shipped,
-          )),
+          SaleFilter.pendingShipment.test(
+            makeSale(
+              shipmentStatus: ShipmentStatus.shipped,
+            ),
+          ),
           isFalse,
         );
       });
@@ -99,7 +103,9 @@ void main() {
     group('shipped', () {
       test('passes for shipped status', () {
         expect(
-          SaleFilter.shipped.test(makeSale(shipmentStatus: ShipmentStatus.shipped)),
+          SaleFilter.shipped.test(
+            makeSale(shipmentStatus: ShipmentStatus.shipped),
+          ),
           isTrue,
         );
       });
@@ -131,24 +137,23 @@ void main() {
     group('handDelivery', () {
       test('passes for handDelivery type', () {
         expect(
-          SaleFilter.handDelivery
-              .test(makeSale(delivery: DeliveryType.handDelivery)),
+          SaleFilter.handDelivery.test(
+            makeSale(delivery: DeliveryType.handDelivery),
+          ),
           isTrue,
         );
       });
 
       test('fails for shipping type', () {
         expect(
-          SaleFilter.handDelivery
-              .test(makeSale()),
+          SaleFilter.handDelivery.test(makeSale()),
           isFalse,
         );
       });
 
       test('fails for pickup type', () {
         expect(
-          SaleFilter.handDelivery
-              .test(makeSale(delivery: DeliveryType.pickup)),
+          SaleFilter.handDelivery.test(makeSale(delivery: DeliveryType.pickup)),
           isFalse,
         );
       });
@@ -158,7 +163,8 @@ void main() {
       test('passes when assembly is notStarted', () {
         expect(
           SaleFilter.assemblyNotReady.test(
-              makeSale(assembly: AssemblyStatus.notStarted)),
+            makeSale(assembly: AssemblyStatus.notStarted),
+          ),
           isTrue,
         );
       });
@@ -166,15 +172,15 @@ void main() {
       test('passes when assembly is waitingForMaterials', () {
         expect(
           SaleFilter.assemblyNotReady.test(
-              makeSale(assembly: AssemblyStatus.waitingForMaterials)),
+            makeSale(assembly: AssemblyStatus.waitingForMaterials),
+          ),
           isTrue,
         );
       });
 
       test('fails when assembly is ready', () {
         expect(
-          SaleFilter.assemblyNotReady.test(
-              makeSale()),
+          SaleFilter.assemblyNotReady.test(makeSale()),
           isFalse,
         );
       });

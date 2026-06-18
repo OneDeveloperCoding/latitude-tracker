@@ -27,8 +27,12 @@ void main() {
     test('upcomingCount counts sales with a future scheduled date', () {
       final sales = [
         makeSale(scheduledDate: DateTime(2026, 7)),
-        makeSale(scheduledDate: DateTime(2026, 6, 4)), // today — counts as upcoming
-        makeSale(scheduledDate: DateTime(2026, 6, 3)), // yesterday — overdue, not upcoming
+        makeSale(
+          scheduledDate: DateTime(2026, 6, 4),
+        ), // today — counts as upcoming
+        makeSale(
+          scheduledDate: DateTime(2026, 6, 3),
+        ), // yesterday — overdue, not upcoming
         makeSale(), // no date
       ];
 
@@ -51,5 +55,4 @@ void main() {
       expect(stats.upcomingCount, 1);
     });
   });
-
 }

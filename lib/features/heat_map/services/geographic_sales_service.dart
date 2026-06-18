@@ -4,7 +4,6 @@ import 'package:latitude_tracker/features/heat_map/services/heat_map_service.dar
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 class LocalityRow {
-
   const LocalityRow({
     required this.postalCode,
     required this.locality,
@@ -18,7 +17,6 @@ class LocalityRow {
 }
 
 class CountryRow {
-
   const CountryRow({
     required this.country,
     required this.count,
@@ -30,7 +28,6 @@ class CountryRow {
 }
 
 class GeoSalesRanking {
-
   const GeoSalesRanking({required this.localities, required this.countries});
   final List<LocalityRow> localities;
   final List<CountryRow> countries;
@@ -65,7 +62,8 @@ class GeographicSalesService {
         if (addressId == null) continue;
         final country = addressCountries[addressId];
         if (country == null ||
-            country.toLowerCase() == BuyerAddress.defaultCountry.toLowerCase()) {
+            country.toLowerCase() ==
+                BuyerAddress.defaultCountry.toLowerCase()) {
           continue;
         }
         intlCounts[country] = (intlCounts[country] ?? 0) + 1;
@@ -80,12 +78,14 @@ class GeographicSalesService {
     for (final entry in ptCounts.entries) {
       onProgress?.call('Locating ${entry.key}', done, total);
       final result = await GeocodingService.geocode(entry.key);
-      localities.add(LocalityRow(
-        postalCode: entry.key,
-        locality: result?.locality ?? entry.key,
-        count: entry.value,
-        revenue: ptRevenue[entry.key] ?? 0.0,
-      ));
+      localities.add(
+        LocalityRow(
+          postalCode: entry.key,
+          locality: result?.locality ?? entry.key,
+          count: entry.value,
+          revenue: ptRevenue[entry.key] ?? 0.0,
+        ),
+      );
       done++;
     }
 

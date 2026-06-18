@@ -3,7 +3,6 @@ import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 
 /// One contributing SaleItem for an [AggregatedComponent].
 class ComponentSource {
-
   const ComponentSource({
     required this.sale,
     required this.item,
@@ -16,7 +15,6 @@ class ComponentSource {
 
 /// A component name merged across all open SaleItems, with quantities summed.
 class AggregatedComponent {
-
   const AggregatedComponent({
     required this.name,
     required this.totalQuantity,

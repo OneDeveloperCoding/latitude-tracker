@@ -13,12 +13,12 @@ import 'package:path_provider/path_provider.dart';
 
 // Version 1.1 adds a `repairs` array. Version 1.2 adds `handDelivery` type.
 // Version 1.3 expands components with `photoUrls` and `notes`.
-// Version 1.4 adds `quantity` to each ComponentItem (older archives default to 1).
+// Version 1.4 adds `quantity` to each ComponentItem (older archives default to
+// 1).
 const _kCurrentArchiveVersion = '1.4';
 const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2', '1.3', '1.4'};
 
 class ImportResult {
-
   const ImportResult({
     required this.salesImported,
     required this.buyersImported,
@@ -32,14 +32,13 @@ class ImportResult {
 }
 
 class ArchiveService {
-
   ArchiveService({
     SaleRepository? salesRepo,
     BuyerRepository? buyersRepo,
     RepairRepository? repairsRepo,
-  })  : _salesRepoOverride = salesRepo,
-        _buyersRepoOverride = buyersRepo,
-        _repairsRepoOverride = repairsRepo;
+  }) : _salesRepoOverride = salesRepo,
+       _buyersRepoOverride = buyersRepo,
+       _repairsRepoOverride = repairsRepo;
   final SaleRepository? _salesRepoOverride;
   final BuyerRepository? _buyersRepoOverride;
   final RepairRepository? _repairsRepoOverride;
@@ -49,8 +48,10 @@ class ArchiveService {
   // The override fields are needed because late-field initialisers can only
   // close over `this`, so the injected value must be stored as a field first.
   late final SaleRepository _salesRepo = _salesRepoOverride ?? SaleRepository();
-  late final BuyerRepository _buyersRepo = _buyersRepoOverride ?? BuyerRepository();
-  late final RepairRepository _repairsRepo = _repairsRepoOverride ?? RepairRepository();
+  late final BuyerRepository _buyersRepo =
+      _buyersRepoOverride ?? BuyerRepository();
+  late final RepairRepository _repairsRepo =
+      _repairsRepoOverride ?? RepairRepository();
 
   Future<File> exportYear(int year) async {
     final sales = await _salesRepo.getSalesForYear(year);
@@ -69,18 +70,16 @@ class ArchiveService {
       'version': _kCurrentArchiveVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'year': year,
-      'sales': sales
-          .map((s) => {'id': s.id, ...s.toFirestore()})
-          .toList(),
-      'repairs': repairs
-          .map((r) => {'id': r.id, ...r.toFirestore()})
-          .toList(),
+      'sales': sales.map((s) => {'id': s.id, ...s.toFirestore()}).toList(),
+      'repairs': repairs.map((r) => {'id': r.id, ...r.toFirestore()}).toList(),
       'buyers': buyers
-          .map((b) => {
-                'id': b.id,
-                ...b.toFirestore(),
-                'addresses': buyerAddresses[b.id] ?? [],
-              })
+          .map(
+            (b) => {
+              'id': b.id,
+              ...b.toFirestore(),
+              'addresses': buyerAddresses[b.id] ?? [],
+            },
+          )
           .toList(),
     });
 
@@ -120,15 +119,26 @@ class ArchiveService {
       final buyerId = buyerMap['id'] as String?;
       if (buyerId == null || buyerId.isEmpty) continue;
       final buyer = Buyer.fromArchiveMap(buyerMap);
-      final addresses = (buyerMap['addresses'] as List?)
+      final addresses =
+          (buyerMap['addresses'] as List?)
               ?.cast<Map<String, dynamic>>()
-              .where((a) => (a['id'] as String?) != null && (a['id'] as String).isNotEmpty)
+              .where(
+                (a) =>
+                    (a['id'] as String?) != null &&
+                    (a['id'] as String).isNotEmpty,
+              )
               .map((a) => BuyerAddress.fromArchiveMap(buyer.id, a))
               .toList() ??
           [];
-      final created =
-          await _buyersRepo.createBuyerIfNotExists(buyer, addresses);
-      if (created) { buyersImported++; } else { skipped++; }
+      final created = await _buyersRepo.createBuyerIfNotExists(
+        buyer,
+        addresses,
+      );
+      if (created) {
+        buyersImported++;
+      } else {
+        skipped++;
+      }
     }
 
     for (final saleMap in sales) {
@@ -136,7 +146,11 @@ class ArchiveService {
       if (saleId == null || saleId.isEmpty) continue;
       final sale = Sale.fromArchiveMap(saleMap);
       final created = await _salesRepo.createSaleIfNotExists(sale);
-      if (created) { salesImported++; } else { skipped++; }
+      if (created) {
+        salesImported++;
+      } else {
+        skipped++;
+      }
     }
 
     for (final repairMap in repairs) {
@@ -144,7 +158,11 @@ class ArchiveService {
       if (repairId == null || repairId.isEmpty) continue;
       final repair = Repair.fromArchiveMap(repairMap);
       final created = await _repairsRepo.createRepairIfNotExists(repair);
-      if (created) { repairsImported++; } else { skipped++; }
+      if (created) {
+        repairsImported++;
+      } else {
+        skipped++;
+      }
     }
 
     return ImportResult(
@@ -155,7 +173,8 @@ class ArchiveService {
     );
   }
 
-  // Firestore Timestamps are not JSON-serialisable — convert them to ISO strings.
+  // Firestore Timestamps are not JSON-serialisable — convert them to ISO
+  // strings.
   static dynamic _toJsonSafe(dynamic value) {
     if (value is Timestamp) return value.toDate().toIso8601String();
     if (value is Map) {

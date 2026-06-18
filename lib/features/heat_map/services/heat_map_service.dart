@@ -3,7 +3,6 @@ import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latlong2/latlong.dart';
 
 class HeatMapPoint {
-
   const HeatMapPoint({
     required this.postalCode,
     required this.locality,
@@ -58,12 +57,14 @@ class HeatMapService {
 
       final result = await GeocodingService.geocode(entry.key);
       if (result != null) {
-        points.add(HeatMapPoint(
-          postalCode: entry.key,
-          locality: result.locality,
-          position: result.latLng,
-          count: entry.value,
-        ));
+        points.add(
+          HeatMapPoint(
+            postalCode: entry.key,
+            locality: result.locality,
+            position: result.latLng,
+            count: entry.value,
+          ),
+        );
       }
 
       done++;
@@ -71,5 +72,4 @@ class HeatMapService {
 
     return points;
   }
-
 }

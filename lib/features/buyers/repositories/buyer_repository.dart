@@ -17,7 +17,10 @@ abstract class BuyerRepository {
   Future<Buyer?> getBuyer(String id);
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId);
   Future<void> createBuyer(Buyer buyer);
-  Future<bool> createBuyerIfNotExists(Buyer buyer, List<BuyerAddress> addresses);
+  Future<bool> createBuyerIfNotExists(
+    Buyer buyer,
+    List<BuyerAddress> addresses,
+  );
   Future<void> updateBuyer(Buyer buyer);
   Future<void> deleteBuyer(String id);
   Future<void> deleteAllBuyers();
@@ -47,9 +50,9 @@ class _FirestoreBuyerRepository implements BuyerRepository {
 
   @override
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId) =>
-      _addressesRef(buyerId)
-          .get()
-          .then((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+      _addressesRef(buyerId).get().then(
+        (snap) => snap.docs.map(BuyerAddress.fromFirestore).toList(),
+      );
 
   @override
   Stream<List<Buyer>> watchBuyers() => _buyersRef
@@ -75,7 +78,9 @@ class _FirestoreBuyerRepository implements BuyerRepository {
 
   @override
   Future<bool> createBuyerIfNotExists(
-      Buyer buyer, List<BuyerAddress> addresses) async {
+    Buyer buyer,
+    List<BuyerAddress> addresses,
+  ) async {
     if ((await _buyersRef.doc(buyer.id).get()).exists) return false;
     // Single batch for the buyer doc + all address docs so the write is atomic.
     // No need to call _clearDefaultAddress here because the buyer doesn't yet
@@ -112,11 +117,10 @@ class _FirestoreBuyerRepository implements BuyerRepository {
           .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
 
   @override
-  Stream<List<BuyerAddress>> watchAllAddresses() =>
-      _firestore
-          .collectionGroup('addresses')
-          .snapshots()
-          .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+  Stream<List<BuyerAddress>> watchAllAddresses() => _firestore
+      .collectionGroup('addresses')
+      .snapshots()
+      .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
 
   @override
   Future<void> deleteAllBuyers() async {
@@ -158,8 +162,9 @@ class _FirestoreBuyerRepository implements BuyerRepository {
     WriteBatch batch, {
     String? excludeId,
   }) async {
-    final existing =
-        await _addressesRef(buyerId).where('isDefault', isEqualTo: true).get();
+    final existing = await _addressesRef(
+      buyerId,
+    ).where('isDefault', isEqualTo: true).get();
     for (final doc in existing.docs) {
       if (doc.id != excludeId) {
         batch.update(doc.reference, {'isDefault': false});

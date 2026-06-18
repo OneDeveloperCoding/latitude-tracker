@@ -139,7 +139,8 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       if (buyer == null || !mounted) return;
       buyerId = buyer.id;
       buyerName = buyer.name;
-      // Filling the Contact section avoids the save guard blocking after this flow.
+      // Filling the Contact section avoids the save guard blocking after this
+      // flow.
       if (!_useFreeText) setState(() => _linkedBuyer = buyer);
     }
 
@@ -188,7 +189,9 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
 
       final repair = Repair(
         id: _repairId,
-        buyerId: _useFreeText ? null : (_linkedBuyer?.id ?? widget.existing?.buyerId),
+        buyerId: _useFreeText
+            ? null
+            : (_linkedBuyer?.id ?? widget.existing?.buyerId),
         buyerName: _useFreeText
             ? null
             : (_linkedBuyer?.name ?? widget.existing?.buyerName),
@@ -525,7 +528,14 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       contentPadding: EdgeInsets.zero,
       title: Text(
         linked != null
-            ? '${DateFormat('dd MMM yyyy').format(linked.createdAt)}${linked.items.isNotEmpty ? ' · ${linked.items.first.description}' : ''}'
+            ? () {
+                final date =
+                    DateFormat('dd MMM yyyy').format(linked.createdAt);
+                final item = linked.items.isNotEmpty
+                    ? ' · ${linked.items.first.description}'
+                    : '';
+                return '$date$item';
+              }()
             : s.repairLinkedSaleNone,
         style: linked == null
             ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)

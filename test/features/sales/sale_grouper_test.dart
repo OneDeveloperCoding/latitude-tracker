@@ -12,12 +12,12 @@ final _kNow = DateTime(2026, 6, 4);
 
 void main() {
   group('SaleGrouper.byWeek — bucket assignment', () {
-    Sale saleWithScheduled(DateTime date,
-            {ShipmentStatus shipment = ShipmentStatus.pending}) =>
-        makeSale(scheduledDate: date, shipmentStatus: shipment);
+    Sale saleWithScheduled(
+      DateTime date, {
+      ShipmentStatus shipment = ShipmentStatus.pending,
+    }) => makeSale(scheduledDate: date, shipmentStatus: shipment);
 
-    Sale saleWithCreatedAt(DateTime date) =>
-        makeSale(createdAt: date);
+    Sale saleWithCreatedAt(DateTime date) => makeSale(createdAt: date);
 
     test('past scheduledDate + pending shipment → Overdue', () {
       final sale = saleWithScheduled(DateTime(2026, 5, 31));
@@ -25,13 +25,18 @@ void main() {
       expect(groups.keys.first, 'Overdue');
     });
 
-    test('past scheduledDate + delivered shipment → not Overdue (month bucket)', () {
-      final sale =
-          saleWithScheduled(DateTime(2026, 5, 31), shipment: ShipmentStatus.delivered);
-      final groups = SaleGrouper.byWeek([sale], now: _kNow);
-      expect(groups.containsKey('Overdue'), isFalse);
-      expect(groups.keys.first, 'May 2026');
-    });
+    test(
+      'past scheduledDate + delivered shipment → not Overdue (month bucket)',
+      () {
+        final sale = saleWithScheduled(
+          DateTime(2026, 5, 31),
+          shipment: ShipmentStatus.delivered,
+        );
+        final groups = SaleGrouper.byWeek([sale], now: _kNow);
+        expect(groups.containsKey('Overdue'), isFalse);
+        expect(groups.keys.first, 'May 2026');
+      },
+    );
 
     test('scheduledDate exactly at startOfThisWeek → This week', () {
       final sale = saleWithScheduled(DateTime(2026, 6));
@@ -85,7 +90,7 @@ void main() {
   group('SaleGrouper.byWeek — bucket ordering', () {
     test('fixed buckets appear before month buckets', () {
       final sales = [
-        makeSale(createdAt: DateTime(2026, 3)),   // month bucket
+        makeSale(createdAt: DateTime(2026, 3)), // month bucket
         makeSale(scheduledDate: DateTime(2026, 6, 8)), // Next week
         makeSale(scheduledDate: DateTime(2026, 5)), // Overdue
         makeSale(scheduledDate: DateTime(2026, 6, 4)), // This week

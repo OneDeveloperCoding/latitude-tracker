@@ -5,7 +5,6 @@ import 'package:latitude_tracker/features/sales/services/sales_analytics_service
 enum DashboardPeriod { yearly, monthly, weekly }
 
 class DashboardStats {
-
   const DashboardStats({
     required this.paidRevenue,
     required this.unpaidRevenue,
@@ -58,10 +57,16 @@ class DashboardStats {
       }
       if (SaleFilter.pendingShipment.test(s)) pendingShipmentCount++;
       if (SaleFilter.shipped.test(s)) shippedCount++;
-      if (SaleFilter.assemblyNotReady.test(s) && active(s)) assemblyNotReadyCount++;
-      if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) nifRequiredCount++;
+      if (SaleFilter.assemblyNotReady.test(s) && active(s)) {
+        assemblyNotReadyCount++;
+      }
+      if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) {
+        nifRequiredCount++;
+      }
       if (SaleFilter.overdue.test(s, now: effectiveNow)) overdueCount++;
-      if (SaleFilter.upcomingScheduled.test(s, now: effectiveNow)) upcomingCount++;
+      if (SaleFilter.upcomingScheduled.test(s, now: effectiveNow)) {
+        upcomingCount++;
+      }
     }
 
     return DashboardStats(
@@ -86,7 +91,8 @@ class DashboardStats {
   final int unpaidCount;
 
   // Global: current action state regardless of which period is selected.
-  // These must match what the destination screens show so counts stay consistent.
+  // These must match what the destination screens show so counts stay
+  // consistent.
   final int unpaidActionCount;
   final double unpaidActionRevenue;
   final int pendingShipmentCount;

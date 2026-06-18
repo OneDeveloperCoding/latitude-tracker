@@ -33,7 +33,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   AnalyticsMetric _metric = AnalyticsMetric.revenue;
   late final TabController _tabController;
 
-  // Cached per-period stats — recomputed only when store data or period changes,
+  // Cached per-period stats — recomputed only when store data or period
+  // changes,
   // not on every build(). Null until the store emits its first StoreLoaded.
   ({double revenue, int count})? _currentStats;
   ({double revenue, int count})? _prevStats;
@@ -74,12 +75,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       _comparisonStats = [];
       return;
     }
-    _currentStats = SalesAnalyticsService.computePeriodStats(all, _periodStart, _periodEnd);
+    _currentStats = SalesAnalyticsService.computePeriodStats(
+      all, _periodStart, _periodEnd,
+    );
     final (prevStart, prevEnd) = _shiftPeriod(-1);
-    _prevStats = SalesAnalyticsService.computePeriodStats(all, prevStart, prevEnd);
+    _prevStats = SalesAnalyticsService.computePeriodStats(
+      all, prevStart, prevEnd,
+    );
     _stackedSparkline = _computeStackedSparkline(all);
-    _paymentBreakdown = SalesAnalyticsService.computePaymentMethodBreakdown(all, _periodStart, _periodEnd);
-    _categoryBreakdown = SalesAnalyticsService.computeCategoryBreakdown(all, _periodStart, _periodEnd);
+    _paymentBreakdown =
+        SalesAnalyticsService.computePaymentMethodBreakdown(
+      all, _periodStart, _periodEnd,
+    );
+    _categoryBreakdown =
+        SalesAnalyticsService.computeCategoryBreakdown(
+      all, _periodStart, _periodEnd,
+    );
     _comparisonStats = _comparisonShifts.map((shift) {
       final (start, end) = _shiftPeriod(shift);
       return SalesAnalyticsService.computePeriodStats(all, start, end);
@@ -147,7 +158,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         DashboardPeriod.monthly => DateFormat('MMMM yyyy').format(_month),
         DashboardPeriod.weekly => () {
             final end = _weekStart.add(const Duration(days: 6));
-            return '${DateFormat('d MMM').format(_weekStart)} – ${DateFormat('d MMM yyyy').format(end)}';
+            final start = DateFormat('d MMM').format(_weekStart);
+            final finish = DateFormat('d MMM yyyy').format(end);
+            return '$start – $finish';
           }(),
       };
 

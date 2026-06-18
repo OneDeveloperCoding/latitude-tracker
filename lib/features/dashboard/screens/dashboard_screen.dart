@@ -33,56 +33,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         bottom: false,
         child: ValueListenableBuilder<StoreState<List<Sale>>>(
-        valueListenable: SalesStore.state,
-        builder: (context, storeState, _) {
-          if (storeState is StoreError<List<Sale>>) {
-            return Center(child: Text(s.errorLoadingSales));
-          }
-          if (storeState is! StoreLoaded<List<Sale>>) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final all = storeState.data;
-          final stats = DashboardStats.compute(all, _periodStart, _periodEnd);
+          valueListenable: SalesStore.state,
+          builder: (context, storeState, _) {
+            if (storeState is StoreError<List<Sale>>) {
+              return Center(child: Text(s.errorLoadingSales));
+            }
+            if (storeState is! StoreLoaded<List<Sale>>) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final all = storeState.data;
+            final stats = DashboardStats.compute(all, _periodStart, _periodEnd);
 
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-                16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
-            children: [
-              _MonthTabsControl(
-                selectedMonth: _month,
-                onMonthSelected: (m) => setState(() => _month = m),
+            return ListView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.of(context).padding.bottom,
               ),
-              const SizedBox(height: 16),
-              _RevenueCard(
-                stats: stats,
-                onInsights: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const AnalyticsScreen(initialPeriod: DashboardPeriod.monthly),
+              children: [
+                _MonthTabsControl(
+                  selectedMonth: _month,
+                  onMonthSelected: (m) => setState(() => _month = m),
+                ),
+                const SizedBox(height: 16),
+                _RevenueCard(
+                  stats: stats,
+                  onInsights: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AnalyticsScreen(
+                        initialPeriod: DashboardPeriod.monthly,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                s.actionNeeded,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              _ActionGrid(stats: stats),
-            ],
-          );
-        },
-      ),
+                const SizedBox(height: 24),
+                Text(
+                  s.actionNeeded,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _ActionGrid(stats: stats),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
 class _MonthTabsControl extends StatefulWidget {
-
   const _MonthTabsControl({
     required this.selectedMonth,
     required this.onMonthSelected,
@@ -124,8 +128,10 @@ class _MonthTabsControlState extends State<_MonthTabsControl> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final months =
-        List.generate(6, (i) => DateTime(now.year, now.month - 5 + i));
+    final months = List.generate(
+      6,
+      (i) => DateTime(now.year, now.month - 5 + i),
+    );
 
     return SizedBox(
       height: 36,
@@ -137,7 +143,8 @@ class _MonthTabsControlState extends State<_MonthTabsControl> {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final month = months[i];
-          final isSelected = month.year == widget.selectedMonth.year &&
+          final isSelected =
+              month.year == widget.selectedMonth.year &&
               month.month == widget.selectedMonth.month;
           return ChoiceChip(
             label: Text(DateFormat('MMM yy').format(month)),
@@ -152,7 +159,6 @@ class _MonthTabsControlState extends State<_MonthTabsControl> {
 }
 
 class _RevenueCard extends StatelessWidget {
-
   const _RevenueCard({required this.stats, required this.onInsights});
   final DashboardStats stats;
   final VoidCallback onInsights;
@@ -176,15 +182,15 @@ class _RevenueCard extends StatelessWidget {
                   Text(
                     currencyFormat.format(stats.paidRevenue),
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     s.nSales(stats.paidCount),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                        ),
+                      color: colorScheme.onPrimaryContainer,
+                    ),
                   ),
                 ],
               ),
@@ -206,15 +212,18 @@ class _RevenueCard extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.insights,
-                        color: colorScheme.onPrimaryContainer, size: 32),
+                    Icon(
+                      Icons.insights,
+                      color: colorScheme.onPrimaryContainer,
+                      size: 32,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       s.dashboardViewTrends,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onPrimaryContainer,
-                            fontSize: 8,
-                          ),
+                        color: colorScheme.onPrimaryContainer,
+                        fontSize: 8,
+                      ),
                     ),
                   ],
                 ),
@@ -228,7 +237,6 @@ class _RevenueCard extends StatelessWidget {
 }
 
 class _ActionGrid extends StatelessWidget {
-
   const _ActionGrid({required this.stats});
   final DashboardStats stats;
 
@@ -257,7 +265,8 @@ class _ActionGrid extends StatelessWidget {
           count: stats.overdueCount,
           color: Colors.red,
           destination: const SalesListScreen(
-              initialFilters: {SaleFilter.overdue}),
+            initialFilters: {SaleFilter.overdue},
+          ),
         ),
         _ActionRow(
           icon: kNifIcon,
@@ -281,7 +290,8 @@ class _ActionGrid extends StatelessWidget {
           count: stats.pendingShipmentCount,
           color: Colors.blue,
           destination: const SalesListScreen(
-              initialFilters: {SaleFilter.pendingShipment}),
+            initialFilters: {SaleFilter.pendingShipment},
+          ),
         ),
         _ActionRow(
           icon: Icons.markunread_mailbox,
@@ -289,7 +299,8 @@ class _ActionGrid extends StatelessWidget {
           count: stats.shippedCount,
           color: Colors.indigo,
           destination: const SalesListScreen(
-              initialFilters: {SaleFilter.shipped}),
+            initialFilters: {SaleFilter.shipped},
+          ),
         ),
         const SizedBox(height: 8),
         _ActionGroupHeader(label: s.dashboardGroupPlanning),
@@ -299,7 +310,8 @@ class _ActionGrid extends StatelessWidget {
           count: stats.upcomingCount,
           color: Colors.green,
           destination: const SalesListScreen(
-              initialFilters: {SaleFilter.upcomingScheduled}),
+            initialFilters: {SaleFilter.upcomingScheduled},
+          ),
         ),
       ],
     );
@@ -307,7 +319,6 @@ class _ActionGrid extends StatelessWidget {
 }
 
 class _ActionGroupHeader extends StatelessWidget {
-
   const _ActionGroupHeader({required this.label});
   final String label;
 
@@ -318,16 +329,15 @@ class _ActionGroupHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-              letterSpacing: 0.8,
-            ),
+          color: Theme.of(context).colorScheme.outline,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }
 }
 
 class _ActionRow extends StatelessWidget {
-
   const _ActionRow({
     required this.icon,
     required this.label,
@@ -354,9 +364,9 @@ class _ActionRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: isActive
             ? () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => destination),
-                )
+                context,
+                MaterialPageRoute<void>(builder: (_) => destination),
+              )
             : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -379,18 +389,18 @@ class _ActionRow extends StatelessWidget {
                     Text(
                       label,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isActive
-                                ? Theme.of(context).colorScheme.onSurface
-                                : Colors.grey,
-                          ),
+                        color: isActive
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Colors.grey,
+                      ),
                     ),
                     if (subtitle != null)
                       Text(
                         subtitle!,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: effectiveColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: effectiveColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                   ],
                 ),
@@ -398,9 +408,9 @@ class _ActionRow extends StatelessWidget {
               Text(
                 '$count',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: effectiveColor,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: effectiveColor,
+                ),
               ),
               const SizedBox(width: 4),
               Icon(Icons.chevron_right, color: effectiveColor, size: 18),

@@ -7,8 +7,9 @@ import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.d
 class BuyersStore {
   BuyersStore._();
 
-  static final _store =
-      StreamStore<Buyer>(() => BuyerRepository().watchBuyers());
+  static final _store = StreamStore<Buyer>(
+    () => BuyerRepository().watchBuyers(),
+  );
 
   static ValueNotifier<StoreState<List<Buyer>>> get state => _store.state;
   static List<Buyer>? get current => _store.current;
