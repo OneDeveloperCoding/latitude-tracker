@@ -1,13 +1,9 @@
-import '../../buyers/models/buyer_address.dart';
-import '../../sales/models/sale.dart';
-import 'geocoding_service.dart';
-import 'heat_map_service.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/heat_map/services/geocoding_service.dart';
+import 'package:latitude_tracker/features/heat_map/services/heat_map_service.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 class LocalityRow {
-  final String postalCode;
-  final String locality;
-  final int count;
-  final double revenue;
 
   const LocalityRow({
     required this.postalCode,
@@ -15,25 +11,29 @@ class LocalityRow {
     required this.count,
     required this.revenue,
   });
+  final String postalCode;
+  final String locality;
+  final int count;
+  final double revenue;
 }
 
 class CountryRow {
-  final String country;
-  final int count;
-  final double revenue;
 
   const CountryRow({
     required this.country,
     required this.count,
     required this.revenue,
   });
+  final String country;
+  final int count;
+  final double revenue;
 }
 
 class GeoSalesRanking {
-  final List<LocalityRow> localities;
-  final List<CountryRow> countries;
 
   const GeoSalesRanking({required this.localities, required this.countries});
+  final List<LocalityRow> localities;
+  final List<CountryRow> countries;
 
   bool get isEmpty => localities.isEmpty && countries.isEmpty;
 }

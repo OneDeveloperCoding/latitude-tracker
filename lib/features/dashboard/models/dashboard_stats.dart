@@ -1,28 +1,10 @@
-import '../../sales/models/sale.dart';
-import '../../sales/models/sale_filter.dart';
-import '../../sales/services/sales_analytics_service.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
+import 'package:latitude_tracker/features/sales/services/sales_analytics_service.dart';
 
 enum DashboardPeriod { yearly, monthly, weekly }
 
 class DashboardStats {
-  // Period-scoped: reflect sales created within the selected period.
-  final double paidRevenue;
-  final double unpaidRevenue;
-  final int paidCount;
-  final int unpaidCount;
-
-  // Global: current action state regardless of which period is selected.
-  // These must match what the destination screens show so counts stay consistent.
-  final int unpaidActionCount;
-  final double unpaidActionRevenue;
-  final int pendingShipmentCount;
-  final int shippedCount;
-  final int assemblyNotReadyCount;
-  final int nifRequiredCount;
-  final int overdueCount;
-  final int upcomingCount;
-
-  int get totalCount => paidCount + unpaidCount;
 
   const DashboardStats({
     required this.paidRevenue,
@@ -51,7 +33,7 @@ class DashboardStats {
     // Period-scoped revenue — delegate to the single canonical implementation.
     final paid = SalesAnalyticsService.computePeriodStats(all, start, end);
     double unpaidRevenue = 0;
-    int unpaidCount = 0;
+    var unpaidCount = 0;
     for (final s in all) {
       if (!s.inPeriod(start, end)) continue;
       if (s.payment.status != PaymentStatus.unpaid) continue;
@@ -59,14 +41,14 @@ class DashboardStats {
       unpaidCount++;
     }
 
-    int unpaidActionCount = 0;
+    var unpaidActionCount = 0;
     double unpaidActionRevenue = 0;
-    int pendingShipmentCount = 0;
-    int shippedCount = 0;
-    int assemblyNotReadyCount = 0;
-    int nifRequiredCount = 0;
-    int overdueCount = 0;
-    int upcomingCount = 0;
+    var pendingShipmentCount = 0;
+    var shippedCount = 0;
+    var assemblyNotReadyCount = 0;
+    var nifRequiredCount = 0;
+    var overdueCount = 0;
+    var upcomingCount = 0;
 
     for (final s in all) {
       // Global action counts — always current, period-independent.
@@ -97,4 +79,22 @@ class DashboardStats {
       upcomingCount: upcomingCount,
     );
   }
+  // Period-scoped: reflect sales created within the selected period.
+  final double paidRevenue;
+  final double unpaidRevenue;
+  final int paidCount;
+  final int unpaidCount;
+
+  // Global: current action state regardless of which period is selected.
+  // These must match what the destination screens show so counts stay consistent.
+  final int unpaidActionCount;
+  final double unpaidActionRevenue;
+  final int pendingShipmentCount;
+  final int shippedCount;
+  final int assemblyNotReadyCount;
+  final int nifRequiredCount;
+  final int overdueCount;
+  final int upcomingCount;
+
+  int get totalCount => paidCount + unpaidCount;
 }

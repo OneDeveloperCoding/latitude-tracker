@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../../core/services/firestore_batch_utils.dart';
-import '../../demo/demo_mode.dart';
-import '../models/repair.dart';
-import '../services/repair_photo_service.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/core/services/firestore_batch_utils.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/services/repair_photo_service.dart';
 
 abstract class RepairRepository {
   factory RepairRepository() =>
@@ -25,8 +25,8 @@ abstract class RepairRepository {
 }
 
 class _FirestoreRepairRepository implements RepairRepository {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String get _userId =>
       _auth.currentUser?.uid ?? (throw const AuthRevokedException());

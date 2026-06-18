@@ -1,11 +1,11 @@
 import 'dart:async' show Timer;
 
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../models/sale.dart';
-import '../services/photo_service.dart';
-import 'photo_grid.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/shopping_list_screen.dart' show ShoppingListScreen;
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 
 /// Bottom sheet for viewing or editing a single [ComponentItem].
 ///
@@ -19,6 +19,14 @@ import 'photo_grid.dart';
 /// editable. Used from [ShoppingListScreen] where photos are needed for visual
 /// reference but management happens elsewhere.
 class ComponentDetailSheet extends StatefulWidget {
+
+  const ComponentDetailSheet({
+    required this.component, required this.saleId, required this.itemId, super.key,
+    this.isReadOnly = false,
+    this.onChanged,
+    this.onPhotoAdded,
+    this.onPhotoRemoved,
+  });
   final ComponentItem component;
   final String saleId;
   final String itemId;
@@ -26,17 +34,6 @@ class ComponentDetailSheet extends StatefulWidget {
   final ValueChanged<ComponentItem>? onChanged;
   final ValueChanged<String>? onPhotoAdded;
   final ValueChanged<String>? onPhotoRemoved;
-
-  const ComponentDetailSheet({
-    super.key,
-    required this.component,
-    required this.saleId,
-    required this.itemId,
-    this.isReadOnly = false,
-    this.onChanged,
-    this.onPhotoAdded,
-    this.onPhotoRemoved,
-  });
 
   @override
   State<ComponentDetailSheet> createState() => _ComponentDetailSheetState();
@@ -184,9 +181,9 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
 }
 
 class _ReadOnlyPhotoGrid extends StatelessWidget {
-  final List<String> photos;
 
   const _ReadOnlyPhotoGrid({required this.photos});
+  final List<String> photos;
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +204,7 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
               size: 96,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) =>
                       PhotoViewer(urls: photos, initialIndex: e.key),
                 ),
@@ -222,14 +219,12 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
 /// Shows a camera icon when count is 0 (to signal photos are available),
 /// and a filled badge with the count when photos exist.
 class ComponentPhotoBadge extends StatelessWidget {
-  final int count;
-  final VoidCallback onTap;
 
   const ComponentPhotoBadge({
-    super.key,
-    required this.count,
-    required this.onTap,
+    required this.count, required this.onTap, super.key,
   });
+  final int count;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -264,14 +259,12 @@ class ComponentPhotoBadge extends StatelessWidget {
 /// Compact inline stepper (− count +) for a [ComponentItem] quantity.
 /// Enforces a minimum of 1. Only the buttons trigger [onChanged].
 class ComponentQuantityStepper extends StatelessWidget {
-  final int quantity;
-  final ValueChanged<int> onChanged;
 
   const ComponentQuantityStepper({
-    super.key,
-    required this.quantity,
-    required this.onChanged,
+    required this.quantity, required this.onChanged, super.key,
   });
+  final int quantity;
+  final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -305,12 +298,12 @@ class ComponentQuantityStepper extends StatelessWidget {
 }
 
 class _StepButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onPressed;
 
   const _StepButton(
       {required this.icon, required this.color, required this.onPressed});
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +330,7 @@ Future<void> showComponentDetailSheet(
   ValueChanged<String>? onPhotoAdded,
   ValueChanged<String>? onPhotoRemoved,
 }) {
-  return showModalBottomSheet(
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,

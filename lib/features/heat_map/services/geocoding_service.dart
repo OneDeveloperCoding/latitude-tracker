@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import '../../../core/services/error_reporter.dart';
-import '../../../core/services/shared_prefs_cache.dart';
 import 'package:http/http.dart' as http;
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 import 'package:latlong2/latlong.dart';
 
 typedef GeocodingResult = ({LatLng latLng, String locality});
@@ -98,7 +98,7 @@ class GeocodingService {
 
       // Honour Nominatim's 1 req/sec policy. Placed here so cached lookups
       // return immediately — the delay only fires on real network requests.
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
 
       if (response.statusCode != 200) {
         return (result: null, shouldCache: false);

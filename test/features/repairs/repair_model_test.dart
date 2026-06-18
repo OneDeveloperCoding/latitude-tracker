@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 Map<String, dynamic> _baseRepairMap() => {
       'id': 'r1',
@@ -144,7 +144,7 @@ void main() {
       expect(repair.materialsCost, 5.50);
       expect(repair.linkedSaleId, 's1');
       expect(repair.photoUrls, ['https://example.com/photo.jpg']);
-      expect(repair.createdAt, DateTime(2026, 1, 1));
+      expect(repair.createdAt, DateTime(2026));
     });
 
     test('materialsCost parsed as double when stored as int', () {
@@ -179,19 +179,18 @@ void main() {
               status: PaymentStatus.unpaid, method: PaymentMethod.cash),
           returnDelivery: RepairReturnDelivery(
               type: DeliveryType.shipping, status: returnStatus),
-          createdAt: DateTime(2026, 1, 1),
+          createdAt: DateTime(2026),
         );
 
     group('isActive', () {
       test('not returned → active', () {
-        expect(makeRepair(status: RepairStatus.inProgress).isActive, isTrue);
+        expect(makeRepair().isActive, isTrue);
       });
 
       test('returned + pending delivery → still active', () {
         expect(
           makeRepair(
             status: RepairStatus.returned,
-            returnStatus: ShipmentStatus.pending,
           ).isActive,
           isTrue,
         );
@@ -210,7 +209,7 @@ void main() {
 
     group('contactName', () {
       test('buyerName takes priority', () {
-        expect(makeRepair(buyerName: 'Ana').contactName, 'Ana');
+        expect(makeRepair().contactName, 'Ana');
       });
 
       test('freeTextContact used when no buyerName', () {
@@ -233,7 +232,7 @@ void main() {
 
     group('isLinkedToBuyer', () {
       test('has buyerId → linked', () {
-        expect(makeRepair(buyerId: 'b1').isLinkedToBuyer, isTrue);
+        expect(makeRepair().isLinkedToBuyer, isTrue);
       });
 
       test('no buyerId → not linked', () {
@@ -258,7 +257,7 @@ void main() {
           status: PaymentStatus.unpaid, method: PaymentMethod.cash),
       returnDelivery: const RepairReturnDelivery(
           type: DeliveryType.shipping, status: ShipmentStatus.pending),
-      createdAt: DateTime(2026, 1, 1),
+      createdAt: DateTime(2026),
     );
 
     test('status updated, other fields preserved', () {

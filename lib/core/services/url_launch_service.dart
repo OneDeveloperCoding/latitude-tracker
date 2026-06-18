@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart' show BuyerAddress;
 import 'package:url_launcher/url_launcher.dart';
-
-import '../l10n/app_strings.dart';
 
 /// Launches [uri] in an external application.
 /// Shows a SnackBar with [errorMessage] if the launch fails.

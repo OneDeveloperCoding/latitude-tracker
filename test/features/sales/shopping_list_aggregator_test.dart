@@ -1,7 +1,7 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/shopping_list_aggregator.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
@@ -44,10 +44,8 @@ void main() {
 
     test('excludes sales where all items are assembled', () {
       final sale = makeSale(
-        assembly: AssemblyStatus.ready,
         items: [
           makeSaleItem(
-            assembly: AssemblyStatus.ready,
             components: [makeComponent()],
           ),
         ],
@@ -59,14 +57,12 @@ void main() {
       final sale = makeSale(
         items: [
           makeSaleItem(
-            id: 'item-1',
-            assembly: AssemblyStatus.ready,
             components: [makeComponent(name: 'silver chain')],
           ),
           makeSaleItem(
             id: 'item-2',
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead')],
+            components: [makeComponent()],
           ),
         ],
       );
@@ -83,7 +79,7 @@ void main() {
             assembly: AssemblyStatus.inProgress,
             components: [
               makeComponent(name: 'silver chain', isAvailable: true),
-              makeComponent(id: 'c2', name: 'blue bead', isAvailable: false),
+              makeComponent(id: 'c2'),
             ],
           ),
         ],
@@ -97,14 +93,13 @@ void main() {
       final sale = makeSale(
         items: [
           makeSaleItem(
-            id: 'item-1',
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead', quantity: 3)],
+            components: [makeComponent(quantity: 3)],
           ),
           makeSaleItem(
             id: 'item-2',
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead', quantity: 2)],
+            components: [makeComponent(quantity: 2)],
           ),
         ],
       );
@@ -119,14 +114,13 @@ void main() {
       final sale = makeSale(
         items: [
           makeSaleItem(
-            id: 'item-1',
             assembly: AssemblyStatus.inProgress,
             components: [makeComponent(name: 'Blue Bead', quantity: 2)],
           ),
           makeSaleItem(
             id: 'item-2',
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead', quantity: 3)],
+            components: [makeComponent(quantity: 3)],
           ),
         ],
       );
@@ -139,14 +133,13 @@ void main() {
       final sale = makeSale(
         items: [
           makeSaleItem(
-            id: 'item-1',
             assembly: AssemblyStatus.inProgress,
             components: [makeComponent(name: 'blue bead (45mm)', quantity: 2)],
           ),
           makeSaleItem(
             id: 'item-2',
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead', quantity: 3)],
+            components: [makeComponent(quantity: 3)],
           ),
         ],
       );
@@ -159,7 +152,7 @@ void main() {
         items: [
           makeSaleItem(
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'silver chain', quantity: 1)],
+            components: [makeComponent(name: 'silver chain')],
           ),
         ],
       );
@@ -180,10 +173,10 @@ void main() {
     test('sorts by worst-case urgency: overdue before thisWeek before none', () {
       // Pin clock to Wednesday 2026-06-04; week = Mon 2026-06-01 – Sun 2026-06-07.
       final now = DateTime(2026, 6, 4);
-      final overdueDate = DateTime(2026, 5, 1);
+      final overdueDate = DateTime(2026, 5);
       final thisWeekDate = DateTime(2026, 6, 5);
 
-      final overdueComp = makeComponent(id: 'c1', name: 'urgent bead');
+      final overdueComp = makeComponent(name: 'urgent bead');
       final thisWeekComp = makeComponent(id: 'c2', name: 'soon bead');
       final noUrgencyComp = makeComponent(id: 'c3', name: 'relaxed bead');
 
@@ -202,7 +195,7 @@ void main() {
             shipment: const SaleShipment(
                 type: DeliveryType.shipping, status: ShipmentStatus.pending),
             requiresNif: false,
-            createdAt: DateTime(2026, 1, 1),
+            createdAt: DateTime(2026),
             scheduledDate: scheduled,
           );
 
@@ -219,7 +212,7 @@ void main() {
     });
 
     test('worst urgency of merged row is the highest across its sources', () {
-      final overdueDate = DateTime(2026, 5, 1);
+      final overdueDate = DateTime(2026, 5);
 
       final saleOverdue = Sale(
         id: 's1',
@@ -228,21 +221,21 @@ void main() {
         items: [
           makeSaleItem(
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead', quantity: 2)],
+            components: [makeComponent(quantity: 2)],
           ),
         ],
         payment: const SalePayment(status: PaymentStatus.paid, method: PaymentMethod.mbWay),
         shipment: const SaleShipment(
             type: DeliveryType.shipping, status: ShipmentStatus.pending),
         requiresNif: false,
-        createdAt: DateTime(2026, 1, 1),
+        createdAt: DateTime(2026),
         scheduledDate: overdueDate,
       );
       final saleNoUrgency = makeSale(
         items: [
           makeSaleItem(
             assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(name: 'blue bead', quantity: 3)],
+            components: [makeComponent(quantity: 3)],
           ),
         ],
       );

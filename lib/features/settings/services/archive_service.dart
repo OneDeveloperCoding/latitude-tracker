@@ -2,15 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
 import 'package:path_provider/path_provider.dart';
-
-import '../../buyers/models/buyer.dart';
-import '../../buyers/models/buyer_address.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../repairs/models/repair.dart';
-import '../../repairs/repositories/repair_repository.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
 
 // Version 1.1 adds a `repairs` array. Version 1.2 adds `handDelivery` type.
 // Version 1.3 expands components with `photoUrls` and `notes`.
@@ -19,10 +18,6 @@ const _kCurrentArchiveVersion = '1.4';
 const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2', '1.3', '1.4'};
 
 class ImportResult {
-  final int salesImported;
-  final int buyersImported;
-  final int repairsImported;
-  final int skipped;
 
   const ImportResult({
     required this.salesImported,
@@ -30,20 +25,13 @@ class ImportResult {
     required this.repairsImported,
     required this.skipped,
   });
+  final int salesImported;
+  final int buyersImported;
+  final int repairsImported;
+  final int skipped;
 }
 
 class ArchiveService {
-  final SaleRepository? _salesRepoOverride;
-  final BuyerRepository? _buyersRepoOverride;
-  final RepairRepository? _repairsRepoOverride;
-
-  // Lazy so Firebase isn't accessed until the first actual read/write call,
-  // allowing the version check to throw before any Firebase interaction.
-  // The override fields are needed because late-field initialisers can only
-  // close over `this`, so the injected value must be stored as a field first.
-  late final _salesRepo = _salesRepoOverride ?? SaleRepository();
-  late final _buyersRepo = _buyersRepoOverride ?? BuyerRepository();
-  late final _repairsRepo = _repairsRepoOverride ?? RepairRepository();
 
   ArchiveService({
     SaleRepository? salesRepo,
@@ -52,6 +40,17 @@ class ArchiveService {
   })  : _salesRepoOverride = salesRepo,
         _buyersRepoOverride = buyersRepo,
         _repairsRepoOverride = repairsRepo;
+  final SaleRepository? _salesRepoOverride;
+  final BuyerRepository? _buyersRepoOverride;
+  final RepairRepository? _repairsRepoOverride;
+
+  // Lazy so Firebase isn't accessed until the first actual read/write call,
+  // allowing the version check to throw before any Firebase interaction.
+  // The override fields are needed because late-field initialisers can only
+  // close over `this`, so the injected value must be stored as a field first.
+  late final SaleRepository _salesRepo = _salesRepoOverride ?? SaleRepository();
+  late final BuyerRepository _buyersRepo = _buyersRepoOverride ?? BuyerRepository();
+  late final RepairRepository _repairsRepo = _repairsRepoOverride ?? RepairRepository();
 
   Future<File> exportYear(int year) async {
     final sales = await _salesRepo.getSalesForYear(year);

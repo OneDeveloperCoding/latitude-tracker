@@ -1,10 +1,10 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_repair_repository.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_sale_repository.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/settings/repositories/catalogue_repository.dart';
 import 'package:latitude_tracker/features/settings/services/category_service.dart';
+import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../helpers/sale_factory.dart';
@@ -42,7 +42,7 @@ Repair _repairWithCategory(String category) => Repair(
         status: ShipmentStatus.pending,
       ),
       freeTextContact: 'Test contact',
-      createdAt: DateTime(2026, 1, 1),
+      createdAt: DateTime(2026),
     );
 
 CategoryService _makeService({

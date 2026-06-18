@@ -1,4 +1,4 @@
-import '../models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 enum UrgencyLevel { overdue, thisWeek, none }
 

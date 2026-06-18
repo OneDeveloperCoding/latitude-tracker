@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
-import '../demo_data.dart';
+import 'package:latitude_tracker/features/demo/demo_data.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
 
 class InMemorySaleRepository implements SaleRepository {
   final _sales = <Sale>[];

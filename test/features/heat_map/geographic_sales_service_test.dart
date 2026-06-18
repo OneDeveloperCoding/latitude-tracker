@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../helpers/sale_factory.dart';
 
 Sale _shippingSale(String? postalCode, {double price = 100.0, String? addressId}) =>
-    makeSale(delivery: DeliveryType.shipping).copyWith(
+    makeSale().copyWith(
       shipment: SaleShipment(
         type: DeliveryType.shipping,
         status: ShipmentStatus.delivered,
@@ -30,7 +30,6 @@ Sale _pickupSale() => makeSale(delivery: DeliveryType.pickup).copyWith(
       shipment: const SaleShipment(
         type: DeliveryType.pickup,
         status: ShipmentStatus.delivered,
-        postalCode: null,
       ),
     );
 
@@ -62,8 +61,8 @@ void main() {
     test('sums count and revenue per CP4', () async {
       final ranking = await GeographicSalesService.buildRanking(
         [
-          _shippingSale('4000-001', price: 80.0),
-          _shippingSale('4000-002', price: 120.0),
+          _shippingSale('4000-001', price: 80),
+          _shippingSale('4000-002', price: 120),
         ],
         {},
       );
@@ -102,8 +101,8 @@ void main() {
     test('groups non-PT sales by country from addressCountries map', () async {
       final ranking = await GeographicSalesService.buildRanking(
         [
-          _shippingSale('75001', addressId: 'addr-fr', price: 90.0),
-          _shippingSale('28001', addressId: 'addr-es', price: 60.0),
+          _shippingSale('75001', addressId: 'addr-fr', price: 90),
+          _shippingSale('28001', addressId: 'addr-es', price: 60),
         ],
         {'addr-fr': 'France', 'addr-es': 'Spain'},
       );
@@ -115,8 +114,8 @@ void main() {
     test('accumulates count and revenue per country', () async {
       final ranking = await GeographicSalesService.buildRanking(
         [
-          _shippingSale('75001', addressId: 'addr-fr-1', price: 50.0),
-          _shippingSale('75002', addressId: 'addr-fr-2', price: 70.0),
+          _shippingSale('75001', addressId: 'addr-fr-1', price: 50),
+          _shippingSale('75002', addressId: 'addr-fr-2', price: 70),
         ],
         {'addr-fr-1': 'France', 'addr-fr-2': 'France'},
       );

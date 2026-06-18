@@ -21,7 +21,7 @@ Repair _makeRepair({RepairStatus status = RepairStatus.inProgress}) => Repair(
         type: DeliveryType.shipping,
         status: ShipmentStatus.pending,
       ),
-      createdAt: DateTime(2026, 1, 1),
+      createdAt: DateTime(2026),
     );
 
 ChoiceChip _findChip(WidgetTester tester, String label) => tester.widget<ChoiceChip>(
@@ -32,9 +32,7 @@ ChoiceChip _findChip(WidgetTester tester, String label) => tester.widget<ChoiceC
     );
 
 void main() {
-  setUp(() {
-    DemoMode.repairRepo.clear();
-  });
+  setUp(DemoMode.repairRepo.clear);
 
   tearDown(() {
     DemoMode.active.value = false;
@@ -42,7 +40,7 @@ void main() {
   });
 
   testWidgets('selected chip matches repair.status', (tester) async {
-    await DemoMode.repairRepo.createRepair(_makeRepair(status: RepairStatus.inProgress));
+    await DemoMode.repairRepo.createRepair(_makeRepair());
     DemoMode.active.value = true;
 
     await tester.pumpWidget(
@@ -59,7 +57,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await DemoMode.repairRepo.createRepair(_makeRepair(status: RepairStatus.inProgress));
+    await DemoMode.repairRepo.createRepair(_makeRepair());
     DemoMode.active.value = true;
 
     await tester.pumpWidget(

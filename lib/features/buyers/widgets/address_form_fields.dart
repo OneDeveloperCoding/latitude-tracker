@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/postal_code_service.dart';
-import '../models/buyer_address.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/postal_code_service.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 
 const kAddressCountries = [
   'Portugal',
@@ -20,14 +20,14 @@ const kAddressCountries = [
 final _ptPostalCodeRegex = RegExp(r'^\d{4}-\d{3}$');
 
 class AddressFormFields extends StatefulWidget {
-  final BuyerAddress? initial;
-  final bool showIsDefault;
 
   const AddressFormFields({
     super.key,
     this.initial,
     this.showIsDefault = false,
   });
+  final BuyerAddress? initial;
+  final bool showIsDefault;
 
   @override
   State<AddressFormFields> createState() => AddressFormFieldsState();
@@ -333,9 +333,9 @@ class AddressFormFieldsState extends State<AddressFormFields> {
 }
 
 class _StreetPickerSheet extends StatelessWidget {
-  final List<String> streets;
 
   const _StreetPickerSheet({required this.streets});
+  final List<String> streets;
 
   @override
   Widget build(BuildContext context) {

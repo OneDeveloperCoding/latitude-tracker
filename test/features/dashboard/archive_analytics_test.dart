@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 Map<String, dynamic> _baseSaleMap({
   String id = 'sale-1',
@@ -20,8 +20,8 @@ Map<String, dynamic> _baseSaleMap({
           'category': 'Colares',
           'price': 45.0,
           'assemblyStatus': 'ready',
-          'components': [],
-          'photoUrls': [],
+          'components': <dynamic>[],
+          'photoUrls': <String>[],
         }
       ],
       'payment': {'status': paymentStatus, 'method': paymentMethod},
@@ -66,7 +66,7 @@ Map<String, dynamic> _baseRepairMap({
         'trackingCode': null,
         'postalCode': null,
       },
-      'photoUrls': [],
+      'photoUrls': <String>[],
       'createdAt': createdAt,
     };
 

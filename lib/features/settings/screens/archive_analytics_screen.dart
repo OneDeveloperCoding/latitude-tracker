@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../dashboard/models/dashboard_stats.dart';
-import '../../sales/services/sales_analytics_service.dart';
-import '../../dashboard/widgets/analytics_widgets.dart';
-import '../../repairs/models/repair.dart';
-import '../../sales/models/sale.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/dashboard/models/dashboard_stats.dart';
+import 'package:latitude_tracker/features/dashboard/widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sales_analytics_service.dart';
 
 class ArchiveAnalyticsScreen extends StatefulWidget {
-  final Map<String, dynamic> archive;
 
-  const ArchiveAnalyticsScreen({super.key, required this.archive});
+  const ArchiveAnalyticsScreen({required this.archive, super.key});
+  final Map<String, dynamic> archive;
 
   @override
   State<ArchiveAnalyticsScreen> createState() =>

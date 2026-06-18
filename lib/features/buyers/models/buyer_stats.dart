@@ -1,11 +1,6 @@
-import '../../sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 class BuyerStats {
-  final int saleCount;
-  final DateTime? lastPurchaseAt;
-  final double totalPaid;
-  final double unpaidBalance;
-  final double averageSaleValue;
 
   const BuyerStats({
     required this.saleCount,
@@ -14,13 +9,6 @@ class BuyerStats {
     required this.averageSaleValue,
     this.lastPurchaseAt,
   });
-
-  static const empty = BuyerStats(
-    saleCount: 0,
-    totalPaid: 0,
-    unpaidBalance: 0,
-    averageSaleValue: 0,
-  );
 
   factory BuyerStats.compute(List<Sale> sales) {
     if (sales.isEmpty) return BuyerStats.empty;
@@ -51,4 +39,16 @@ class BuyerStats {
       averageSaleValue: totalValue / sales.length,
     );
   }
+  final int saleCount;
+  final DateTime? lastPurchaseAt;
+  final double totalPaid;
+  final double unpaidBalance;
+  final double averageSaleValue;
+
+  static const empty = BuyerStats(
+    saleCount: 0,
+    totalPaid: 0,
+    unpaidBalance: 0,
+    averageSaleValue: 0,
+  );
 }

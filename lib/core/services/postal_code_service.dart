@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'error_reporter.dart';
 import 'package:http/http.dart' as http;
-import 'shared_prefs_cache.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 
 class PostalCodeResult {
-  final List<String> streets;
-  final String city;
 
   const PostalCodeResult({required this.streets, required this.city});
+  final List<String> streets;
+  final String city;
 }
 
 class PostalCodeService {
@@ -51,7 +51,7 @@ class PostalCodeService {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-      final parts = (data['partes'] as List<dynamic>? ?? []);
+      final parts = data['partes'] as List<dynamic>? ?? [];
       final streets = parts
           .map((p) =>
               ((p as Map<String, dynamic>)['Artéria'] as String? ?? '').trim())
