@@ -5,10 +5,7 @@ import 'package:test/test.dart';
 import '../../helpers/sale_factory.dart';
 
 void main() {
-  final jan = DateTime(2026);
-  final feb = DateTime(2026, 2);
-
-  group('DashboardStats.compute action counts', () {
+  group('DashboardActionCounts.compute', () {
     final now = DateTime(2026, 6, 4);
 
     test('shippedCount counts sales with shipped status', () {
@@ -19,9 +16,9 @@ void main() {
         makeSale(shipmentStatus: ShipmentStatus.delivered),
       ];
 
-      final stats = DashboardStats.compute(sales, jan, feb);
+      final counts = DashboardActionCounts.compute(sales);
 
-      expect(stats.shippedCount, 2);
+      expect(counts.shippedCount, 2);
     });
 
     test('upcomingCount counts sales with a future scheduled date', () {
@@ -36,9 +33,9 @@ void main() {
         makeSale(), // no date
       ];
 
-      final stats = DashboardStats.compute(sales, jan, feb, now: now);
+      final counts = DashboardActionCounts.compute(sales, now: now);
 
-      expect(stats.upcomingCount, 2);
+      expect(counts.upcomingCount, 2);
     });
 
     test('upcomingCount excludes delivered sales', () {
@@ -50,9 +47,9 @@ void main() {
         makeSale(scheduledDate: DateTime(2026, 7)),
       ];
 
-      final stats = DashboardStats.compute(sales, jan, feb, now: now);
+      final counts = DashboardActionCounts.compute(sales, now: now);
 
-      expect(stats.upcomingCount, 1);
+      expect(counts.upcomingCount, 1);
     });
   });
 }

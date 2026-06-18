@@ -4,12 +4,46 @@ import 'package:latitude_tracker/features/sales/services/sales_analytics_service
 
 enum DashboardPeriod { yearly, monthly, weekly }
 
-class DashboardStats {
-  const DashboardStats({
+class DashboardPeriodStats {
+  const DashboardPeriodStats({
     required this.paidRevenue,
     required this.unpaidRevenue,
     required this.paidCount,
     required this.unpaidCount,
+  });
+
+  factory DashboardPeriodStats.compute(
+    List<Sale> all,
+    DateTime start,
+    DateTime end,
+  ) {
+    final paid = SalesAnalyticsService.computePeriodStats(all, start, end);
+    double unpaidRevenue = 0;
+    var unpaidCount = 0;
+    for (final s in all) {
+      if (!s.inPeriod(start, end)) continue;
+      if (s.payment.status != PaymentStatus.unpaid) continue;
+      unpaidRevenue += s.totalPrice;
+      unpaidCount++;
+    }
+    return DashboardPeriodStats(
+      paidRevenue: paid.revenue,
+      unpaidRevenue: unpaidRevenue,
+      paidCount: paid.count,
+      unpaidCount: unpaidCount,
+    );
+  }
+
+  final double paidRevenue;
+  final double unpaidRevenue;
+  final int paidCount;
+  final int unpaidCount;
+
+  int get totalCount => paidCount + unpaidCount;
+}
+
+class DashboardActionCounts {
+  const DashboardActionCounts({
     required this.unpaidActionCount,
     required this.unpaidActionRevenue,
     required this.pendingShipmentCount,
@@ -20,25 +54,12 @@ class DashboardStats {
     required this.upcomingCount,
   });
 
-  factory DashboardStats.compute(
-    List<Sale> all,
-    DateTime start,
-    DateTime end, {
+  factory DashboardActionCounts.compute(
+    List<Sale> all, {
     DateTime? now,
   }) {
     final effectiveNow = now ?? DateTime.now();
     bool active(Sale s) => s.shipment.status != ShipmentStatus.delivered;
-
-    // Period-scoped revenue — delegate to the single canonical implementation.
-    final paid = SalesAnalyticsService.computePeriodStats(all, start, end);
-    double unpaidRevenue = 0;
-    var unpaidCount = 0;
-    for (final s in all) {
-      if (!s.inPeriod(start, end)) continue;
-      if (s.payment.status != PaymentStatus.unpaid) continue;
-      unpaidRevenue += s.totalPrice;
-      unpaidCount++;
-    }
 
     var unpaidActionCount = 0;
     double unpaidActionRevenue = 0;
@@ -50,7 +71,6 @@ class DashboardStats {
     var upcomingCount = 0;
 
     for (final s in all) {
-      // Global action counts — always current, period-independent.
       if (s.payment.status == PaymentStatus.unpaid) {
         unpaidActionCount++;
         unpaidActionRevenue += s.totalPrice;
@@ -69,11 +89,7 @@ class DashboardStats {
       }
     }
 
-    return DashboardStats(
-      paidRevenue: paid.revenue,
-      unpaidRevenue: unpaidRevenue,
-      paidCount: paid.count,
-      unpaidCount: unpaidCount,
+    return DashboardActionCounts(
       unpaidActionCount: unpaidActionCount,
       unpaidActionRevenue: unpaidActionRevenue,
       pendingShipmentCount: pendingShipmentCount,
@@ -84,15 +100,7 @@ class DashboardStats {
       upcomingCount: upcomingCount,
     );
   }
-  // Period-scoped: reflect sales created within the selected period.
-  final double paidRevenue;
-  final double unpaidRevenue;
-  final int paidCount;
-  final int unpaidCount;
 
-  // Global: current action state regardless of which period is selected.
-  // These must match what the destination screens show so counts stay
-  // consistent.
   final int unpaidActionCount;
   final double unpaidActionRevenue;
   final int pendingShipmentCount;
@@ -101,6 +109,4 @@ class DashboardStats {
   final int nifRequiredCount;
   final int overdueCount;
   final int upcomingCount;
-
-  int get totalCount => paidCount + unpaidCount;
 }
