@@ -7,6 +7,7 @@ import 'package:latitude_tracker/features/buyers/screens/buyers_list_screen.dart
 import 'package:latitude_tracker/features/dashboard/screens/dashboard_screen.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
+import 'package:latitude_tracker/features/heat_map/services/geocoding_warm_up.dart';
 import 'package:latitude_tracker/features/repairs/screens/sales_repairs_tab_screen.dart';
 import 'package:latitude_tracker/features/settings/screens/settings_screen.dart';
 
@@ -34,6 +35,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.init();
     BuyersStore.init();
     RepairsStore.init();
+    GeocodingWarmUp.attach();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     // After a DemoMode transition the old MainNav's dispose() runs after this
     // initState — tearing down the subscription init() just created. The
@@ -50,6 +52,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
+    GeocodingWarmUp.detach();
     SalesStore.dispose();
     BuyersStore.dispose();
     RepairsStore.dispose();
