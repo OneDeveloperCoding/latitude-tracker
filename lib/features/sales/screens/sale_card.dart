@@ -404,7 +404,7 @@ void _showNotePreview(BuildContext context, String notes) {
   final s = context.s;
   unawaited(showModalBottomSheet<void>(
     context: context,
-    builder: (_) => Padding(
+    builder: (ctx) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -413,14 +413,14 @@ void _showNotePreview(BuildContext context, String notes) {
           Row(
             children: [
               Icon(Icons.sticky_note_2_outlined,
-                  color: Theme.of(context).colorScheme.primary),
+                  color: Theme.of(ctx).colorScheme.primary),
               const SizedBox(width: 12),
               Text(s.sectionNotes,
-                  style: Theme.of(context).textTheme.titleMedium),
+                  style: Theme.of(ctx).textTheme.titleMedium),
             ],
           ),
           const SizedBox(height: 12),
-          Text(notes, style: Theme.of(context).textTheme.bodyMedium),
+          Text(notes, style: Theme.of(ctx).textTheme.bodyMedium),
         ],
       ),
     ),
@@ -451,7 +451,7 @@ void _showNifDetail(
 
   unawaited(showModalBottomSheet<void>(
     context: context,
-    builder: (_) => Padding(
+    builder: (ctx) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -461,11 +461,12 @@ void _showNifDetail(
             children: [
               Icon(kNifIcon, color: iconColor),
               const SizedBox(width: 12),
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              Text(title,
+                  style: Theme.of(ctx).textTheme.titleMedium),
             ],
           ),
           const SizedBox(height: 12),
-          Text(body, style: Theme.of(context).textTheme.bodyMedium),
+          Text(body, style: Theme.of(ctx).textTheme.bodyMedium),
         ],
       ),
     ),
@@ -476,7 +477,7 @@ void _showReadyButUnpaidDetail(BuildContext context) {
   final s = context.s;
   unawaited(showModalBottomSheet<void>(
     context: context,
-    builder: (_) => Padding(
+    builder: (ctx) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -485,15 +486,15 @@ void _showReadyButUnpaidDetail(BuildContext context) {
           Row(
             children: [
               Icon(Icons.price_check,
-                  color: Theme.of(context).colorScheme.warning),
+                  color: Theme.of(ctx).colorScheme.warning),
               const SizedBox(width: 12),
               Text(s.readyButUnpaidTitle,
-                  style: Theme.of(context).textTheme.titleMedium),
+                  style: Theme.of(ctx).textTheme.titleMedium),
             ],
           ),
           const SizedBox(height: 12),
           Text(s.readyButUnpaidBody,
-              style: Theme.of(context).textTheme.bodyMedium),
+              style: Theme.of(ctx).textTheme.bodyMedium),
         ],
       ),
     ),
@@ -505,14 +506,14 @@ void _showUrgencyDetail(
   final s = context.s;
   unawaited(showModalBottomSheet<void>(
     context: context,
-    builder: (_) => Padding(
+    builder: (ctx) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(s.urgencySheetTitle,
-              style: Theme.of(context).textTheme.titleMedium),
+              style: Theme.of(ctx).textTheme.titleMedium),
           const SizedBox(height: 12),
           ...reasons.map(
             (r) => Padding(
@@ -520,10 +521,10 @@ void _showUrgencyDetail(
               child: Row(
                 children: [
                   Icon(r.icon, size: 20,
-                      color: r.colorOf(Theme.of(context).colorScheme)),
+                      color: r.colorOf(Theme.of(ctx).colorScheme)),
                   const SizedBox(width: 12),
                   Text(s.urgencyReasonLabel(r),
-                      style: Theme.of(context).textTheme.bodyMedium),
+                      style: Theme.of(ctx).textTheme.bodyMedium),
                 ],
               ),
             ),

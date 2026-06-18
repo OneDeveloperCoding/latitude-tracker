@@ -12,14 +12,14 @@ class SalesFilterSheet extends StatefulWidget {
   const SalesFilterSheet({
     required this.filters,
     required this.availableYears,
-    required this.monthsByYear,
+    required this.availableCategories,
     required this.onFiltersChanged,
     super.key,
   });
 
   final SalesListFilters filters;
   final List<int> availableYears;
-  final Map<int, List<int>> monthsByYear;
+  final List<String> availableCategories;
   final ValueChanged<SalesListFilters> onFiltersChanged;
 
   @override
@@ -51,7 +51,6 @@ class _SalesFilterSheetState extends State<SalesFilterSheet> {
     _buyerSearchController.clear();
     _update(SalesListFilters(
       postalCodePrefix: _filters.postalCodePrefix,
-      searchQuery: _filters.searchQuery,
     ));
   }
 
@@ -60,7 +59,8 @@ class _SalesFilterSheetState extends State<SalesFilterSheet> {
       _filters.categoryFilters.isNotEmpty ||
       _filters.selectedYear != null ||
       _filters.buyerFilter != null ||
-      _filters.sortOrder != SortOrder.newestFirst;
+      _filters.sortOrder != SortOrder.newestFirst ||
+      _filters.searchQuery.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +95,16 @@ class _SalesFilterSheetState extends State<SalesFilterSheet> {
             .where((b) => b.name.toLowerCase().contains(buyerQuery))
             .take(6)
             .toList();
+    // Derived live so a sync from the other device adds months immediately.
+    final selectedYear = _filters.selectedYear;
+    final monthsForYear = selectedYear == null
+        ? <int>[]
+        : (SalesStore.currentOrEmpty
+                .where((s) => s.createdAt.year == selectedYear)
+                .map((s) => s.createdAt.month)
+                .toSet()
+                .toList()
+              ..sort());
 
     return SafeArea(
       child: DraggableScrollableSheet(
@@ -213,24 +223,21 @@ class _SalesFilterSheetState extends State<SalesFilterSheet> {
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                     child: Wrap(
                       spacing: 8,
-                      children:
-                          (widget.monthsByYear[_filters.selectedYear] ??
-                                  [])
-                              .map((m) => FilterChip(
-                                    label: Text(_monthLabel(m)),
-                                    selected:
-                                        _filters.selectedMonth == m,
-                                    onSelected: (_) =>
-                                        _update(_filters.copyWith(
-                                      selectedMonth:
-                                          _filters.selectedMonth == m
-                                              ? null
-                                              : m,
-                                      clearMonth:
-                                          _filters.selectedMonth == m,
-                                    )),
-                                  ))
-                              .toList(),
+                      children: monthsForYear
+                          .map((m) => FilterChip(
+                                label: Text(_monthLabel(m)),
+                                selected: _filters.selectedMonth == m,
+                                onSelected: (_) =>
+                                    _update(_filters.copyWith(
+                                  selectedMonth:
+                                      _filters.selectedMonth == m
+                                          ? null
+                                          : m,
+                                  clearMonth:
+                                      _filters.selectedMonth == m,
+                                )),
+                              ))
+                          .toList(),
                     ),
                   ),
                 ],
@@ -240,37 +247,28 @@ class _SalesFilterSheetState extends State<SalesFilterSheet> {
               SheetSectionLabel(s.categoryFilterHeader.toUpperCase()),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Builder(
-                  builder: (_) {
-                    final allCats = SalesStore.currentOrEmpty
-                        .expand((s) => s.items.map((i) => i.category))
-                        .toSet()
-                        .toList()
-                      ..sort();
-                    return Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: allCats
-                          .map((cat) => FilterChip(
-                                label: Text(cat),
-                                selected: _filters.categoryFilters
-                                    .contains(cat),
-                                onSelected: (on) {
-                                  final updated = on
-                                      ? {
-                                          ..._filters.categoryFilters,
-                                          cat,
-                                        }
-                                      : ({..._filters.categoryFilters}
-                                        ..remove(cat));
-                                  _update(_filters.copyWith(
-                                    categoryFilters: updated,
-                                  ));
-                                },
-                              ))
-                          .toList(),
-                    );
-                  },
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: widget.availableCategories
+                      .map((cat) => FilterChip(
+                            label: Text(cat),
+                            selected: _filters.categoryFilters
+                                .contains(cat),
+                            onSelected: (on) {
+                              final updated = on
+                                  ? {
+                                      ..._filters.categoryFilters,
+                                      cat,
+                                    }
+                                  : ({..._filters.categoryFilters}
+                                    ..remove(cat));
+                              _update(_filters.copyWith(
+                                categoryFilters: updated,
+                              ));
+                            },
+                          ))
+                      .toList(),
                 ),
               ),
               // ── Buyer ─────────────────────────────────────────────────

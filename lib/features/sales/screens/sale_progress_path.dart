@@ -107,13 +107,14 @@ void showPathLegend(BuildContext context, AppStrings s) {
   final cs = Theme.of(context).colorScheme;
   unawaited(showModalBottomSheet<void>(
     context: context,
-    builder: (_) => Padding(
+    builder: (ctx) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(s.legendTitle, style: Theme.of(context).textTheme.titleMedium),
+          Text(s.legendTitle,
+              style: Theme.of(ctx).textTheme.titleMedium),
           const SizedBox(height: 16),
           for (final status in AssemblyStatus.values)
             LegendRow(status.icon, status.colorOf(cs),

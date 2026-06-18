@@ -138,8 +138,13 @@ class _SalesListScreenState extends State<SalesListScreen> {
       builder: (_) => SalesFilterSheet(
         filters: _filters,
         availableYears: _result.availableYears,
-        monthsByYear: _result.monthsByYear,
+        availableCategories: _result.availableCategories,
         onFiltersChanged: (updated) {
+          if (updated.searchQuery.isEmpty &&
+              _filters.searchQuery.isNotEmpty) {
+            _searchController.clear();
+            _searchExpanded = false;
+          }
           _filters = updated;
           _rebuildCache();
           setState(() {});
