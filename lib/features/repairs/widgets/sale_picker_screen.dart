@@ -37,7 +37,7 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
   void _onStoreChanged() => setState(() {});
 
   List<Sale> get _filteredSales {
-    final all = SalesStore.current ?? [];
+    final all = SalesStore.currentOrEmpty;
     final byBuyer = all
         .where((s) => s.buyerId == widget.buyerId)
         .toList()

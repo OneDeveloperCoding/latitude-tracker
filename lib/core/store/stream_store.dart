@@ -20,6 +20,8 @@ class StreamStore<T> {
     _ => null,
   };
 
+  List<T> get currentOrEmpty => current ?? [];
+
   void _tearDown() {
     _sub?.cancel();
     _sub = null;

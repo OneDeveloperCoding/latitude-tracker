@@ -51,7 +51,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
 
   void _onBuyersChanged() {
     setState(() {
-      _buyersById = {for (final b in BuyersStore.current ?? <Buyer>[]) b.id: b};
+      _buyersById = {for (final b in BuyersStore.currentOrEmpty) b.id: b};
     });
   }
 

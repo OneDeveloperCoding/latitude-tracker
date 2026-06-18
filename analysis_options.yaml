@@ -8,10 +8,12 @@ linter:
     # Deferred to follow-up PR: requires reformatting Flutter widget trees.
     lines_longer_than_80_chars: false
 
-    # Deferred to follow-up PR: requires judgment at each call site.
+    # Deferred to follow-up PR: each site needs a judgment call on async safety.
     discarded_futures: false
     avoid_catches_without_on_clauses: false
     avoid_dynamic_calls: false
     unawaited_futures: false
     cast_nullable_to_non_nullable: false
+
+    # Deferred to follow-up PR: API design concern — affects method signatures.
     avoid_positional_boolean_parameters: false

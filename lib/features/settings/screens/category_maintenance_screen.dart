@@ -4,7 +4,6 @@ import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
-import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/settings/services/category_service.dart';
 
@@ -47,12 +46,12 @@ class _CategoryMaintenanceScreenState
   List<_CategoryEntry> _buildEntries() {
     final counts = <String, int>{};
 
-    for (final sale in SalesStore.current ?? <Sale>[]) {
+    for (final sale in SalesStore.currentOrEmpty) {
       for (final item in sale.items) {
         counts[item.category] = (counts[item.category] ?? 0) + 1;
       }
     }
-    for (final repair in RepairsStore.current ?? <Repair>[]) {
+    for (final repair in RepairsStore.currentOrEmpty) {
       counts[repair.itemCategory] =
           (counts[repair.itemCategory] ?? 0) + 1;
     }

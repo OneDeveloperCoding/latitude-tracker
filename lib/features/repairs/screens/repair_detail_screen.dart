@@ -391,7 +391,7 @@ class _LinkedSaleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sale = (SalesStore.current ?? [])
+    final sale = SalesStore.currentOrEmpty
         .where((s) => s.id == saleId)
         .firstOrNull;
     final title = sale != null

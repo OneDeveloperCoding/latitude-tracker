@@ -11,6 +11,7 @@ class SalesStore {
 
   static ValueNotifier<StoreState<List<Sale>>> get state => _store.state;
   static List<Sale>? get current => _store.current;
+  static List<Sale> get currentOrEmpty => _store.currentOrEmpty;
   static void init() => _store.init();
   static void ensureSubscribed() => _store.ensureSubscribed();
   static void forceReset() => _store.forceReset();

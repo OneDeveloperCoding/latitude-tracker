@@ -12,6 +12,7 @@ class BuyersStore {
 
   static ValueNotifier<StoreState<List<Buyer>>> get state => _store.state;
   static List<Buyer>? get current => _store.current;
+  static List<Buyer> get currentOrEmpty => _store.currentOrEmpty;
   static void init() => _store.init();
   static void ensureSubscribed() => _store.ensureSubscribed();
   static void forceReset() => _store.forceReset();

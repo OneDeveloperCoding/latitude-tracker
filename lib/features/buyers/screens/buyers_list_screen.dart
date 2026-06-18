@@ -71,9 +71,9 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   void _rebuildStats() {
-    final byBuyer = SaleGrouper.byBuyerId(SalesStore.current ?? []);
+    final byBuyer = SaleGrouper.byBuyerId(SalesStore.currentOrEmpty);
     _statsCache = {
-      for (final buyer in BuyersStore.current ?? <Buyer>[])
+      for (final buyer in BuyersStore.currentOrEmpty)
         buyer.id: _BuyerWithStats(
           buyer: buyer,
           stats: BuyerStats.compute(byBuyer[buyer.id] ?? []),
@@ -83,9 +83,9 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
   void _rebuildViews() {
     _alphabeticalCache =
-        _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
+        _applySearch(BuyersStore.currentOrEmpty).map(_statsFor).toList();
     _groupedCache = _computeGroupedItems();
-    _rankedCache = _applySearch(BuyersStore.current ?? [])
+    _rankedCache = _applySearch(BuyersStore.currentOrEmpty)
         .map(_statsFor)
         .toList()
       ..sort((a, b) =>
@@ -123,7 +123,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
   List<Object> _computeGroupedItems() {
     final neverPurchasedLabel = context.s.neverPurchased;
-    final stats = _applySearch(BuyersStore.current ?? []).map(_statsFor).toList();
+    final stats = _applySearch(BuyersStore.currentOrEmpty).map(_statsFor).toList();
     final withPurchase = stats.where((s) => s.lastPurchaseAt != null).toList()
       ..sort((a, b) => b.lastPurchaseAt!.compareTo(a.lastPurchaseAt!));
     final noPurchase = stats.where((s) => s.lastPurchaseAt == null).toList()

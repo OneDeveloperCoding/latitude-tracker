@@ -12,6 +12,7 @@ class RepairsStore {
 
   static ValueNotifier<StoreState<List<Repair>>> get state => _store.state;
   static List<Repair>? get current => _store.current;
+  static List<Repair> get currentOrEmpty => _store.currentOrEmpty;
   static void init() => _store.init();
   static void ensureSubscribed() => _store.ensureSubscribed();
   static void forceReset() => _store.forceReset();

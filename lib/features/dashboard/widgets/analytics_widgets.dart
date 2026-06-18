@@ -8,6 +8,9 @@ import 'package:latitude_tracker/features/sales/widgets/payment_method_display.d
 
 enum AnalyticsMetric { revenue, count }
 
+double _sumRevenue(Iterable<({String category, double revenue})> entries) =>
+    entries.fold(0, (sum, e) => sum + e.revenue);
+
 // Tableau 10 palette — designed for perceptual distinctiveness.
 const kAnalyticsCategoryColors = [
   Color(0xFF4E79A7),
@@ -272,15 +275,13 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
     final orderedCategories = _orderedCategories();
 
     final periodTotals = widget.periodsData
-        .map((p) => p.fold<double>(0, (sum, e) => sum + e.revenue))
+        .map(_sumRevenue)
         .toList();
 
     final categoryValues = {
       for (final cat in orderedCategories)
         cat: widget.periodsData
-            .map((period) => period
-                .where((e) => e.category == cat)
-                .fold<double>(0, (sum, e) => sum + e.revenue))
+            .map((period) => _sumRevenue(period.where((e) => e.category == cat)))
             .toList(),
     };
 
@@ -480,7 +481,7 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
 
     var maxTotal = 0.0;
     for (final period in periodsData) {
-      final total = period.fold<double>(0, (s, e) => s + e.revenue);
+      final total = _sumRevenue(period);
       if (total > maxTotal) maxTotal = total;
     }
     if (maxTotal == 0) return;
@@ -494,7 +495,7 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
       if (period.isEmpty) continue;
 
       final periodAlpha = (allHighlighted || i == lastIndex) ? 1.0 : 0.4;
-      final total = period.fold<double>(0, (s, e) => s + e.revenue);
+      final total = _sumRevenue(period);
       final totalBarH = (total / maxTotal) * size.height;
       final barLeft = i * barWidth + gap / 2;
       final barRight = (i + 1) * barWidth - gap / 2;

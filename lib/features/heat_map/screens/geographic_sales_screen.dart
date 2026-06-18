@@ -67,7 +67,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
   }
 
   void _rebuild() {
-    final all = _salesForView(SalesStore.current ?? []);
+    final all = _salesForView(SalesStore.currentOrEmpty);
     final years = all.map((s) => s.createdAt.year).toSet().toList()
       ..sort((a, b) => b.compareTo(a));
     final year =
@@ -152,18 +152,18 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
   void _selectYear(int? year) {
     if (year == _selectedYear) return;
     setState(() { _selectedYear = year; _ranking = null; _mapPoints = []; });
-    _load(_salesForView(SalesStore.current ?? []), year);
+    _load(_salesForView(SalesStore.currentOrEmpty), year);
   }
 
   void _toggleMode() {
     final newMapMode = !_mapMode;
     setState(() { _mapMode = newMapMode; _loading = true; });
-    _load(_salesForView(SalesStore.current ?? []), _selectedYear);
+    _load(_salesForView(SalesStore.currentOrEmpty), _selectedYear);
   }
 
   void _toggleHandDelivery() {
     setState(() { _includeHandDelivery = !_includeHandDelivery; _ranking = null; _mapPoints = []; });
-    _load(_salesForView(SalesStore.current ?? []), _selectedYear);
+    _load(_salesForView(SalesStore.currentOrEmpty), _selectedYear);
   }
 
   List<Sale> _salesForView(List<Sale> sales) => sales.where((s) {
@@ -173,17 +173,18 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
         return false;
       }).toList();
 
+  int _compareByMetric(double aRevenue, int aCount, double bRevenue, int bCount) =>
+      _metric == AnalyticsMetric.revenue
+          ? bRevenue.compareTo(aRevenue)
+          : bCount.compareTo(aCount);
+
   List<LocalityRow> get _sortedLocalities =>
       (List<LocalityRow>.from(_ranking?.localities ?? []))
-        ..sort((a, b) => _metric == AnalyticsMetric.revenue
-            ? b.revenue.compareTo(a.revenue)
-            : b.count.compareTo(a.count));
+        ..sort((a, b) => _compareByMetric(a.revenue, a.count, b.revenue, b.count));
 
   List<CountryRow> get _sortedCountries =>
       (List<CountryRow>.from(_ranking?.countries ?? []))
-        ..sort((a, b) => _metric == AnalyticsMetric.revenue
-            ? b.revenue.compareTo(a.revenue)
-            : b.count.compareTo(a.count));
+        ..sort((a, b) => _compareByMetric(a.revenue, a.count, b.revenue, b.count));
 
   double _markerSize(int count) => (32 + (count - 1) * 8).clamp(32, 80).toDouble();
 

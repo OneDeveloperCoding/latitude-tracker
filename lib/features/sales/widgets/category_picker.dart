@@ -28,7 +28,7 @@ Future<String?> showCategoryPicker(
 /// Seeds from [kDefaultCategories] so the list is never empty on a fresh install.
 List<String> _buildSortedCategories(Set<String> hidden) {
   final counts = <String, int>{};
-  for (final sale in SalesStore.current ?? <Sale>[]) {
+  for (final sale in SalesStore.currentOrEmpty) {
     for (final item in sale.items) {
       counts[item.category] = (counts[item.category] ?? 0) + 1;
     }

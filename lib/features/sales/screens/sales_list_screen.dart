@@ -96,7 +96,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _rebuildCache() {
-    final allSales = SalesStore.current ?? [];
+    final allSales = SalesStore.currentOrEmpty;
 
     var sales = _applyFilter(allSales);
     sales = _applySearch(sales);
@@ -118,7 +118,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     );
 
     _buyerNifById = {
-      for (final b in BuyersStore.current ?? <Buyer>[]) b.id: b.nif,
+      for (final b in BuyersStore.currentOrEmpty) b.id: b.nif,
     };
   }
 
@@ -465,7 +465,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
               buyerSearchController.text.trim().toLowerCase();
           final buyerResults = buyerQuery.isEmpty
               ? <Buyer>[]
-              : (BuyersStore.current ?? [])
+              : BuyersStore.currentOrEmpty
                   .where((b) =>
                       b.name.toLowerCase().contains(buyerQuery))
                   .take(6)
@@ -617,7 +617,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                       child: Builder(
                         builder: (_) {
-                          final allCats = (SalesStore.current ?? [])
+                          final allCats = (SalesStore.currentOrEmpty)
                               .expand((s) => s.items.map((i) => i.category))
                               .toSet()
                               .toList()

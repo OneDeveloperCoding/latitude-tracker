@@ -95,7 +95,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       _postalCodeController.text = existing.returnDelivery.postalCode ?? '';
       _photoUrls = List.from(existing.photoUrls);
       _linkedSale = existing.linkedSaleId != null
-          ? (SalesStore.current ?? [])
+          ? SalesStore.currentOrEmpty
               .where((s) => s.id == existing.linkedSaleId)
               .firstOrNull
           : null;
