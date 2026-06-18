@@ -7,9 +7,7 @@ enum DashboardPeriod { yearly, monthly, weekly }
 class DashboardPeriodStats {
   const DashboardPeriodStats({
     required this.paidRevenue,
-    required this.unpaidRevenue,
     required this.paidCount,
-    required this.unpaidCount,
   });
 
   factory DashboardPeriodStats.compute(
@@ -18,28 +16,14 @@ class DashboardPeriodStats {
     DateTime end,
   ) {
     final paid = SalesAnalyticsService.computePeriodStats(all, start, end);
-    double unpaidRevenue = 0;
-    var unpaidCount = 0;
-    for (final s in all) {
-      if (!s.inPeriod(start, end)) continue;
-      if (s.payment.status != PaymentStatus.unpaid) continue;
-      unpaidRevenue += s.totalPrice;
-      unpaidCount++;
-    }
     return DashboardPeriodStats(
       paidRevenue: paid.revenue,
-      unpaidRevenue: unpaidRevenue,
       paidCount: paid.count,
-      unpaidCount: unpaidCount,
     );
   }
 
   final double paidRevenue;
-  final double unpaidRevenue;
   final int paidCount;
-  final int unpaidCount;
-
-  int get totalCount => paidCount + unpaidCount;
 }
 
 class DashboardActionCounts {

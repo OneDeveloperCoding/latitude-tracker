@@ -22,7 +22,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime _month;
   DashboardActionCounts _actionCounts = const DashboardActionCounts(
     unpaidActionCount: 0,
     unpaidActionRevenue: 0,
@@ -40,8 +40,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _updateActionCounts();
+    final now = DateTime.now();
+    _month = DateTime(now.year, now.month);
     SalesStore.state.addListener(_updateActionCounts);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateActionCounts());
   }
 
   @override
@@ -54,11 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final storeState = SalesStore.state.value;
     if (storeState is! StoreLoaded<List<Sale>>) return;
     final counts = DashboardActionCounts.compute(storeState.data);
-    if (!mounted) {
-      _actionCounts = counts;
-      return;
-    }
-    setState(() => _actionCounts = counts);
+    if (mounted) setState(() => _actionCounts = counts);
   }
 
   @override
@@ -66,59 +64,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final s = context.s;
     final storeState = SalesStore.state.value;
 
+    if (storeState is StoreError<List<Sale>>) {
+      return Scaffold(body: Center(child: Text(s.errorLoadingSales)));
+    }
+    if (storeState is! StoreLoaded<List<Sale>>) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final periodStats = DashboardPeriodStats.compute(
+      storeState.data,
+      _periodStart,
+      _periodEnd,
+    );
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: Builder(
-          builder: (context) {
-            if (storeState is StoreError<List<Sale>>) {
-              return Center(child: Text(s.errorLoadingSales));
-            }
-            if (storeState is! StoreLoaded<List<Sale>>) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final periodStats = DashboardPeriodStats.compute(
-              storeState.data,
-              _periodStart,
-              _periodEnd,
-            );
-
-            return ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                16 + MediaQuery.of(context).padding.bottom,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.of(context).padding.bottom,
+          ),
+          children: [
+            _MonthTabsControl(
+              selectedMonth: _month,
+              onMonthSelected: (m) => setState(() => _month = m),
+            ),
+            const SizedBox(height: 16),
+            _RevenueCard(
+              stats: periodStats,
+              onInsights: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const AnalyticsScreen(
+                    initialPeriod: DashboardPeriod.monthly,
+                  ),
+                ),
               ),
-              children: [
-                _MonthTabsControl(
-                  selectedMonth: _month,
-                  onMonthSelected: (m) => setState(() => _month = m),
-                ),
-                const SizedBox(height: 16),
-                _RevenueCard(
-                  stats: periodStats,
-                  onInsights: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AnalyticsScreen(
-                        initialPeriod: DashboardPeriod.monthly,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  s.actionNeeded,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _ActionGrid(actionCounts: _actionCounts),
-              ],
-            );
-          },
+            ),
+            const SizedBox(height: 24),
+            Text(
+              s.actionNeeded,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ActionGrid(actionCounts: _actionCounts),
+          ],
         ),
       ),
     );
