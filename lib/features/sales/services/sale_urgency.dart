@@ -35,7 +35,8 @@ extension SaleUrgency on Sale {
     if (payment.status == PaymentStatus.unpaid) {
       reasons.add(UrgencyReasonType.paymentPending);
     }
-    if (resolvedLevel == UrgencyLevel.overdue && shipment.status == ShipmentStatus.pending) {
+    if (resolvedLevel == UrgencyLevel.overdue &&
+        shipment.status == ShipmentStatus.pending) {
       reasons.add(UrgencyReasonType.notYetShipped);
     }
     return reasons;

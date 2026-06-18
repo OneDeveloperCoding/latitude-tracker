@@ -6,25 +6,26 @@ import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.d
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 Repair _makeRepair({RepairStatus status = RepairStatus.inProgress}) => Repair(
-      id: 'r1',
-      buyerId: 'b1',
-      buyerName: 'Ana',
-      itemDescription: 'Necklace',
-      itemCategory: 'Colares',
-      problemDescription: 'Broken clasp',
-      status: status,
-      payment: const SalePayment(
-        status: PaymentStatus.unpaid,
-        method: PaymentMethod.cash,
-      ),
-      returnDelivery: const RepairReturnDelivery(
-        type: DeliveryType.shipping,
-        status: ShipmentStatus.pending,
-      ),
-      createdAt: DateTime(2026),
-    );
+  id: 'r1',
+  buyerId: 'b1',
+  buyerName: 'Ana',
+  itemDescription: 'Necklace',
+  itemCategory: 'Colares',
+  problemDescription: 'Broken clasp',
+  status: status,
+  payment: const SalePayment(
+    status: PaymentStatus.unpaid,
+    method: PaymentMethod.cash,
+  ),
+  returnDelivery: const RepairReturnDelivery(
+    type: DeliveryType.shipping,
+    status: ShipmentStatus.pending,
+  ),
+  createdAt: DateTime(2026),
+);
 
-ChoiceChip _findChip(WidgetTester tester, String label) => tester.widget<ChoiceChip>(
+ChoiceChip _findChip(WidgetTester tester, String label) =>
+    tester.widget<ChoiceChip>(
       find.ancestor(
         of: find.text(label),
         matching: find.byType(ChoiceChip),

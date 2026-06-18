@@ -5,12 +5,16 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/repairs/services/repair_photo_service.dart';
-import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart' show PhotoViewer;
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart'
+    show PhotoViewer;
 
 class RepairPhotoGrid extends StatefulWidget {
-
   const RepairPhotoGrid({
-    required this.repairId, required this.photoUrls, required this.onUploaded, required this.onRemoved, super.key,
+    required this.repairId,
+    required this.photoUrls,
+    required this.onUploaded,
+    required this.onRemoved,
+    super.key,
   });
   final String repairId;
   final List<String> photoUrls;
@@ -115,26 +119,25 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
           runSpacing: 8,
           children: [
             ...photos.asMap().entries.map(
-                  (entry) => _DeletablePhotoTile(
-                    url: entry.value,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => PhotoViewer(
-                          urls: photos,
-                          initialIndex: entry.key,
-                        ),
-                      ),
+              (entry) => _DeletablePhotoTile(
+                url: entry.value,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => PhotoViewer(
+                      urls: photos,
+                      initialIndex: entry.key,
                     ),
-                    onDelete: () => _confirmRemove(entry.key),
                   ),
                 ),
+                onDelete: () => _confirmRemove(entry.key),
+              ),
+            ),
             ...List.generate(
               _uploadingCount,
               (_) => const _UploadingTile(),
             ),
-            if (!DemoMode.active.value)
-              _AddPhotoTile(onTap: _showSourcePicker),
+            if (!DemoMode.active.value) _AddPhotoTile(onTap: _showSourcePicker),
           ],
         ),
       ],
@@ -143,7 +146,6 @@ class _RepairPhotoGridState extends State<RepairPhotoGrid> {
 }
 
 class _DeletablePhotoTile extends StatelessWidget {
-
   const _DeletablePhotoTile({
     required this.url,
     required this.onTap,
@@ -157,8 +159,8 @@ class _DeletablePhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cacheSize =
-        (_displaySize * MediaQuery.devicePixelRatioOf(context)).round();
+    final cacheSize = (_displaySize * MediaQuery.devicePixelRatioOf(context))
+        .round();
     return SizedBox(
       width: _displaySize,
       height: _displaySize,
@@ -192,11 +194,11 @@ class _DeletablePhotoTile extends StatelessWidget {
                   height: 32,
                   decoration: const BoxDecoration(
                     color: Colors.black54,
-                    borderRadius:
-                        BorderRadius.only(bottomLeft: Radius.circular(8)),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(8),
+                    ),
                   ),
-                  child:
-                      const Icon(Icons.close, size: 20, color: Colors.white),
+                  child: const Icon(Icons.close, size: 20, color: Colors.white),
                 ),
               ),
             ),
@@ -213,7 +215,8 @@ class _DemoPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final idx = ((RegExp(r'\d+$').firstMatch(url) != null
+    final idx =
+        ((RegExp(r'\d+$').firstMatch(url) != null
                 ? int.parse(RegExp(r'\d+$').firstMatch(url)!.group(0)!)
                 : 1) -
             1) %
@@ -233,7 +236,8 @@ class _DemoPlaceholder extends StatelessWidget {
         ),
       ),
       child: const Center(
-          child: Icon(Icons.build_outlined, size: 32, color: Colors.white70)),
+        child: Icon(Icons.build_outlined, size: 32, color: Colors.white70),
+      ),
     );
   }
 }
@@ -256,7 +260,6 @@ class _UploadingTile extends StatelessWidget {
 }
 
 class _AddPhotoTile extends StatelessWidget {
-
   const _AddPhotoTile({required this.onTap});
   final VoidCallback onTap;
 
@@ -277,8 +280,10 @@ class _AddPhotoTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_a_photo,
-                color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.add_a_photo,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 4),
             Text(
               context.s.addPhoto,

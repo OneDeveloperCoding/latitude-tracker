@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Buyer {
-
   const Buyer({
     required this.id,
     required this.name,
-    required this.createdAt, this.instagramHandle,
+    required this.createdAt,
+    this.instagramHandle,
     this.phone,
     this.nif,
     this.tags = const [],
@@ -13,16 +13,17 @@ class Buyer {
   });
 
   factory Buyer.fromArchiveMap(Map<String, dynamic> map) => Buyer(
-        id: map['id'] as String? ?? '',
-        name: map['name'] as String? ?? '',
-        instagramHandle: map['instagramHandle'] as String?,
-        phone: map['phone'] as String?,
-        nif: map['nif'] as String?,
-        tags: List<String>.from(map['tags'] as List? ?? []),
-        notes: map['notes'] as String?,
-        createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ??
-            DateTime.fromMillisecondsSinceEpoch(0),
-      );
+    id: map['id'] as String? ?? '',
+    name: map['name'] as String? ?? '',
+    instagramHandle: map['instagramHandle'] as String?,
+    phone: map['phone'] as String?,
+    nif: map['nif'] as String?,
+    tags: List<String>.from(map['tags'] as List? ?? []),
+    notes: map['notes'] as String?,
+    createdAt:
+        DateTime.tryParse(map['createdAt'] as String? ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0),
+  );
 
   factory Buyer.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -47,14 +48,14 @@ class Buyer {
   final DateTime createdAt;
 
   Map<String, dynamic> toFirestore() => {
-        'name': name,
-        'instagramHandle': instagramHandle,
-        'phone': phone,
-        'nif': nif,
-        'tags': tags,
-        'notes': notes,
-        'createdAt': Timestamp.fromDate(createdAt),
-      };
+    'name': name,
+    'instagramHandle': instagramHandle,
+    'phone': phone,
+    'nif': nif,
+    'tags': tags,
+    'notes': notes,
+    'createdAt': Timestamp.fromDate(createdAt),
+  };
 
   Buyer copyWith({
     String? name,
@@ -63,17 +64,16 @@ class Buyer {
     String? nif,
     List<String>? tags,
     Object? notes = _unset,
-  }) =>
-      Buyer(
-        id: id,
-        name: name ?? this.name,
-        instagramHandle: instagramHandle ?? this.instagramHandle,
-        phone: phone ?? this.phone,
-        nif: nif ?? this.nif,
-        tags: tags ?? this.tags,
-        notes: notes == _unset ? this.notes : notes as String?,
-        createdAt: createdAt,
-      );
+  }) => Buyer(
+    id: id,
+    name: name ?? this.name,
+    instagramHandle: instagramHandle ?? this.instagramHandle,
+    phone: phone ?? this.phone,
+    nif: nif ?? this.nif,
+    tags: tags ?? this.tags,
+    notes: notes == _unset ? this.notes : notes as String?,
+    createdAt: createdAt,
+  );
 }
 
 const _unset = Object();

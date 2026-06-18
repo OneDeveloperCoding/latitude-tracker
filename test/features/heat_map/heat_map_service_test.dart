@@ -4,17 +4,16 @@ import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
-Sale _shippingSale(String? postalCode) => makeSale(
-      
-    ).copyWith(
-      shipment: SaleShipment(
-        type: DeliveryType.shipping,
-        status: ShipmentStatus.delivered,
-        postalCode: postalCode,
-      ),
-    );
+Sale _shippingSale(String? postalCode) => makeSale().copyWith(
+  shipment: SaleShipment(
+    type: DeliveryType.shipping,
+    status: ShipmentStatus.delivered,
+    postalCode: postalCode,
+  ),
+);
 
-Sale _handDeliverySale(String? postalCode) => makeSale(
+Sale _handDeliverySale(String? postalCode) =>
+    makeSale(
       delivery: DeliveryType.handDelivery,
     ).copyWith(
       shipment: SaleShipment(
@@ -24,7 +23,8 @@ Sale _handDeliverySale(String? postalCode) => makeSale(
       ),
     );
 
-Sale _pickupSale(String? postalCode) => makeSale(
+Sale _pickupSale(String? postalCode) =>
+    makeSale(
       delivery: DeliveryType.pickup,
     ).copyWith(
       shipment: SaleShipment(
@@ -107,7 +107,9 @@ void main() {
     });
 
     test('handDelivery type is included', () {
-      final counts = HeatMapService.postalCounts([_handDeliverySale('2000-001')]);
+      final counts = HeatMapService.postalCounts([
+        _handDeliverySale('2000-001'),
+      ]);
       expect(counts, {'2000': 1});
     });
 

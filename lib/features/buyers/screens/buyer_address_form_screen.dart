@@ -9,9 +9,9 @@ import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.d
 import 'package:latitude_tracker/features/buyers/widgets/address_form_fields.dart';
 
 class BuyerAddressFormScreen extends StatefulWidget {
-
   const BuyerAddressFormScreen({
-    required this.buyerId, super.key,
+    required this.buyerId,
+    super.key,
     this.address,
   });
   final String buyerId;
@@ -30,8 +30,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
 
   bool get _isEditing => widget.address != null;
 
-  bool get _hasChanges =>
-      _addressFormKey.currentState?.hasChanges ?? false;
+  bool get _hasChanges => _addressFormKey.currentState?.hasChanges ?? false;
 
   Future<void> _onPopInvoked(bool didPop, _) async {
     if (didPop) return;
@@ -76,34 +75,34 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(_isEditing ? s.editAddress : s.newAddress),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _save,
-            child: _isLoading
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(s.save),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            AddressFormFields(
-              key: _addressFormKey,
-              initial: widget.address,
-              showIsDefault: true,
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : _save,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(s.save),
             ),
-            const SizedBox(height: 32),
           ],
         ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              AddressFormFields(
+                key: _addressFormKey,
+                initial: widget.address,
+                showIsDefault: true,
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
   }
 }

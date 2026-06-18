@@ -9,14 +9,15 @@ class InMemoryBuyerRepository implements BuyerRepository {
   final _buyers = <Buyer>[];
   final _addresses = <String, List<BuyerAddress>>{};
   final _buyerController = StreamController<List<Buyer>>.broadcast();
-  final _addressControllers =
-      <String, StreamController<List<BuyerAddress>>>{};
+  final _addressControllers = <String, StreamController<List<BuyerAddress>>>{};
   final _allAddressesController =
       StreamController<List<BuyerAddress>>.broadcast();
 
   StreamController<List<BuyerAddress>> _addressController(String buyerId) =>
       _addressControllers.putIfAbsent(
-          buyerId, StreamController<List<BuyerAddress>>.broadcast);
+        buyerId,
+        StreamController<List<BuyerAddress>>.broadcast,
+      );
 
   List<Buyer> get _sorted =>
       List.from(_buyers)..sort((a, b) => a.name.compareTo(b.name));
@@ -62,8 +63,9 @@ class InMemoryBuyerRepository implements BuyerRepository {
   @override
   Stream<Buyer?> watchBuyer(String id) async* {
     yield _buyers.where((b) => b.id == id).firstOrNull;
-    yield* _buyerController.stream
-        .map((list) => list.where((b) => b.id == id).firstOrNull);
+    yield* _buyerController.stream.map(
+      (list) => list.where((b) => b.id == id).firstOrNull,
+    );
   }
 
   @override
@@ -97,7 +99,9 @@ class InMemoryBuyerRepository implements BuyerRepository {
 
   @override
   Future<bool> createBuyerIfNotExists(
-      Buyer buyer, List<BuyerAddress> addresses) async {
+    Buyer buyer,
+    List<BuyerAddress> addresses,
+  ) async {
     if (_buyers.any((b) => b.id == buyer.id)) return false;
     _buyers.add(buyer);
     _emitBuyers();

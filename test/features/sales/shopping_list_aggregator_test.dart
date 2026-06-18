@@ -12,15 +12,14 @@ ComponentItem makeComponent({
   bool isAvailable = false,
   String? notes,
   List<String> photoUrls = const [],
-}) =>
-    ComponentItem(
-      id: id,
-      name: name,
-      quantity: quantity,
-      isAvailable: isAvailable,
-      notes: notes,
-      photoUrls: photoUrls,
-    );
+}) => ComponentItem(
+  id: id,
+  name: name,
+  quantity: quantity,
+  isAvailable: isAvailable,
+  notes: notes,
+  photoUrls: photoUrls,
+);
 
 void main() {
   group('aggregateShoppingList', () {
@@ -89,26 +88,29 @@ void main() {
       expect(result.first.name, 'blue bead');
     });
 
-    test('merges same-named components across SaleItems and sums quantities', () {
-      final sale = makeSale(
-        items: [
-          makeSaleItem(
-            assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(quantity: 3)],
-          ),
-          makeSaleItem(
-            id: 'item-2',
-            assembly: AssemblyStatus.inProgress,
-            components: [makeComponent(quantity: 2)],
-          ),
-        ],
-      );
-      final result = aggregateShoppingList([sale]);
-      expect(result, hasLength(1));
-      expect(result.first.name, 'blue bead');
-      expect(result.first.totalQuantity, 5);
-      expect(result.first.sources, hasLength(2));
-    });
+    test(
+      'merges same-named components across SaleItems and sums quantities',
+      () {
+        final sale = makeSale(
+          items: [
+            makeSaleItem(
+              assembly: AssemblyStatus.inProgress,
+              components: [makeComponent(quantity: 3)],
+            ),
+            makeSaleItem(
+              id: 'item-2',
+              assembly: AssemblyStatus.inProgress,
+              components: [makeComponent(quantity: 2)],
+            ),
+          ],
+        );
+        final result = aggregateShoppingList([sale]);
+        expect(result, hasLength(1));
+        expect(result.first.name, 'blue bead');
+        expect(result.first.totalQuantity, 5);
+        expect(result.first.sources, hasLength(2));
+      },
+    );
 
     test('merges case-insensitively', () {
       final sale = makeSale(
@@ -170,8 +172,11 @@ void main() {
       expect(result.first.sources, hasLength(2));
     });
 
-    test('sorts by worst-case urgency: overdue before thisWeek before none', () {
-      // Pin clock to Wednesday 2026-06-04; week = Mon 2026-06-01 – Sun 2026-06-07.
+    test(
+        'sorts by worst-case urgency: overdue before thisWeek before none',
+        () {
+      // Pin clock to Wednesday 2026-06-04; week = Mon 2026-06-01 – Sun
+      // 2026-06-07.
       final now = DateTime(2026, 6, 4);
       final overdueDate = DateTime(2026, 5);
       final thisWeekDate = DateTime(2026, 6, 5);
@@ -181,23 +186,27 @@ void main() {
       final noUrgencyComp = makeComponent(id: 'c3', name: 'relaxed bead');
 
       Sale makeSaleWith(ComponentItem c, DateTime? scheduled) => Sale(
-            id: c.id,
-            buyerId: 'b1',
-            buyerName: 'Test',
-            items: [
-              makeSaleItem(
-                assembly: AssemblyStatus.inProgress,
-                components: [c],
-              ),
-            ],
-            payment:
-                const SalePayment(status: PaymentStatus.paid, method: PaymentMethod.mbWay),
-            shipment: const SaleShipment(
-                type: DeliveryType.shipping, status: ShipmentStatus.pending),
-            requiresNif: false,
-            createdAt: DateTime(2026),
-            scheduledDate: scheduled,
-          );
+        id: c.id,
+        buyerId: 'b1',
+        buyerName: 'Test',
+        items: [
+          makeSaleItem(
+            assembly: AssemblyStatus.inProgress,
+            components: [c],
+          ),
+        ],
+        payment: const SalePayment(
+          status: PaymentStatus.paid,
+          method: PaymentMethod.mbWay,
+        ),
+        shipment: const SaleShipment(
+          type: DeliveryType.shipping,
+          status: ShipmentStatus.pending,
+        ),
+        requiresNif: false,
+        createdAt: DateTime(2026),
+        scheduledDate: scheduled,
+      );
 
       final result = aggregateShoppingList([
         makeSaleWith(noUrgencyComp, null),
@@ -207,8 +216,11 @@ void main() {
 
       // Confirm urgency is computed correctly for this date (not tested here,
       // but the sort order depends on it).
-      expect(result.map((a) => a.name).toList(),
-          ['urgent bead', 'soon bead', 'relaxed bead']);
+      expect(result.map((a) => a.name).toList(), [
+        'urgent bead',
+        'soon bead',
+        'relaxed bead',
+      ]);
     });
 
     test('worst urgency of merged row is the highest across its sources', () {
@@ -224,9 +236,14 @@ void main() {
             components: [makeComponent(quantity: 2)],
           ),
         ],
-        payment: const SalePayment(status: PaymentStatus.paid, method: PaymentMethod.mbWay),
+        payment: const SalePayment(
+          status: PaymentStatus.paid,
+          method: PaymentMethod.mbWay,
+        ),
         shipment: const SaleShipment(
-            type: DeliveryType.shipping, status: ShipmentStatus.pending),
+          type: DeliveryType.shipping,
+          status: ShipmentStatus.pending,
+        ),
         requiresNif: false,
         createdAt: DateTime(2026),
         scheduledDate: overdueDate,

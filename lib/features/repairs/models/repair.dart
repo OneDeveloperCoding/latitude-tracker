@@ -11,7 +11,6 @@ enum RepairStatus {
 }
 
 class RepairReturnDelivery {
-
   const RepairReturnDelivery({
     required this.type,
     required this.status,
@@ -38,33 +37,38 @@ class RepairReturnDelivery {
   final String? postalCode;
 
   Map<String, dynamic> toMap() => {
-        'type': type.name,
-        'status': status.name,
-        'trackingCode': trackingCode,
-        'postalCode': postalCode,
-      };
+    'type': type.name,
+    'status': status.name,
+    'trackingCode': trackingCode,
+    'postalCode': postalCode,
+  };
 
   RepairReturnDelivery copyWith({
     DeliveryType? type,
     ShipmentStatus? status,
     Object? trackingCode = _unset,
     Object? postalCode = _unset,
-  }) =>
-      RepairReturnDelivery(
-        type: type ?? this.type,
-        status: status ?? this.status,
-        trackingCode:
-            trackingCode == _unset ? this.trackingCode : trackingCode as String?,
-        postalCode:
-            postalCode == _unset ? this.postalCode : postalCode as String?,
-      );
+  }) => RepairReturnDelivery(
+    type: type ?? this.type,
+    status: status ?? this.status,
+    trackingCode: trackingCode == _unset
+        ? this.trackingCode
+        : trackingCode as String?,
+    postalCode: postalCode == _unset ? this.postalCode : postalCode as String?,
+  );
 }
 
 class Repair {
-
   const Repair({
     required this.id,
-    required this.itemDescription, required this.itemCategory, required this.problemDescription, required this.status, required this.payment, required this.returnDelivery, required this.createdAt, this.buyerId,
+    required this.itemDescription,
+    required this.itemCategory,
+    required this.problemDescription,
+    required this.status,
+    required this.payment,
+    required this.returnDelivery,
+    required this.createdAt,
+    this.buyerId,
     this.buyerName,
     this.freeTextContact,
     this.linkedSaleId,
@@ -72,36 +76,38 @@ class Repair {
     this.materialsCost,
     this.photoUrls = const [],
   }) : assert(
-          buyerId != null || freeTextContact != null,
-          'A Repair must have either a buyerId or a freeTextContact',
-        );
+         buyerId != null || freeTextContact != null,
+         'A Repair must have either a buyerId or a freeTextContact',
+       );
 
   factory Repair.fromArchiveMap(Map<String, dynamic> map) => Repair(
-        id: map['id'] as String? ?? '',
-        buyerId: map['buyerId'] as String?,
-        buyerName: map['buyerName'] as String?,
-        // If buyerId is absent, freeTextContact must be non-null to satisfy the
-        // constructor assert. Fall back to '' rather than letting both be null.
-        freeTextContact: map['buyerId'] == null
-            ? (map['freeTextContact'] as String? ?? '')
-            : map['freeTextContact'] as String?,
-        linkedSaleId: map['linkedSaleId'] as String?,
-        itemDescription: map['itemDescription'] as String? ?? '',
-        itemCategory: map['itemCategory'] as String? ?? '',
-        problemDescription: map['problemDescription'] as String? ?? '',
-        workDone: map['workDone'] as String? ?? '',
-        materialsCost: (map['materialsCost'] as num?)?.toDouble(),
-        status: RepairStatus.values.firstWhere(
-          (e) => e.name == map['status'],
-          orElse: () => RepairStatus.received,
-        ),
-        payment: SalePayment.fromMap(
-            (map['payment'] as Map<String, dynamic>?) ?? const {}),
-        returnDelivery: RepairReturnDelivery.fromMap(
-            (map['returnDelivery'] as Map<String, dynamic>?) ?? const {}),
-        photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
-        createdAt: _parseArchiveDate(map['createdAt']),
-      );
+    id: map['id'] as String? ?? '',
+    buyerId: map['buyerId'] as String?,
+    buyerName: map['buyerName'] as String?,
+    // If buyerId is absent, freeTextContact must be non-null to satisfy the
+    // constructor assert. Fall back to '' rather than letting both be null.
+    freeTextContact: map['buyerId'] == null
+        ? (map['freeTextContact'] as String? ?? '')
+        : map['freeTextContact'] as String?,
+    linkedSaleId: map['linkedSaleId'] as String?,
+    itemDescription: map['itemDescription'] as String? ?? '',
+    itemCategory: map['itemCategory'] as String? ?? '',
+    problemDescription: map['problemDescription'] as String? ?? '',
+    workDone: map['workDone'] as String? ?? '',
+    materialsCost: (map['materialsCost'] as num?)?.toDouble(),
+    status: RepairStatus.values.firstWhere(
+      (e) => e.name == map['status'],
+      orElse: () => RepairStatus.received,
+    ),
+    payment: SalePayment.fromMap(
+      (map['payment'] as Map<String, dynamic>?) ?? const {},
+    ),
+    returnDelivery: RepairReturnDelivery.fromMap(
+      (map['returnDelivery'] as Map<String, dynamic>?) ?? const {},
+    ),
+    photoUrls: List<String>.from(map['photoUrls'] as List? ?? []),
+    createdAt: _parseArchiveDate(map['createdAt']),
+  );
 
   factory Repair.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -123,11 +129,14 @@ class Repair {
         orElse: () => RepairStatus.received,
       ),
       payment: SalePayment.fromMap(
-          (data['payment'] as Map<String, dynamic>?) ?? const {}),
+        (data['payment'] as Map<String, dynamic>?) ?? const {},
+      ),
       returnDelivery: RepairReturnDelivery.fromMap(
-          (data['returnDelivery'] as Map<String, dynamic>?) ?? const {}),
+        (data['returnDelivery'] as Map<String, dynamic>?) ?? const {},
+      ),
       photoUrls: List<String>.from(data['photoUrls'] as List? ?? []),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
+      createdAt:
+          (data['createdAt'] as Timestamp?)?.toDate() ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
@@ -158,7 +167,8 @@ class Repair {
 
   bool get isLinkedToBuyer => buyerId != null;
 
-  // A Repair is active (shown in default list) unless returned AND delivery confirmed.
+  // A Repair is active (shown in default list) unless returned AND delivery
+  // confirmed.
   bool get isActive =>
       !(status == RepairStatus.returned &&
           returnDelivery.status == ShipmentStatus.delivered);
@@ -169,27 +179,28 @@ class Repair {
     }
     if (value is Map && value['_seconds'] != null) {
       return DateTime.fromMillisecondsSinceEpoch(
-          (value['_seconds'] as int) * 1000);
+        (value['_seconds'] as int) * 1000,
+      );
     }
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Map<String, dynamic> toFirestore() => {
-        'buyerId': buyerId,
-        'buyerName': buyerName,
-        'freeTextContact': freeTextContact,
-        'linkedSaleId': linkedSaleId,
-        'itemDescription': itemDescription,
-        'itemCategory': itemCategory,
-        'problemDescription': problemDescription,
-        'workDone': workDone,
-        'materialsCost': materialsCost,
-        'status': status.name,
-        'payment': payment.toMap(),
-        'returnDelivery': returnDelivery.toMap(),
-        'photoUrls': photoUrls,
-        'createdAt': Timestamp.fromDate(createdAt),
-      };
+    'buyerId': buyerId,
+    'buyerName': buyerName,
+    'freeTextContact': freeTextContact,
+    'linkedSaleId': linkedSaleId,
+    'itemDescription': itemDescription,
+    'itemCategory': itemCategory,
+    'problemDescription': problemDescription,
+    'workDone': workDone,
+    'materialsCost': materialsCost,
+    'status': status.name,
+    'payment': payment.toMap(),
+    'returnDelivery': returnDelivery.toMap(),
+    'photoUrls': photoUrls,
+    'createdAt': Timestamp.fromDate(createdAt),
+  };
 
   Repair copyWith({
     String? itemDescription,
@@ -202,27 +213,29 @@ class Repair {
     SalePayment? payment,
     RepairReturnDelivery? returnDelivery,
     List<String>? photoUrls,
-    // Contact fields intentionally excluded — changing contact creates a new Repair
-  }) =>
-      Repair(
-        id: id,
-        buyerId: buyerId,
-        buyerName: buyerName,
-        freeTextContact: freeTextContact,
-        linkedSaleId:
-            linkedSaleId == _unset ? this.linkedSaleId : linkedSaleId as String?,
-        itemDescription: itemDescription ?? this.itemDescription,
-        itemCategory: itemCategory ?? this.itemCategory,
-        problemDescription: problemDescription ?? this.problemDescription,
-        workDone: workDone ?? this.workDone,
-        materialsCost:
-            materialsCost == _unset ? this.materialsCost : materialsCost as double?,
-        status: status ?? this.status,
-        payment: payment ?? this.payment,
-        returnDelivery: returnDelivery ?? this.returnDelivery,
-        photoUrls: photoUrls ?? this.photoUrls,
-        createdAt: createdAt,
-      );
+    // Contact fields intentionally excluded — changing contact creates a new
+    // Repair
+  }) => Repair(
+    id: id,
+    buyerId: buyerId,
+    buyerName: buyerName,
+    freeTextContact: freeTextContact,
+    linkedSaleId: linkedSaleId == _unset
+        ? this.linkedSaleId
+        : linkedSaleId as String?,
+    itemDescription: itemDescription ?? this.itemDescription,
+    itemCategory: itemCategory ?? this.itemCategory,
+    problemDescription: problemDescription ?? this.problemDescription,
+    workDone: workDone ?? this.workDone,
+    materialsCost: materialsCost == _unset
+        ? this.materialsCost
+        : materialsCost as double?,
+    status: status ?? this.status,
+    payment: payment ?? this.payment,
+    returnDelivery: returnDelivery ?? this.returnDelivery,
+    photoUrls: photoUrls ?? this.photoUrls,
+    createdAt: createdAt,
+  );
 }
 
 const _unset = Object();

@@ -5,7 +5,6 @@ import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
 import 'package:latitude_tracker/features/sales/screens/sales_list_screen.dart';
 
 class SalesRepairsTabScreen extends StatefulWidget {
-
   const SalesRepairsTabScreen({
     super.key,
     this.initialSaleFilters = const {},

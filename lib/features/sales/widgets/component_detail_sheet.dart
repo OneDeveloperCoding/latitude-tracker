@@ -3,7 +3,8 @@ import 'dart:async' show Timer;
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
-import 'package:latitude_tracker/features/sales/screens/shopping_list_screen.dart' show ShoppingListScreen;
+import 'package:latitude_tracker/features/sales/screens/shopping_list_screen.dart'
+    show ShoppingListScreen;
 import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 
@@ -19,9 +20,11 @@ import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 /// editable. Used from [ShoppingListScreen] where photos are needed for visual
 /// reference but management happens elsewhere.
 class ComponentDetailSheet extends StatefulWidget {
-
   const ComponentDetailSheet({
-    required this.component, required this.saleId, required this.itemId, super.key,
+    required this.component,
+    required this.saleId,
+    required this.itemId,
+    super.key,
     this.isReadOnly = false,
     this.onChanged,
     this.onPhotoAdded,
@@ -49,8 +52,9 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
   void initState() {
     super.initState();
     _component = widget.component;
-    _notesController =
-        TextEditingController(text: widget.component.notes ?? '');
+    _notesController = TextEditingController(
+      text: widget.component.notes ?? '',
+    );
   }
 
   @override
@@ -61,8 +65,7 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
   }
 
   void _toggle() {
-    final updated =
-        _component.copyWith(isAvailable: !_component.isAvailable);
+    final updated = _component.copyWith(isAvailable: !_component.isAvailable);
     setState(() => _component = updated);
     widget.onChanged?.call(updated);
   }
@@ -98,7 +101,11 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
       builder: (_, scrollController) => ListView(
         controller: scrollController,
         padding: EdgeInsets.fromLTRB(
-            16, 8, 16, 16 + MediaQuery.of(context).padding.bottom),
+          16,
+          8,
+          16,
+          16 + MediaQuery.of(context).padding.bottom,
+        ),
         children: [
           Center(
             child: Container(
@@ -143,8 +150,8 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
             Text(
               _component.notes!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -152,8 +159,8 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
           Text(
             s.sectionPhotos,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 8),
           if (widget.isReadOnly)
@@ -165,11 +172,11 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
               photoUrls: photos,
               uploadCallback: (source) =>
                   _photoService.pickAndUploadForComponent(
-                saleId: widget.saleId,
-                itemId: widget.itemId,
-                componentId: _component.id,
-                source: source,
-              ),
+                    saleId: widget.saleId,
+                    itemId: widget.itemId,
+                    componentId: _component.id,
+                    source: source,
+                  ),
               onChanged: _updatePhotos,
               onPhotoAdded: widget.onPhotoAdded,
               onPhotoRemoved: widget.onPhotoRemoved,
@@ -181,7 +188,6 @@ class _ComponentDetailSheetState extends State<ComponentDetailSheet> {
 }
 
 class _ReadOnlyPhotoGrid extends StatelessWidget {
-
   const _ReadOnlyPhotoGrid({required this.photos});
   final List<String> photos;
 
@@ -191,14 +197,17 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
       return Text(
         context.s.noPhotos,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       );
     }
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: photos.asMap().entries.map(
+      children: photos
+          .asMap()
+          .entries
+          .map(
             (e) => PhotoThumbnail(
               url: e.value,
               size: 96,
@@ -210,7 +219,8 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
                 ),
               ),
             ),
-          ).toList(),
+          )
+          .toList(),
     );
   }
 }
@@ -219,9 +229,10 @@ class _ReadOnlyPhotoGrid extends StatelessWidget {
 /// Shows a camera icon when count is 0 (to signal photos are available),
 /// and a filled badge with the count when photos exist.
 class ComponentPhotoBadge extends StatelessWidget {
-
   const ComponentPhotoBadge({
-    required this.count, required this.onTap, super.key,
+    required this.count,
+    required this.onTap,
+    super.key,
   });
   final int count;
   final VoidCallback onTap;
@@ -243,14 +254,18 @@ class ComponentPhotoBadge extends StatelessWidget {
                   Text(
                     '$count',
                     style: TextStyle(
-                        fontSize: 11,
-                        color: color,
-                        fontWeight: FontWeight.w600),
+                      fontSize: 11,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               )
-            : Icon(Icons.add_a_photo_outlined,
-                size: 16, color: color.withAlpha(120)),
+            : Icon(
+                Icons.add_a_photo_outlined,
+                size: 16,
+                color: color.withAlpha(120),
+              ),
       ),
     );
   }
@@ -259,9 +274,10 @@ class ComponentPhotoBadge extends StatelessWidget {
 /// Compact inline stepper (− count +) for a [ComponentItem] quantity.
 /// Enforces a minimum of 1. Only the buttons trigger [onChanged].
 class ComponentQuantityStepper extends StatelessWidget {
-
   const ComponentQuantityStepper({
-    required this.quantity, required this.onChanged, super.key,
+    required this.quantity,
+    required this.onChanged,
+    super.key,
   });
   final int quantity;
   final ValueChanged<int> onChanged;
@@ -282,7 +298,10 @@ class ComponentQuantityStepper extends StatelessWidget {
           child: Text(
             '$quantity',
             style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w600, color: color),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ),
         _StepButton(
@@ -298,9 +317,11 @@ class ComponentQuantityStepper extends StatelessWidget {
 }
 
 class _StepButton extends StatelessWidget {
-
-  const _StepButton(
-      {required this.icon, required this.color, required this.onPressed});
+  const _StepButton({
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
   final IconData icon;
   final Color color;
   final VoidCallback? onPressed;
@@ -312,8 +333,11 @@ class _StepButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: Icon(icon,
-            size: 16, color: onPressed != null ? color : color.withAlpha(60)),
+        child: Icon(
+          icon,
+          size: 16,
+          color: onPressed != null ? color : color.withAlpha(60),
+        ),
       ),
     );
   }

@@ -34,9 +34,11 @@ class ShoppingListScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_outline,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(height: 12),
                   Text(s.nothingLeftToBuy),
                 ],
@@ -44,15 +46,21 @@ class ShoppingListScreen extends StatelessWidget {
             );
           }
 
-          final totalSources =
-              aggregated.fold(0, (sum, a) => sum + a.sources.length);
+          final totalSources = aggregated.fold(
+            0,
+            (sum, a) => sum + a.sources.length,
+          );
           final urgentCount = aggregated
               .where((a) => a.worstUrgency != UrgencyLevel.none)
               .length;
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
-                16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+              16,
+              16,
+              16,
+              16 + MediaQuery.of(context).padding.bottom,
+            ),
             children: [
               _ShoppingListHeader(
                 totalMaterials: aggregated.length,
@@ -60,8 +68,7 @@ class ShoppingListScreen extends StatelessWidget {
                 urgentCount: urgentCount,
               ),
               const SizedBox(height: 16),
-              ...aggregated
-                  .map((a) => _AggregatedComponentTile(aggregated: a)),
+              ...aggregated.map((a) => _AggregatedComponentTile(aggregated: a)),
             ],
           );
         },
@@ -71,7 +78,6 @@ class ShoppingListScreen extends StatelessWidget {
 }
 
 class _ShoppingListHeader extends StatelessWidget {
-
   const _ShoppingListHeader({
     required this.totalMaterials,
     required this.totalSources,
@@ -89,8 +95,8 @@ class _ShoppingListHeader extends StatelessWidget {
         Text(
           s.materialsAcrossItems(totalMaterials, totalSources),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         if (urgentCount > 0) ...[
           const SizedBox(width: 8),
@@ -100,7 +106,8 @@ class _ShoppingListHeader extends StatelessWidget {
               color: Theme.of(context).colorScheme.error.withAlpha(30),
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.error.withAlpha(100)),
+                color: Theme.of(context).colorScheme.error.withAlpha(100),
+              ),
             ),
             child: Text(
               s.nUrgent(urgentCount),
@@ -118,7 +125,6 @@ class _ShoppingListHeader extends StatelessWidget {
 }
 
 class _AggregatedComponentTile extends StatefulWidget {
-
   const _AggregatedComponentTile({required this.aggregated});
   final AggregatedComponent aggregated;
 
@@ -148,7 +154,8 @@ class _AggregatedComponentTileState extends State<_AggregatedComponentTile> {
       child: Container(
         decoration: accent != null
             ? BoxDecoration(
-                border: Border(left: BorderSide(color: accent, width: 4)))
+                border: Border(left: BorderSide(color: accent, width: 4)),
+              )
             : null,
         child: Column(
           children: [
@@ -158,9 +165,11 @@ class _AggregatedComponentTileState extends State<_AggregatedComponentTile> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    Icon(Icons.shopping_cart_outlined,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.error),
+                    Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -203,7 +212,6 @@ class _AggregatedComponentTileState extends State<_AggregatedComponentTile> {
 }
 
 class _SourceRow extends StatelessWidget {
-
   const _SourceRow({required this.source});
   final ComponentSource source;
 
@@ -217,7 +225,8 @@ class _SourceRow extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute<void>(
-            builder: (_) => SaleDetailScreen(saleId: sale.id)),
+          builder: (_) => SaleDetailScreen(saleId: sale.id),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(36, 8, 12, 8),
@@ -230,9 +239,8 @@ class _SourceRow extends StatelessWidget {
                   child: Text(
                     '${sale.buyerName} · ${item.description}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -242,10 +250,9 @@ class _SourceRow extends StatelessWidget {
                   Text(
                     '× ${c.quantity}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
                 if (c.photoUrls.isNotEmpty) ...[
@@ -279,12 +286,11 @@ class _SourceRow extends StatelessWidget {
                 child: Text(
                   c.notes!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant
-                            .withAlpha(180),
-                        fontStyle: FontStyle.italic,
-                      ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withAlpha(180),
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
           ],
@@ -295,7 +301,6 @@ class _SourceRow extends StatelessWidget {
 }
 
 class _DueDateLabel extends StatelessWidget {
-
   const _DueDateLabel({required this.sale});
   final Sale sale;
 
@@ -321,17 +326,17 @@ class _DueDateLabel extends StatelessWidget {
     final label = urgency == UrgencyLevel.overdue
         ? s.daysOverdue(days.abs())
         : days == 0
-            ? s.today
-            : days == 1
-                ? s.tomorrow
-                : DateFormat('dd MMM').format(sale.scheduledDate!);
+        ? s.today
+        : days == 1
+        ? s.tomorrow
+        : DateFormat('dd MMM').format(sale.scheduledDate!);
 
     return Text(
       label,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
+        color: color,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 }

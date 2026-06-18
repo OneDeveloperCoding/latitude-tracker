@@ -27,7 +27,9 @@ const kAnalyticsCategoryColors = [
 
 Color analyticsColorForCategory(String category, List<String> ordered) {
   final i = ordered.indexOf(category);
-  return i < 0 ? Colors.grey : kAnalyticsCategoryColors[i % kAnalyticsCategoryColors.length];
+  return i < 0
+      ? Colors.grey
+      : kAnalyticsCategoryColors[i % kAnalyticsCategoryColors.length];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,9 +37,9 @@ Color analyticsColorForCategory(String category, List<String> ordered) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsPeriodHeader extends StatelessWidget {
-
   const AnalyticsPeriodHeader({
-    required this.label, super.key,
+    required this.label,
+    super.key,
     this.onPrevious,
     this.onNext,
   });
@@ -53,8 +55,7 @@ class AnalyticsPeriodHeader extends StatelessWidget {
         IconButton(
           icon: Icon(
             Icons.chevron_left,
-            color:
-                onPrevious == null ? Theme.of(context).disabledColor : null,
+            color: onPrevious == null ? Theme.of(context).disabledColor : null,
           ),
           onPressed: onPrevious,
         ),
@@ -82,9 +83,10 @@ class AnalyticsPeriodHeader extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsMetricToggle extends StatelessWidget {
-
   const AnalyticsMetricToggle({
-    required this.metric, required this.onChanged, super.key,
+    required this.metric,
+    required this.onChanged,
+    super.key,
   });
   final AnalyticsMetric metric;
   final ValueChanged<AnalyticsMetric> onChanged;
@@ -117,9 +119,11 @@ class AnalyticsMetricToggle extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsRevenueSummaryCard extends StatelessWidget {
-
   const AnalyticsRevenueSummaryCard({
-    required this.currentStats, required this.prevStats, required this.metric, super.key,
+    required this.currentStats,
+    required this.prevStats,
+    required this.metric,
+    super.key,
   });
   final ({double revenue, int count}) currentStats;
   final ({double revenue, int count}) prevStats;
@@ -137,8 +141,9 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
     final prevValue = metric == AnalyticsMetric.revenue
         ? prevStats.revenue
         : prevStats.count.toDouble();
-    final trendPct =
-        prevValue > 0 ? (currentValue - prevValue) / prevValue * 100 : null;
+    final trendPct = prevValue > 0
+        ? (currentValue - prevValue) / prevValue * 100
+        : null;
 
     final primary = metric == AnalyticsMetric.revenue
         ? currency.format(currentStats.revenue)
@@ -164,15 +169,15 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
                   Text(
                     primary,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     secondary,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                        ),
+                      color: colorScheme.onPrimaryContainer,
+                    ),
                   ),
                   if (metric == AnalyticsMetric.revenue && avgOrder != null)
                     Padding(
@@ -183,16 +188,18 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
                           Icon(
                             Icons.show_chart,
                             size: 13,
-                            color: colorScheme.onPrimaryContainer.withAlpha(180),
+                            color: colorScheme.onPrimaryContainer.withAlpha(
+                              180,
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${s.avgSaleMetric} ${currency.format(avgOrder)}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onPrimaryContainer
-                                          .withAlpha(180),
-                                    ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: colorScheme.onPrimaryContainer
+                                      .withAlpha(180),
+                                ),
                           ),
                         ],
                       ),
@@ -216,9 +223,10 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsStackedBarChart extends StatefulWidget {
-
   const AnalyticsStackedBarChart({
-    required this.periodsData, required this.periodLabels, super.key,
+    required this.periodsData,
+    required this.periodLabels,
+    super.key,
   });
   final List<List<({String category, double revenue})>> periodsData;
   final List<String> periodLabels;
@@ -274,22 +282,20 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
     final colorScheme = Theme.of(context).colorScheme;
     final orderedCategories = _orderedCategories();
 
-    final periodTotals = widget.periodsData
-        .map(_sumRevenue)
-        .toList();
+    final periodTotals = widget.periodsData.map(_sumRevenue).toList();
 
     final categoryValues = {
       for (final cat in orderedCategories)
         cat: widget.periodsData
-            .map((period) => _sumRevenue(period.where((e) => e.category == cat)))
+            .map(
+              (period) => _sumRevenue(period.where((e) => e.category == cat)),
+            )
             .toList(),
     };
 
     final shownCategories = _selectedCategories.isEmpty
         ? orderedCategories
-        : orderedCategories
-            .where(_selectedCategories.contains)
-            .toList();
+        : orderedCategories.where(_selectedCategories.contains).toList();
 
     return Card(
       child: Padding(
@@ -300,9 +306,9 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
             Text(
               context.s.trendsRevenueByCategory.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.outline,
-                    letterSpacing: 0.8,
-                  ),
+                color: colorScheme.outline,
+                letterSpacing: 0.8,
+              ),
             ),
             const SizedBox(height: 12),
             GestureDetector(
@@ -329,9 +335,7 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
                         child: Text(
                           widget.periodLabels[i],
                           textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
+                          style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 fontSize: 10,
                                 color: i == widget.periodLabels.length - 1
@@ -353,9 +357,7 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
                                 ? '€${periodTotals[i].toStringAsFixed(0)}'
                                 : '—',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -374,8 +376,7 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
             if (_showValues && shownCategories.isNotEmpty) ...[
               const SizedBox(height: 8),
               ...shownCategories.map((cat) {
-                final color =
-                    analyticsColorForCategory(cat, orderedCategories);
+                final color = analyticsColorForCategory(cat, orderedCategories);
                 final values = categoryValues[cat]!;
                 final lastIndex = values.length - 1;
                 return Padding(
@@ -386,7 +387,9 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     child: Row(
                       children: List.generate(
                         values.length,
@@ -423,8 +426,10 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: orderedCategories.map((cat) {
-                    final color =
-                        analyticsColorForCategory(cat, orderedCategories);
+                    final color = analyticsColorForCategory(
+                      cat,
+                      orderedCategories,
+                    );
                     final isSelected = _selectedCategories.contains(cat);
                     return Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -463,7 +468,6 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
 }
 
 class _AnalyticsStackedBarPainter extends CustomPainter {
-
   const _AnalyticsStackedBarPainter({
     required this.periodsData,
     required this.orderedCategories,
@@ -502,21 +506,26 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
 
       canvas
         ..save()
-        ..clipRRect(RRect.fromLTRBR(
-          barLeft,
-          size.height - totalBarH,
-          barRight,
-          size.height,
-          const Radius.circular(3),
-        ));
+        ..clipRRect(
+          RRect.fromLTRBR(
+            barLeft,
+            size.height - totalBarH,
+            barRight,
+            size.height,
+            const Radius.circular(3),
+          ),
+        );
 
       var bottomY = size.height;
       for (final e in period) {
-        final categoryActive = selectedCategories.isEmpty ||
+        final categoryActive =
+            selectedCategories.isEmpty ||
             selectedCategories.contains(e.category);
         final effectiveColor = categoryActive
-            ? analyticsColorForCategory(e.category, orderedCategories)
-                .withAlpha((255 * periodAlpha).round())
+            ? analyticsColorForCategory(
+                e.category,
+                orderedCategories,
+              ).withAlpha((255 * periodAlpha).round())
             : Colors.grey.withAlpha(35);
         final segH = (e.revenue / maxTotal) * size.height;
         canvas.drawRect(
@@ -545,9 +554,12 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsComparisonRow extends StatelessWidget {
-
   const AnalyticsComparisonRow({
-    required this.label, required this.currentStats, required this.comparisonStats, required this.metric, super.key,
+    required this.label,
+    required this.currentStats,
+    required this.comparisonStats,
+    required this.metric,
+    super.key,
   });
   final String label;
   final ({double revenue, int count}) currentStats;
@@ -598,23 +610,23 @@ class AnalyticsComparisonRow extends StatelessWidget {
                     ? currency.format(comparisonStats.revenue)
                     : '${comparisonStats.count}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+                  color: colorScheme.onSurface,
+                ),
               ),
               Text(
                 metric == AnalyticsMetric.revenue
                     ? s.nSales(comparisonStats.count)
                     : currency.format(comparisonStats.revenue),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
+                  color: colorScheme.outline,
+                ),
               ),
             ] else
               Text(
                 s.trendsNoPreviousData,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
+                  color: colorScheme.outline,
+                ),
               ),
           ],
         ),
@@ -624,7 +636,6 @@ class AnalyticsComparisonRow extends StatelessWidget {
 }
 
 class AnalyticsTrendBadge extends StatelessWidget {
-
   const AnalyticsTrendBadge({required this.pct, required this.up, super.key});
   final double pct;
   final bool up;
@@ -641,9 +652,9 @@ class AnalyticsTrendBadge extends StatelessWidget {
       child: Text(
         '${up ? '↑' : '↓'} ${pct.toStringAsFixed(0)}%',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -654,7 +665,6 @@ class AnalyticsTrendBadge extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsPaymentMethodSection extends StatelessWidget {
-
   const AnalyticsPaymentMethodSection({required this.breakdown, super.key});
   final Map<PaymentMethod, ({double revenue, int count})> breakdown;
 
@@ -664,8 +674,10 @@ class AnalyticsPaymentMethodSection extends StatelessWidget {
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final colorScheme = Theme.of(context).colorScheme;
 
-    final totalRevenue =
-        breakdown.values.fold<double>(0, (sum, e) => sum + e.revenue);
+    final totalRevenue = breakdown.values.fold<double>(
+      0,
+      (sum, e) => sum + e.revenue,
+    );
     final sorted = breakdown.entries.toList()
       ..sort((a, b) => b.value.revenue.compareTo(a.value.revenue));
 
@@ -678,9 +690,9 @@ class AnalyticsPaymentMethodSection extends StatelessWidget {
             Text(
               s.trendsPaymentMethods.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.outline,
-                    letterSpacing: 0.8,
-                  ),
+                color: colorScheme.outline,
+                letterSpacing: 0.8,
+              ),
             ),
             const SizedBox(height: 10),
             ...sorted.map(
@@ -689,7 +701,8 @@ class AnalyticsPaymentMethodSection extends StatelessWidget {
                 child: AnalyticsBarRow(
                   label: entry.key.label,
                   sublabel:
-                      '${currency.format(entry.value.revenue)} · ${s.nSales(entry.value.count)}',
+                      '${currency.format(entry.value.revenue)} ·'
+                      ' ${s.nSales(entry.value.count)}',
                   fraction: totalRevenue > 0
                       ? entry.value.revenue / totalRevenue
                       : 0,
@@ -710,7 +723,6 @@ class AnalyticsPaymentMethodSection extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsTopCategoriesSection extends StatelessWidget {
-
   const AnalyticsTopCategoriesSection({required this.breakdown, super.key});
   final List<({String category, double revenue})> breakdown;
 
@@ -730,9 +742,9 @@ class AnalyticsTopCategoriesSection extends StatelessWidget {
             Text(
               s.dashboardTopCategories.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.outline,
-                    letterSpacing: 0.8,
-                  ),
+                color: colorScheme.outline,
+                letterSpacing: 0.8,
+              ),
             ),
             const SizedBox(height: 10),
             ...breakdown.map(
@@ -759,9 +771,13 @@ class AnalyticsTopCategoriesSection extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsBarRow extends StatelessWidget {
-
   const AnalyticsBarRow({
-    required this.label, required this.sublabel, required this.fraction, required this.barColor, required this.trackColor, super.key,
+    required this.label,
+    required this.sublabel,
+    required this.fraction,
+    required this.barColor,
+    required this.trackColor,
+    super.key,
   });
   final String label;
   final String sublabel;
@@ -785,10 +801,9 @@ class AnalyticsBarRow extends StatelessWidget {
             ),
             Text(
               sublabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -803,7 +818,8 @@ class AnalyticsBarRow extends StatelessWidget {
                   Container(color: trackColor, width: constraints.maxWidth),
                   Container(
                     color: barColor,
-                    width: constraints.maxWidth *
+                    width:
+                        constraints.maxWidth *
                         math.max(0, math.min(1, fraction)),
                   ),
                 ],

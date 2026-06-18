@@ -24,7 +24,9 @@ void main() {
     });
 
     test('overdue when scheduled before start of this week', () {
-      final sale = makeSale(scheduledDate: DateTime(2026, 5, 31)); // before Mon Jun 1
+      final sale = makeSale(
+        scheduledDate: DateTime(2026, 5, 31),
+      ); // before Mon Jun 1
       expect(sale.urgencyLevel(now: _kNow), UrgencyLevel.overdue);
     });
 
@@ -39,7 +41,9 @@ void main() {
     });
 
     test('none when scheduled start of next week', () {
-      final sale = makeSale(scheduledDate: DateTime(2026, 6, 8)); // Mon of next week
+      final sale = makeSale(
+        scheduledDate: DateTime(2026, 6, 8),
+      ); // Mon of next week
       expect(sale.urgencyLevel(now: _kNow), UrgencyLevel.none);
     });
   });
@@ -139,11 +143,14 @@ void main() {
         payment: PaymentStatus.unpaid,
       );
       final reasons = sale.urgencyReasons(now: _kNow);
-      expect(reasons, containsAll([
-        UrgencyReasonType.assemblyNotReady,
-        UrgencyReasonType.paymentPending,
-        UrgencyReasonType.notYetShipped,
-      ]));
+      expect(
+        reasons,
+        containsAll([
+          UrgencyReasonType.assemblyNotReady,
+          UrgencyReasonType.paymentPending,
+          UrgencyReasonType.notYetShipped,
+        ]),
+      );
       expect(reasons, hasLength(3));
     });
   });

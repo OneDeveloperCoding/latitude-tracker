@@ -16,7 +16,6 @@ import 'package:latitude_tracker/features/sales/widgets/buyer_picker_screen.dart
 import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
 
 class NewSaleScreen extends StatefulWidget {
-
   const NewSaleScreen({super.key, this.sale, this.isDuplicate = false});
   final Sale? sale;
   final bool isDuplicate;
@@ -63,37 +62,41 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final sale = widget.sale;
     final dup = widget.isDuplicate;
 
-    _notesController =
-        TextEditingController(text: dup ? '' : (sale?.notes ?? ''));
+    _notesController = TextEditingController(
+      text: dup ? '' : (sale?.notes ?? ''),
+    );
     _trackingCodeController = TextEditingController(
-        text: dup ? '' : (sale?.shipment.trackingCode ?? ''));
-    _postalCodeController =
-        TextEditingController(text: sale?.shipment.postalCode ?? '');
+      text: dup ? '' : (sale?.shipment.trackingCode ?? ''),
+    );
+    _postalCodeController = TextEditingController(
+      text: sale?.shipment.postalCode ?? '',
+    );
 
     _paymentMethod = sale?.payment.method ?? PaymentMethod.mbWay;
-    _paymentStatus =
-        dup ? PaymentStatus.unpaid : (sale?.payment.status ?? PaymentStatus.unpaid);
+    _paymentStatus = dup
+        ? PaymentStatus.unpaid
+        : (sale?.payment.status ?? PaymentStatus.unpaid);
     _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
     _requiresNif = sale?.requiresNif ?? false;
     _scheduledDate = dup ? null : sale?.scheduledDate;
-    _saleId = _isEditing
-        ? sale!.id
-        : newId();
+    _saleId = _isEditing ? sale!.id : newId();
 
     if (dup) {
       // Duplicate: reset assembly/payment but keep descriptions and categories.
       // Assign new IDs to all items so photos don't conflict.
       _items = (sale?.items ?? [])
-          .map((item) => SaleItem(
-                id: newId(),
-                description: item.description,
-                category: item.category,
-                price: item.price,
-                assemblyStatus: AssemblyStatus.notStarted,
-                components: item.components
-                    .map((c) => c.copyWith(isAvailable: false))
-                    .toList(),
-              ))
+          .map(
+            (item) => SaleItem(
+              id: newId(),
+              description: item.description,
+              category: item.category,
+              price: item.price,
+              assemblyStatus: AssemblyStatus.notStarted,
+              components: item.components
+                  .map((c) => c.copyWith(isAvailable: false))
+                  .toList(),
+            ),
+          )
           .toList();
       _originalItemIds = {};
     } else {
@@ -168,13 +171,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       ),
     );
     if (!mounted) return;
-    final addresses =
-        await _buyerRepository.watchAddresses(_selectedBuyer!.id).first;
-    final newAddress =
-        addresses.where((a) => !existingIds.contains(a.id)).firstOrNull;
+    final addresses = await _buyerRepository
+        .watchAddresses(_selectedBuyer!.id)
+        .first;
+    final newAddress = addresses
+        .where((a) => !existingIds.contains(a.id))
+        .firstOrNull;
     setState(() {
       _buyerAddresses = addresses;
-      _selectedAddress = newAddress ?? _selectedAddress ?? addresses.firstOrNull;
+      _selectedAddress =
+          newAddress ?? _selectedAddress ?? addresses.firstOrNull;
       if (_selectedAddress != null) {
         _postalCodeController.text = _selectedAddress!.postalCode;
       }
@@ -201,7 +207,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   Future<void> _removeItem(int index) async {
     final item = _items[index];
-    // If this item was in the original sale, queue its photos for deletion on save.
+    // If this item was in the original sale, queue its photos for deletion on
+    // save.
     if (_originalItemIds.contains(item.id)) {
       _pendingDeletions.addAll(item.photoUrls);
     } else {
@@ -219,7 +226,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Future<void> _cancel() async {
     try {
       if (_isEditing) {
-        // Delete photos from newly added items (those not in the original sale).
+        // Delete photos from newly added items (those not in the original
+        // sale).
         for (final item in _items) {
           if (!_originalItemIds.contains(item.id)) {
             for (final url in item.photoUrls) {
@@ -241,13 +249,15 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Future<void> _save() async {
     final s = context.s;
     if (_selectedBuyer == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(s.buyerRequired)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(s.buyerRequired)));
       return;
     }
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(s.atLeastOneItem)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(s.atLeastOneItem)));
       return;
     }
     setState(() => _isLoading = true);
@@ -261,7 +271,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ? _nullIfEmpty(_trackingCodeController.text)
             : null,
         addressId: _selectedAddress?.id,
-        postalCode: (_deliveryType == DeliveryType.shipping ||
+        postalCode:
+            (_deliveryType == DeliveryType.shipping ||
                 _deliveryType == DeliveryType.handDelivery)
             ? _nullIfEmpty(_postalCodeController.text)
             : null,
@@ -302,8 +313,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     } catch (e, st) {
       logError(e, st);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(s.errorSavingSaleMsg(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(s.errorSavingSaleMsg(e))));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -322,11 +334,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEditing
-              ? s.editSale
-              : widget.isDuplicate
-                  ? s.duplicateSale
-                  : s.newSale),
+          title: Text(
+            _isEditing
+                ? s.editSale
+                : widget.isDuplicate
+                ? s.duplicateSale
+                : s.newSale,
+          ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _cancel,
@@ -346,7 +360,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ),
         body: ListView(
           padding: EdgeInsets.fromLTRB(
-              16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+            16,
+            16,
+            16,
+            16 + MediaQuery.of(context).padding.bottom,
+          ),
           children: [
             // ── Buyer ──────────────────────────────────────────────────────
             _FormCard(
@@ -368,13 +386,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                       s.previousSales(
                         _selectedBuyerStats!.saleCount,
                         _selectedBuyerStats!.lastPurchaseAt != null
-                            ? DateFormat('MMM yyyy')
-                                .format(_selectedBuyerStats!.lastPurchaseAt!)
+                            ? DateFormat(
+                                'MMM yyyy',
+                              ).format(_selectedBuyerStats!.lastPurchaseAt!)
                             : '',
                       ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ],
                 ],
@@ -388,18 +407,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   ? Text(
                       '${s.saleTotal}: €${_totalPrice.toStringAsFixed(2)}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     )
                   : null,
               child: Column(
                 children: [
-                  ..._items.asMap().entries.map((entry) => _ItemRow(
-                        item: entry.value,
-                        onEdit: () => _editItem(entry.key),
-                        onDelete: () => _removeItem(entry.key),
-                      )),
+                  ..._items.asMap().entries.map(
+                    (entry) => _ItemRow(
+                      item: entry.value,
+                      onEdit: () => _editItem(entry.key),
+                      onDelete: () => _removeItem(entry.key),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   SizedBox(
                     width: double.infinity,
@@ -425,10 +446,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                       border: const OutlineInputBorder(),
                     ),
                     items: kPaymentMethodOrder
-                        .map((m) => DropdownMenuItem(
-                              value: m,
-                              child: PaymentMethodDropdownItem(m),
-                            ))
+                        .map(
+                          (m) => DropdownMenuItem(
+                            value: m,
+                            child: PaymentMethodDropdownItem(m),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => _paymentMethod = v!),
                   ),
@@ -436,8 +459,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(s.paid),
                     value: _paymentStatus == PaymentStatus.paid,
-                    onChanged: (v) => setState(() => _paymentStatus =
-                        v ? PaymentStatus.paid : PaymentStatus.unpaid),
+                    onChanged: (v) => setState(
+                      () => _paymentStatus = v
+                          ? PaymentStatus.paid
+                          : PaymentStatus.unpaid,
+                    ),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -459,17 +485,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     showSelectedIcon: false,
                     segments: [
                       ButtonSegment(
-                          value: DeliveryType.shipping,
-                          icon: const Icon(Icons.local_shipping),
-                          label: Text(s.shipping)),
+                        value: DeliveryType.shipping,
+                        icon: const Icon(Icons.local_shipping),
+                        label: Text(s.shipping),
+                      ),
                       ButtonSegment(
-                          value: DeliveryType.pickup,
-                          icon: const Icon(Icons.store),
-                          label: Text(s.pickup)),
+                        value: DeliveryType.pickup,
+                        icon: const Icon(Icons.store),
+                        label: Text(s.pickup),
+                      ),
                       ButtonSegment(
-                          value: DeliveryType.handDelivery,
-                          icon: const Icon(Icons.directions_walk),
-                          label: Text(s.handDelivery)),
+                        value: DeliveryType.handDelivery,
+                        icon: const Icon(Icons.directions_walk),
+                        label: Text(s.handDelivery),
+                      ),
                     ],
                     selected: {_deliveryType},
                     onSelectionChanged: (v) =>
@@ -487,14 +516,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                           border: const OutlineInputBorder(),
                         ),
                         items: _buyerAddresses
-                            .map((a) => DropdownMenuItem(
-                                  value: a,
-                                  child: Text(
-                                    '${a.label} — ${a.street}, ${a.city}',
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                ))
+                            .map(
+                              (a) => DropdownMenuItem(
+                                value: a,
+                                child: Text(
+                                  '${a.label} — ${a.street}, ${a.city}',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (a) => setState(() {
                           _selectedAddress = a;
@@ -508,7 +539,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Text(
-                            '${_selectedAddress!.street}, ${_selectedAddress!.postalCode} ${_selectedAddress!.city}, ${_selectedAddress!.country}',
+                            '${_selectedAddress!.street},'
+                            ' ${_selectedAddress!.postalCode}'
+                            ' ${_selectedAddress!.city},'
+                            ' ${_selectedAddress!.country}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -551,8 +585,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   _ScheduledDatePicker(
                     date: _scheduledDate,
                     isPickup: _deliveryType == DeliveryType.pickup,
-                    onChanged: (date) =>
-                        setState(() => _scheduledDate = date),
+                    onChanged: (date) => setState(() => _scheduledDate = date),
                   ),
                 ],
               ),
@@ -580,7 +613,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 }
 
 class _ItemRow extends StatelessWidget {
-
   const _ItemRow({
     required this.item,
     required this.onEdit,
@@ -608,8 +640,8 @@ class _ItemRow extends StatelessWidget {
             Text(
               '€${item.price.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(width: 4),
             IconButton(
@@ -624,7 +656,6 @@ class _ItemRow extends StatelessWidget {
 }
 
 class _ScheduledDatePicker extends StatelessWidget {
-
   const _ScheduledDatePicker({
     required this.date,
     required this.isPickup,
@@ -640,10 +671,10 @@ class _ScheduledDatePicker extends StatelessWidget {
     final initial = date == null
         ? DateTime.now()
         : date!.isBefore(first)
-            ? first
-            : date!.isAfter(last)
-                ? last
-                : date!;
+        ? first
+        : date!.isAfter(last)
+        ? last
+        : date!;
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -659,10 +690,11 @@ class _ScheduledDatePicker extends StatelessWidget {
     final dateFormat = DateFormat('EEE, dd MMM yyyy');
     final hasDate = date != null;
     final label = hasDate
-        ? '${isPickup ? s.readyBy : s.scheduledLabel}: ${dateFormat.format(date!)}'
+        ? '${isPickup ? s.readyBy : s.scheduledLabel}:'
+        ' ${dateFormat.format(date!)}'
         : isPickup
-            ? s.noReadyByDate
-            : s.noScheduledDate;
+        ? s.noReadyByDate
+        : s.noScheduledDate;
     return Row(
       children: [
         const Icon(Icons.event, size: 18),
@@ -685,7 +717,6 @@ class _ScheduledDatePicker extends StatelessWidget {
 }
 
 class _FormCard extends StatelessWidget {
-
   const _FormCard({required this.title, required this.child, this.trailing});
   final String title;
   final Widget? trailing;
@@ -705,8 +736,8 @@ class _FormCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 ?trailing,
               ],
@@ -721,7 +752,6 @@ class _FormCard extends StatelessWidget {
 }
 
 class _BuyerSelector extends StatelessWidget {
-
   const _BuyerSelector({
     required this.buyer,
     required this.label,

@@ -50,9 +50,11 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
     if (_searchQuery.isEmpty) return repairs;
     final q = _searchQuery.toLowerCase();
     return repairs
-        .where((r) =>
-            r.contactName.toLowerCase().contains(q) ||
-            r.itemDescription.toLowerCase().contains(q))
+        .where(
+          (r) =>
+              r.contactName.toLowerCase().contains(q) ||
+              r.itemDescription.toLowerCase().contains(q),
+        )
         .toList();
   }
 
@@ -76,7 +78,8 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
         final isLoading = state is StoreLoading;
         final repairs = _applySort(_applySearch(_applyFilter(allRepairs)));
 
-        // On wide layout, clear selection if the repair was deleted on another device.
+        // On wide layout, clear selection if the repair was deleted on another
+        // device.
         if (_selectedRepair != null && state is StoreLoaded<List<Repair>>) {
           if (!allRepairs.any((r) => r.id == _selectedRepair!.id)) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -146,41 +149,45 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                       onRetry: RepairsStore.ensureSubscribed,
                     )
                   : isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : repairs.isEmpty
-                          ? Center(
-                              child: Text(
-                                s.noRepairsFound,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-                              itemCount: repairs.length,
-                              itemBuilder: (context, i) {
-                                final repair = repairs[i];
-                                return RepairCard(
-                                  repair: repair,
-                                  selected: _selectedRepair?.id == repair.id,
-                                  onTap: () {
-                                    if (_isWide) {
-                                      setState(() => _selectedRepair = repair);
-                                      _rightPanelKey.currentState
-                                          ?.pushReplacement(MaterialPageRoute<void>(
-                                        builder: (_) => RepairDetailScreen(
-                                            repairId: repair.id),
-                                      ));
-                                    } else {
-                                      Navigator.of(context)
-                                          .push(MaterialPageRoute<void>(
-                                        builder: (_) => RepairDetailScreen(
-                                            repairId: repair.id),
-                                      ));
-                                    }
-                                  },
-                                );
-                              },
-                            ),
+                  ? const Center(child: CircularProgressIndicator())
+                  : repairs.isEmpty
+                  ? Center(
+                      child: Text(
+                        s.noRepairsFound,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom,
+                      ),
+                      itemCount: repairs.length,
+                      itemBuilder: (context, i) {
+                        final repair = repairs[i];
+                        return RepairCard(
+                          repair: repair,
+                          selected: _selectedRepair?.id == repair.id,
+                          onTap: () {
+                            if (_isWide) {
+                              setState(() => _selectedRepair = repair);
+                              _rightPanelKey.currentState?.pushReplacement(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      RepairDetailScreen(repairId: repair.id),
+                                ),
+                              );
+                            } else {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      RepairDetailScreen(repairId: repair.id),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         );
@@ -308,16 +315,18 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                         spacing: 8,
                         runSpacing: 4,
                         children: RepairStatus.values
-                            .map((status) => FilterChip(
-                                  label: Text(s.repairStatusLabelFor(status)),
-                                  selected: _statusFilters.contains(status),
-                                  onSelected: (on) {
-                                    _statusFilters = on
-                                        ? {..._statusFilters, status}
-                                        : ({..._statusFilters}..remove(status));
-                                    refresh();
-                                  },
-                                ))
+                            .map(
+                              (status) => FilterChip(
+                                label: Text(s.repairStatusLabelFor(status)),
+                                selected: _statusFilters.contains(status),
+                                onSelected: (on) {
+                                  _statusFilters = on
+                                      ? {..._statusFilters, status}
+                                      : ({..._statusFilters}..remove(status));
+                                  refresh();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ),

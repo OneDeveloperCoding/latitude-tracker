@@ -5,12 +5,14 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
-import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart' show PhotoViewer;
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart'
+    show PhotoViewer;
 
 class SalePickerScreen extends StatefulWidget {
-
   const SalePickerScreen({
-    required this.buyerId, required this.buyerName, super.key,
+    required this.buyerId,
+    required this.buyerName,
+    super.key,
   });
   final String buyerId;
   final String buyerName;
@@ -38,9 +40,7 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
 
   List<Sale> get _filteredSales {
     final all = SalesStore.currentOrEmpty;
-    final byBuyer = all
-        .where((s) => s.buyerId == widget.buyerId)
-        .toList()
+    final byBuyer = all.where((s) => s.buyerId == widget.buyerId).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     if (_showAll) return byBuyer;
     final year = DateTime.now().year;
@@ -71,8 +71,8 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
             child: sales.isEmpty
                 ? _buildEmpty(s)
                 : _showAll
-                    ? _buildGroupedList(sales)
-                    : _buildFlatList(sales),
+                ? _buildGroupedList(sales)
+                : _buildFlatList(sales),
           ),
         ],
       ),
@@ -124,14 +124,16 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
               child: Text(
                 entry.key,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
-            ...entry.value.map((sale) => _SalePickerCard(
-                  sale: sale,
-                  onTap: () => Navigator.pop(context, sale),
-                )),
+            ...entry.value.map(
+              (sale) => _SalePickerCard(
+                sale: sale,
+                onTap: () => Navigator.pop(context, sale),
+              ),
+            ),
           ],
         );
       },
@@ -140,7 +142,6 @@ class _SalePickerScreenState extends State<SalePickerScreen> {
 }
 
 class _SalePickerCard extends StatelessWidget {
-
   const _SalePickerCard({required this.sale, required this.onTap});
   final Sale sale;
   final VoidCallback onTap;
@@ -163,14 +164,14 @@ class _SalePickerCard extends StatelessWidget {
                   Text(
                     DateFormat('dd MMM yyyy').format(sale.createdAt),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   Text(
                     '€${sale.totalPrice.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -185,7 +186,6 @@ class _SalePickerCard extends StatelessWidget {
 }
 
 class _ItemRow extends StatelessWidget {
-
   const _ItemRow({required this.item});
   final SaleItem item;
 
@@ -212,7 +212,6 @@ class _ItemRow extends StatelessWidget {
 }
 
 class _Thumbnail extends StatelessWidget {
-
   const _Thumbnail({required this.item});
   final SaleItem item;
 
