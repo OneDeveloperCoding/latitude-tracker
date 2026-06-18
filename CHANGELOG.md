@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Chores
+- Completed migration from `flutter_lints` to `very_good_analysis` — all ~50 additional lint rules are now active; `analysis_options.yaml` only disables `public_member_api_docs` (not applicable for a private app). Fixes applied: `on Object catch` on all broad catch clauses, `unawaited()` on 53 fire-and-forget futures, `doc.data()!` on four model deserialisers, named bool params on three methods, 80-char line wrapping throughout.
+
+---
+
 ## [1.7.0] — 2026-06-17
 
 ### Features
