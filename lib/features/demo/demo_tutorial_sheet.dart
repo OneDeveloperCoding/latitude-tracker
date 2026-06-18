@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
@@ -6,7 +7,7 @@ class DemoTutorialSheet extends StatefulWidget {
   const DemoTutorialSheet({super.key});
 
   static void show(BuildContext context) {
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -14,7 +15,7 @@ class DemoTutorialSheet extends StatefulWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => const DemoTutorialSheet(),
-    );
+    ));
   }
 
   @override
@@ -33,20 +34,20 @@ class _DemoTutorialSheetState extends State<DemoTutorialSheet> {
 
   void _next(int total) {
     if (_page < total - 1) {
-      _controller.nextPage(
+      unawaited(_controller.nextPage(
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeInOut,
-      );
+      ));
     } else {
       Navigator.pop(context);
     }
   }
 
   void _back() {
-    _controller.previousPage(
+    unawaited(_controller.previousPage(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeInOut,
-    );
+    ));
   }
 
   @override

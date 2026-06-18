@@ -191,7 +191,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                                   await _saleRepo.updateSale(
                                     sale.copyWith(atSubmissionDone: !filed),
                                   );
-                                } catch (e) {
+                                } on Object catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(

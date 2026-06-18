@@ -33,7 +33,7 @@ class BuyerAddress {
   );
 
   factory BuyerAddress.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()! as Map<String, dynamic>;
     return BuyerAddress(
       id: doc.id,
       buyerId: doc.reference.parent.parent?.id ?? '',

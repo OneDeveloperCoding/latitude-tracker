@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
@@ -155,17 +156,17 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   }
 
   void _openBuyer(Buyer buyer) {
-    Navigator.push(
+    unawaited(Navigator.push(
       context,
       MaterialPageRoute<void>(
         builder: (_) => BuyerDetailScreen(buyerId: buyer.id),
       ),
-    );
+    ));
   }
 
   void _showSortMenu() {
     final s = context.s;
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) => SafeArea(
@@ -224,7 +225,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   String _metricLabel(_RankingMetric metric) {

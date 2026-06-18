@@ -55,7 +55,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
         await _repository.createAddress(widget.buyerId, address);
       }
       if (mounted) Navigator.pop(context);
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorSavingAddressMsg(e))),

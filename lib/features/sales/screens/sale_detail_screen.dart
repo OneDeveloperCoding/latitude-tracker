@@ -1,4 +1,4 @@
-import 'dart:async' show Timer;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -67,7 +67,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           ? s.delivered
           : s.shippedStatus;
       message = s.deleteShippedSaleBody(
-        statusLabel, sale.atSubmissionDone, totalPhotos,
+        statusLabel,
+        atDone: sale.atSubmissionDone,
+        photoCount: totalPhotos,
       );
     } else if (paid) {
       title = s.deletePaidSaleTitle;
@@ -104,7 +106,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         _popping = true;
         Navigator.of(context).pop();
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -198,7 +200,7 @@ class _SaleDetailBody extends StatelessWidget {
   Future<void> _update(BuildContext context, Sale updated) async {
     try {
       await repository.updateSale(updated);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
@@ -211,11 +213,11 @@ class _SaleDetailBody extends StatelessWidget {
     final updatedItems = sale.items
         .map((item) => item.id == updated.id ? updated : item)
         .toList();
-    _update(context, sale.copyWith(items: updatedItems));
+    unawaited(_update(context, sale.copyWith(items: updatedItems)));
   }
 
   void _openItemDetail(BuildContext context, SaleItem item) {
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _ItemDetailSheet(
@@ -223,7 +225,7 @@ class _SaleDetailBody extends StatelessWidget {
         item: item,
         onUpdateItem: (updated) => _updateItem(context, updated),
       ),
-    );
+    ));
   }
 
   @override
@@ -527,7 +529,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (!committedUrls.contains(url)) {
         // Upload landed in Storage but the sheet was dismissed before the
         // Firestore write confirmed — delete the orphan best-effort.
-        _photoService.deletePhoto(url);
+        unawaited(_photoService.deletePhoto(url));
       }
     }
     super.dispose();
@@ -587,7 +589,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       onPhotoAdded: _sessionComponentUploads.add,
       onPhotoRemoved: (url) {
         _sessionComponentUploads.remove(url);
-        _photoService.deletePhoto(url);
+        unawaited(_photoService.deletePhoto(url));
       },
     );
   }
@@ -1056,7 +1058,7 @@ class _NifComplianceRow extends StatelessWidget {
     try {
       await repository.updateSale(
           sale.copyWith(atSubmissionDone: !sale.atSubmissionDone));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
@@ -1109,7 +1111,7 @@ class _NifComplianceRow extends StatelessWidget {
 
       await BuyerRepository()
           .updateBuyer(buyer.copyWith(nif: controller.text.trim()));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)

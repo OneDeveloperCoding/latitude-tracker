@@ -297,7 +297,7 @@ class Sale {
   );
 
   factory Sale.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()! as Map<String, dynamic>;
     return Sale(
       id: doc.id,
       buyerId: data['buyerId'] as String? ?? '',

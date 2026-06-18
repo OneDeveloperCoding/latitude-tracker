@@ -5,11 +5,3 @@ linter:
     # Not applicable to a private app — no external API consumers.
     public_member_api_docs: false
 
-    # Deferred to follow-up PR: each site needs a judgment call on async safety.
-    discarded_futures: false
-    avoid_catches_without_on_clauses: false
-    unawaited_futures: false
-    cast_nullable_to_non_nullable: false
-
-    # Deferred to follow-up PR: API design concern — affects method signatures.
-    avoid_positional_boolean_parameters: false

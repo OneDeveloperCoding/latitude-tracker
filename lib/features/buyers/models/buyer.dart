@@ -26,7 +26,7 @@ class Buyer {
   );
 
   factory Buyer.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()! as Map<String, dynamic>;
     return Buyer(
       id: doc.id,
       name: data['name'] as String? ?? '',

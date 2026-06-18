@@ -110,7 +110,7 @@ class Repair {
   );
 
   factory Repair.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()! as Map<String, dynamic>;
     return Repair(
       id: doc.id,
       buyerId: data['buyerId'] as String?,
