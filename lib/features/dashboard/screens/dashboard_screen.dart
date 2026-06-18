@@ -22,65 +22,97 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime _month;
+  DashboardActionCounts _actionCounts = const DashboardActionCounts(
+    unpaidActionCount: 0,
+    unpaidActionRevenue: 0,
+    pendingShipmentCount: 0,
+    shippedCount: 0,
+    assemblyNotReadyCount: 0,
+    nifRequiredCount: 0,
+    overdueCount: 0,
+    upcomingCount: 0,
+  );
 
   DateTime get _periodStart => _month;
   DateTime get _periodEnd => DateTime(_month.year, _month.month + 1);
 
   @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _month = DateTime(now.year, now.month);
+    SalesStore.state.addListener(_updateActionCounts);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateActionCounts());
+  }
+
+  @override
+  void dispose() {
+    SalesStore.state.removeListener(_updateActionCounts);
+    super.dispose();
+  }
+
+  void _updateActionCounts() {
+    final storeState = SalesStore.state.value;
+    if (storeState is! StoreLoaded<List<Sale>>) return;
+    final counts = DashboardActionCounts.compute(storeState.data);
+    if (mounted) setState(() => _actionCounts = counts);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final storeState = SalesStore.state.value;
+
+    if (storeState is StoreError<List<Sale>>) {
+      return Scaffold(body: Center(child: Text(s.errorLoadingSales)));
+    }
+    if (storeState is! StoreLoaded<List<Sale>>) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final periodStats = DashboardPeriodStats.compute(
+      storeState.data,
+      _periodStart,
+      _periodEnd,
+    );
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: ValueListenableBuilder<StoreState<List<Sale>>>(
-          valueListenable: SalesStore.state,
-          builder: (context, storeState, _) {
-            if (storeState is StoreError<List<Sale>>) {
-              return Center(child: Text(s.errorLoadingSales));
-            }
-            if (storeState is! StoreLoaded<List<Sale>>) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final all = storeState.data;
-            final stats = DashboardStats.compute(all, _periodStart, _periodEnd);
-
-            return ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                16 + MediaQuery.of(context).padding.bottom,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.of(context).padding.bottom,
+          ),
+          children: [
+            _MonthTabsControl(
+              selectedMonth: _month,
+              onMonthSelected: (m) => setState(() => _month = m),
+            ),
+            const SizedBox(height: 16),
+            _RevenueCard(
+              stats: periodStats,
+              onInsights: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const AnalyticsScreen(
+                    initialPeriod: DashboardPeriod.monthly,
+                  ),
+                ),
               ),
-              children: [
-                _MonthTabsControl(
-                  selectedMonth: _month,
-                  onMonthSelected: (m) => setState(() => _month = m),
-                ),
-                const SizedBox(height: 16),
-                _RevenueCard(
-                  stats: stats,
-                  onInsights: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AnalyticsScreen(
-                        initialPeriod: DashboardPeriod.monthly,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  s.actionNeeded,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _ActionGrid(stats: stats),
-              ],
-            );
-          },
+            ),
+            const SizedBox(height: 24),
+            Text(
+              s.actionNeeded,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ActionGrid(actionCounts: _actionCounts),
+          ],
         ),
       ),
     );
@@ -161,7 +193,7 @@ class _MonthTabsControlState extends State<_MonthTabsControl> {
 
 class _RevenueCard extends StatelessWidget {
   const _RevenueCard({required this.stats, required this.onInsights});
-  final DashboardStats stats;
+  final DashboardPeriodStats stats;
   final VoidCallback onInsights;
 
   @override
@@ -238,8 +270,8 @@ class _RevenueCard extends StatelessWidget {
 }
 
 class _ActionGrid extends StatelessWidget {
-  const _ActionGrid({required this.stats});
-  final DashboardStats stats;
+  const _ActionGrid({required this.actionCounts});
+  final DashboardActionCounts actionCounts;
 
   @override
   Widget build(BuildContext context) {
@@ -253,9 +285,9 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: Icons.euro,
           label: s.unpaid,
-          count: stats.unpaidActionCount,
-          subtitle: stats.unpaidActionCount > 0
-              ? currency.format(stats.unpaidActionRevenue)
+          count: actionCounts.unpaidActionCount,
+          subtitle: actionCounts.unpaidActionCount > 0
+              ? currency.format(actionCounts.unpaidActionRevenue)
               : null,
           color: Colors.orange,
           destination: const UnpaidBalancesScreen(),
@@ -263,7 +295,7 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: Icons.schedule,
           label: s.overdue,
-          count: stats.overdueCount,
+          count: actionCounts.overdueCount,
           color: Colors.red,
           destination: const SalesListScreen(
             initialFilters: {SaleFilter.overdue},
@@ -272,7 +304,7 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: kNifIcon,
           label: s.nifRequired,
-          count: stats.nifRequiredCount,
+          count: actionCounts.nifRequiredCount,
           color: Colors.teal,
           destination: const NifPendingScreen(),
         ),
@@ -281,14 +313,14 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: Icons.shopping_cart,
           label: s.assemblyNotReady,
-          count: stats.assemblyNotReadyCount,
+          count: actionCounts.assemblyNotReadyCount,
           color: Colors.purple,
           destination: const ShoppingListScreen(),
         ),
         _ActionRow(
           icon: Icons.local_shipping,
           label: s.pendingShipment,
-          count: stats.pendingShipmentCount,
+          count: actionCounts.pendingShipmentCount,
           color: Colors.blue,
           destination: const SalesListScreen(
             initialFilters: {SaleFilter.pendingShipment},
@@ -297,7 +329,7 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: Icons.markunread_mailbox,
           label: s.inTransit,
-          count: stats.shippedCount,
+          count: actionCounts.shippedCount,
           color: Colors.indigo,
           destination: const SalesListScreen(
             initialFilters: {SaleFilter.shipped},
@@ -308,7 +340,7 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: Icons.event,
           label: s.upcomingScheduled,
-          count: stats.upcomingCount,
+          count: actionCounts.upcomingCount,
           color: Colors.green,
           destination: const SalesListScreen(
             initialFilters: {SaleFilter.upcomingScheduled},
