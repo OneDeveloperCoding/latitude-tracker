@@ -1,38 +1,37 @@
-import 'dart:async' show Timer;
+import 'dart:async' show Timer, unawaited;
 
-import '../../../core/id_gen.dart';
-import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/url_launch_service.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
+import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
+import 'package:latitude_tracker/features/sales/widgets/component_detail_sheet.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/constants.dart';
-import '../../../core/theme/color_scheme_ext.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/url_launch_service.dart';
-import '../../../core/store/buyers_store.dart';
-import '../../buyers/models/buyer.dart';
-import '../../buyers/models/buyer_address.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../buyers/screens/buyer_detail_screen.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../repairs/models/repair.dart';
-import '../../repairs/screens/repair_detail_screen.dart';
-import '../models/sale.dart';
-import '../repositories/sale_repository.dart';
-import '../services/sale_urgency_ui.dart';
-import '../services/photo_service.dart';
-import '../widgets/component_detail_sheet.dart';
-import '../widgets/photo_grid.dart';
-import 'new_sale_screen.dart';
-
 class SaleDetailScreen extends StatefulWidget {
-  final String saleId;
 
-  const SaleDetailScreen({super.key, required this.saleId});
+  const SaleDetailScreen({required this.saleId, super.key});
+  final String saleId;
 
   @override
   State<SaleDetailScreen> createState() => _SaleDetailScreenState();
@@ -67,8 +66,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final statusLabel = sale.shipment.status == ShipmentStatus.delivered
           ? s.delivered
           : s.shippedStatus;
-      message =
-          s.deleteShippedSaleBody(statusLabel, sale.atSubmissionDone, totalPhotos);
+      message = s.deleteShippedSaleBody(
+        statusLabel,
+        atDone: sale.atSubmissionDone,
+        photoCount: totalPhotos,
+      );
     } else if (paid) {
       title = s.deletePaidSaleTitle;
       message = s.deletePaidSaleBody(sale.totalPrice, totalPhotos);
@@ -104,7 +106,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         _popping = true;
         Navigator.of(context).pop();
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,11 +128,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         }
         final sale = snapshot.data;
         if (sale == null) {
-          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping &&
+              snapshot.connectionState != ConnectionState.waiting) {
             // Sale deleted on another device — navigate back after this frame.
-            // Direct assignment without setState: setState is forbidden inside a
-            // builder callback. The Dart single-thread model guarantees subsequent
-            // builder calls see the updated value before another callback is queued.
+            // Direct assignment without setState: setState is forbidden inside
+            // a
+            // builder callback. The Dart single-thread model guarantees
+            // subsequent
+            // builder calls see the updated value before another callback is
+            // queued.
             _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (context.mounted && Navigator.of(context).canPop()) {
@@ -153,7 +159,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 tooltip: context.s.editSale,
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => NewSaleScreen(sale: sale),
                   ),
                 ),
@@ -163,7 +169,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 tooltip: context.s.duplicateSaleTooltip,
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) =>
                         NewSaleScreen(sale: sale, isDuplicate: true),
                   ),
@@ -184,17 +190,17 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 }
 
 class _SaleDetailBody extends StatelessWidget {
+
+  const _SaleDetailBody({required this.sale, required this.repository});
   static final _dateFormat = DateFormat('dd MMM yyyy');
 
   final Sale sale;
   final SaleRepository repository;
 
-  const _SaleDetailBody({required this.sale, required this.repository});
-
   Future<void> _update(BuildContext context, Sale updated) async {
     try {
       await repository.updateSale(updated);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
@@ -207,11 +213,11 @@ class _SaleDetailBody extends StatelessWidget {
     final updatedItems = sale.items
         .map((item) => item.id == updated.id ? updated : item)
         .toList();
-    _update(context, sale.copyWith(items: updatedItems));
+    unawaited(_update(context, sale.copyWith(items: updatedItems)));
   }
 
   void _openItemDetail(BuildContext context, SaleItem item) {
-    showModalBottomSheet(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _ItemDetailSheet(
@@ -219,7 +225,7 @@ class _SaleDetailBody extends StatelessWidget {
         item: item,
         onUpdateItem: (updated) => _updateItem(context, updated),
       ),
-    );
+    ));
   }
 
   @override
@@ -237,7 +243,7 @@ class _SaleDetailBody extends StatelessWidget {
             text: sale.buyerName,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
+              MaterialPageRoute<void>(
                 builder: (_) => BuyerDetailScreen(buyerId: sale.buyerId),
               ),
             ),
@@ -248,7 +254,11 @@ class _SaleDetailBody extends StatelessWidget {
           ),
           _InfoRow(
             icon: Icons.euro,
-            text: '€${sale.totalPrice.toStringAsFixed(2)} · ${sale.items.length} ${sale.items.length == 1 ? 'item' : 'items'}',
+            text: () {
+              final price = sale.totalPrice.toStringAsFixed(2);
+              final n = sale.items.length;
+              return '€$price · $n ${n == 1 ? 'item' : 'items'}';
+            }(),
           ),
         ]),
         const SizedBox(height: 16),
@@ -424,14 +434,15 @@ class _SaleDetailBody extends StatelessWidget {
 }
 
 class _ItemSummaryTile extends StatelessWidget {
+
+  const _ItemSummaryTile({required this.item, required this.onTap});
   final SaleItem item;
   final VoidCallback onTap;
 
-  const _ItemSummaryTile({required this.item, required this.onTap});
-
   @override
   Widget build(BuildContext context) {
-    final statusColor = item.assemblyStatus.colorOf(Theme.of(context).colorScheme);
+    final statusColor =
+        item.assemblyStatus.colorOf(Theme.of(context).colorScheme);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
@@ -440,7 +451,7 @@ class _ItemSummaryTile extends StatelessWidget {
               url: item.photoUrls.first,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => PhotoViewer(
                     urls: item.photoUrls,
                     initialIndex: 0,
@@ -478,15 +489,15 @@ class _ItemSummaryTile extends StatelessWidget {
 
 // Bottom sheet shown when tapping a SaleItem in the detail view.
 class _ItemDetailSheet extends StatefulWidget {
-  final String saleId;
-  final SaleItem item;
-  final ValueChanged<SaleItem> onUpdateItem;
 
   const _ItemDetailSheet({
     required this.saleId,
     required this.item,
     required this.onUpdateItem,
   });
+  final String saleId;
+  final SaleItem item;
+  final ValueChanged<SaleItem> onUpdateItem;
 
   @override
   State<_ItemDetailSheet> createState() => _ItemDetailSheetState();
@@ -518,7 +529,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (!committedUrls.contains(url)) {
         // Upload landed in Storage but the sheet was dismissed before the
         // Firestore write confirmed — delete the orphan best-effort.
-        _photoService.deletePhoto(url);
+        unawaited(_photoService.deletePhoto(url));
       }
     }
     super.dispose();
@@ -557,9 +568,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     );
     setState(() => _item = updated);
     widget.onUpdateItem(updated);
-    for (final url in c.photoUrls) {
-      _photoService.deletePhoto(url);
-    }
+    c.photoUrls.forEach(_photoService.deletePhoto);
   }
 
   Future<void> _openComponentSheet(ComponentItem c) async {
@@ -577,10 +586,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         setState(() => _item = newItem);
         widget.onUpdateItem(newItem);
       },
-      onPhotoAdded: (url) => _sessionComponentUploads.add(url),
+      onPhotoAdded: _sessionComponentUploads.add,
       onPhotoRemoved: (url) {
         _sessionComponentUploads.remove(url);
-        _photoService.deletePhoto(url);
+        unawaited(_photoService.deletePhoto(url));
       },
     );
   }
@@ -735,13 +744,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 }
 
 class _TrackingCodeField extends StatefulWidget {
-  final String initialValue;
-  final ValueChanged<String> onSave;
 
   const _TrackingCodeField({
     required this.initialValue,
     required this.onSave,
   });
+  final String initialValue;
+  final ValueChanged<String> onSave;
 
   @override
   State<_TrackingCodeField> createState() => _TrackingCodeFieldState();
@@ -871,12 +880,12 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
 }
 
 class _ScheduledDateField extends StatelessWidget {
+
+  const _ScheduledDateField({required this.date, required this.onChanged});
   static final _dateFormat = DateFormat('EEE, dd MMM yyyy');
 
   final DateTime? date;
   final ValueChanged<DateTime?> onChanged;
-
-  const _ScheduledDateField({required this.date, required this.onChanged});
 
   Future<void> _pick(BuildContext context) async {
     final first = DateTime(DateTime.now().year - 5);
@@ -926,15 +935,15 @@ class _ScheduledDateField extends StatelessWidget {
 }
 
 class _AddressDisplay extends StatefulWidget {
-  final String buyerId;
-  final String addressId;
-  final String? postalCode;
 
   const _AddressDisplay({
     required this.buyerId,
     required this.addressId,
     this.postalCode,
   });
+  final String buyerId;
+  final String addressId;
+  final String? postalCode;
 
   @override
   State<_AddressDisplay> createState() => _AddressDisplayState();
@@ -992,10 +1001,10 @@ class _AddressDisplayState extends State<_AddressDisplay> {
 }
 
 class _SectionCard extends StatelessWidget {
-  final String title;
-  final Widget child;
 
   const _SectionCard({required this.title, required this.child});
+  final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -1019,9 +1028,9 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _InfoCard extends StatelessWidget {
-  final List<Widget> children;
 
   const _InfoCard({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -1035,17 +1044,21 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _NifComplianceRow extends StatelessWidget {
+
+  const _NifComplianceRow({
+    required this.sale,
+    required this.repository,
+    required this.buyer,
+  });
   final Sale sale;
   final SaleRepository repository;
   final Buyer? buyer;
-
-  const _NifComplianceRow({required this.sale, required this.repository, required this.buyer});
 
   Future<void> _toggleAt(BuildContext context) async {
     try {
       await repository.updateSale(
           sale.copyWith(atSubmissionDone: !sale.atSubmissionDone));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
@@ -1098,7 +1111,7 @@ class _NifComplianceRow extends StatelessWidget {
 
       await BuyerRepository()
           .updateBuyer(buyer.copyWith(nif: controller.text.trim()));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
@@ -1155,12 +1168,17 @@ class _NifComplianceRow extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
+
+  const _InfoRow({
+    required this.icon,
+    required this.text,
+    this.onTap,
+    this.trailing,
+  });
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
   final Widget? trailing;
-
-  const _InfoRow({required this.icon, required this.text, this.onTap, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -1192,10 +1210,10 @@ Future<void> _launchMaps(BuildContext context, BuyerAddress address) =>
     launchMapsUrl(context, address.mapsUri);
 
 class _NotesField extends StatefulWidget {
-  final String initialValue;
-  final ValueChanged<String> onSave;
 
   const _NotesField({required this.initialValue, required this.onSave});
+  final String initialValue;
+  final ValueChanged<String> onSave;
 
   @override
   State<_NotesField> createState() => _NotesFieldState();
@@ -1281,10 +1299,10 @@ class _NotesFieldState extends State<_NotesField> {
 }
 
 class _StatusChip extends StatelessWidget {
-  final String label;
-  final Color color;
 
   const _StatusChip({required this.label, required this.color});
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -1300,9 +1318,9 @@ class _StatusChip extends StatelessWidget {
 }
 
 class _RepairsSection extends StatelessWidget {
-  final String saleId;
 
   const _RepairsSection({required this.saleId});
+  final String saleId;
 
   @override
   Widget build(BuildContext context) {
@@ -1341,10 +1359,12 @@ class _RepairsSection extends StatelessWidget {
                       leading: const Icon(Icons.build_outlined),
                       title: Text(repair.itemDescription),
                       subtitle: Text(
-                          '${repair.contactName} · ${s.repairStatusLabelFor(repair.status)}'),
+                        '${repair.contactName}'
+                        ' · ${s.repairStatusLabelFor(repair.status)}',
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (_) =>
                               RepairDetailScreen(repairId: repair.id),
                         ),

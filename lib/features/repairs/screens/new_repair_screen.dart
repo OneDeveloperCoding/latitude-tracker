@@ -1,26 +1,25 @@
-import '../../../core/id_gen.dart';
-import '../../../core/services/error_reporter.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../buyers/models/buyer.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/widgets/buyer_picker_screen.dart';
-import '../../sales/widgets/category_picker.dart';
-import '../../sales/widgets/payment_method_display.dart';
 import 'package:intl/intl.dart';
-
-import '../models/repair.dart';
-import '../repositories/repair_repository.dart';
-import '../services/repair_photo_service.dart';
-import '../widgets/repair_photo_grid.dart';
-import '../widgets/sale_picker_screen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/repairs/services/repair_photo_service.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_photo_grid.dart';
+import 'package:latitude_tracker/features/repairs/widgets/sale_picker_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/widgets/buyer_picker_screen.dart';
+import 'package:latitude_tracker/features/sales/widgets/category_picker.dart';
+import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
 
 class NewRepairScreen extends StatefulWidget {
-  final Repair? existing;
 
   const NewRepairScreen({super.key, this.existing});
+  final Repair? existing;
 
   @override
   State<NewRepairScreen> createState() => _NewRepairScreenState();
@@ -97,7 +96,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       _postalCodeController.text = existing.returnDelivery.postalCode ?? '';
       _photoUrls = List.from(existing.photoUrls);
       _linkedSale = existing.linkedSaleId != null
-          ? (SalesStore.current ?? [])
+          ? SalesStore.currentOrEmpty
               .where((s) => s.id == existing.linkedSaleId)
               .firstOrNull
           : null;
@@ -120,7 +119,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
 
   Future<void> _pickBuyer() async {
     final buyer = await Navigator.of(context).push<Buyer>(
-      MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
+      MaterialPageRoute<Buyer>(builder: (_) => const BuyerPickerScreen()),
     );
     if (buyer != null) setState(() => _linkedBuyer = buyer);
   }
@@ -136,17 +135,18 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
 
     if (buyerId == null) {
       final buyer = await Navigator.of(context).push<Buyer>(
-        MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
+        MaterialPageRoute<Buyer>(builder: (_) => const BuyerPickerScreen()),
       );
       if (buyer == null || !mounted) return;
       buyerId = buyer.id;
       buyerName = buyer.name;
-      // Filling the Contact section avoids the save guard blocking after this flow.
+      // Filling the Contact section avoids the save guard blocking after this
+      // flow.
       if (!_useFreeText) setState(() => _linkedBuyer = buyer);
     }
 
     final sale = await Navigator.of(context).push<Sale>(
-      MaterialPageRoute(
+      MaterialPageRoute<Sale>(
         builder: (_) => SalePickerScreen(
           buyerId: buyerId!,
           buyerName: buyerName ?? '',
@@ -190,7 +190,9 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
 
       final repair = Repair(
         id: _repairId,
-        buyerId: _useFreeText ? null : (_linkedBuyer?.id ?? widget.existing?.buyerId),
+        buyerId: _useFreeText
+            ? null
+            : (_linkedBuyer?.id ?? widget.existing?.buyerId),
         buyerName: _useFreeText
             ? null
             : (_linkedBuyer?.name ?? widget.existing?.buyerName),
@@ -227,7 +229,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       }
 
       if (mounted) Navigator.of(context).pop();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -246,7 +248,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       for (final url in _sessionUploads) {
         await _photoService.deletePhoto(url);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
     } finally {
       if (mounted) Navigator.of(context).pop();
@@ -259,7 +261,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        if (!didPop) unawaited(_cancel());
       },
       child: Scaffold(
       appBar: AppBar(
@@ -527,7 +529,14 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       contentPadding: EdgeInsets.zero,
       title: Text(
         linked != null
-            ? '${DateFormat('dd MMM yyyy').format(linked.createdAt)}${linked.items.isNotEmpty ? ' · ${linked.items.first.description}' : ''}'
+            ? () {
+                final date =
+                    DateFormat('dd MMM yyyy').format(linked.createdAt);
+                final item = linked.items.isNotEmpty
+                    ? ' · ${linked.items.first.description}'
+                    : '';
+                return '$date$item';
+              }()
             : s.repairLinkedSaleNone,
         style: linked == null
             ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)
@@ -547,9 +556,9 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String label;
 
   const _SectionHeader({required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -564,4 +573,3 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
-

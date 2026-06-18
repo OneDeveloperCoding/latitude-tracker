@@ -2,27 +2,27 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/id_gen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../models/sale.dart';
-import '../services/photo_service.dart';
-import '../widgets/category_picker.dart';
-import '../widgets/component_detail_sheet.dart';
-import '../widgets/photo_grid.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
+import 'package:latitude_tracker/features/sales/widgets/category_picker.dart';
+import 'package:latitude_tracker/features/sales/widgets/component_detail_sheet.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 
 /// Full-screen editor for adding or editing a single SaleItem.
 /// Pushed from NewSaleScreen and returns the completed [SaleItem] on save,
 /// or null when the user cancels.
 ///
 /// Photo lifecycle: photos uploaded in this session are cleaned up if the
-/// user cancels. The caller is responsible for executing [pendingDeletions]
+/// user cancels. The caller is responsible for executing `pendingDeletions`
 /// (pre-existing photos the user removed) when the outer form is saved.
 class SaleItemScreen extends StatefulWidget {
+
+  const SaleItemScreen({required this.saleId, super.key, this.item});
   final String saleId;
   final SaleItem? item;
-
-  const SaleItemScreen({super.key, required this.saleId, this.item});
 
   @override
   State<SaleItemScreen> createState() => _SaleItemScreenState();
@@ -60,7 +60,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     _photoUrls = List.from(item?.photoUrls ?? []);
     _originalPhotoUrls = List.from(item?.photoUrls ?? []);
     _originalComponentPhotoUrls = {
-      for (final c in item?.components ?? []) ...c.photoUrls,
+      for (final c in item?.components ?? <ComponentItem>[]) ...c.photoUrls,
     };
   }
 
@@ -80,7 +80,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     for (final url in toDelete) {
       await _photoService.deletePhoto(url);
     }
-    if (mounted) Navigator.of(context).pop(null);
+    if (mounted) Navigator.of(context).pop();
   }
 
   void _save() {
@@ -160,7 +160,9 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
       }
     }
     if (!mounted) return;
-    setState(() => _components = List<ComponentItem>.from(_components)..removeAt(index));
+    setState(() {
+      _components = List<ComponentItem>.from(_components)..removeAt(index);
+    });
   }
 
   Future<void> _openComponentSheet(int index) async {
@@ -177,7 +179,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
           _components = list;
         });
       },
-      onPhotoAdded: (url) => _uploadedInSession.add(url),
+      onPhotoAdded: _uploadedInSession.add,
       onPhotoRemoved: (url) {
         if (_originalComponentPhotoUrls.contains(url)) {
           _pendingDeletions.add(url);
@@ -195,7 +197,7 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        if (!didPop) unawaited(_cancel());
       },
       child: Scaffold(
         appBar: AppBar(
@@ -289,12 +291,12 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                 itemId: _itemId,
                 photoUrls: _photoUrls,
                 onChanged: (urls) => setState(() => _photoUrls = urls),
-                onPhotoAdded: (url) => _uploadedInSession.add(url),
+                onPhotoAdded: _uploadedInSession.add,
                 onPhotoRemoved: (url) {
                   if (_originalPhotoUrls.contains(url)) {
                     _pendingDeletions.add(url);
                   } else {
-                    _photoService.deletePhoto(url);
+                    unawaited(_photoService.deletePhoto(url));
                     _uploadedInSession.remove(url);
                   }
                 },
@@ -314,7 +316,10 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
                               Expanded(child: Text(entry.value.name)),
                               ComponentQuantityStepper(
                                 quantity: entry.value.quantity,
-                                onChanged: (q) => _adjustQuantity(entry.key, q - entry.value.quantity),
+                                onChanged: (q) => _adjustQuantity(
+                                  entry.key,
+                                  q - entry.value.quantity,
+                                ),
                               ),
                             ],
                           ),
@@ -373,17 +378,17 @@ class _SaleItemScreenState extends State<SaleItemScreen> {
 }
 
 class SaleItemResult {
-  final SaleItem item;
-  final List<String> pendingDeletions;
 
   const SaleItemResult({required this.item, required this.pendingDeletions});
+  final SaleItem item;
+  final List<String> pendingDeletions;
 }
 
 class _FormCard extends StatelessWidget {
-  final String title;
-  final Widget child;
 
   const _FormCard({required this.title, required this.child});
+  final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -417,7 +422,7 @@ Future<SaleItemResult?> pushSaleItemScreen(
 }) {
   return Navigator.push<SaleItemResult>(
     context,
-    MaterialPageRoute(
+    MaterialPageRoute<SaleItemResult>(
       builder: (_) => SaleItemScreen(saleId: saleId, item: item),
     ),
   );

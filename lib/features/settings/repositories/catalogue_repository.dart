@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
 
 abstract class CatalogueRepository {
   factory CatalogueRepository() => DemoMode.active.value
@@ -17,8 +17,8 @@ abstract class CatalogueRepository {
 }
 
 class _FirestoreCatalogueRepository implements CatalogueRepository {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String get _userId =>
       _auth.currentUser?.uid ?? (throw const AuthRevokedException());
@@ -39,22 +39,25 @@ class _FirestoreCatalogueRepository implements CatalogueRepository {
   }
 
   @override
-  Future<void> saveHiddenCategories(List<String> hidden) =>
-      _docRef.set({'hiddenCategories': hidden.toSet().toList()}, SetOptions(merge: true));
+  Future<void> saveHiddenCategories(List<String> hidden) => _docRef.set({
+    'hiddenCategories': hidden.toSet().toList(),
+  }, SetOptions(merge: true));
 
   @override
-  Future<void> addHiddenCategory(String name) =>
-      _docRef.set(
-        {'hiddenCategories': FieldValue.arrayUnion([name])},
-        SetOptions(merge: true),
-      );
+  Future<void> addHiddenCategory(String name) => _docRef.set(
+    {
+      'hiddenCategories': FieldValue.arrayUnion([name]),
+    },
+    SetOptions(merge: true),
+  );
 
   @override
-  Future<void> removeHiddenCategory(String name) =>
-      _docRef.set(
-        {'hiddenCategories': FieldValue.arrayRemove([name])},
-        SetOptions(merge: true),
-      );
+  Future<void> removeHiddenCategory(String name) => _docRef.set(
+    {
+      'hiddenCategories': FieldValue.arrayRemove([name]),
+    },
+    SetOptions(merge: true),
+  );
 
   // Firestore has no atomic arrayRemove+arrayUnion on the same field, so we
   // add the new name first: if the remove then fails, both names are hidden

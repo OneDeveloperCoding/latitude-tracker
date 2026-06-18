@@ -1,20 +1,19 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/heat_map/services/heat_map_service.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
-Sale _shippingSale(String? postalCode) => makeSale(
-      delivery: DeliveryType.shipping,
-    ).copyWith(
-      shipment: SaleShipment(
-        type: DeliveryType.shipping,
-        status: ShipmentStatus.delivered,
-        postalCode: postalCode,
-      ),
-    );
+Sale _shippingSale(String? postalCode) => makeSale().copyWith(
+  shipment: SaleShipment(
+    type: DeliveryType.shipping,
+    status: ShipmentStatus.delivered,
+    postalCode: postalCode,
+  ),
+);
 
-Sale _handDeliverySale(String? postalCode) => makeSale(
+Sale _handDeliverySale(String? postalCode) =>
+    makeSale(
       delivery: DeliveryType.handDelivery,
     ).copyWith(
       shipment: SaleShipment(
@@ -24,7 +23,8 @@ Sale _handDeliverySale(String? postalCode) => makeSale(
       ),
     );
 
-Sale _pickupSale(String? postalCode) => makeSale(
+Sale _pickupSale(String? postalCode) =>
+    makeSale(
       delivery: DeliveryType.pickup,
     ).copyWith(
       shipment: SaleShipment(
@@ -35,6 +35,24 @@ Sale _pickupSale(String? postalCode) => makeSale(
     );
 
 void main() {
+  group('HeatMapService.localityPrefix', () {
+    test('valid 7-digit postal code returns 4-digit prefix', () {
+      expect(HeatMapService.localityPrefix('3000-550'), '3000');
+    });
+
+    test('null returns null', () {
+      expect(HeatMapService.localityPrefix(null), isNull);
+    });
+
+    test('non-Portuguese format returns null', () {
+      expect(HeatMapService.localityPrefix('75001'), isNull);
+    });
+
+    test('whitespace is trimmed before matching', () {
+      expect(HeatMapService.localityPrefix(' 3000-550 '), '3000');
+    });
+  });
+
   group('HeatMapService.postalCounts — prefix extraction', () {
     test('valid 7-digit postal code maps to 4-digit prefix', () {
       final counts = HeatMapService.postalCounts([_shippingSale('3000-550')]);
@@ -89,7 +107,9 @@ void main() {
     });
 
     test('handDelivery type is included', () {
-      final counts = HeatMapService.postalCounts([_handDeliverySale('2000-001')]);
+      final counts = HeatMapService.postalCounts([
+        _handDeliverySale('2000-001'),
+      ]);
       expect(counts, {'2000': 1});
     });
 

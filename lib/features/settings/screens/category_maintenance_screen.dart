@@ -1,12 +1,12 @@
-import '../../../core/services/error_reporter.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../demo/demo_mode.dart';
-import '../../sales/models/sale.dart';
-import '../services/category_service.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/settings/services/category_service.dart';
 
 class CategoryMaintenanceScreen extends StatefulWidget {
   const CategoryMaintenanceScreen({super.key});
@@ -16,8 +16,7 @@ class CategoryMaintenanceScreen extends StatefulWidget {
       _CategoryMaintenanceScreenState();
 }
 
-class _CategoryMaintenanceScreenState
-    extends State<CategoryMaintenanceScreen> {
+class _CategoryMaintenanceScreenState extends State<CategoryMaintenanceScreen> {
   final _service = CategoryService();
 
   List<String> _hidden = [];
@@ -26,17 +25,25 @@ class _CategoryMaintenanceScreenState
   @override
   void initState() {
     super.initState();
-    _loadHidden();
+    unawaited(_loadHidden());
   }
 
   Future<void> _loadHidden() async {
     try {
       final hidden = await _service.fetchHiddenCategories();
-      if (mounted) setState(() { _hidden = hidden; _loading = false; });
-    } catch (e, st) {
+      if (mounted) {
+        setState(() {
+          _hidden = hidden;
+          _loading = false;
+        });
+      }
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
-        setState(() { _hidden = []; _loading = false; });
+        setState(() {
+          _hidden = [];
+          _loading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorMsg(e))),
         );
@@ -47,14 +54,13 @@ class _CategoryMaintenanceScreenState
   List<_CategoryEntry> _buildEntries() {
     final counts = <String, int>{};
 
-    for (final sale in SalesStore.current ?? []) {
+    for (final sale in SalesStore.currentOrEmpty) {
       for (final item in sale.items) {
         counts[item.category] = (counts[item.category] ?? 0) + 1;
       }
     }
-    for (final repair in RepairsStore.current ?? []) {
-      counts[repair.itemCategory] =
-          (counts[repair.itemCategory] ?? 0) + 1;
+    for (final repair in RepairsStore.currentOrEmpty) {
+      counts[repair.itemCategory] = (counts[repair.itemCategory] ?? 0) + 1;
     }
 
     final known = {
@@ -64,11 +70,13 @@ class _CategoryMaintenanceScreenState
     };
 
     return known
-        .map((name) => _CategoryEntry(
-              name: name,
-              useCount: counts[name] ?? 0,
-              isHidden: _hidden.contains(name),
-            ))
+        .map(
+          (name) => _CategoryEntry(
+            name: name,
+            useCount: counts[name] ?? 0,
+            isHidden: _hidden.contains(name),
+          ),
+        )
         .toList()
       ..sort((a, b) {
         final cmp = b.useCount.compareTo(a.useCount);
@@ -94,16 +102,21 @@ class _CategoryMaintenanceScreenState
                     child: Text(
                       s.demoBanner,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ...entries.map((e) => _CategoryTile(
-                      entry: e,
-                      onRename: () => isDemo ? _showDemoBlocked() : _showRenameDialog(e),
-                      onToggleHide: () => isDemo ? _showDemoBlocked() : _toggleHide(e),
-                      onDelete: () => isDemo ? _showDemoBlocked() : _confirmDelete(e),
-                    )),
+                ...entries.map(
+                  (e) => _CategoryTile(
+                    entry: e,
+                    onRename: () =>
+                        isDemo ? _showDemoBlocked() : _showRenameDialog(e),
+                    onToggleHide: () =>
+                        isDemo ? _showDemoBlocked() : _toggleHide(e),
+                    onDelete: () =>
+                        isDemo ? _showDemoBlocked() : _confirmDelete(e),
+                  ),
+                ),
               ],
             ),
     );
@@ -149,8 +162,7 @@ class _CategoryMaintenanceScreenState
                   setDialogState(() => error = s.renameCategoryEmpty);
                   return;
                 }
-                if (newName != entry.name &&
-                    allNames.contains(newName)) {
+                if (newName != entry.name && allNames.contains(newName)) {
                   setDialogState(() => error = s.renameCategoryDuplicate);
                   return;
                 }
@@ -172,7 +184,7 @@ class _CategoryMaintenanceScreenState
       await _runWithProgress(s.renamingCategory, () async {
         updatedHidden = await _service.renameCategory(entry.name, newName);
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,12 +200,16 @@ class _CategoryMaintenanceScreenState
     try {
       if (entry.isHidden) {
         await _service.unhideCategory(entry.name);
-        if (mounted) setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
+        if (mounted) {
+          setState(
+            () => _hidden = _hidden.where((c) => c != entry.name).toList(),
+          );
+        }
       } else {
         await _service.hideCategory(entry.name);
         if (mounted) setState(() => _hidden = [..._hidden, entry.name]);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +242,7 @@ class _CategoryMaintenanceScreenState
     if (confirmed != true || !mounted) return;
     try {
       await _service.deleteCategory(entry.name);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -235,7 +251,9 @@ class _CategoryMaintenanceScreenState
       }
       return;
     }
-    if (mounted) setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
+    if (mounted) {
+      setState(() => _hidden = _hidden.where((c) => c != entry.name).toList());
+    }
   }
 
   Future<void> _runWithProgress(
@@ -243,7 +261,7 @@ class _CategoryMaintenanceScreenState
     Future<void> Function() action,
   ) async {
     if (!mounted) return;
-    showDialog(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -255,7 +273,7 @@ class _CategoryMaintenanceScreenState
           ],
         ),
       ),
-    );
+    ));
     try {
       await action();
     } finally {
@@ -265,31 +283,29 @@ class _CategoryMaintenanceScreenState
 }
 
 class _CategoryEntry {
-  final String name;
-  final int useCount;
-  final bool isHidden;
-
   const _CategoryEntry({
     required this.name,
     required this.useCount,
     required this.isHidden,
   });
+  final String name;
+  final int useCount;
+  final bool isHidden;
 }
 
 enum _CategoryAction { rename, toggleHide, delete }
 
 class _CategoryTile extends StatelessWidget {
-  final _CategoryEntry entry;
-  final VoidCallback onRename;
-  final VoidCallback onToggleHide;
-  final VoidCallback onDelete;
-
   const _CategoryTile({
     required this.entry,
     required this.onRename,
     required this.onToggleHide,
     required this.onDelete,
   });
+  final _CategoryEntry entry;
+  final VoidCallback onRename;
+  final VoidCallback onToggleHide;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -313,39 +329,39 @@ class _CategoryTile extends StatelessWidget {
             : null,
       ),
       trailing: PopupMenuButton<_CategoryAction>(
-              onSelected: (action) {
-                switch (action) {
-                  case _CategoryAction.rename:
-                    onRename();
-                  case _CategoryAction.toggleHide:
-                    onToggleHide();
-                  case _CategoryAction.delete:
-                    onDelete();
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: _CategoryAction.rename,
-                  child: Text(s.rename),
-                ),
-                PopupMenuItem(
-                  value: _CategoryAction.toggleHide,
-                  child: Text(entry.isHidden ? s.unhide : s.hide),
-                ),
-                PopupMenuItem(
-                  enabled: canDelete,
-                  value: _CategoryAction.delete,
-                  child: Text(
-                    s.delete,
-                    style: TextStyle(
-                      color: canDelete
-                          ? Colors.red
-                          : colorScheme.onSurface.withAlpha(97),
-                    ),
-                  ),
-                ),
-              ],
+        onSelected: (action) {
+          switch (action) {
+            case _CategoryAction.rename:
+              onRename();
+            case _CategoryAction.toggleHide:
+              onToggleHide();
+            case _CategoryAction.delete:
+              onDelete();
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: _CategoryAction.rename,
+            child: Text(s.rename),
+          ),
+          PopupMenuItem(
+            value: _CategoryAction.toggleHide,
+            child: Text(entry.isHidden ? s.unhide : s.hide),
+          ),
+          PopupMenuItem(
+            enabled: canDelete,
+            value: _CategoryAction.delete,
+            child: Text(
+              s.delete,
+              style: TextStyle(
+                color: canDelete
+                    ? Colors.red
+                    : colorScheme.onSurface.withAlpha(97),
+              ),
             ),
+          ),
+        ],
+      ),
     );
   }
 }

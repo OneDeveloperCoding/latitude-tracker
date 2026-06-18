@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
@@ -23,7 +23,7 @@ void main() {
 
       test('fails for paid sale', () {
         expect(
-          SaleFilter.unpaid.test(makeSale(payment: PaymentStatus.paid)),
+          SaleFilter.unpaid.test(makeSale()),
           isFalse,
         );
       });
@@ -39,7 +39,7 @@ void main() {
 
       test('fails when requiresNif is false', () {
         expect(
-          SaleFilter.nifRequired.test(makeSale(requiresNif: false)),
+          SaleFilter.nifRequired.test(makeSale()),
           isFalse,
         );
       });
@@ -48,7 +48,7 @@ void main() {
     group('scheduled', () {
       test('passes when scheduledDate is set', () {
         expect(
-          SaleFilter.scheduled.test(makeSale(scheduledDate: DateTime(2026, 7, 1))),
+          SaleFilter.scheduled.test(makeSale(scheduledDate: DateTime(2026, 7))),
           isTrue,
         );
       });
@@ -61,40 +61,40 @@ void main() {
     group('pendingShipment', () {
       test('passes for shipping + pending', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            delivery: DeliveryType.shipping,
-            shipmentStatus: ShipmentStatus.pending,
-          )),
+          SaleFilter.pendingShipment.test(makeSale()),
           isTrue,
         );
       });
 
       test('passes for handDelivery + pending', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            delivery: DeliveryType.handDelivery,
-            shipmentStatus: ShipmentStatus.pending,
-          )),
+          SaleFilter.pendingShipment.test(
+            makeSale(
+              delivery: DeliveryType.handDelivery,
+            ),
+          ),
           isTrue,
         );
       });
 
       test('fails for pickup even if pending', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            delivery: DeliveryType.pickup,
-            shipmentStatus: ShipmentStatus.pending,
-          )),
+          SaleFilter.pendingShipment.test(
+            makeSale(
+              delivery: DeliveryType.pickup,
+            ),
+          ),
           isFalse,
         );
       });
 
       test('fails for shipped status', () {
         expect(
-          SaleFilter.pendingShipment.test(makeSale(
-            delivery: DeliveryType.shipping,
-            shipmentStatus: ShipmentStatus.shipped,
-          )),
+          SaleFilter.pendingShipment.test(
+            makeSale(
+              shipmentStatus: ShipmentStatus.shipped,
+            ),
+          ),
           isFalse,
         );
       });
@@ -103,14 +103,16 @@ void main() {
     group('shipped', () {
       test('passes for shipped status', () {
         expect(
-          SaleFilter.shipped.test(makeSale(shipmentStatus: ShipmentStatus.shipped)),
+          SaleFilter.shipped.test(
+            makeSale(shipmentStatus: ShipmentStatus.shipped),
+          ),
           isTrue,
         );
       });
 
       test('fails for pending', () {
         expect(
-          SaleFilter.shipped.test(makeSale(shipmentStatus: ShipmentStatus.pending)),
+          SaleFilter.shipped.test(makeSale()),
           isFalse,
         );
       });
@@ -126,7 +128,7 @@ void main() {
 
       test('fails for shipping delivery type', () {
         expect(
-          SaleFilter.pickup.test(makeSale(delivery: DeliveryType.shipping)),
+          SaleFilter.pickup.test(makeSale()),
           isFalse,
         );
       });
@@ -135,24 +137,23 @@ void main() {
     group('handDelivery', () {
       test('passes for handDelivery type', () {
         expect(
-          SaleFilter.handDelivery
-              .test(makeSale(delivery: DeliveryType.handDelivery)),
+          SaleFilter.handDelivery.test(
+            makeSale(delivery: DeliveryType.handDelivery),
+          ),
           isTrue,
         );
       });
 
       test('fails for shipping type', () {
         expect(
-          SaleFilter.handDelivery
-              .test(makeSale(delivery: DeliveryType.shipping)),
+          SaleFilter.handDelivery.test(makeSale()),
           isFalse,
         );
       });
 
       test('fails for pickup type', () {
         expect(
-          SaleFilter.handDelivery
-              .test(makeSale(delivery: DeliveryType.pickup)),
+          SaleFilter.handDelivery.test(makeSale(delivery: DeliveryType.pickup)),
           isFalse,
         );
       });
@@ -162,7 +163,8 @@ void main() {
       test('passes when assembly is notStarted', () {
         expect(
           SaleFilter.assemblyNotReady.test(
-              makeSale(assembly: AssemblyStatus.notStarted)),
+            makeSale(assembly: AssemblyStatus.notStarted),
+          ),
           isTrue,
         );
       });
@@ -170,15 +172,15 @@ void main() {
       test('passes when assembly is waitingForMaterials', () {
         expect(
           SaleFilter.assemblyNotReady.test(
-              makeSale(assembly: AssemblyStatus.waitingForMaterials)),
+            makeSale(assembly: AssemblyStatus.waitingForMaterials),
+          ),
           isTrue,
         );
       });
 
       test('fails when assembly is ready', () {
         expect(
-          SaleFilter.assemblyNotReady.test(
-              makeSale(assembly: AssemblyStatus.ready)),
+          SaleFilter.assemblyNotReady.test(makeSale()),
           isFalse,
         );
       });
@@ -190,7 +192,6 @@ void main() {
           SaleFilter.overdue.test(
             makeSale(
               scheduledDate: DateTime(2026, 6, 3),
-              shipmentStatus: ShipmentStatus.pending,
             ),
             now: _kNow,
           ),
@@ -212,7 +213,7 @@ void main() {
         expect(
           SaleFilter.overdue.test(
             makeSale(
-              scheduledDate: DateTime(2026, 6, 1),
+              scheduledDate: DateTime(2026, 6),
               shipmentStatus: ShipmentStatus.delivered,
             ),
             now: _kNow,
@@ -232,7 +233,6 @@ void main() {
           SaleFilter.upcomingScheduled.test(
             makeSale(
               scheduledDate: DateTime(2026, 6, 4),
-              shipmentStatus: ShipmentStatus.pending,
             ),
             now: _kNow,
           ),
@@ -244,8 +244,7 @@ void main() {
         expect(
           SaleFilter.upcomingScheduled.test(
             makeSale(
-              scheduledDate: DateTime(2026, 7, 1),
-              shipmentStatus: ShipmentStatus.pending,
+              scheduledDate: DateTime(2026, 7),
             ),
             now: _kNow,
           ),
@@ -258,7 +257,6 @@ void main() {
           SaleFilter.upcomingScheduled.test(
             makeSale(
               scheduledDate: DateTime(2026, 6, 3),
-              shipmentStatus: ShipmentStatus.pending,
             ),
             now: _kNow,
           ),
@@ -277,7 +275,7 @@ void main() {
         expect(
           SaleFilter.upcomingScheduled.test(
             makeSale(
-              scheduledDate: DateTime(2026, 7, 1),
+              scheduledDate: DateTime(2026, 7),
               shipmentStatus: ShipmentStatus.delivered,
             ),
             now: _kNow,
@@ -306,7 +304,7 @@ void main() {
     test('single filter rejects when test fails', () {
       expect(
         testSaleFilters(
-          makeSale(payment: PaymentStatus.paid),
+          makeSale(),
           {SaleFilter.unpaid},
         ),
         isFalse,
@@ -326,7 +324,6 @@ void main() {
 
     test('AND logic — fails when only one filter passes', () {
       final sale = makeSale(
-        payment: PaymentStatus.paid,
         requiresNif: true,
       );
       expect(
@@ -337,9 +334,9 @@ void main() {
 
     group('dateFrom', () {
       test('passes when sale is on dateFrom', () {
-        final sale = makeSale(createdAt: DateTime(2026, 6, 1));
+        final sale = makeSale(createdAt: DateTime(2026, 6));
         expect(
-          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6, 1)),
+          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6)),
           isTrue,
         );
       });
@@ -347,7 +344,7 @@ void main() {
       test('passes when sale is after dateFrom', () {
         final sale = makeSale(createdAt: DateTime(2026, 6, 10));
         expect(
-          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6, 1)),
+          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6)),
           isTrue,
         );
       });
@@ -355,7 +352,7 @@ void main() {
       test('fails when sale is before dateFrom', () {
         final sale = makeSale(createdAt: DateTime(2026, 5, 31));
         expect(
-          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6, 1)),
+          testSaleFilters(sale, {}, dateFrom: DateTime(2026, 6)),
           isFalse,
         );
       });
@@ -371,7 +368,7 @@ void main() {
       });
 
       test('fails when sale is after dateTo', () {
-        final sale = makeSale(createdAt: DateTime(2026, 7, 1));
+        final sale = makeSale(createdAt: DateTime(2026, 7));
         expect(
           testSaleFilters(sale, {}, dateTo: DateTime(2026, 6, 30)),
           isFalse,
@@ -388,7 +385,7 @@ void main() {
         testSaleFilters(
           sale,
           {SaleFilter.unpaid},
-          dateFrom: DateTime(2026, 6, 1),
+          dateFrom: DateTime(2026, 6),
           dateTo: DateTime(2026, 6, 30),
         ),
         isTrue,
@@ -398,13 +395,13 @@ void main() {
     test('date range + filter — fails when sale is outside range', () {
       final sale = makeSale(
         payment: PaymentStatus.unpaid,
-        createdAt: DateTime(2026, 7, 1),
+        createdAt: DateTime(2026, 7),
       );
       expect(
         testSaleFilters(
           sale,
           {SaleFilter.unpaid},
-          dateFrom: DateTime(2026, 6, 1),
+          dateFrom: DateTime(2026, 6),
           dateTo: DateTime(2026, 6, 30),
         ),
         isFalse,

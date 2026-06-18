@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
 /// Shows a "Discard changes?" confirmation dialog.
 /// Returns true if the user chose to discard, false or null otherwise.

@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_status_colors.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../sales/models/sale.dart';
-import '../models/repair.dart';
-import 'repair_status_colors.dart';
-
-const _kDeliveryStatuses = {RepairStatus.done, RepairStatus.returned};
+const Set<RepairStatus> _kDeliveryStatuses = {
+  RepairStatus.done,
+  RepairStatus.returned,
+};
 
 class RepairCard extends StatelessWidget {
+  const RepairCard({
+    required this.repair,
+    required this.onTap,
+    super.key,
+    this.selected = false,
+  });
   final Repair repair;
   final VoidCallback onTap;
   final bool selected;
-
-  const RepairCard({
-    super.key,
-    required this.repair,
-    required this.onTap,
-    this.selected = false,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +84,8 @@ class RepairCard extends StatelessWidget {
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          if (repair.payment.status == PaymentStatus.unpaid) ...[
+                          if (repair.payment.status ==
+                              PaymentStatus.unpaid) ...[
                             const SizedBox(width: 8),
                             Icon(
                               Icons.payments_outlined,
@@ -113,18 +115,17 @@ class RepairCard extends StatelessWidget {
   }
 
   Color _statusColor(RepairStatus status, ColorScheme cs) => switch (status) {
-        RepairStatus.received => cs.tertiary,
-        RepairStatus.waitingForMaterials => cs.error,
-        RepairStatus.inProgress => cs.primary,
-        RepairStatus.done => Colors.green,
-        RepairStatus.returned => cs.onSurfaceVariant,
-      };
+    RepairStatus.received => cs.tertiary,
+    RepairStatus.waitingForMaterials => cs.error,
+    RepairStatus.inProgress => cs.primary,
+    RepairStatus.done => Colors.green,
+    RepairStatus.returned => cs.onSurfaceVariant,
+  };
 }
 
 class _ReturnDeliveryIndicator extends StatelessWidget {
-  final RepairReturnDelivery delivery;
-
   const _ReturnDeliveryIndicator({required this.delivery});
+  final RepairReturnDelivery delivery;
 
   @override
   Widget build(BuildContext context) {
@@ -136,10 +137,7 @@ class _ReturnDeliveryIndicator extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           _label(context.s),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
         ),
       ],
     );
@@ -155,7 +153,10 @@ class _ReturnDeliveryIndicator extends StatelessWidget {
           : (Icons.directions_walk, cs.onSurfaceVariant);
     }
     return switch (delivery.status) {
-      ShipmentStatus.pending => (Icons.local_shipping_outlined, cs.onSurfaceVariant),
+      ShipmentStatus.pending => (
+        Icons.local_shipping_outlined,
+        cs.onSurfaceVariant,
+      ),
       ShipmentStatus.shipped => (Icons.local_shipping, Colors.blue),
       ShipmentStatus.delivered => (Icons.local_shipping, Colors.green),
     };
@@ -165,10 +166,9 @@ class _ReturnDeliveryIndicator extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status, required this.s});
   final RepairStatus status;
   final AppStrings s;
-
-  const _StatusChip({required this.status, required this.s});
 
   @override
   Widget build(BuildContext context) {

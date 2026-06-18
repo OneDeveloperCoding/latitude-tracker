@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
-import '../models/buyer.dart';
-import '../models/buyer_address.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
 
 abstract class BuyerRepository {
   factory BuyerRepository() =>
@@ -18,7 +17,10 @@ abstract class BuyerRepository {
   Future<Buyer?> getBuyer(String id);
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId);
   Future<void> createBuyer(Buyer buyer);
-  Future<bool> createBuyerIfNotExists(Buyer buyer, List<BuyerAddress> addresses);
+  Future<bool> createBuyerIfNotExists(
+    Buyer buyer,
+    List<BuyerAddress> addresses,
+  );
   Future<void> updateBuyer(Buyer buyer);
   Future<void> deleteBuyer(String id);
   Future<void> deleteAllBuyers();
@@ -28,8 +30,8 @@ abstract class BuyerRepository {
 }
 
 class _FirestoreBuyerRepository implements BuyerRepository {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String get _userId =>
       _auth.currentUser?.uid ?? (throw const AuthRevokedException());
@@ -48,9 +50,9 @@ class _FirestoreBuyerRepository implements BuyerRepository {
 
   @override
   Future<List<BuyerAddress>> getAllAddressesForBuyer(String buyerId) =>
-      _addressesRef(buyerId)
-          .get()
-          .then((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+      _addressesRef(buyerId).get().then(
+        (snap) => snap.docs.map(BuyerAddress.fromFirestore).toList(),
+      );
 
   @override
   Stream<List<Buyer>> watchBuyers() => _buyersRef
@@ -76,13 +78,15 @@ class _FirestoreBuyerRepository implements BuyerRepository {
 
   @override
   Future<bool> createBuyerIfNotExists(
-      Buyer buyer, List<BuyerAddress> addresses) async {
+    Buyer buyer,
+    List<BuyerAddress> addresses,
+  ) async {
     if ((await _buyersRef.doc(buyer.id).get()).exists) return false;
     // Single batch for the buyer doc + all address docs so the write is atomic.
     // No need to call _clearDefaultAddress here because the buyer doesn't yet
     // exist, so there are no existing default addresses to demote.
-    final batch = _firestore.batch();
-    batch.set(_buyersRef.doc(buyer.id), buyer.toFirestore());
+    final batch = _firestore.batch()
+      ..set(_buyersRef.doc(buyer.id), buyer.toFirestore());
     for (final address in addresses) {
       batch.set(_addressesRef(buyer.id).doc(address.id), address.toFirestore());
     }
@@ -113,11 +117,10 @@ class _FirestoreBuyerRepository implements BuyerRepository {
           .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
 
   @override
-  Stream<List<BuyerAddress>> watchAllAddresses() =>
-      _firestore
-          .collectionGroup('addresses')
-          .snapshots()
-          .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
+  Stream<List<BuyerAddress>> watchAllAddresses() => _firestore
+      .collectionGroup('addresses')
+      .snapshots()
+      .map((snap) => snap.docs.map(BuyerAddress.fromFirestore).toList());
 
   @override
   Future<void> deleteAllBuyers() async {
@@ -159,8 +162,9 @@ class _FirestoreBuyerRepository implements BuyerRepository {
     WriteBatch batch, {
     String? excludeId,
   }) async {
-    final existing =
-        await _addressesRef(buyerId).where('isDefault', isEqualTo: true).get();
+    final existing = await _addressesRef(
+      buyerId,
+    ).where('isDefault', isEqualTo: true).get();
     for (final doc in existing.docs) {
       if (doc.id != excludeId) {
         batch.update(doc.reference, {'isDefault': false});

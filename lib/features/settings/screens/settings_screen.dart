@@ -1,23 +1,24 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/locale_settings.dart'
+    show AppLocaleScope, LocaleSettings;
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/theme/theme_settings.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/settings/screens/archive_import_screen.dart';
+import 'package:latitude_tracker/features/settings/screens/category_maintenance_screen.dart';
+import 'package:latitude_tracker/features/settings/services/archive_service.dart';
+import 'package:latitude_tracker/features/settings/services/reset_app_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/l10n/locale_settings.dart' show AppLocaleScope, LocaleSettings;
-import '../../../core/theme/theme_settings.dart';
-import '../../demo/demo_mode.dart';
-import '../../demo/demo_tutorial_sheet.dart';
-import '../../repairs/repositories/repair_repository.dart';
-import '../../sales/repositories/sale_repository.dart';
-import '../services/archive_service.dart';
-import '../services/reset_app_service.dart';
-import 'archive_import_screen.dart';
-import 'category_maintenance_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -32,87 +33,93 @@ class SettingsScreen extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-        children: [
-          _SectionHeader(s.account),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(s.signedInAs),
-            subtitle: Text(isDemo ? s.demoUser : (user?.email ?? '')),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom,
           ),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: Text(s.signOut),
-            onTap: () => isDemo ? DemoMode.exit() : _confirmSignOut(context),
-          ),
-          const Divider(),
-          _SectionHeader(s.catalogueSection),
-          ListTile(
-            leading: const Icon(Icons.label_outline),
-            title: Text(s.categoriesTitle),
-            subtitle: Text(s.categoriesSubtitle),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CategoryMaintenanceScreen(),
+          children: [
+            _SectionHeader(s.account),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: Text(s.signedInAs),
+              subtitle: Text(isDemo ? s.demoUser : (user?.email ?? '')),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: Text(s.signOut),
+              onTap: () => isDemo ? DemoMode.exit() : _confirmSignOut(context),
+            ),
+            const Divider(),
+            _SectionHeader(s.catalogueSection),
+            ListTile(
+              leading: const Icon(Icons.label_outline),
+              title: Text(s.categoriesTitle),
+              subtitle: Text(s.categoriesSubtitle),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const CategoryMaintenanceScreen(),
+                ),
               ),
             ),
-          ),
-          const Divider(),
-          _SectionHeader(s.archive),
-          ListTile(
-            leading: const Icon(Icons.upload),
-            title: Text(s.exportYear),
-            subtitle: Text(s.exportYearSubtitle),
-            onTap: () => _exportYear(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.download),
-            title: Text(s.importArchive),
-            subtitle: Text(s.importArchiveSubtitle),
-            onTap: () => _importArchive(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: Text(s.deleteArchivedYear,
-                style: const TextStyle(color: Colors.red)),
-            subtitle: Text(s.deleteArchivedYearSubtitle),
-            onTap: () => _deleteYear(context),
-          ),
-          const Divider(),
-          _SectionHeader(s.app),
-          ListTile(
-            leading: const Icon(Icons.explore_outlined),
-            title: Text(s.appTour),
-            onTap: () => DemoTutorialSheet.show(context),
-          ),
-          _LanguageTile(),
-          _ThemeModeTile(),
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              final version = snapshot.data?.version ?? '—';
-              final build = snapshot.data?.buildNumber ?? '';
-              return ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: Text(s.version),
-                trailing: Text('$version ($build)'),
-              );
-            },
-          ),
-          if (!isDemo) ...[
             const Divider(),
-            _SectionHeader(s.dangerZone),
+            _SectionHeader(s.archive),
             ListTile(
-              leading: const Icon(Icons.delete_sweep, color: Colors.red),
-              title: Text(s.resetApp,
-                  style: const TextStyle(color: Colors.red)),
-              subtitle: Text(s.resetAppSubtitle),
-              onTap: () => _resetApp(context),
+              leading: const Icon(Icons.upload),
+              title: Text(s.exportYear),
+              subtitle: Text(s.exportYearSubtitle),
+              onTap: () => _exportYear(context),
             ),
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: Text(s.importArchive),
+              subtitle: Text(s.importArchiveSubtitle),
+              onTap: () => _importArchive(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: Text(
+                s.deleteArchivedYear,
+                style: const TextStyle(color: Colors.red),
+              ),
+              subtitle: Text(s.deleteArchivedYearSubtitle),
+              onTap: () => _deleteYear(context),
+            ),
+            const Divider(),
+            _SectionHeader(s.app),
+            ListTile(
+              leading: const Icon(Icons.explore_outlined),
+              title: Text(s.appTour),
+              onTap: () => DemoTutorialSheet.show(context),
+            ),
+            _LanguageTile(),
+            _ThemeModeTile(),
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.data?.version ?? '—';
+                final build = snapshot.data?.buildNumber ?? '';
+                return ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(s.version),
+                  trailing: Text('$version ($build)'),
+                );
+              },
+            ),
+            if (!isDemo) ...[
+              const Divider(),
+              _SectionHeader(s.dangerZone),
+              ListTile(
+                leading: const Icon(Icons.delete_sweep, color: Colors.red),
+                title: Text(
+                  s.resetApp,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                subtitle: Text(s.resetAppSubtitle),
+                onTap: () => _resetApp(context),
+              ),
+            ],
           ],
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -138,7 +145,7 @@ class SettingsScreen extends StatelessWidget {
     if (confirmed == true) {
       try {
         await FirebaseAuth.instance.signOut();
-      } catch (e, st) {
+      } on Object catch (e, st) {
         logError(e, st);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -184,7 +191,7 @@ class SettingsScreen extends StatelessWidget {
         s.resettingApp,
         () => ResetAppService().resetApp(deletePhotos: deletePhotos),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -206,7 +213,7 @@ class SettingsScreen extends StatelessWidget {
       await _runWithProgress(context, s.exportingYear(year), () async {
         file = await service.exportYear(year);
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -239,7 +246,7 @@ class SettingsScreen extends StatelessWidget {
     final String content;
     try {
       content = await File(path).readAsString();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -259,12 +266,12 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    Navigator.push(
+    unawaited(Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => ArchiveImportScreen(archive: archive),
       ),
-    );
+    ));
   }
 
   Future<void> _deleteYear(BuildContext context) async {
@@ -282,16 +289,20 @@ class SettingsScreen extends StatelessWidget {
     try {
       await _runWithProgress(
         context,
-        s.deletingYear(year, deletePhotos),
+        s.deletingYear(year, deletePhotos: deletePhotos),
         () async {
-          await SaleRepository()
-              .deleteAllSalesForYear(year, deletePhotos: deletePhotos);
+          await SaleRepository().deleteAllSalesForYear(
+            year,
+            deletePhotos: deletePhotos,
+          );
           salesDeleted = true;
-          await RepairRepository()
-              .deleteAllRepairsForYear(year, deletePhotos: deletePhotos);
+          await RepairRepository().deleteAllRepairsForYear(
+            year,
+            deletePhotos: deletePhotos,
+          );
         },
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         final message = salesDeleted
@@ -320,10 +331,12 @@ class SettingsScreen extends StatelessWidget {
       builder: (_) => SimpleDialog(
         title: Text(title),
         children: years
-            .map((y) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(context, y),
-                  child: Text('$y'),
-                ))
+            .map(
+              (y) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, y),
+                child: Text('$y'),
+              ),
+            )
             .toList(),
       ),
     );
@@ -335,7 +348,7 @@ class SettingsScreen extends StatelessWidget {
     Future<void> Function() action,
   ) async {
     if (!context.mounted) return;
-    showDialog(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -347,7 +360,7 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
     try {
       await action();
     } finally {
@@ -371,8 +384,7 @@ class _LanguageTile extends StatelessWidget {
           ButtonSegment(value: 'en', label: Text('EN')),
         ],
         selected: {currentCode},
-        onSelectionChanged: (v) =>
-            LocaleSettings.setLocale(Locale(v.first)),
+        onSelectionChanged: (v) => LocaleSettings.setLocale(Locale(v.first)),
         style: const ButtonStyle(
           visualDensity: VisualDensity.compact,
         ),
@@ -417,9 +429,8 @@ class _ThemeModeTile extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String title;
-
   const _SectionHeader(this.title);
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -428,18 +439,17 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 1.2,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
 }
 
 class _DeleteYearDialog extends StatefulWidget {
-  final int year;
-
   const _DeleteYearDialog({required this.year});
+  final int year;
 
   @override
   State<_DeleteYearDialog> createState() => _DeleteYearDialogState();

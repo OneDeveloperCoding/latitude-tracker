@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/postal_code_service.dart';
-import '../models/buyer_address.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/postal_code_service.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 
 const kAddressCountries = [
   'Portugal',
@@ -20,14 +21,13 @@ const kAddressCountries = [
 final _ptPostalCodeRegex = RegExp(r'^\d{4}-\d{3}$');
 
 class AddressFormFields extends StatefulWidget {
-  final BuyerAddress? initial;
-  final bool showIsDefault;
-
   const AddressFormFields({
     super.key,
     this.initial,
     this.showIsDefault = false,
   });
+  final BuyerAddress? initial;
+  final bool showIsDefault;
 
   @override
   State<AddressFormFields> createState() => AddressFormFieldsState();
@@ -67,10 +67,12 @@ class AddressFormFieldsState extends State<AddressFormFields> {
           _notesController.text.trim().isNotEmpty ||
           _isDefault;
     }
-    final fraction =
-        _fractionController.text.trim().isEmpty ? null : _fractionController.text.trim();
-    final notes =
-        _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    final fraction = _fractionController.text.trim().isEmpty
+        ? null
+        : _fractionController.text.trim();
+    final notes = _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim();
     return _labelController.text.trim() != a.label ||
         _postalCodeController.text.trim() != a.postalCode ||
         _cityController.text.trim() != a.city ||
@@ -83,23 +85,23 @@ class AddressFormFieldsState extends State<AddressFormFields> {
   }
 
   BuyerAddress buildAddress(String id) => BuyerAddress(
-        id: id,
-        label: _labelController.text.trim().isEmpty
-            ? context.s.addressDefaultLabel
-            : _labelController.text.trim(),
-        street: _streetController.text.trim(),
-        houseNumber: _houseNumberController.text.trim(),
-        fraction: _fractionController.text.trim().isEmpty
-            ? null
-            : _fractionController.text.trim(),
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-        city: _cityController.text.trim(),
-        postalCode: _postalCodeController.text.trim(),
-        country: _country,
-        isDefault: _isDefault,
-      );
+    id: id,
+    label: _labelController.text.trim().isEmpty
+        ? context.s.addressDefaultLabel
+        : _labelController.text.trim(),
+    street: _streetController.text.trim(),
+    houseNumber: _houseNumberController.text.trim(),
+    fraction: _fractionController.text.trim().isEmpty
+        ? null
+        : _fractionController.text.trim(),
+    notes: _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim(),
+    city: _cityController.text.trim(),
+    postalCode: _postalCodeController.text.trim(),
+    country: _country,
+    isDefault: _isDefault,
+  );
 
   @override
   void initState() {
@@ -140,7 +142,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
       return;
     }
     if (code == _lastLookedUp) return;
-    _lookup(code);
+    unawaited(_lookup(code));
   }
 
   void _clearAutoFilledFields() {
@@ -222,10 +224,12 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             border: const OutlineInputBorder(),
           ),
           items: kAddressCountries
-              .map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(s.countryDisplayNames[c] ?? c),
-                  ))
+              .map(
+                (c) => DropdownMenuItem(
+                  value: c,
+                  child: Text(s.countryDisplayNames[c] ?? c),
+                ),
+              )
               .toList(),
           onChanged: (v) => setState(() {
             _country = v!;
@@ -333,9 +337,8 @@ class AddressFormFieldsState extends State<AddressFormFields> {
 }
 
 class _StreetPickerSheet extends StatelessWidget {
-  final List<String> streets;
-
   const _StreetPickerSheet({required this.streets});
+  final List<String> streets;
 
   @override
   Widget build(BuildContext context) {

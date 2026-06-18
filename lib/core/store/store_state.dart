@@ -7,11 +7,11 @@ final class StoreLoading<T> extends StoreState<T> {
 }
 
 final class StoreLoaded<T> extends StoreState<T> {
-  final T data;
   const StoreLoaded(this.data);
+  final T data;
 }
 
 final class StoreError<T> extends StoreState<T> {
-  final Object error;
   const StoreError(this.error);
+  final Object error;
 }

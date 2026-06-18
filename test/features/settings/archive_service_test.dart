@@ -1,89 +1,85 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_buyer_repository.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_repair_repository.dart';
 import 'package:latitude_tracker/features/demo/repositories/in_memory_sale_repository.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
+import 'package:test/test.dart';
 
 Map<String, dynamic> _saleMap({
   String id = 's1',
   String createdAt = '2025-06-01T10:00:00.000',
-}) =>
-    {
-      'id': id,
-      'buyerId': 'b1',
-      'buyerName': 'Ana',
-      'items': <dynamic>[],
-      'payment': {'status': 'paid', 'method': 'mbWay'},
-      'shipment': {'type': 'shipping', 'status': 'pending'},
-      'requiresNif': false,
-      'atSubmissionDone': false,
-      'createdAt': createdAt,
-      'scheduledDate': null,
-      'notes': null,
-    };
+}) => {
+  'id': id,
+  'buyerId': 'b1',
+  'buyerName': 'Ana',
+  'items': <dynamic>[],
+  'payment': {'status': 'paid', 'method': 'mbWay'},
+  'shipment': {'type': 'shipping', 'status': 'pending'},
+  'requiresNif': false,
+  'atSubmissionDone': false,
+  'createdAt': createdAt,
+  'scheduledDate': null,
+  'notes': null,
+};
 
 Map<String, dynamic> _repairMap({
   String id = 'r1',
   String createdAt = '2025-06-01T10:00:00.000',
-}) =>
-    {
-      'id': id,
-      'buyerId': 'b1',
-      'buyerName': 'Ana',
-      'freeTextContact': null,
-      'linkedSaleId': null,
-      'itemDescription': 'Colar',
-      'itemCategory': 'Colares',
-      'problemDescription': 'Broken clasp',
-      'workDone': '',
-      'materialsCost': null,
-      'status': 'received',
-      'payment': {'status': 'unpaid', 'method': 'cash'},
-      'returnDelivery': {'type': 'shipping', 'status': 'pending'},
-      'photoUrls': <dynamic>[],
-      'createdAt': createdAt,
-    };
+}) => {
+  'id': id,
+  'buyerId': 'b1',
+  'buyerName': 'Ana',
+  'freeTextContact': null,
+  'linkedSaleId': null,
+  'itemDescription': 'Colar',
+  'itemCategory': 'Colares',
+  'problemDescription': 'Broken clasp',
+  'workDone': '',
+  'materialsCost': null,
+  'status': 'received',
+  'payment': {'status': 'unpaid', 'method': 'cash'},
+  'returnDelivery': {'type': 'shipping', 'status': 'pending'},
+  'photoUrls': <dynamic>[],
+  'createdAt': createdAt,
+};
 
 Map<String, dynamic> _buyerMap({
   String id = 'b1',
   String createdAt = '2025-01-01T00:00:00.000',
   List<Map<String, dynamic>> addresses = const [],
-}) =>
-    {
-      'id': id,
-      'name': 'Ana',
-      'instagramHandle': '@ana',
-      'phone': null,
-      'nif': null,
-      'tags': <dynamic>[],
-      'notes': null,
-      'createdAt': createdAt,
-      'addresses': addresses,
-    };
+}) => {
+  'id': id,
+  'name': 'Ana',
+  'instagramHandle': '@ana',
+  'phone': null,
+  'nif': null,
+  'tags': <dynamic>[],
+  'notes': null,
+  'createdAt': createdAt,
+  'addresses': addresses,
+};
 
 Map<String, dynamic> _addressMap({String id = 'addr1'}) => {
-      'id': id,
-      'label': 'Casa',
-      'street': 'Rua das Flores',
-      'houseNumber': '10',
-      'fraction': null,
-      'notes': null,
-      'city': 'Porto',
-      'postalCode': '4000-123',
-      'country': 'Portugal',
-      'isDefault': true,
-    };
+  'id': id,
+  'label': 'Casa',
+  'street': 'Rua das Flores',
+  'houseNumber': '10',
+  'fraction': null,
+  'notes': null,
+  'city': 'Porto',
+  'postalCode': '4000-123',
+  'country': 'Portugal',
+  'isDefault': true,
+};
 
 ArchiveService _service({
   InMemorySaleRepository? sales,
   InMemoryBuyerRepository? buyers,
   InMemoryRepairRepository? repairs,
-}) =>
-    ArchiveService(
-      salesRepo: sales ?? InMemorySaleRepository(),
-      buyersRepo: buyers ?? InMemoryBuyerRepository(),
-      repairsRepo: repairs ?? InMemoryRepairRepository(),
-    );
+}) => ArchiveService(
+  salesRepo: sales ?? InMemorySaleRepository(),
+  buyersRepo: buyers ?? InMemoryBuyerRepository(),
+  repairsRepo: repairs ?? InMemoryRepairRepository(),
+);
 
 void main() {
   group('ArchiveService.importArchive — version check', () {
@@ -95,11 +91,13 @@ void main() {
           'sales': <dynamic>[],
           'buyers': <dynamic>[],
         }),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('2.0'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('2.0'),
+          ),
+        ),
       );
     });
 
@@ -160,7 +158,9 @@ void main() {
         'version': '1.2',
         'sales': <dynamic>[],
         'repairs': <dynamic>[],
-        'buyers': [_buyerMap(addresses: [_addressMap()])],
+        'buyers': [
+          _buyerMap(addresses: [_addressMap()]),
+        ],
       });
 
       expect(result.buyersImported, 1);
@@ -233,20 +233,23 @@ void main() {
       final buyersRepo = InMemoryBuyerRepository();
       final repairsRepo = InMemoryRepairRepository();
       final service = _service(
-          sales: salesRepo, buyers: buyersRepo, repairs: repairsRepo);
+        sales: salesRepo,
+        buyers: buyersRepo,
+        repairs: repairsRepo,
+      );
 
       final archive = {
         'version': '1.2',
-        'sales': [_saleMap(id: 's1'), _saleMap(id: 's2')],
-        'repairs': [_repairMap(id: 'r1')],
-        'buyers': [_buyerMap(id: 'b1')],
+        'sales': [_saleMap(), _saleMap(id: 's2')],
+        'repairs': [_repairMap()],
+        'buyers': [_buyerMap()],
       };
       await service.importArchive(archive);
 
       final archiveWithDuplicate = {
         'version': '1.2',
-        'sales': [_saleMap(id: 's1'), _saleMap(id: 's3')],
-        'repairs': [_repairMap(id: 'r1')],
+        'sales': [_saleMap(), _saleMap(id: 's3')],
+        'repairs': [_repairMap()],
         'buyers': [_buyerMap(id: 'b2')],
       };
       final result = await service.importArchive(archiveWithDuplicate);
@@ -258,22 +261,25 @@ void main() {
     });
   });
 
-  group('ArchiveService.importArchive — malformed entries are silently skipped', () {
-    test('entry without id is skipped and not counted', () async {
-      final salesRepo = InMemorySaleRepository();
-      final service = _service(sales: salesRepo);
+  group(
+    'ArchiveService.importArchive — malformed entries are silently skipped',
+    () {
+      test('entry without id is skipped and not counted', () async {
+        final salesRepo = InMemorySaleRepository();
+        final service = _service(sales: salesRepo);
 
-      final result = await service.importArchive({
-        'version': '1.2',
-        'sales': [
-          {'buyerId': 'b1', 'createdAt': '2025-01-01T00:00:00.000'},
-        ],
-        'repairs': <dynamic>[],
-        'buyers': <dynamic>[],
+        final result = await service.importArchive({
+          'version': '1.2',
+          'sales': [
+            {'buyerId': 'b1', 'createdAt': '2025-01-01T00:00:00.000'},
+          ],
+          'repairs': <dynamic>[],
+          'buyers': <dynamic>[],
+        });
+
+        expect(result.salesImported, 0);
+        expect(result.skipped, 0);
       });
-
-      expect(result.salesImported, 0);
-      expect(result.skipped, 0);
-    });
-  });
+    },
+  );
 }

@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../../core/services/firestore_batch_utils.dart';
-import '../../demo/demo_mode.dart';
-import '../models/sale.dart';
-import '../services/photo_service.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/core/services/firestore_batch_utils.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 
 abstract class SaleRepository {
   factory SaleRepository() =>
@@ -26,8 +26,8 @@ abstract class SaleRepository {
 }
 
 class _FirestoreSaleRepository implements SaleRepository {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String get _userId =>
       _auth.currentUser?.uid ?? (throw const AuthRevokedException());
@@ -61,8 +61,10 @@ class _FirestoreSaleRepository implements SaleRepository {
 
   @override
   Future<List<Sale>> getSalesForYear(int year) => _salesRef
-      .where('createdAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(year)))
+      .where(
+        'createdAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(year)),
+      )
       .where('createdAt', isLessThan: Timestamp.fromDate(DateTime(year + 1)))
       .get()
       .then((snap) => snap.docs.map(Sale.fromFirestore).toList());
@@ -70,8 +72,10 @@ class _FirestoreSaleRepository implements SaleRepository {
   // By default keeps photos in Storage so archive JSON URLs stay valid.
   // Pass deletePhotos: true for a full wipe (e.g. reset).
   @override
-  Future<void> deleteAllSalesForYear(int year,
-      {bool deletePhotos = false}) async {
+  Future<void> deleteAllSalesForYear(
+    int year, {
+    bool deletePhotos = false,
+  }) async {
     final sales = await getSalesForYear(year);
     if (sales.isEmpty) return;
     if (deletePhotos) {
@@ -110,8 +114,11 @@ class _FirestoreSaleRepository implements SaleRepository {
   Stream<List<Sale>> watchSalesForBuyer(String buyerId) => _salesRef
       .where('buyerId', isEqualTo: buyerId)
       .snapshots()
-      .map((snap) => snap.docs.map(Sale.fromFirestore).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+      .map(
+        (snap) =>
+            snap.docs.map(Sale.fromFirestore).toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+      );
 
   @override
   Future<List<Sale>> getSalesForBuyer(String buyerId) => _salesRef
@@ -131,7 +138,8 @@ class _FirestoreSaleRepository implements SaleRepository {
     final toUpdate = snap.docs.where((doc) {
       final items = doc.data()['items'] as List<dynamic>? ?? [];
       return items.any(
-          (item) => (item as Map<String, dynamic>)['category'] == oldName);
+        (item) => (item as Map<String, dynamic>)['category'] == oldName,
+      );
     }).toList();
     if (toUpdate.isEmpty) return;
 
@@ -139,13 +147,11 @@ class _FirestoreSaleRepository implements SaleRepository {
       _firestore,
       toUpdate,
       (batch, doc) {
-        final items = (doc.data()['items'] as List<dynamic>)
-            .map((raw) {
-              final item = Map<String, dynamic>.from(raw as Map);
-              if (item['category'] == oldName) item['category'] = newName;
-              return item;
-            })
-            .toList();
+        final items = (doc.data()['items'] as List<dynamic>).map((raw) {
+          final item = Map<String, dynamic>.from(raw as Map);
+          if (item['category'] == oldName) item['category'] = newName;
+          return item;
+        }).toList();
         batch.update(doc.reference, {'items': items});
       },
     );

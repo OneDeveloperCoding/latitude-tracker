@@ -1,11 +1,12 @@
 import 'package:intl/intl.dart';
 
-import '../models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 /// Groups a list of [Sale]s into ordered buckets for the timeline view.
 ///
 /// Bucket keys are always English strings — callers translate them for display.
-/// Fixed buckets appear first in this order, followed by past months descending.
+// / Fixed buckets appear first in this order, followed by past months
+// descending.
 class SaleGrouper {
   SaleGrouper._();
 
@@ -43,13 +44,14 @@ class SaleGrouper {
     final startOfThisWeek = today.subtract(Duration(days: today.weekday - 1));
     final startOfNextWeek = startOfThisWeek.add(const Duration(days: 7));
     final endOfNextWeek = startOfNextWeek.add(const Duration(days: 7));
-    final Map<String, List<Sale>> groups = {};
+    final groups = <String, List<Sale>>{};
 
     for (final sale in sales) {
       groups
           .putIfAbsent(
-              _weekKey(sale, startOfThisWeek, startOfNextWeek, endOfNextWeek),
-              () => [])
+            _weekKey(sale, startOfThisWeek, startOfNextWeek, endOfNextWeek),
+            () => [],
+          )
           .add(sale);
     }
 
@@ -63,8 +65,12 @@ class SaleGrouper {
     return sorted;
   }
 
-  static String _weekKey(Sale sale, DateTime startOfThisWeek,
-      DateTime startOfNextWeek, DateTime endOfNextWeek) {
+  static String _weekKey(
+    Sale sale,
+    DateTime startOfThisWeek,
+    DateTime startOfNextWeek,
+    DateTime endOfNextWeek,
+  ) {
     final relevantDate = sale.scheduledDate ?? sale.createdAt;
 
     if (sale.scheduledDate != null &&

@@ -1,14 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/sheet_section_label.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../models/repair.dart';
-import '../widgets/repair_card.dart';
-import 'new_repair_screen.dart';
-import 'repair_detail_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/sheet_section_label.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/screens/new_repair_screen.dart';
+import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_card.dart';
 
 enum _SortOrder { newestFirst, oldestFirst }
 
@@ -51,9 +51,11 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
     if (_searchQuery.isEmpty) return repairs;
     final q = _searchQuery.toLowerCase();
     return repairs
-        .where((r) =>
-            r.contactName.toLowerCase().contains(q) ||
-            r.itemDescription.toLowerCase().contains(q))
+        .where(
+          (r) =>
+              r.contactName.toLowerCase().contains(q) ||
+              r.itemDescription.toLowerCase().contains(q),
+        )
         .toList();
   }
 
@@ -77,7 +79,8 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
         final isLoading = state is StoreLoading;
         final repairs = _applySort(_applySearch(_applyFilter(allRepairs)));
 
-        // On wide layout, clear selection if the repair was deleted on another device.
+        // On wide layout, clear selection if the repair was deleted on another
+        // device.
         if (_selectedRepair != null && state is StoreLoaded<List<Repair>>) {
           if (!allRepairs.any((r) => r.id == _selectedRepair!.id)) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -123,7 +126,6 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                     FilterChip(
                       avatar: const Icon(Icons.search, size: 18),
                       label: Text(s.searchRepairs),
-                      selected: false,
                       onSelected: (_) => setState(() => _searchExpanded = true),
                       visualDensity: VisualDensity.compact,
                     ),
@@ -148,41 +150,47 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                       onRetry: RepairsStore.ensureSubscribed,
                     )
                   : isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : repairs.isEmpty
-                          ? Center(
-                              child: Text(
-                                s.noRepairsFound,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-                              itemCount: repairs.length,
-                              itemBuilder: (context, i) {
-                                final repair = repairs[i];
-                                return RepairCard(
-                                  repair: repair,
-                                  selected: _selectedRepair?.id == repair.id,
-                                  onTap: () {
-                                    if (_isWide) {
-                                      setState(() => _selectedRepair = repair);
-                                      _rightPanelKey.currentState
-                                          ?.pushReplacement(MaterialPageRoute(
-                                        builder: (_) => RepairDetailScreen(
-                                            repairId: repair.id),
-                                      ));
-                                    } else {
-                                      Navigator.of(context)
-                                          .push(MaterialPageRoute(
-                                        builder: (_) => RepairDetailScreen(
-                                            repairId: repair.id),
-                                      ));
-                                    }
-                                  },
-                                );
-                              },
-                            ),
+                  ? const Center(child: CircularProgressIndicator())
+                  : repairs.isEmpty
+                  ? Center(
+                      child: Text(
+                        s.noRepairsFound,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom,
+                      ),
+                      itemCount: repairs.length,
+                      itemBuilder: (context, i) {
+                        final repair = repairs[i];
+                        return RepairCard(
+                          repair: repair,
+                          selected: _selectedRepair?.id == repair.id,
+                          onTap: () {
+                            if (_isWide) {
+                              setState(() => _selectedRepair = repair);
+                              unawaited(
+                                _rightPanelKey.currentState?.pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        RepairDetailScreen(repairId: repair.id),
+                                  ),
+                                ) ?? Future<void>.value(),
+                              );
+                            } else {
+                              unawaited(Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      RepairDetailScreen(repairId: repair.id),
+                                ),
+                              ));
+                            }
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         );
@@ -190,7 +198,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
         final fab = FloatingActionButton(
           heroTag: 'repair-fab',
           onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const NewRepairScreen()),
+            MaterialPageRoute<void>(builder: (_) => const NewRepairScreen()),
           ),
           tooltip: s.newRepair,
           child: const Icon(Icons.add),
@@ -219,7 +227,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                       )
                     : Navigator(
                         key: _rightPanelKey,
-                        onGenerateRoute: (_) => MaterialPageRoute(
+                        onGenerateRoute: (_) => MaterialPageRoute<void>(
                           builder: (_) => RepairDetailScreen(
                             repairId: _selectedRepair!.id,
                           ),
@@ -235,7 +243,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
 
   void _showOptionsSheet() {
     final s = context.s;
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
@@ -257,7 +265,6 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           return SafeArea(
             child: DraggableScrollableSheet(
               expand: false,
-              initialChildSize: 0.5,
               minChildSize: 0.3,
               maxChildSize: 0.85,
               builder: (_, scrollController) => SingleChildScrollView(
@@ -311,16 +318,18 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                         spacing: 8,
                         runSpacing: 4,
                         children: RepairStatus.values
-                            .map((status) => FilterChip(
-                                  label: Text(s.repairStatusLabelFor(status)),
-                                  selected: _statusFilters.contains(status),
-                                  onSelected: (on) {
-                                    _statusFilters = on
-                                        ? {..._statusFilters, status}
-                                        : ({..._statusFilters}..remove(status));
-                                    refresh();
-                                  },
-                                ))
+                            .map(
+                              (status) => FilterChip(
+                                label: Text(s.repairStatusLabelFor(status)),
+                                selected: _statusFilters.contains(status),
+                                onSelected: (on) {
+                                  _statusFilters = on
+                                      ? {..._statusFilters, status}
+                                      : ({..._statusFilters}..remove(status));
+                                  refresh();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ),
@@ -331,7 +340,6 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           );
         },
       ),
-    );
+    ));
   }
 }
-

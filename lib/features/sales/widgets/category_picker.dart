@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../settings/repositories/catalogue_repository.dart';
-import '../models/sale.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/settings/repositories/catalogue_repository.dart';
 
 /// Opens a bottom sheet that lets the user pick an existing category or type a
 /// new one. Fetches the hidden-category list once before showing the sheet so
@@ -25,11 +24,13 @@ Future<String?> showCategoryPicker(
   );
 }
 
-/// Returns deduplicated, visible categories sorted by usage frequency descending.
-/// Seeds from [kDefaultCategories] so the list is never empty on a fresh install.
+// / Returns deduplicated, visible categories sorted by usage frequency
+// descending.
+// / Seeds from [kDefaultCategories] so the list is never empty on a fresh
+// install.
 List<String> _buildSortedCategories(Set<String> hidden) {
   final counts = <String, int>{};
-  for (final sale in SalesStore.current ?? []) {
+  for (final sale in SalesStore.currentOrEmpty) {
     for (final item in sale.items) {
       counts[item.category] = (counts[item.category] ?? 0) + 1;
     }
@@ -37,9 +38,7 @@ List<String> _buildSortedCategories(Set<String> hidden) {
   for (final cat in kDefaultCategories) {
     counts.putIfAbsent(cat, () => 0);
   }
-  return counts.keys
-      .where((cat) => !hidden.contains(cat))
-      .toList()
+  return counts.keys.where((cat) => !hidden.contains(cat)).toList()
     ..sort((a, b) {
       final cmp = counts[b]!.compareTo(counts[a]!);
       return cmp != 0 ? cmp : a.compareTo(b);
@@ -47,13 +46,12 @@ List<String> _buildSortedCategories(Set<String> hidden) {
 }
 
 class _CategoryPickerSheet extends StatefulWidget {
-  final List<String> allCategories;
-  final String? current;
-
   const _CategoryPickerSheet({
     required this.allCategories,
     this.current,
   });
+  final List<String> allCategories;
+  final String? current;
 
   @override
   State<_CategoryPickerSheet> createState() => _CategoryPickerSheetState();
@@ -78,12 +76,16 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
         .where((c) => c.toLowerCase().contains(_query.toLowerCase()))
         .toList();
 
-    final showAddNew = _query.isNotEmpty &&
-        !widget.allCategories
-            .any((c) => c.toLowerCase() == _query.toLowerCase().trim());
+    final showAddNew =
+        _query.isNotEmpty &&
+        !widget.allCategories.any(
+          (c) => c.toLowerCase() == _query.toLowerCase().trim(),
+        );
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SafeArea(
         child: DraggableScrollableSheet(
           expand: false,
@@ -107,7 +109,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                 child: TextField(
                   controller: _searchController,
                   autofocus: true,
-                  textCapitalization: TextCapitalization.none,
                   decoration: InputDecoration(
                     hintText: s.searchOrAddCategory,
                     prefixIcon: const Icon(Icons.search),
@@ -126,15 +127,13 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                       ListTile(
                         leading: const Icon(Icons.add_circle_outline),
                         title: Text(s.addCategoryLabel(_query.trim())),
-                        onTap: () =>
-                            Navigator.pop(context, _query.trim()),
+                        onTap: () => Navigator.pop(context, _query.trim()),
                       ),
                     ...filtered.map(
                       (cat) => ListTile(
                         title: Text(cat),
                         trailing: cat == widget.current
-                            ? Icon(Icons.check,
-                                color: colorScheme.primary)
+                            ? Icon(Icons.check, color: colorScheme.primary)
                             : null,
                         onTap: () => Navigator.pop(context, cat),
                       ),

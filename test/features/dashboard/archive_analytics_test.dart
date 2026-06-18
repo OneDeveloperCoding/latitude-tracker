@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 Map<String, dynamic> _baseSaleMap({
   String id = 'sale-1',
@@ -8,36 +8,35 @@ Map<String, dynamic> _baseSaleMap({
   String? scheduledDate,
   String paymentStatus = 'paid',
   String paymentMethod = 'mbWay',
-}) =>
+}) => {
+  'id': id,
+  'buyerId': 'buyer-1',
+  'buyerName': 'Alice',
+  'items': [
     {
-      'id': id,
-      'buyerId': 'buyer-1',
-      'buyerName': 'Alice',
-      'items': [
-        {
-          'id': 'item-1',
-          'description': 'Colar prata',
-          'category': 'Colares',
-          'price': 45.0,
-          'assemblyStatus': 'ready',
-          'components': [],
-          'photoUrls': [],
-        }
-      ],
-      'payment': {'status': paymentStatus, 'method': paymentMethod},
-      'shipment': {
-        'type': 'shipping',
-        'status': 'delivered',
-        'trackingCode': null,
-        'addressId': null,
-        'postalCode': '1000-001',
-      },
-      'requiresNif': false,
-      'atSubmissionDone': false,
-      'createdAt': createdAt,
-      'scheduledDate': scheduledDate,
-      'notes': null,
-    };
+      'id': 'item-1',
+      'description': 'Colar prata',
+      'category': 'Colares',
+      'price': 45.0,
+      'assemblyStatus': 'ready',
+      'components': <dynamic>[],
+      'photoUrls': <String>[],
+    },
+  ],
+  'payment': {'status': paymentStatus, 'method': paymentMethod},
+  'shipment': {
+    'type': 'shipping',
+    'status': 'delivered',
+    'trackingCode': null,
+    'addressId': null,
+    'postalCode': '1000-001',
+  },
+  'requiresNif': false,
+  'atSubmissionDone': false,
+  'createdAt': createdAt,
+  'scheduledDate': scheduledDate,
+  'notes': null,
+};
 
 Map<String, dynamic> _baseRepairMap({
   String id = 'repair-1',
@@ -46,29 +45,28 @@ Map<String, dynamic> _baseRepairMap({
   String? buyerName = 'Alice',
   String? freeTextContact,
   double? materialsCost,
-}) =>
-    {
-      'id': id,
-      'buyerId': buyerId,
-      'buyerName': buyerName,
-      'freeTextContact': freeTextContact,
-      'linkedSaleId': null,
-      'itemDescription': 'Colar dourado',
-      'itemCategory': 'Colares',
-      'problemDescription': 'Fecho partido',
-      'workDone': 'Fecho substituído',
-      'materialsCost': materialsCost,
-      'status': 'done',
-      'payment': {'status': 'paid', 'method': 'cash'},
-      'returnDelivery': {
-        'type': 'pickup',
-        'status': 'pending',
-        'trackingCode': null,
-        'postalCode': null,
-      },
-      'photoUrls': [],
-      'createdAt': createdAt,
-    };
+}) => {
+  'id': id,
+  'buyerId': buyerId,
+  'buyerName': buyerName,
+  'freeTextContact': freeTextContact,
+  'linkedSaleId': null,
+  'itemDescription': 'Colar dourado',
+  'itemCategory': 'Colares',
+  'problemDescription': 'Fecho partido',
+  'workDone': 'Fecho substituído',
+  'materialsCost': materialsCost,
+  'status': 'done',
+  'payment': {'status': 'paid', 'method': 'cash'},
+  'returnDelivery': {
+    'type': 'pickup',
+    'status': 'pending',
+    'trackingCode': null,
+    'postalCode': null,
+  },
+  'photoUrls': <String>[],
+  'createdAt': createdAt,
+};
 
 void main() {
   group('Sale.fromArchiveMap', () {
@@ -81,8 +79,10 @@ void main() {
       final map = _baseSaleMap()
         ..['createdAt'] = {'_seconds': 1710494400, '_nanoseconds': 0};
       final sale = Sale.fromArchiveMap(map);
-      expect(sale.createdAt,
-          DateTime.fromMillisecondsSinceEpoch(1710494400 * 1000));
+      expect(
+        sale.createdAt,
+        DateTime.fromMillisecondsSinceEpoch(1710494400 * 1000),
+      );
     });
 
     test('parses nullable scheduledDate when present', () {
@@ -106,7 +106,8 @@ void main() {
 
     test('parses payment status and method', () {
       final sale = Sale.fromArchiveMap(
-          _baseSaleMap(paymentStatus: 'unpaid', paymentMethod: 'cash'));
+        _baseSaleMap(paymentStatus: 'unpaid', paymentMethod: 'cash'),
+      );
       expect(sale.payment.status, PaymentStatus.unpaid);
       expect(sale.payment.method, PaymentMethod.cash);
     });
@@ -134,8 +135,10 @@ void main() {
       final map = _baseRepairMap()
         ..['createdAt'] = {'_seconds': 1717228800, '_nanoseconds': 0};
       final repair = Repair.fromArchiveMap(map);
-      expect(repair.createdAt,
-          DateTime.fromMillisecondsSinceEpoch(1717228800 * 1000));
+      expect(
+        repair.createdAt,
+        DateTime.fromMillisecondsSinceEpoch(1717228800 * 1000),
+      );
     });
 
     test('parses nullable materialsCost when present', () {
@@ -156,11 +159,13 @@ void main() {
     });
 
     test('free-text contact parsed when buyerId absent', () {
-      final repair = Repair.fromArchiveMap(_baseRepairMap(
-        buyerId: null,
-        buyerName: null,
-        freeTextContact: 'Bob',
-      ));
+      final repair = Repair.fromArchiveMap(
+        _baseRepairMap(
+          buyerId: null,
+          buyerName: null,
+          freeTextContact: 'Bob',
+        ),
+      );
       expect(repair.buyerId, isNull);
       expect(repair.freeTextContact, 'Bob');
     });

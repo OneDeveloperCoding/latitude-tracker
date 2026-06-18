@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../buyers/models/buyer.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../buyers/screens/buyer_form_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_form_screen.dart';
 
 class BuyerPickerScreen extends StatefulWidget {
   const BuyerPickerScreen({super.key});
@@ -34,16 +34,18 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
     if (_searchQuery.isEmpty) return buyers;
     final query = _searchQuery.toLowerCase();
     return buyers
-        .where((b) =>
-            b.name.toLowerCase().contains(query) ||
-            (b.instagramHandle?.toLowerCase().contains(query) ?? false))
+        .where(
+          (b) =>
+              b.name.toLowerCase().contains(query) ||
+              (b.instagramHandle?.toLowerCase().contains(query) ?? false),
+        )
         .toList();
   }
 
   Future<void> _createAndPickBuyer() async {
     final buyer = await Navigator.push<Buyer>(
       context,
-      MaterialPageRoute(builder: (_) => const BuyerFormScreen()),
+      MaterialPageRoute<Buyer>(builder: (_) => const BuyerFormScreen()),
     );
     if (buyer != null && mounted) {
       Navigator.pop(context, buyer);
@@ -97,9 +99,11 @@ class _BuyerPickerScreenState extends State<BuyerPickerScreen> {
                     final buyer = buyers[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        child: Text(buyer.name.isNotEmpty
-                            ? buyer.name[0].toUpperCase()
-                            : '?'),
+                        child: Text(
+                          buyer.name.isNotEmpty
+                              ? buyer.name[0].toUpperCase()
+                              : '?',
+                        ),
                       ),
                       title: Text(buyer.name),
                       subtitle: buyer.instagramHandle != null

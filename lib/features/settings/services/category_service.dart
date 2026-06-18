@@ -1,19 +1,18 @@
-import '../../repairs/repositories/repair_repository.dart';
-import '../../sales/repositories/sale_repository.dart';
-import '../repositories/catalogue_repository.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/settings/repositories/catalogue_repository.dart';
 
 class CategoryService {
-  final SaleRepository _saleRepo;
-  final RepairRepository _repairRepo;
-  final CatalogueRepository _catalogueRepo;
-
   CategoryService({
     SaleRepository? saleRepo,
     RepairRepository? repairRepo,
     CatalogueRepository? catalogueRepo,
-  })  : _saleRepo = saleRepo ?? SaleRepository(),
-        _repairRepo = repairRepo ?? RepairRepository(),
-        _catalogueRepo = catalogueRepo ?? CatalogueRepository();
+  }) : _saleRepo = saleRepo ?? SaleRepository(),
+       _repairRepo = repairRepo ?? RepairRepository(),
+       _catalogueRepo = catalogueRepo ?? CatalogueRepository();
+  final SaleRepository _saleRepo;
+  final RepairRepository _repairRepo;
+  final CatalogueRepository _catalogueRepo;
 
   Future<List<String>> fetchHiddenCategories() =>
       _catalogueRepo.fetchHiddenCategories();

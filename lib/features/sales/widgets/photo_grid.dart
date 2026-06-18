@@ -1,13 +1,24 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/auth_revoked_exception.dart';
-import '../../demo/demo_mode.dart';
-import '../services/photo_service.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 
 class PhotoGrid extends StatefulWidget {
+  const PhotoGrid({
+    required this.saleId,
+    required this.itemId,
+    required this.photoUrls,
+    required this.onChanged,
+    super.key,
+    this.onPhotoAdded,
+    this.onPhotoRemoved,
+    this.uploadCallback,
+  });
   final String saleId;
   final String itemId;
   final List<String> photoUrls;
@@ -23,17 +34,6 @@ class PhotoGrid extends StatefulWidget {
   /// When provided, replaces the default [PhotoService.pickAndUpload] call.
   /// Lets callers supply their own upload path (e.g. component photos).
   final Future<String?> Function(ImageSource)? uploadCallback;
-
-  const PhotoGrid({
-    super.key,
-    required this.saleId,
-    required this.itemId,
-    required this.photoUrls,
-    required this.onChanged,
-    this.onPhotoAdded,
-    this.onPhotoRemoved,
-    this.uploadCallback,
-  });
 
   @override
   State<PhotoGrid> createState() => _PhotoGridState();
@@ -57,9 +57,9 @@ class _PhotoGridState extends State<PhotoGrid> {
         widget.onPhotoAdded?.call(url);
         widget.onChanged([...widget.photoUrls, url]);
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (e is AuthRevokedException) {
-        FirebaseAuth.instance.signOut();
+        unawaited(FirebaseAuth.instance.signOut());
         return;
       }
       if (mounted) {
@@ -100,7 +100,7 @@ class _PhotoGridState extends State<PhotoGrid> {
 
   void _showSourcePicker() {
     final s = context.s;
-    showModalBottomSheet(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       builder: (_) => SafeArea(
         child: Column(
@@ -111,7 +111,7 @@ class _PhotoGridState extends State<PhotoGrid> {
               title: Text(s.takePhoto),
               onTap: () {
                 Navigator.pop(context);
-                _addPhoto(ImageSource.camera);
+                unawaited(_addPhoto(ImageSource.camera));
               },
             ),
             ListTile(
@@ -119,25 +119,25 @@ class _PhotoGridState extends State<PhotoGrid> {
               title: Text(s.chooseFromGallery),
               onTap: () {
                 Navigator.pop(context);
-                _addPhoto(ImageSource.gallery);
+                unawaited(_addPhoto(ImageSource.gallery));
               },
             ),
           ],
         ),
       ),
-    );
+    ));
   }
 
   void _viewPhoto(BuildContext context, int index) {
-    Navigator.push(
+    unawaited(Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => PhotoViewer(
           urls: widget.photoUrls,
           initialIndex: index,
         ),
       ),
-    );
+    ));
   }
 
   @override
@@ -152,26 +152,26 @@ class _PhotoGridState extends State<PhotoGrid> {
           runSpacing: 8,
           children: [
             ...photos.asMap().entries.map(
-                  (entry) => _PhotoTile(
-                    url: entry.value,
-                    isUploading: false,
-                    onTap: () => _viewPhoto(context, entry.key),
-                    onDelete: () => _removePhoto(entry.key),
-                  ),
-                ),
+              (entry) => _PhotoTile(
+                url: entry.value,
+                isUploading: false,
+                onTap: () => _viewPhoto(context, entry.key),
+                onDelete: () => _removePhoto(entry.key),
+              ),
+            ),
             ...List.generate(
               _uploadingCount,
               (_) => const _PhotoTile(isUploading: true),
             ),
-            if (!DemoMode.active.value)
-              _AddPhotoTile(onTap: _showSourcePicker),
+            if (!DemoMode.active.value) _AddPhotoTile(onTap: _showSourcePicker),
           ],
         ),
         if (photos.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              '${photos.length} photo${photos.length == 1 ? '' : 's'} — tap to view',
+              '${photos.length} photo${photos.length == 1 ? '' : 's'} — tap to'
+              ' view',
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),
@@ -181,6 +181,12 @@ class _PhotoGridState extends State<PhotoGrid> {
 }
 
 class _PhotoTile extends StatelessWidget {
+  const _PhotoTile({
+    required this.isUploading,
+    this.url,
+    this.onTap,
+    this.onDelete,
+  });
   static const double _displaySize = 96;
 
   final String? url;
@@ -188,17 +194,10 @@ class _PhotoTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
-  const _PhotoTile({
-    this.url,
-    required this.isUploading,
-    this.onTap,
-    this.onDelete,
-  });
-
   @override
   Widget build(BuildContext context) {
-    final cacheSize =
-        (_displaySize * MediaQuery.devicePixelRatioOf(context)).round();
+    final cacheSize = (_displaySize * MediaQuery.devicePixelRatioOf(context))
+        .round();
     return SizedBox(
       width: _displaySize,
       height: _displaySize,
@@ -230,7 +229,8 @@ class _PhotoTile extends StatelessWidget {
                       : Container(
                           color: Colors.grey[200],
                           child: const Center(
-                              child: CircularProgressIndicator()),
+                            child: CircularProgressIndicator(),
+                          ),
                         ),
                   errorBuilder: (context, error, stack) => Container(
                     color: Colors.grey[200],
@@ -269,10 +269,9 @@ class _PhotoTile extends StatelessWidget {
 }
 
 class _DemoPhotoPlaceholder extends StatelessWidget {
+  const _DemoPhotoPlaceholder({required this.url, this.large = false});
   final String url;
   final bool large;
-
-  const _DemoPhotoPlaceholder({required this.url, this.large = false});
 
   static const _palettes = [
     [Color(0xFFE1BEE7), Color(0xFFF8BBD9)], // purple/pink
@@ -281,7 +280,7 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
     [Color(0xFFC8E6C9), Color(0xFFB2DFDB)], // green/teal
   ];
 
-  static const _icons = [
+  static const List<IconData> _icons = [
     Icons.diamond_outlined,
     Icons.auto_awesome,
     Icons.shopping_bag_outlined,
@@ -291,7 +290,8 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final match = RegExp(r'\d+$').firstMatch(url);
-    final idx = ((match != null ? int.parse(match.group(0)!) : 1) - 1) %
+    final idx =
+        ((match != null ? int.parse(match.group(0)!) : 1) - 1) %
         _palettes.length;
     final size = large ? 200.0 : 96.0;
     return Container(
@@ -306,17 +306,15 @@ class _DemoPhotoPlaceholder extends StatelessWidget {
         borderRadius: large ? null : BorderRadius.circular(8),
       ),
       child: Center(
-        child: Icon(_icons[idx],
-            size: large ? 64 : 32, color: Colors.white70),
+        child: Icon(_icons[idx], size: large ? 64 : 32, color: Colors.white70),
       ),
     );
   }
 }
 
 class _AddPhotoTile extends StatelessWidget {
-  final VoidCallback onTap;
-
   const _AddPhotoTile({required this.onTap});
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -335,8 +333,10 @@ class _AddPhotoTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_a_photo,
-                color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.add_a_photo,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 4),
             Text(
               context.s.addPhoto,
@@ -353,22 +353,20 @@ class _AddPhotoTile extends StatelessWidget {
 }
 
 class PhotoThumbnail extends StatelessWidget {
+  const PhotoThumbnail({
+    required this.url,
+    super.key,
+    this.size = 48,
+    this.onTap,
+  });
   final String url;
   final double size;
   final VoidCallback? onTap;
 
-  const PhotoThumbnail({
-    super.key,
-    required this.url,
-    this.size = 48,
-    this.onTap,
-  });
-
   @override
   Widget build(BuildContext context) {
-    final cacheSize =
-        (size * MediaQuery.devicePixelRatioOf(context)).round();
-    final Widget image = url.startsWith('demo://')
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
+    final image = url.startsWith('demo://')
         ? _DemoPhotoPlaceholder(url: url)
         : Image.network(
             url,
@@ -398,10 +396,13 @@ class PhotoThumbnail extends StatelessWidget {
 }
 
 class PhotoViewer extends StatefulWidget {
+  const PhotoViewer({
+    required this.urls,
+    required this.initialIndex,
+    super.key,
+  });
   final List<String> urls;
   final int initialIndex;
-
-  const PhotoViewer({super.key, required this.urls, required this.initialIndex});
 
   @override
   State<PhotoViewer> createState() => _PhotoViewerState();
@@ -450,9 +451,14 @@ class _PhotoViewerState extends State<PhotoViewer> {
                 loadingBuilder: (_, child, progress) => progress == null
                     ? child
                     : const Center(
-                        child: CircularProgressIndicator(color: Colors.white)),
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
                 errorBuilder: (_, err, stack) => const Center(
-                  child: Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Colors.white54,
+                    size: 64,
+                  ),
                 ),
               ),
             ),
