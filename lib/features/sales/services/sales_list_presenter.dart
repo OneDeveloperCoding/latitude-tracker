@@ -21,15 +21,7 @@ class SalesListPresenter {
         ? SaleGrouper.byCreatedMonth(sales)
         : SaleGrouper.byWeek(sales, now: now);
 
-    final monthsMap = <int, Set<int>>{};
-    for (final s in allSales) {
-      (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
-    }
-    final availableYears = monthsMap.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
-    final monthsByYear = monthsMap.map(
-      (y, months) => MapEntry(y, months.toList()..sort()),
-    );
+    final (:availableYears, :monthsByYear) = _buildYearIndex(allSales);
 
     return SalesListResult(
       filteredSales: sales,
@@ -40,61 +32,57 @@ class SalesListPresenter {
     );
   }
 
+  static ({List<int> availableYears, Map<int, List<int>> monthsByYear})
+      _buildYearIndex(List<Sale> sales) {
+    final monthsMap = <int, Set<int>>{};
+    for (final s in sales) {
+      (monthsMap[s.createdAt.year] ??= {}).add(s.createdAt.month);
+    }
+    final availableYears = monthsMap.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+    final monthsByYear = monthsMap.map(
+      (y, months) => MapEntry(y, months.toList()..sort()),
+    );
+    return (availableYears: availableYears, monthsByYear: monthsByYear);
+  }
+
   static List<Sale> _applyFilter(
     List<Sale> sales,
     SalesListFilters filters, {
     DateTime? now,
   }) {
-    var result = List<Sale>.from(sales);
+    final today = now ?? DateTime.now();
+    return sales.where((s) => _passesScopeFilters(s, filters, today)).toList();
+  }
 
-    // Active-only default: hide delivered unless a year is selected or a
-    // postal prefix scope is active (geographic view shows all time).
-    if (filters.selectedYear == null && filters.postalCodePrefix == null) {
-      result = result
-          .where((s) => s.shipment.status != ShipmentStatus.delivered)
-          .toList();
+  // Tests one sale against all filter dimensions using early returns.
+  // History mode (year selected or postal prefix active) lifts the active-only
+  // default so delivered sales are included.
+  static bool _passesScopeFilters(Sale s, SalesListFilters f, DateTime now) {
+    final isHistoryMode = f.selectedYear != null || f.postalCodePrefix != null;
+    if (!isHistoryMode && s.shipment.status == ShipmentStatus.delivered) {
+      return false;
     }
-
-    if (filters.postalCodePrefix != null) {
-      result = result.where((s) {
-        final pc = s.shipment.postalCode;
-        return pc != null && pc.startsWith('${filters.postalCodePrefix}-');
-      }).toList();
+    if (f.postalCodePrefix != null) {
+      final pc = s.shipment.postalCode;
+      if (pc == null || !pc.startsWith('${f.postalCodePrefix}-')) return false;
     }
-
-    if (filters.selectedYear != null) {
-      result = result
-          .where((s) => s.createdAt.year == filters.selectedYear)
-          .toList();
-      if (filters.selectedMonth != null) {
-        result = result
-            .where((s) => s.createdAt.month == filters.selectedMonth)
-            .toList();
+    if (f.selectedYear != null) {
+      if (s.createdAt.year != f.selectedYear) return false;
+      if (f.selectedMonth != null && s.createdAt.month != f.selectedMonth) {
+        return false;
       }
     }
-
-    if (filters.buyerFilter != null) {
-      result =
-          result.where((s) => s.buyerId == filters.buyerFilter!.id).toList();
+    if (f.buyerFilter != null && s.buyerId != f.buyerFilter!.id) return false;
+    if (f.categoryFilters.isNotEmpty &&
+        !s.items.any((i) => f.categoryFilters.contains(i.category))) {
+      return false;
     }
-
-    if (filters.categoryFilters.isNotEmpty) {
-      result = result
-          .where(
-            (s) => s.items
-                .any((i) => filters.categoryFilters.contains(i.category)),
-          )
-          .toList();
+    if (f.activeFilters.isNotEmpty &&
+        !testSaleFilters(s, f.activeFilters, now: now)) {
+      return false;
     }
-
-    if (filters.activeFilters.isNotEmpty) {
-      final today = now ?? DateTime.now();
-      result = result
-          .where((s) => testSaleFilters(s, filters.activeFilters, now: today))
-          .toList();
-    }
-
-    return result;
+    return true;
   }
 
   static List<Sale> _applySearch(List<Sale> sales, String query) {
@@ -110,18 +98,18 @@ class SalesListPresenter {
   }
 
   static List<Sale> _applySort(List<Sale> sales, SortOrder order) {
-    if (order == SortOrder.newestFirst) return sales;
-    final sorted = List<Sale>.from(sales);
     switch (order) {
-      case SortOrder.oldestFirst:
-        sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      case SortOrder.priceHigh:
-        sorted.sort((a, b) => b.totalPrice.compareTo(a.totalPrice));
-      case SortOrder.priceLow:
-        sorted.sort((a, b) => a.totalPrice.compareTo(b.totalPrice));
       case SortOrder.newestFirst:
-        break;
+        return sales;
+      case SortOrder.oldestFirst:
+        return List<Sale>.from(sales)
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      case SortOrder.priceHigh:
+        return List<Sale>.from(sales)
+          ..sort((a, b) => b.totalPrice.compareTo(a.totalPrice));
+      case SortOrder.priceLow:
+        return List<Sale>.from(sales)
+          ..sort((a, b) => a.totalPrice.compareTo(b.totalPrice));
     }
-    return sorted;
   }
 }
