@@ -22,15 +22,24 @@ class SalesListPresenter {
         : SaleGrouper.byWeek(sales, now: now);
 
     final (:availableYears, :monthsByYear) = _buildYearIndex(allSales);
+    final availableCategories = _buildCategories(allSales);
 
     return SalesListResult(
       filteredSales: sales,
       groupedSales: grouped,
       availableYears: availableYears,
       monthsByYear: monthsByYear,
+      availableCategories: availableCategories,
       buyerNifById: {for (final b in allBuyers) b.id: b.nif},
     );
   }
+
+  static List<String> _buildCategories(List<Sale> sales) =>
+      sales
+          .expand((s) => s.items.map((i) => i.category))
+          .toSet()
+          .toList()
+        ..sort();
 
   static ({List<int> availableYears, Map<int, List<int>> monthsByYear})
       _buildYearIndex(List<Sale> sales) {
