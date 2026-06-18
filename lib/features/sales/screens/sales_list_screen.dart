@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/constants.dart';
@@ -215,40 +216,40 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   void _selectSale(Sale sale) {
     if (!_isTablet()) {
-      Navigator.push(
+      unawaited(Navigator.push(
         context,
         MaterialPageRoute<void>(
           builder: (_) => SaleDetailScreen(saleId: sale.id),
         ),
-      );
+      ));
       return;
     }
     if (_selectedSale?.id == sale.id) return;
     setState(() => _selectedSale = sale);
     final nav = _rightPanelKey.currentState;
     if (nav != null) {
-      nav
-        ..popUntil((r) => r.isFirst)
-        ..push(MaterialPageRoute<void>(
-          builder: (_) => SaleDetailScreen(saleId: sale.id),
-        ));
+      nav.popUntil((r) => r.isFirst);
+      unawaited(nav.push(MaterialPageRoute<void>(
+        builder: (_) => SaleDetailScreen(saleId: sale.id),
+      )));
     }
   }
 
   void _openNewSale() {
     if (!_isTablet()) {
-      Navigator.push(
+      unawaited(Navigator.push(
         context,
         MaterialPageRoute<void>(builder: (_) => const NewSaleScreen()),
-      );
+      ));
       return;
     }
     setState(() => _selectedSale = null);
     final nav = _rightPanelKey.currentState;
     if (nav != null) {
-      nav
-        ..popUntil((r) => r.isFirst)
-        ..push(MaterialPageRoute<void>(builder: (_) => const NewSaleScreen()));
+      nav.popUntil((r) => r.isFirst);
+      unawaited(nav.push(MaterialPageRoute<void>(
+        builder: (_) => const NewSaleScreen(),
+      )));
     }
   }
 
@@ -429,12 +430,12 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
     final buyerSearchController = TextEditingController();
 
-    showModalBottomSheet<void>(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (_, setSheetState) {
-          void updateFilter(SaleFilter f, bool? checked) {
+          void updateFilter(SaleFilter f, {bool? checked}) {
             _activeFilters = checked == true
                 ? {..._activeFilters, f}
                 : ({..._activeFilters}..remove(f));
@@ -698,7 +699,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           ...group.filters.map((f) => CheckboxListTile(
                                 title: Text(s.filterLabel(f)),
                                 value: _activeFilters.contains(f),
-                                onChanged: (v) => updateFilter(f, v),
+                                onChanged: (v) => updateFilter(f, checked: v),
                                 controlAffinity:
                                     ListTileControlAffinity.leading,
                                 dense: true,
@@ -712,7 +713,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
           );
         },
       ),
-    );
+    ));
   }
 
 }
@@ -1231,7 +1232,7 @@ class _ScheduledDateLabel extends StatelessWidget {
 
 void _showNotePreview(BuildContext context, String notes) {
   final s = context.s;
-  showModalBottomSheet<void>(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1253,7 +1254,7 @@ void _showNotePreview(BuildContext context, String notes) {
         ],
       ),
     ),
-  );
+  ));
 }
 
 void _showNifDetail(
@@ -1278,7 +1279,7 @@ void _showNifDetail(
     iconColor = cs.pending;
   }
 
-  showModalBottomSheet<void>(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1298,12 +1299,12 @@ void _showNifDetail(
         ],
       ),
     ),
-  );
+  ));
 }
 
 void _showReadyButUnpaidDetail(BuildContext context) {
   final s = context.s;
-  showModalBottomSheet<void>(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1332,13 +1333,13 @@ void _showReadyButUnpaidDetail(BuildContext context) {
         ],
       ),
     ),
-  );
+  ));
 }
 
 void _showUrgencyDetail(
     BuildContext context, List<UrgencyReasonType> reasons) {
   final s = context.s;
-  showModalBottomSheet<void>(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1369,12 +1370,12 @@ void _showUrgencyDetail(
         ],
       ),
     ),
-  );
+  ));
 }
 
 void _showPathLegend(BuildContext context, AppStrings s) {
   final cs = Theme.of(context).colorScheme;
-  showModalBottomSheet<void>(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -1417,7 +1418,7 @@ void _showPathLegend(BuildContext context, AppStrings s) {
         ],
       ),
     ),
-  );
+  ));
 }
 
 class _LegendRow extends StatelessWidget {

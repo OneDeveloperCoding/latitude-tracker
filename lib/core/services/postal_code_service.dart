@@ -71,7 +71,7 @@ class PostalCodeService {
 
       if (city.isEmpty) return null;
       return PostalCodeResult(streets: streets, city: city);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       return null;
     }

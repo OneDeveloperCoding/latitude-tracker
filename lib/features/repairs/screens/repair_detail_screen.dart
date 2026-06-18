@@ -62,7 +62,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
         setState(() => _popping = true);
         Navigator.of(context).pop();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${s.errorDeletingRepair}: $e')),
@@ -375,7 +375,7 @@ class _ContactRow extends StatelessWidget {
           SnackBar(content: Text(s.promotedToBuyerMsg(newBuyer.name))),
         );
       }
-    } catch (e) {
+    } on Object catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.errorSavingRepair)),
@@ -449,7 +449,7 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
     });
     try {
       await RepairRepository().updateRepair(repair.copyWith(status: status));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         setState(() => _optimisticStatus = null);
@@ -553,7 +553,7 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
               : null,
         ),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

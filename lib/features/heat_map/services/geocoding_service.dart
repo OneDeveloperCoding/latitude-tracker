@@ -135,7 +135,7 @@ class GeocodingService {
         result: (latLng: LatLng(lat, lon), locality: locality),
         shouldCache: true,
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       return (result: null, shouldCache: false);
     }

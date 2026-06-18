@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
@@ -78,7 +79,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       _years = years;
       _selectedYear = year;
     });
-    _load(all, year);
+    unawaited(_load(all, year));
   }
 
   Future<void> _load(List<Sale> sales, int? year) async {
@@ -131,7 +132,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
           }),
         );
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       applyIfCurrent(() => setState(() => _loading = false));
     }
@@ -158,7 +159,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
         for (final addr in addresses) {
           result[addr.id] = addr.country;
         }
-      } catch (_) {
+      } on Object catch (_) {
         // Skip — that buyer's sales just won't appear in the international
         // section.
       }
@@ -174,7 +175,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       _ranking = null;
       _mapPoints = [];
     });
-    _load(_salesForView(SalesStore.currentOrEmpty), year);
+    unawaited(_load(_salesForView(SalesStore.currentOrEmpty), year));
   }
 
   void _toggleMode() {
@@ -183,7 +184,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       _mapMode = newMapMode;
       _loading = true;
     });
-    _load(_salesForView(SalesStore.currentOrEmpty), _selectedYear);
+    unawaited(_load(_salesForView(SalesStore.currentOrEmpty), _selectedYear));
   }
 
   void _toggleHandDelivery() {
@@ -192,7 +193,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       _ranking = null;
       _mapPoints = [];
     });
-    _load(_salesForView(SalesStore.currentOrEmpty), _selectedYear);
+    unawaited(_load(_salesForView(SalesStore.currentOrEmpty), _selectedYear));
   }
 
   List<Sale> _salesForView(List<Sale> sales) => sales.where((s) {

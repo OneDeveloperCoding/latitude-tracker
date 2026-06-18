@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
@@ -141,7 +142,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
       return;
     }
     if (code == _lastLookedUp) return;
-    _lookup(code);
+    unawaited(_lookup(code));
   }
 
   void _clearAutoFilledFields() {

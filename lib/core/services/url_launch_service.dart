@@ -18,7 +18,7 @@ Future<void> launchExternalUrl(
         context,
       ).showSnackBar(SnackBar(content: Text(errorMessage)));
     }
-  } catch (_) {
+  } on Object catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(
         context,

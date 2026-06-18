@@ -1923,7 +1923,11 @@ enum AppStrings {
 
   // ── Dynamic string helpers ────────────────────────────────────────────────
 
-  String deleteShippedSaleBody(String status, bool atDone, int photoCount) {
+  String deleteShippedSaleBody(
+    String status, {
+    required bool atDone,
+    required int photoCount,
+  }) {
     if (_pt) {
       final photoClause = photoCount > 0
           ? ', e ${nPhotos(photoCount)}'
@@ -2011,7 +2015,7 @@ enum AppStrings {
   String exportingYear(int year) =>
       _pt ? 'A exportar $year...' : 'Exporting $year...';
 
-  String deletingYear(int year, bool deletePhotos) {
+  String deletingYear(int year, {required bool deletePhotos}) {
     if (_pt) {
       return deletePhotos
           ? 'A eliminar dados e fotos de $year...'

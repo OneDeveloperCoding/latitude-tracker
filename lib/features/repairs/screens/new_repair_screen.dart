@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/id_gen.dart';
@@ -228,7 +229,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       }
 
       if (mounted) Navigator.of(context).pop();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -247,7 +248,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
       for (final url in _sessionUploads) {
         await _photoService.deletePhoto(url);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
     } finally {
       if (mounted) Navigator.of(context).pop();
@@ -260,7 +261,7 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        if (!didPop) unawaited(_cancel());
       },
       child: Scaffold(
       appBar: AppBar(
