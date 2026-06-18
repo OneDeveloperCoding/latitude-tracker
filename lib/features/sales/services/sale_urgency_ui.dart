@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/theme/color_scheme_ext.dart';
-import '../models/sale.dart';
-import 'sale_urgency.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 
 extension AssemblyStatusUI on AssemblyStatus {
   IconData get icon => switch (this) {

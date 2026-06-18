@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:test/test.dart';
 
 BuyerAddress _address({
   String street = 'Rua das Flores',
@@ -8,17 +8,16 @@ BuyerAddress _address({
   String postalCode = '4000-123',
   String city = 'Porto',
   String country = 'Portugal',
-}) =>
-    BuyerAddress(
-      id: 'test-id',
-      label: 'Casa',
-      street: street,
-      houseNumber: houseNumber,
-      fraction: fraction,
-      city: city,
-      postalCode: postalCode,
-      country: country,
-    );
+}) => BuyerAddress(
+  id: 'test-id',
+  label: 'Casa',
+  street: street,
+  houseNumber: houseNumber,
+  fraction: fraction,
+  city: city,
+  postalCode: postalCode,
+  country: country,
+);
 
 void main() {
   group('BuyerAddress.formattedAddress', () {
@@ -35,13 +34,15 @@ void main() {
     });
 
     test('omits country line for Portugal', () {
-      final result = _address(country: 'Portugal').formattedAddress('Ana Silva');
+      final result = _address().formattedAddress('Ana Silva');
       expect(result.split('\n').length, 3);
       expect(result, isNot(contains('Portugal')));
     });
 
     test('omits country line for portugal (case-insensitive)', () {
-      final result = _address(country: 'portugal').formattedAddress('Ana Silva');
+      final result = _address(
+        country: 'portugal',
+      ).formattedAddress('Ana Silva');
       expect(result.split('\n').length, 3);
     });
 
@@ -58,7 +59,7 @@ void main() {
     });
 
     test('omits fraction when null', () {
-      final result = _address(fraction: null).formattedAddress('Ana Silva');
+      final result = _address().formattedAddress('Ana Silva');
       expect(result.split('\n')[1], 'Rua das Flores, 12');
     });
 
@@ -156,7 +157,7 @@ void main() {
     });
 
     test('omits fraction from query when null', () {
-      final uri = _address(fraction: null).mapsUri;
+      final uri = _address().mapsUri;
       expect(uri.queryParameters['q'], isNot(contains('null')));
     });
 
@@ -168,7 +169,7 @@ void main() {
     });
 
     test('omits country from query for Portugal', () {
-      final uri = _address(country: 'Portugal').mapsUri;
+      final uri = _address().mapsUri;
       expect(uri.queryParameters['q'], isNot(contains('Portugal')));
     });
 

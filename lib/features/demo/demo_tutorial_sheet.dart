@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
-import '../../core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
 class DemoTutorialSheet extends StatefulWidget {
   const DemoTutorialSheet({super.key});
 
   static void show(BuildContext context) {
-    showModalBottomSheet(
+    unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -14,7 +15,7 @@ class DemoTutorialSheet extends StatefulWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => const DemoTutorialSheet(),
-    );
+    ));
   }
 
   @override
@@ -33,20 +34,20 @@ class _DemoTutorialSheetState extends State<DemoTutorialSheet> {
 
   void _next(int total) {
     if (_page < total - 1) {
-      _controller.nextPage(
+      unawaited(_controller.nextPage(
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeInOut,
-      );
+      ));
     } else {
       Navigator.pop(context);
     }
   }
 
   void _back() {
-    _controller.previousPage(
+    unawaited(_controller.previousPage(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeInOut,
-    );
+    ));
   }
 
   @override
@@ -92,63 +93,83 @@ class _DemoTutorialSheetState extends State<DemoTutorialSheet> {
   }
 
   List<_TutorialPage> _buildPages(AppStrings s) => [
-        _TutorialPage(
-          icon: Icons.storefront_outlined,
-          color: const Color(0xFF6750A4),
-          title: s.tourWelcomeTitle,
-          body: s.tourWelcomeBody,
+    _TutorialPage(
+      icon: Icons.storefront_outlined,
+      color: const Color(0xFF6750A4),
+      title: s.tourWelcomeTitle,
+      body: s.tourWelcomeBody,
+    ),
+    _TutorialPage(
+      icon: Icons.add_circle_outline,
+      color: const Color(0xFF1976D2),
+      title: s.tourCreateSaleTitle,
+      body: s.tourCreateSaleBody,
+    ),
+    _TutorialPage(
+      icon: Icons.receipt_long_outlined,
+      color: const Color(0xFF00796B),
+      title: s.tourSaleDetailTitle,
+      body: s.tourSaleDetailBody,
+    ),
+    _TutorialPage(
+      icon: Icons.dashboard_outlined,
+      color: const Color(0xFF3949AB),
+      title: s.tourDashboardTitle,
+      body: s.tourDashboardBody,
+    ),
+    _TutorialPage(
+      icon: Icons.people_outlined,
+      color: const Color(0xFFF57C00),
+      title: s.tourBuyersTitle,
+      body: s.tourBuyersBody,
+    ),
+    _TutorialPage(
+      icon: Icons.bar_chart_outlined,
+      color: const Color(0xFF7B1FA2),
+      title: s.tourAnalyticsTitle,
+      body: s.tourAnalyticsBody,
+    ),
+    _TutorialPage(
+      icon: Icons.tips_and_updates_outlined,
+      color: const Color(0xFF0288D1),
+      title: s.tourDiscoverTitle,
+      body: s.tourDiscoverBody,
+      gems: [
+        _Gem(
+          Icons.checklist_outlined,
+          const Color(0xFF388E3C),
+          s.tourGemShoppingTitle,
+          s.tourGemShoppingBody,
         ),
-        _TutorialPage(
-          icon: Icons.add_circle_outline,
-          color: const Color(0xFF1976D2),
-          title: s.tourCreateSaleTitle,
-          body: s.tourCreateSaleBody,
+        _Gem(
+          Icons.map_outlined,
+          const Color(0xFF0288D1),
+          s.tourGemMapTitle,
+          s.tourGemMapBody,
         ),
-        _TutorialPage(
-          icon: Icons.receipt_long_outlined,
-          color: const Color(0xFF00796B),
-          title: s.tourSaleDetailTitle,
-          body: s.tourSaleDetailBody,
+        _Gem(
+          Icons.account_balance_wallet_outlined,
+          const Color(0xFFD32F2F),
+          s.tourGemUnpaidTitle,
+          s.tourGemUnpaidBody,
         ),
-        _TutorialPage(
-          icon: Icons.dashboard_outlined,
-          color: const Color(0xFF3949AB),
-          title: s.tourDashboardTitle,
-          body: s.tourDashboardBody,
+        _Gem(
+          Icons.receipt_outlined,
+          const Color(0xFF7B1FA2),
+          s.tourGemNifTitle,
+          s.tourGemNifBody,
         ),
-        _TutorialPage(
-          icon: Icons.people_outlined,
-          color: const Color(0xFFF57C00),
-          title: s.tourBuyersTitle,
-          body: s.tourBuyersBody,
-        ),
-        _TutorialPage(
-          icon: Icons.bar_chart_outlined,
-          color: const Color(0xFF7B1FA2),
-          title: s.tourAnalyticsTitle,
-          body: s.tourAnalyticsBody,
-        ),
-        _TutorialPage(
-          icon: Icons.tips_and_updates_outlined,
-          color: const Color(0xFF0288D1),
-          title: s.tourDiscoverTitle,
-          body: s.tourDiscoverBody,
-          gems: [
-            _Gem(Icons.checklist_outlined, const Color(0xFF388E3C), s.tourGemShoppingTitle, s.tourGemShoppingBody),
-            _Gem(Icons.map_outlined, const Color(0xFF0288D1), s.tourGemMapTitle, s.tourGemMapBody),
-            _Gem(Icons.account_balance_wallet_outlined, const Color(0xFFD32F2F), s.tourGemUnpaidTitle, s.tourGemUnpaidBody),
-            _Gem(Icons.receipt_outlined, const Color(0xFF7B1FA2), s.tourGemNifTitle, s.tourGemNifBody),
-          ],
-        ),
-      ];
+      ],
+    ),
+  ];
 }
 
-// ── Sub-widgets ───────────────────────────────────────────────────────────────
+// ── Sub-widgets
+// ───────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
-  final String title;
-
   const _Header({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -156,16 +177,18 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 8, 12),
       child: Row(
         children: [
-          Icon(Icons.explore_outlined,
-              size: 20, color: Theme.of(context).colorScheme.primary),
+          Icon(
+            Icons.explore_outlined,
+            size: 20,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           IconButton(
@@ -180,14 +203,6 @@ class _Header extends StatelessWidget {
 }
 
 class _Footer extends StatelessWidget {
-  final int page;
-  final int total;
-  final ColorScheme colorScheme;
-  final String backLabel;
-  final String nextLabel;
-  final VoidCallback onBack;
-  final VoidCallback onNext;
-
   const _Footer({
     required this.page,
     required this.total,
@@ -197,6 +212,13 @@ class _Footer extends StatelessWidget {
     required this.onBack,
     required this.onNext,
   });
+  final int page;
+  final int total;
+  final ColorScheme colorScheme;
+  final String backLabel;
+  final String nextLabel;
+  final VoidCallback onBack;
+  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -247,9 +269,8 @@ class _Footer extends StatelessWidget {
 }
 
 class _PageContent extends StatelessWidget {
-  final _TutorialPage page;
-
   const _PageContent({required this.page});
+  final _TutorialPage page;
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +294,9 @@ class _PageContent extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             page.title,
-            style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
@@ -294,9 +317,8 @@ class _PageContent extends StatelessWidget {
 }
 
 class _GemCard extends StatelessWidget {
-  final _Gem gem;
-
   const _GemCard({required this.gem});
+  final _Gem gem;
 
   @override
   Widget build(BuildContext context) {
@@ -324,7 +346,9 @@ class _GemCard extends StatelessWidget {
               children: [
                 Text(
                   gem.title,
-                  style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -343,15 +367,10 @@ class _GemCard extends StatelessWidget {
   }
 }
 
-// ── Models ────────────────────────────────────────────────────────────────────
+// ── Models
+// ────────────────────────────────────────────────────────────────────
 
 class _TutorialPage {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String body;
-  final List<_Gem>? gems;
-
   const _TutorialPage({
     required this.icon,
     required this.color,
@@ -359,13 +378,17 @@ class _TutorialPage {
     required this.body,
     this.gems,
   });
-}
-
-class _Gem {
   final IconData icon;
   final Color color;
   final String title;
   final String body;
+  final List<_Gem>? gems;
+}
 
+class _Gem {
   const _Gem(this.icon, this.color, this.title, this.body);
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
 }

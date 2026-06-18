@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../repairs/models/repair.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/services/sales_analytics_service.dart';
-import '../models/dashboard_stats.dart';
-import '../widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/dashboard/models/dashboard_stats.dart';
+import 'package:latitude_tracker/features/dashboard/widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sales_analytics_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  final DashboardPeriod initialPeriod;
-  final bool startOnRepairs;
 
   const AnalyticsScreen({
-    super.key,
-    required this.initialPeriod,
+    required this.initialPeriod, super.key,
     this.startOnRepairs = false,
   });
+  final DashboardPeriod initialPeriod;
+  final bool startOnRepairs;
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -35,7 +33,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   AnalyticsMetric _metric = AnalyticsMetric.revenue;
   late final TabController _tabController;
 
-  // Cached per-period stats — recomputed only when store data or period changes,
+  // Cached per-period stats — recomputed only when store data or period
+  // changes,
   // not on every build(). Null until the store emits its first StoreLoaded.
   ({double revenue, int count})? _currentStats;
   ({double revenue, int count})? _prevStats;
@@ -76,12 +75,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       _comparisonStats = [];
       return;
     }
-    _currentStats = SalesAnalyticsService.computePeriodStats(all, _periodStart, _periodEnd);
+    _currentStats = SalesAnalyticsService.computePeriodStats(
+      all, _periodStart, _periodEnd,
+    );
     final (prevStart, prevEnd) = _shiftPeriod(-1);
-    _prevStats = SalesAnalyticsService.computePeriodStats(all, prevStart, prevEnd);
+    _prevStats = SalesAnalyticsService.computePeriodStats(
+      all, prevStart, prevEnd,
+    );
     _stackedSparkline = _computeStackedSparkline(all);
-    _paymentBreakdown = SalesAnalyticsService.computePaymentMethodBreakdown(all, _periodStart, _periodEnd);
-    _categoryBreakdown = SalesAnalyticsService.computeCategoryBreakdown(all, _periodStart, _periodEnd);
+    _paymentBreakdown =
+        SalesAnalyticsService.computePaymentMethodBreakdown(
+      all, _periodStart, _periodEnd,
+    );
+    _categoryBreakdown =
+        SalesAnalyticsService.computeCategoryBreakdown(
+      all, _periodStart, _periodEnd,
+    );
     _comparisonStats = _comparisonShifts.map((shift) {
       final (start, end) = _shiftPeriod(shift);
       return SalesAnalyticsService.computePeriodStats(all, start, end);
@@ -149,7 +158,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         DashboardPeriod.monthly => DateFormat('MMMM yyyy').format(_month),
         DashboardPeriod.weekly => () {
             final end = _weekStart.add(const Duration(days: 6));
-            return '${DateFormat('d MMM').format(_weekStart)} – ${DateFormat('d MMM yyyy').format(end)}';
+            final start = DateFormat('d MMM').format(_weekStart);
+            final finish = DateFormat('d MMM yyyy').format(end);
+            return '$start – $finish';
           }(),
       };
 
@@ -179,7 +190,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     return List.generate(periodCount, (i) {
       final offset = i - (periodCount - 1);
       return switch (_period) {
-        DashboardPeriod.yearly => '\'${(_year + offset) % 100}',
+        DashboardPeriod.yearly => "'${(_year + offset) % 100}",
         DashboardPeriod.monthly =>
           DateFormat('MMM')
               .format(DateTime(_month.year, _month.month + offset)),

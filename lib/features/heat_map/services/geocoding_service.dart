@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import '../../../core/services/error_reporter.dart';
-import '../../../core/services/shared_prefs_cache.dart';
 import 'package:http/http.dart' as http;
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 import 'package:latlong2/latlong.dart';
 
 typedef GeocodingResult = ({LatLng latLng, String locality});
@@ -31,7 +31,8 @@ class GeocodingService {
     }
   }
 
-  /// Returns coordinates + locality name for [postalCode], or null if not found.
+  // / Returns coordinates + locality name for [postalCode], or null if not
+  // found.
   /// Only makes a Nominatim request when no cached result (hit or miss) exists.
   static Future<GeocodingResult?> geocode(String postalCode) async {
     if (_memCache.containsKey(postalCode)) return _memCache[postalCode];
@@ -52,7 +53,8 @@ class GeocodingService {
   }
 
   static Future<({bool found, GeocodingResult? value})> _fromCache(
-      String postalCode) async {
+    String postalCode,
+  ) async {
     final map = await _cache.get(
       postalCode,
       ttlDays: (m) => m['miss'] == true ? _missTtlDays : _hitTtlDays,
@@ -69,7 +71,10 @@ class GeocodingService {
     );
   }
 
-  static Future<void> _toCache(String postalCode, GeocodingResult? result) async {
+  static Future<void> _toCache(
+    String postalCode,
+    GeocodingResult? result,
+  ) async {
     await _cache.set(
       postalCode,
       result != null
@@ -91,14 +96,19 @@ class GeocodingService {
         'addressdetails': '1',
       });
 
-      final response = await http.get(uri, headers: {
-        'User-Agent': 'LatitudeTracker/1.0 (private)',
-        'Accept-Language': 'pt,en',
-      }).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            uri,
+            headers: {
+              'User-Agent': 'LatitudeTracker/1.0 (private)',
+              'Accept-Language': 'pt,en',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       // Honour Nominatim's 1 req/sec policy. Placed here so cached lookups
       // return immediately — the delay only fires on real network requests.
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
 
       if (response.statusCode != 200) {
         return (result: null, shouldCache: false);
@@ -113,15 +123,19 @@ class GeocodingService {
       if (lat == null || lon == null) return (result: null, shouldCache: false);
 
       final address = hit['address'] as Map<String, dynamic>? ?? {};
-      final locality = (address['city'] as String?) ??
+      final locality =
+          (address['city'] as String?) ??
           (address['town'] as String?) ??
           (address['village'] as String?) ??
           (address['municipality'] as String?) ??
           (address['county'] as String?) ??
           postalCode;
 
-      return (result: (latLng: LatLng(lat, lon), locality: locality), shouldCache: true);
-    } catch (e, st) {
+      return (
+        result: (latLng: LatLng(lat, lon), locality: locality),
+        shouldCache: true,
+      );
+    } on Object catch (e, st) {
       logError(e, st);
       return (result: null, shouldCache: false);
     }

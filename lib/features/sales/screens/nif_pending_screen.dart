@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/constants.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/buyers_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../buyers/models/buyer.dart';
-import '../models/sale.dart';
-import '../repositories/sale_repository.dart';
-import 'sale_detail_screen.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
 
 class NifPendingScreen extends StatefulWidget {
   const NifPendingScreen({super.key});
@@ -51,7 +51,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
 
   void _onBuyersChanged() {
     setState(() {
-      _buyersById = {for (final b in BuyersStore.current ?? []) b.id: b};
+      _buyersById = {for (final b in BuyersStore.currentOrEmpty) b.id: b};
     });
   }
 
@@ -86,138 +86,138 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _sales.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle_outline,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(height: 12),
-                      Text(s.noPendingNif),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(
-                      16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
-                  children: [
-                    Builder(builder: (context) {
-                      final pending =
-                          _sales.where((s) => !s.atSubmissionDone).length;
-                      final filed =
-                          _sales.where((s) => s.atSubmissionDone).length;
-                      return Text(
-                        s.nPending(pending, filed),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                    ..._sales.map((sale) {
-                      final buyer = _buyersById[sale.buyerId];
-                      final filed = sale.atSubmissionDone;
-                      return Opacity(
-                        opacity: filed ? 0.55 : 1.0,
-                        child: Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    SaleDetailScreen(saleId: sale.id),
-                              ),
-                            ),
-                            title: Text(sale.buyerName),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  sale.items.isEmpty
-                                      ? '—'
-                                      : sale.items.length == 1
-                                          ? sale.items.first.description
-                                          : '${sale.items.length} items',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                _NifRow(nif: buyer?.nif),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      '€${sale.totalPrice.toStringAsFixed(2)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge,
-                                    ),
-                                    Text(
-                                      dateFormat.format(sale.createdAt),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: Icon(
-                                    filed
-                                        ? Icons.check_circle
-                                        : Icons.check_circle_outline,
-                                    color: filed
-                                        ? Colors.green
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                  ),
-                                  tooltip: filed
-                                      ? s.markAsPending
-                                      : s.markAsFiled,
-                                  onPressed: () async {
-                                    try {
-                                      await _saleRepo.updateSale(
-                                        sale.copyWith(
-                                            atSubmissionDone: !filed),
-                                      );
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    context.s.errorMsg(e))));
-                                      }
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            isThreeLine: true,
+                  const SizedBox(height: 12),
+                  Text(s.noPendingNif),
+                ],
+              ),
+            )
+          : ListView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.of(context).padding.bottom,
+              ),
+              children: [
+                Builder(
+                  builder: (context) {
+                    final pending = _sales
+                        .where((s) => !s.atSubmissionDone)
+                        .length;
+                    final filed = _sales
+                        .where((s) => s.atSubmissionDone)
+                        .length;
+                    return Text(
+                      s.nPending(pending, filed),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                ..._sales.map((sale) {
+                  final buyer = _buyersById[sale.buyerId];
+                  final filed = sale.atSubmissionDone;
+                  return Opacity(
+                    opacity: filed ? 0.55 : 1.0,
+                    child: Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => SaleDetailScreen(saleId: sale.id),
                           ),
                         ),
-                      );
-                    }),
-                  ],
-                ),
+                        title: Text(sale.buyerName),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sale.items.isEmpty
+                                  ? '—'
+                                  : sale.items.length == 1
+                                  ? sale.items.first.description
+                                  : '${sale.items.length} items',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            _NifRow(nif: buyer?.nif),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '€${sale.totalPrice.toStringAsFixed(2)}',
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                Text(
+                                  dateFormat.format(sale.createdAt),
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: Icon(
+                                filed
+                                    ? Icons.check_circle
+                                    : Icons.check_circle_outline,
+                                color: filed
+                                    ? Colors.green
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                              ),
+                              tooltip: filed ? s.markAsPending : s.markAsFiled,
+                              onPressed: () async {
+                                try {
+                                  await _saleRepo.updateSale(
+                                    sale.copyWith(atSubmissionDone: !filed),
+                                  );
+                                } on Object catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(context.s.errorMsg(e)),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        isThreeLine: true,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
     );
   }
 }
 
 class _NifRow extends StatelessWidget {
-  final String? nif;
-
   const _NifRow({required this.nif});
+  final String? nif;
 
   @override
   Widget build(BuildContext context) {
@@ -236,11 +236,11 @@ class _NifRow extends StatelessWidget {
         Text(
           hasNif ? nif! : s.noNifOnFile,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: hasNif
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.w600,
-              ),
+            color: hasNif
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.error,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-
-import '../../features/buyers/screens/buyers_list_screen.dart';
-import '../../features/dashboard/screens/dashboard_screen.dart';
-import '../../features/demo/demo_mode.dart';
-import '../../features/demo/demo_tutorial_sheet.dart';
-import '../../features/repairs/screens/sales_repairs_tab_screen.dart';
-import '../../features/settings/screens/settings_screen.dart';
-import '../l10n/app_strings.dart';
-import '../store/buyers_store.dart';
-import '../store/repairs_store.dart';
-import '../store/sales_store.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyers_list_screen.dart';
+import 'package:latitude_tracker/features/dashboard/screens/dashboard_screen.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
+import 'package:latitude_tracker/features/repairs/screens/sales_repairs_tab_screen.dart';
+import 'package:latitude_tracker/features/settings/screens/settings_screen.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -145,8 +144,8 @@ class _DemoBanner extends StatelessWidget {
                 child: Text(
                   s.demoBanner,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: onContainer,
-                      ),
+                    color: onContainer,
+                  ),
                 ),
               ),
               IconButton(
@@ -157,7 +156,7 @@ class _DemoBanner extends StatelessWidget {
                 onPressed: () => DemoTutorialSheet.show(context),
               ),
               TextButton(
-                onPressed: () => DemoMode.exit(),
+                onPressed: DemoMode.exit,
                 style: TextButton.styleFrom(
                   foregroundColor: onContainer,
                   visualDensity: VisualDensity.compact,

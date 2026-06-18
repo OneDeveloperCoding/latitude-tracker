@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../dashboard/models/dashboard_stats.dart';
-import '../../sales/services/sales_analytics_service.dart';
-import '../../dashboard/widgets/analytics_widgets.dart';
-import '../../repairs/models/repair.dart';
-import '../../sales/models/sale.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/dashboard/models/dashboard_stats.dart';
+import 'package:latitude_tracker/features/dashboard/widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sales_analytics_service.dart';
 
 class ArchiveAnalyticsScreen extends StatefulWidget {
-  final Map<String, dynamic> archive;
 
-  const ArchiveAnalyticsScreen({super.key, required this.archive});
+  const ArchiveAnalyticsScreen({required this.archive, super.key});
+  final Map<String, dynamic> archive;
 
   @override
   State<ArchiveAnalyticsScreen> createState() =>
@@ -60,8 +59,10 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
       final end = DateTime(_year, i + 2);
       return SalesAnalyticsService.computeCategoryBreakdown(_sales, start, end);
     });
-    _monthLabels =
-        List.generate(12, (i) => DateFormat('MMM').format(DateTime(_year, i + 1)));
+    _monthLabels = List.generate(
+      12,
+      (i) => DateFormat('MMM').format(DateTime(_year, i + 1)),
+    );
     _rebuildPeriodCache();
   }
 
@@ -80,12 +81,15 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
       : DateTime(_year + 1);
 
   void _rebuildPeriodCache() {
-    _currentStats =
-        SalesAnalyticsService.computePeriodStats(_sales, _periodStart, _periodEnd);
+    _currentStats = SalesAnalyticsService.computePeriodStats(
+      _sales, _periodStart, _periodEnd,
+    );
     _paymentBreakdown = SalesAnalyticsService.computePaymentMethodBreakdown(
-        _sales, _periodStart, _periodEnd);
-    _categoryBreakdown =
-        SalesAnalyticsService.computeCategoryBreakdown(_sales, _periodStart, _periodEnd);
+      _sales, _periodStart, _periodEnd,
+    );
+    _categoryBreakdown = SalesAnalyticsService.computeCategoryBreakdown(
+      _sales, _periodStart, _periodEnd,
+    );
     _prevStats = _period == DashboardPeriod.monthly && _month.month > 1
         ? SalesAnalyticsService.computePeriodStats(
             _sales,
@@ -173,7 +177,8 @@ class _ArchiveAnalyticsScreenState extends State<ArchiveAnalyticsScreen>
         padding: EdgeInsets.fromLTRB(
             16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
         children: [
-          // No prior year in archive — prevStats zeros suppress the trend badge.
+          // No prior year in archive — prevStats zeros suppress the trend
+          // badge.
           AnalyticsRevenueSummaryCard(
             currentStats: _currentStats,
             prevStats: _prevStats,

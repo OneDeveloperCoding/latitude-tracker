@@ -6,25 +6,26 @@ import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.d
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 Repair _makeRepair({RepairStatus status = RepairStatus.inProgress}) => Repair(
-      id: 'r1',
-      buyerId: 'b1',
-      buyerName: 'Ana',
-      itemDescription: 'Necklace',
-      itemCategory: 'Colares',
-      problemDescription: 'Broken clasp',
-      status: status,
-      payment: const SalePayment(
-        status: PaymentStatus.unpaid,
-        method: PaymentMethod.cash,
-      ),
-      returnDelivery: const RepairReturnDelivery(
-        type: DeliveryType.shipping,
-        status: ShipmentStatus.pending,
-      ),
-      createdAt: DateTime(2026, 1, 1),
-    );
+  id: 'r1',
+  buyerId: 'b1',
+  buyerName: 'Ana',
+  itemDescription: 'Necklace',
+  itemCategory: 'Colares',
+  problemDescription: 'Broken clasp',
+  status: status,
+  payment: const SalePayment(
+    status: PaymentStatus.unpaid,
+    method: PaymentMethod.cash,
+  ),
+  returnDelivery: const RepairReturnDelivery(
+    type: DeliveryType.shipping,
+    status: ShipmentStatus.pending,
+  ),
+  createdAt: DateTime(2026),
+);
 
-ChoiceChip _findChip(WidgetTester tester, String label) => tester.widget<ChoiceChip>(
+ChoiceChip _findChip(WidgetTester tester, String label) =>
+    tester.widget<ChoiceChip>(
       find.ancestor(
         of: find.text(label),
         matching: find.byType(ChoiceChip),
@@ -32,9 +33,7 @@ ChoiceChip _findChip(WidgetTester tester, String label) => tester.widget<ChoiceC
     );
 
 void main() {
-  setUp(() {
-    DemoMode.repairRepo.clear();
-  });
+  setUp(DemoMode.repairRepo.clear);
 
   tearDown(() {
     DemoMode.active.value = false;
@@ -42,7 +41,7 @@ void main() {
   });
 
   testWidgets('selected chip matches repair.status', (tester) async {
-    await DemoMode.repairRepo.createRepair(_makeRepair(status: RepairStatus.inProgress));
+    await DemoMode.repairRepo.createRepair(_makeRepair());
     DemoMode.active.value = true;
 
     await tester.pumpWidget(
@@ -59,7 +58,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await DemoMode.repairRepo.createRepair(_makeRepair(status: RepairStatus.inProgress));
+    await DemoMode.repairRepo.createRepair(_makeRepair());
     DemoMode.active.value = true;
 
     await tester.pumpWidget(

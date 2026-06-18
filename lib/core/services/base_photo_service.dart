@@ -2,12 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'auth_revoked_exception.dart';
-import 'error_reporter.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
 
 abstract class BasePhotoService {
-  final storage = FirebaseStorage.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseStorage storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final _picker = ImagePicker();
 
   String get userId =>
@@ -30,8 +30,9 @@ abstract class BasePhotoService {
     if (photoUrl.startsWith('demo://')) return;
     try {
       await storage.refFromURL(photoUrl).delete();
-    } catch (e, st) {
-      // Photo may already be deleted — best-effort, but track unexpected errors.
+    } on Object catch (e, st) {
+      // Photo may already be deleted — best-effort, but track unexpected
+      // errors.
       logError(e, st);
     }
   }
@@ -43,7 +44,7 @@ abstract class BasePhotoService {
     if (_auth.currentUser == null) return;
     try {
       await _deleteFolder(rootPathBuilder());
-    } catch (e, st) {
+    } on Object catch (e, st) {
       if (e is AuthRevokedException) rethrow;
       // Folder may not exist — best-effort, but track unexpected errors.
       logError(e, st);
@@ -63,7 +64,7 @@ abstract class BasePhotoService {
   Future<void> _deleteItem(Reference item) async {
     try {
       await item.delete();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       // object-not-found is expected when the other device already deleted the
       // file — treat it as success. Log everything else.
       if (e is FirebaseException && e.code == 'object-not-found') return;

@@ -1,22 +1,23 @@
 import 'dart:async';
 
-import '../../buyers/models/buyer.dart';
-import '../../buyers/models/buyer_address.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../demo_data.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/demo/demo_data.dart';
 
 class InMemoryBuyerRepository implements BuyerRepository {
   final _buyers = <Buyer>[];
   final _addresses = <String, List<BuyerAddress>>{};
   final _buyerController = StreamController<List<Buyer>>.broadcast();
-  final _addressControllers =
-      <String, StreamController<List<BuyerAddress>>>{};
+  final _addressControllers = <String, StreamController<List<BuyerAddress>>>{};
   final _allAddressesController =
       StreamController<List<BuyerAddress>>.broadcast();
 
   StreamController<List<BuyerAddress>> _addressController(String buyerId) =>
       _addressControllers.putIfAbsent(
-          buyerId, () => StreamController<List<BuyerAddress>>.broadcast());
+        buyerId,
+        StreamController<List<BuyerAddress>>.broadcast,
+      );
 
   List<Buyer> get _sorted =>
       List.from(_buyers)..sort((a, b) => a.name.compareTo(b.name));
@@ -40,9 +41,7 @@ class InMemoryBuyerRepository implements BuyerRepository {
       ..clear()
       ..addAll(DemoData.addresses());
     _emitBuyers();
-    for (final id in _addresses.keys) {
-      _emitAddresses(id);
-    }
+    _addresses.keys.forEach(_emitAddresses);
   }
 
   void clear() {
@@ -64,8 +63,9 @@ class InMemoryBuyerRepository implements BuyerRepository {
   @override
   Stream<Buyer?> watchBuyer(String id) async* {
     yield _buyers.where((b) => b.id == id).firstOrNull;
-    yield* _buyerController.stream
-        .map((list) => list.where((b) => b.id == id).firstOrNull);
+    yield* _buyerController.stream.map(
+      (list) => list.where((b) => b.id == id).firstOrNull,
+    );
   }
 
   @override
@@ -99,7 +99,9 @@ class InMemoryBuyerRepository implements BuyerRepository {
 
   @override
   Future<bool> createBuyerIfNotExists(
-      Buyer buyer, List<BuyerAddress> addresses) async {
+    Buyer buyer,
+    List<BuyerAddress> addresses,
+  ) async {
     if (_buyers.any((b) => b.id == buyer.id)) return false;
     _buyers.add(buyer);
     _emitBuyers();

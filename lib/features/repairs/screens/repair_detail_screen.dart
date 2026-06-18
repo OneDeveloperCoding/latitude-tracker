@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/id_gen.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/error_reporter.dart';
-import '../../../core/store/sales_store.dart';
-import '../../buyers/models/buyer.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../buyers/screens/buyer_detail_screen.dart';
-import '../../demo/demo_mode.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/screens/sale_detail_screen.dart';
-import '../../sales/widgets/photo_grid.dart';
-import '../models/repair.dart';
-import '../repositories/repair_repository.dart';
-import '../widgets/repair_status_colors.dart';
-import 'new_repair_screen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/repairs/screens/new_repair_screen.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_status_colors.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 
 class RepairDetailScreen extends StatefulWidget {
-  final String repairId;
 
-  const RepairDetailScreen({super.key, required this.repairId});
+  const RepairDetailScreen({required this.repairId, super.key});
+  final String repairId;
 
   @override
   State<RepairDetailScreen> createState() => _RepairDetailScreenState();
@@ -64,7 +62,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
         setState(() => _popping = true);
         Navigator.of(context).pop();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${s.errorDeletingRepair}: $e')),
@@ -86,7 +84,8 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
         }
         final repair = snapshot.data;
         if (repair == null) {
-          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping &&
+              snapshot.connectionState != ConnectionState.waiting) {
             _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (context.mounted && Navigator.of(context).canPop()) {
@@ -106,10 +105,10 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
 }
 
 class _RepairDetailBody extends StatelessWidget {
-  final Repair repair;
-  final Future<void> Function(BuildContext, Repair) onDelete;
 
   const _RepairDetailBody({required this.repair, required this.onDelete});
+  final Repair repair;
+  final Future<void> Function(BuildContext, Repair) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +124,7 @@ class _RepairDetailBody extends StatelessWidget {
               icon: const Icon(Icons.edit_outlined),
               tooltip: s.edit,
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => NewRepairScreen(existing: repair),
                 ),
               ),
@@ -209,7 +208,7 @@ class _RepairDetailBody extends StatelessWidget {
                               size: 80,
                               onTap: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(
+                                MaterialPageRoute<void>(
                                   builder: (_) => PhotoViewer(
                                     urls: repair.photoUrls,
                                     initialIndex: e.key,
@@ -288,9 +287,9 @@ class _RepairDetailBody extends StatelessWidget {
 }
 
 class _ContactRow extends StatelessWidget {
-  final Repair repair;
 
   const _ContactRow({required this.repair});
+  final Repair repair;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +302,7 @@ class _ContactRow extends StatelessWidget {
         subtitle: Text(s.buyer),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
+          MaterialPageRoute<void>(
             builder: (_) => BuyerDetailScreen(buyerId: repair.buyerId!),
           ),
         ),
@@ -357,7 +356,6 @@ class _ContactRow extends StatelessWidget {
         id: repair.id,
         buyerId: newBuyer.id,
         buyerName: newBuyer.name,
-        freeTextContact: null,
         linkedSaleId: repair.linkedSaleId,
         itemDescription: repair.itemDescription,
         itemCategory: repair.itemCategory,
@@ -377,7 +375,7 @@ class _ContactRow extends StatelessWidget {
           SnackBar(content: Text(s.promotedToBuyerMsg(newBuyer.name))),
         );
       }
-    } catch (e) {
+    } on Object catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(s.errorSavingRepair)),
@@ -388,13 +386,13 @@ class _ContactRow extends StatelessWidget {
 }
 
 class _LinkedSaleRow extends StatelessWidget {
-  final String saleId;
 
   const _LinkedSaleRow({required this.saleId});
+  final String saleId;
 
   @override
   Widget build(BuildContext context) {
-    final sale = (SalesStore.current ?? [])
+    final sale = SalesStore.currentOrEmpty
         .where((s) => s.id == saleId)
         .firstOrNull;
     final title = sale != null
@@ -407,7 +405,7 @@ class _LinkedSaleRow extends StatelessWidget {
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (_) => SaleDetailScreen(saleId: saleId),
         ),
       ),
@@ -417,9 +415,9 @@ class _LinkedSaleRow extends StatelessWidget {
 
 
 class _RepairStatusPicker extends StatefulWidget {
-  final Repair repair;
 
   const _RepairStatusPicker({required this.repair});
+  final Repair repair;
 
   @override
   State<_RepairStatusPicker> createState() => _RepairStatusPickerState();
@@ -451,7 +449,7 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
     });
     try {
       await RepairRepository().updateRepair(repair.copyWith(status: status));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         setState(() => _optimisticStatus = null);
@@ -523,9 +521,9 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
 }
 
 class _ReturnDeliveryActions extends StatefulWidget {
-  final Repair repair;
 
   const _ReturnDeliveryActions({required this.repair});
+  final Repair repair;
 
   @override
   State<_ReturnDeliveryActions> createState() => _ReturnDeliveryActionsState();
@@ -535,7 +533,8 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
   bool _isUpdating = false;
 
   Future<void> _advance() async {
-    // Snapshot before any await so the write is consistent with what was rendered.
+    // Snapshot before any await so the write is consistent with what was
+    // rendered.
     final repair = widget.repair;
     final delivery = repair.returnDelivery;
     final nextStatus = delivery.type == DeliveryType.shipping &&
@@ -554,7 +553,7 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
               : null,
         ),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -575,7 +574,9 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
     }
 
     final delivery = repair.returnDelivery;
-    if (delivery.status == ShipmentStatus.delivered) return const SizedBox.shrink();
+    if (delivery.status == ShipmentStatus.delivered) {
+      return const SizedBox.shrink();
+    }
 
     final s = context.s;
     final isShippingPending = delivery.type == DeliveryType.shipping &&
@@ -602,10 +603,10 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
 }
 
 class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
 
   const _SectionCard({required this.title, required this.children});
+  final String title;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {

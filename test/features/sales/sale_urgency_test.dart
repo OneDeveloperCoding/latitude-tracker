@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
@@ -17,19 +17,21 @@ void main() {
 
     test('none when delivered regardless of scheduled date', () {
       final sale = makeSale(
-        scheduledDate: DateTime(2026, 5, 1),
+        scheduledDate: DateTime(2026, 5),
         shipmentStatus: ShipmentStatus.delivered,
       );
       expect(sale.urgencyLevel(now: _kNow), UrgencyLevel.none);
     });
 
     test('overdue when scheduled before start of this week', () {
-      final sale = makeSale(scheduledDate: DateTime(2026, 5, 31)); // before Mon Jun 1
+      final sale = makeSale(
+        scheduledDate: DateTime(2026, 5, 31),
+      ); // before Mon Jun 1
       expect(sale.urgencyLevel(now: _kNow), UrgencyLevel.overdue);
     });
 
     test('thisWeek on Monday (first day of week)', () {
-      final sale = makeSale(scheduledDate: DateTime(2026, 6, 1));
+      final sale = makeSale(scheduledDate: DateTime(2026, 6));
       expect(sale.urgencyLevel(now: _kNow), UrgencyLevel.thisWeek);
     });
 
@@ -39,7 +41,9 @@ void main() {
     });
 
     test('none when scheduled start of next week', () {
-      final sale = makeSale(scheduledDate: DateTime(2026, 6, 8)); // Mon of next week
+      final sale = makeSale(
+        scheduledDate: DateTime(2026, 6, 8),
+      ); // Mon of next week
       expect(sale.urgencyLevel(now: _kNow), UrgencyLevel.none);
     });
   });
@@ -85,7 +89,6 @@ void main() {
     test('no assembly reason when ready', () {
       final sale = makeSale(
         scheduledDate: DateTime(2026, 6, 3),
-        assembly: AssemblyStatus.ready,
       );
       final reasons = sale.urgencyReasons(now: _kNow);
       expect(reasons, isNot(contains(UrgencyReasonType.waitingForMaterials)));
@@ -106,7 +109,6 @@ void main() {
     test('no payment reason when paid', () {
       final sale = makeSale(
         scheduledDate: DateTime(2026, 6, 3),
-        payment: PaymentStatus.paid,
       );
       expect(
         sale.urgencyReasons(now: _kNow),
@@ -117,7 +119,6 @@ void main() {
     test('notYetShipped when overdue and shipment pending', () {
       final sale = makeSale(
         scheduledDate: DateTime(2026, 5, 31),
-        shipmentStatus: ShipmentStatus.pending,
       );
       expect(
         sale.urgencyReasons(now: _kNow),
@@ -128,7 +129,6 @@ void main() {
     test('no notYetShipped when thisWeek (not overdue)', () {
       final sale = makeSale(
         scheduledDate: DateTime(2026, 6, 3),
-        shipmentStatus: ShipmentStatus.pending,
       );
       expect(
         sale.urgencyReasons(now: _kNow),
@@ -141,14 +141,16 @@ void main() {
         scheduledDate: DateTime(2026, 5, 31),
         assembly: AssemblyStatus.notStarted,
         payment: PaymentStatus.unpaid,
-        shipmentStatus: ShipmentStatus.pending,
       );
       final reasons = sale.urgencyReasons(now: _kNow);
-      expect(reasons, containsAll([
-        UrgencyReasonType.assemblyNotReady,
-        UrgencyReasonType.paymentPending,
-        UrgencyReasonType.notYetShipped,
-      ]));
+      expect(
+        reasons,
+        containsAll([
+          UrgencyReasonType.assemblyNotReady,
+          UrgencyReasonType.paymentPending,
+          UrgencyReasonType.notYetShipped,
+        ]),
+      );
       expect(reasons, hasLength(3));
     });
   });
@@ -186,7 +188,7 @@ void main() {
     });
 
     test('counts full days since creation', () {
-      final sale = makeSale(createdAt: DateTime(2026, 5, 1));
+      final sale = makeSale(createdAt: DateTime(2026, 5));
       expect(sale.daysOpen(now: _kNow), 34);
     });
   });

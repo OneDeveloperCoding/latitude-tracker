@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/id_gen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/widgets/discard_dialog.dart';
-import '../models/buyer_address.dart';
-import '../repositories/buyer_repository.dart';
-import '../widgets/address_form_fields.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/widgets/discard_dialog.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/widgets/address_form_fields.dart';
 
 class BuyerAddressFormScreen extends StatefulWidget {
-  final String buyerId;
-  final BuyerAddress? address;
-
   const BuyerAddressFormScreen({
-    super.key,
     required this.buyerId,
+    super.key,
     this.address,
   });
+  final String buyerId;
+  final BuyerAddress? address;
 
   @override
   State<BuyerAddressFormScreen> createState() => _BuyerAddressFormScreenState();
@@ -31,8 +30,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
 
   bool get _isEditing => widget.address != null;
 
-  bool get _hasChanges =>
-      _addressFormKey.currentState?.hasChanges ?? false;
+  bool get _hasChanges => _addressFormKey.currentState?.hasChanges ?? false;
 
   Future<void> _onPopInvoked(bool didPop, _) async {
     if (didPop) return;
@@ -57,7 +55,7 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
         await _repository.createAddress(widget.buyerId, address);
       }
       if (mounted) Navigator.pop(context);
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errorSavingAddressMsg(e))),
@@ -77,34 +75,34 @@ class _BuyerAddressFormScreenState extends State<BuyerAddressFormScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(_isEditing ? s.editAddress : s.newAddress),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _save,
-            child: _isLoading
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(s.save),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            AddressFormFields(
-              key: _addressFormKey,
-              initial: widget.address,
-              showIsDefault: true,
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : _save,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(s.save),
             ),
-            const SizedBox(height: 32),
           ],
         ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              AddressFormFields(
+                key: _addressFormKey,
+                initial: widget.address,
+                showIsDefault: true,
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
   }
 }

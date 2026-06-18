@@ -1,32 +1,31 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/url_launch_service.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_address_form_screen.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_form_screen.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_card.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/constants.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/error_reporter.dart';
-import '../../../core/services/url_launch_service.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../repairs/models/repair.dart';
-import '../../repairs/screens/repair_detail_screen.dart';
-import '../../repairs/widgets/repair_card.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/repositories/sale_repository.dart';
-import '../../sales/screens/sale_detail_screen.dart';
-import '../models/buyer.dart';
-import '../models/buyer_address.dart';
-import '../models/buyer_stats.dart';
-import '../repositories/buyer_repository.dart';
-import 'buyer_address_form_screen.dart';
-import 'buyer_form_screen.dart';
-
 class BuyerDetailScreen extends StatefulWidget {
+  const BuyerDetailScreen({required this.buyerId, super.key});
   final String buyerId;
-
-  const BuyerDetailScreen({super.key, required this.buyerId});
 
   @override
   State<BuyerDetailScreen> createState() => _BuyerDetailScreenState();
@@ -60,11 +59,15 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
         final buyer = snapshot.data;
 
         if (buyer == null) {
-          if (!_popping && snapshot.connectionState != ConnectionState.waiting) {
+          if (!_popping &&
+              snapshot.connectionState != ConnectionState.waiting) {
             // Buyer deleted on another device — navigate back after this frame.
-            // Direct assignment without setState: setState is forbidden inside a
-            // builder callback. The Dart single-thread model guarantees subsequent
-            // builder calls see the updated value before another callback is queued.
+            // Direct assignment without setState: setState is forbidden inside
+            // a
+            // builder callback. The Dart single-thread model guarantees
+            // subsequent
+            // builder calls see the updated value before another callback is
+            // queued.
             _popping = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (context.mounted && Navigator.of(context).canPop()) {
@@ -89,8 +92,9 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
                   tooltip: s.editBuyer,
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => BuyerFormScreen(buyer: buyer)),
+                    MaterialPageRoute<void>(
+                      builder: (_) => BuyerFormScreen(buyer: buyer),
+                    ),
                   ),
                 ),
                 IconButton(
@@ -143,7 +147,7 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
         _popping = true;
         Navigator.pop(context);
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       logError(e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -155,10 +159,9 @@ class _BuyerDetailScreenState extends State<BuyerDetailScreen> {
 }
 
 class _BuyerDetailBody extends StatelessWidget {
+  const _BuyerDetailBody({required this.buyer, required this.buyerRepo});
   final Buyer buyer;
   final BuyerRepository buyerRepo;
-
-  const _BuyerDetailBody({required this.buyer, required this.buyerRepo});
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +195,9 @@ class _BuyerDetailBody extends StatelessWidget {
   }
 
   Future<void> _deleteAddress(
-      BuildContext context, BuyerAddress address) async {
+    BuildContext context,
+    BuyerAddress address,
+  ) async {
     final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -214,7 +219,7 @@ class _BuyerDetailBody extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
     try {
       await buyerRepo.deleteAddress(buyer.id, address.id);
-    } catch (e) {
+    } on Object catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.errGeneric)),
@@ -224,18 +229,21 @@ class _BuyerDetailBody extends StatelessWidget {
   }
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+// ── Tabs
+// ──────────────────────────────────────────────────────────────────────
 
 class _HistoryTab extends StatelessWidget {
-  final String buyerId;
-
   const _HistoryTab({required this.buyerId});
+  final String buyerId;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        16, 16, 16, 16 + MediaQuery.of(context).padding.bottom,
+        16,
+        16,
+        16,
+        16 + MediaQuery.of(context).padding.bottom,
       ),
       child: _BuyerHistorySection(buyerId: buyerId),
     );
@@ -245,9 +253,8 @@ class _HistoryTab extends StatelessWidget {
 enum _HistoryView { sales, repairs }
 
 class _BuyerHistorySection extends StatefulWidget {
-  final String buyerId;
-
   const _BuyerHistorySection({required this.buyerId});
+  final String buyerId;
 
   @override
   State<_BuyerHistorySection> createState() => _BuyerHistorySectionState();
@@ -272,10 +279,9 @@ class _BuyerHistorySectionState extends State<_BuyerHistorySection> {
     final state = RepairsStore.state.value;
     if (state is! StoreLoaded<List<Repair>>) return;
 
-    final repairs = state.data
-        .where((r) => r.buyerId == widget.buyerId)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final repairs =
+        state.data.where((r) => r.buyerId == widget.buyerId).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     setState(() {
       _repairs = repairs;
       if (repairs.isEmpty) _view = _HistoryView.sales;
@@ -328,38 +334,38 @@ class _BuyerHistorySectionState extends State<_BuyerHistorySection> {
 }
 
 class _BuyerRepairsSection extends StatelessWidget {
-  final List<Repair> repairs;
-
   const _BuyerRepairsSection({required this.repairs});
+  final List<Repair> repairs;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: repairs
-          .map((repair) => RepairCard(
-                repair: repair,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RepairDetailScreen(repairId: repair.id),
-                  ),
+          .map(
+            (repair) => RepairCard(
+              repair: repair,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => RepairDetailScreen(repairId: repair.id),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
 }
 
 class _AddressesTab extends StatelessWidget {
-  final Buyer buyer;
-  final BuyerRepository buyerRepo;
-  final void Function(BuyerAddress) onDelete;
-
   const _AddressesTab({
     required this.buyer,
     required this.buyerRepo,
     required this.onDelete,
   });
+  final Buyer buyer;
+  final BuyerRepository buyerRepo;
+  final void Function(BuyerAddress) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +380,7 @@ class _AddressesTab extends StatelessWidget {
             child: TextButton.icon(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => BuyerAddressFormScreen(buyerId: buyer.id),
                 ),
               ),
@@ -386,7 +392,10 @@ class _AddressesTab extends StatelessWidget {
         Expanded(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
-              16, 4, 16, 16 + MediaQuery.of(context).padding.bottom,
+              16,
+              4,
+              16,
+              16 + MediaQuery.of(context).padding.bottom,
             ),
             child: _AddressesList(
               buyerId: buyer.id,
@@ -394,7 +403,7 @@ class _AddressesTab extends StatelessWidget {
               buyerRepo: buyerRepo,
               onEdit: (a) => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) =>
                       BuyerAddressFormScreen(buyerId: buyer.id, address: a),
                 ),
@@ -408,12 +417,12 @@ class _AddressesTab extends StatelessWidget {
   }
 }
 
-// ── Purchase history ──────────────────────────────────────────────────────────
+// ── Purchase history
+// ──────────────────────────────────────────────────────────
 
 class _BuyerSalesSection extends StatefulWidget {
-  final String buyerId;
-
   const _BuyerSalesSection({required this.buyerId});
+  final String buyerId;
 
   @override
   State<_BuyerSalesSection> createState() => _BuyerSalesSectionState();
@@ -438,9 +447,7 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
 
   void _onSalesChanged() {
     final all = SalesStore.current;
-    final sales = all
-        ?.where((s) => s.buyerId == widget.buyerId)
-        .toList()
+    final sales = all?.where((s) => s.buyerId == widget.buyerId).toList()
       ?..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     setState(() {
       _sales = sales;
@@ -449,9 +456,8 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
           ? []
           : ({
               for (final s in sales)
-                DateTime(s.createdAt.year, s.createdAt.month)
-            }.toList()
-                ..sort((a, b) => b.compareTo(a)));
+                DateTime(s.createdAt.year, s.createdAt.month),
+            }.toList()..sort((a, b) => b.compareTo(a)));
     });
   }
 
@@ -465,9 +471,11 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
     if (_showAll) return all;
     if (_selectedMonth != null) {
       return all
-          .where((s) =>
-              s.createdAt.year == _selectedMonth!.year &&
-              s.createdAt.month == _selectedMonth!.month)
+          .where(
+            (s) =>
+                s.createdAt.year == _selectedMonth!.year &&
+                s.createdAt.month == _selectedMonth!.month,
+          )
           .toList();
     }
     if (_selectedYear != null) {
@@ -477,8 +485,10 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
     final now = DateTime.now();
     final cutoff = DateTime(now.year, now.month - 2);
     return all
-        .where((s) => !DateTime(s.createdAt.year, s.createdAt.month)
-            .isBefore(cutoff))
+        .where(
+          (s) =>
+              !DateTime(s.createdAt.year, s.createdAt.month).isBefore(cutoff),
+        )
         .toList();
   }
 
@@ -506,7 +516,9 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
     if (allSales.isEmpty) {
       return Text(
         s.noPurchasesYet,
-        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        style: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
       );
     }
 
@@ -532,18 +544,20 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
                   _selectedMonth = null;
                 }),
               ),
-              ..._years.map((year) => Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: FilterChip(
-                      label: Text('$year'),
-                      selected: !_showAll && _selectedYear == year,
-                      onSelected: (_) => setState(() {
-                        _showAll = false;
-                        _selectedYear = year;
-                        _selectedMonth = null;
-                      }),
-                    ),
-                  )),
+              ..._years.map(
+                (year) => Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: FilterChip(
+                    label: Text('$year'),
+                    selected: !_showAll && _selectedYear == year,
+                    onSelected: (_) => setState(() {
+                      _showAll = false;
+                      _selectedYear = year;
+                      _selectedMonth = null;
+                    }),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -574,7 +588,9 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
           const SizedBox(height: 4),
           Text(
             s.last3Months,
-            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
         const SizedBox(height: 8),
@@ -585,9 +601,8 @@ class _BuyerSalesSectionState extends State<_BuyerSalesSection> {
 }
 
 class _PurchaseSummary extends StatelessWidget {
-  final BuyerStats stats;
-
   const _PurchaseSummary({required this.stats});
+  final BuyerStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -601,8 +616,9 @@ class _PurchaseSummary extends StatelessWidget {
           children: [
             _StatRow(label: s.totalSalesLabel, value: '${stats.saleCount}'),
             _StatRow(
-                label: s.totalPaidLabel,
-                value: currency.format(stats.totalPaid)),
+              label: s.totalPaidLabel,
+              value: currency.format(stats.totalPaid),
+            ),
             if (stats.unpaidBalance > 0)
               _StatRow(
                 label: s.unpaidBalanceLabel,
@@ -616,8 +632,7 @@ class _PurchaseSummary extends StatelessWidget {
             if (stats.lastPurchaseAt != null)
               _StatRow(
                 label: s.lastPurchaseLabel,
-                value:
-                    DateFormat('dd MMM yyyy').format(stats.lastPurchaseAt!),
+                value: DateFormat('dd MMM yyyy').format(stats.lastPurchaseAt!),
               ),
           ],
         ),
@@ -627,11 +642,10 @@ class _PurchaseSummary extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
+  const _StatRow({required this.label, required this.value, this.valueColor});
   final String label;
   final String value;
   final Color? valueColor;
-
-  const _StatRow({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -650,9 +664,8 @@ class _StatRow extends StatelessWidget {
 }
 
 class _SaleTile extends StatelessWidget {
-  final Sale sale;
-
   const _SaleTile({required this.sale});
+  final Sale sale;
 
   @override
   Widget build(BuildContext context) {
@@ -665,8 +678,8 @@ class _SaleTile extends StatelessWidget {
           sale.items.isEmpty
               ? '—'
               : sale.items.length == 1
-                  ? sale.items.first.description
-                  : sale.items.map((i) => i.description).join(', '),
+              ? sale.items.first.description
+              : sale.items.map((i) => i.description).join(', '),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -707,8 +720,9 @@ class _SaleTile extends StatelessWidget {
         ),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-              builder: (_) => SaleDetailScreen(saleId: sale.id)),
+          MaterialPageRoute<void>(
+            builder: (_) => SaleDetailScreen(saleId: sale.id),
+          ),
         ),
       ),
     );
@@ -717,7 +731,7 @@ class _SaleTile extends StatelessWidget {
 
 void _showNotePreview(BuildContext context, String notes) {
   final s = context.s;
-  showModalBottomSheet(
+  unawaited(showModalBottomSheet<void>(
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -727,11 +741,15 @@ void _showNotePreview(BuildContext context, String notes) {
         children: [
           Row(
             children: [
-              Icon(Icons.sticky_note_2_outlined,
-                  color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.sticky_note_2_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 12),
-              Text(s.sectionNotes,
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                s.sectionNotes,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -739,18 +757,13 @@ void _showNotePreview(BuildContext context, String notes) {
         ],
       ),
     ),
-  );
+  ));
 }
 
-// ── Addresses list ────────────────────────────────────────────────────────────
+// ── Addresses list
+// ────────────────────────────────────────────────────────────
 
 class _AddressesList extends StatefulWidget {
-  final String buyerId;
-  final String buyerName;
-  final BuyerRepository buyerRepo;
-  final void Function(BuyerAddress) onEdit;
-  final void Function(BuyerAddress) onDelete;
-
   const _AddressesList({
     required this.buyerId,
     required this.buyerName,
@@ -758,6 +771,11 @@ class _AddressesList extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
   });
+  final String buyerId;
+  final String buyerName;
+  final BuyerRepository buyerRepo;
+  final void Function(BuyerAddress) onEdit;
+  final void Function(BuyerAddress) onDelete;
 
   @override
   State<_AddressesList> createState() => _AddressesListState();
@@ -812,21 +830,24 @@ class _AddressesListState extends State<_AddressesList> {
         if (addresses.isEmpty) {
           return Text(
             s.noAddressesSaved,
-            style: textTheme.bodyMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           );
         }
         return Column(
           children: addresses
-              .map((a) => _AddressTile(
-                    address: a,
-                    onEdit: () => widget.onEdit(a),
-                    onDelete: () => widget.onDelete(a),
-                    onCopy: () => _copyAddress(context, a),
-                    onOpenMaps: a.hasMapsAddress
-                        ? () => _openMaps(context, a)
-                        : null,
-                  ))
+              .map(
+                (a) => _AddressTile(
+                  address: a,
+                  onEdit: () => widget.onEdit(a),
+                  onDelete: () => widget.onDelete(a),
+                  onCopy: () => _copyAddress(context, a),
+                  onOpenMaps: a.hasMapsAddress
+                      ? () => _openMaps(context, a)
+                      : null,
+                ),
+              )
               .toList(),
         );
       },
@@ -834,12 +855,12 @@ class _AddressesListState extends State<_AddressesList> {
   }
 }
 
-// ── Info section ──────────────────────────────────────────────────────────────
+// ── Info section
+// ──────────────────────────────────────────────────────────────
 
 class _InfoSection extends StatelessWidget {
-  final Buyer buyer;
-
   const _InfoSection({required this.buyer});
+  final Buyer buyer;
 
   @override
   Widget build(BuildContext context) {
@@ -854,18 +875,27 @@ class _InfoSection extends StatelessWidget {
               InkWell(
                 onTap: () async {
                   final url = Uri.parse(
-                      'https://instagram.com/${buyer.instagramHandle}');
+                    'https://instagram.com/${buyer.instagramHandle}',
+                  );
                   try {
-                    final launched = await launchUrl(url,
-                        mode: LaunchMode.externalApplication);
+                    final launched = await launchUrl(
+                      url,
+                      mode: LaunchMode.externalApplication,
+                    );
                     if (!launched && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(context.s.couldNotOpenInstagram)));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(context.s.couldNotOpenInstagram),
+                        ),
+                      );
                     }
-                  } catch (_) {
+                  } on Object catch (_) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(context.s.couldNotOpenInstagram)));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(context.s.couldNotOpenInstagram),
+                        ),
+                      );
                     }
                   }
                 },
@@ -882,18 +912,21 @@ class _InfoSection extends StatelessWidget {
                 buyer.phone == null &&
                 buyer.nif == null)
               Text(s.noContactDetails),
-            if (buyer.tags.isNotEmpty || (buyer.notes?.isNotEmpty ?? false)) ...[
+            if (buyer.tags.isNotEmpty ||
+                (buyer.notes?.isNotEmpty ?? false)) ...[
               const Divider(height: 24),
               if (buyer.tags.isNotEmpty)
                 Wrap(
                   spacing: 8,
                   runSpacing: 4,
                   children: buyer.tags
-                      .map((tag) => Chip(
-                            label: Text(tag),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ))
+                      .map(
+                        (tag) => Chip(
+                          label: Text(tag),
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      )
                       .toList(),
                 ),
               if (buyer.notes?.isNotEmpty ?? false) ...[
@@ -911,10 +944,8 @@ class _InfoSection extends StatelessWidget {
                       child: Text(
                         buyer.notes!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
@@ -929,10 +960,9 @@ class _InfoSection extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.text});
   final IconData icon;
   final String text;
-
-  const _InfoRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -949,15 +979,10 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// ── Address tile ──────────────────────────────────────────────────────────────
+// ── Address tile
+// ──────────────────────────────────────────────────────────────
 
 class _AddressTile extends StatelessWidget {
-  final BuyerAddress address;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onCopy;
-  final VoidCallback? onOpenMaps;
-
   const _AddressTile({
     required this.address,
     required this.onEdit,
@@ -965,6 +990,11 @@ class _AddressTile extends StatelessWidget {
     required this.onCopy,
     this.onOpenMaps,
   });
+  final BuyerAddress address;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onCopy;
+  final VoidCallback? onOpenMaps;
 
   @override
   Widget build(BuildContext context) {
@@ -979,15 +1009,15 @@ class _AddressTile extends StatelessWidget {
               Chip(
                 label: Text(s.defaultChip),
                 padding: EdgeInsets.zero,
-                labelPadding:
-                    const EdgeInsets.symmetric(horizontal: 6),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                 visualDensity: VisualDensity.compact,
               ),
             ],
           ],
         ),
         subtitle: Text(
-          '${address.street}\n${address.postalCode} ${address.city}, ${address.country}',
+          '${address.street}\n${address.postalCode} ${address.city},'
+          ' ${address.country}',
         ),
         isThreeLine: true,
         trailing: Row(

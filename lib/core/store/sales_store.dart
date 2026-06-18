@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
-
-import '../../features/sales/models/sale.dart';
-import '../../features/sales/repositories/sale_repository.dart';
-import 'store_state.dart';
-import 'stream_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/store/stream_store.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
 
 class SalesStore {
   SalesStore._();
@@ -12,6 +11,7 @@ class SalesStore {
 
   static ValueNotifier<StoreState<List<Sale>>> get state => _store.state;
   static List<Sale>? get current => _store.current;
+  static List<Sale> get currentOrEmpty => _store.currentOrEmpty;
   static void init() => _store.init();
   static void ensureSubscribed() => _store.ensureSubscribed();
   static void forceReset() => _store.forceReset();

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/services/sale_grouper.dart';
-import '../../sales/screens/sale_detail_screen.dart';
-import 'buyer_detail_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
 
 class UnpaidBalancesScreen extends StatefulWidget {
   const UnpaidBalancesScreen({super.key});
@@ -18,16 +17,15 @@ class UnpaidBalancesScreen extends StatefulWidget {
 }
 
 class _UnpaidBalancesGroup {
-  final String buyerId;
-  final String buyerName;
-  final List<Sale> unpaidSales;
-  final double totalOwed;
-
   _UnpaidBalancesGroup({
     required this.buyerId,
     required this.buyerName,
     required this.unpaidSales,
-  }) : totalOwed = unpaidSales.fold(0.0, (sum, s) => sum + s.totalPrice);
+  }) : totalOwed = unpaidSales.fold(0, (sum, s) => sum + s.totalPrice);
+  final String buyerId;
+  final String buyerName;
+  final List<Sale> unpaidSales;
+  final double totalOwed;
 }
 
 class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
@@ -46,21 +44,25 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
   void _onSalesChanged() {
     final all = SalesStore.current;
     if (all == null) return;
-    final unpaid =
-        all.where((s) => s.payment.status == PaymentStatus.unpaid).toList();
+    final unpaid = all
+        .where((s) => s.payment.status == PaymentStatus.unpaid)
+        .toList();
 
-    final groups = SaleGrouper.byBuyerId(unpaid).entries
-        .map((e) => _UnpaidBalancesGroup(
-              buyerId: e.key,
-              buyerName: e.value.first.buyerName,
-              unpaidSales: e.value,
-            ))
-        .toList()
-      ..sort((a, b) => b.totalOwed.compareTo(a.totalOwed));
+    final groups =
+        SaleGrouper.byBuyerId(unpaid).entries
+            .map(
+              (e) => _UnpaidBalancesGroup(
+                buyerId: e.key,
+                buyerName: e.value.first.buyerName,
+                unpaidSales: e.value,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.totalOwed.compareTo(a.totalOwed));
 
     setState(() {
       _groups = groups;
-      _grandTotal = groups.fold(0.0, (sum, g) => sum + g.totalOwed);
+      _grandTotal = groups.fold(0, (sum, g) => sum + g.totalOwed);
     });
   }
 
@@ -90,72 +92,75 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _groups.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle_outline,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(height: 12),
-                      Text(s.allPaid),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(
-                      16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
-                  children: [
-                    Card(
-                      color: Theme.of(context).colorScheme.errorContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              s.totalOutstanding,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onErrorContainer,
-                                  ),
-                            ),
-                            Text(
-                              currency.format(_grandTotal),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onErrorContainer,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ],
+                  const SizedBox(height: 12),
+                  Text(s.allPaid),
+                ],
+              ),
+            )
+          : ListView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.of(context).padding.bottom,
+              ),
+              children: [
+                Card(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          s.totalOutstanding,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
                         ),
-                      ),
+                        Text(
+                          currency.format(_grandTotal),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    ..._groups.map((group) => _BuyerDebtCard(
-                          group: group,
-                          currency: currency,
-                        )),
-                  ],
+                  ),
                 ),
+                const SizedBox(height: 16),
+                ..._groups.map(
+                  (group) => _BuyerDebtCard(
+                    group: group,
+                    currency: currency,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
 
 class _BuyerDebtCard extends StatefulWidget {
+  const _BuyerDebtCard({required this.group, required this.currency});
   final _UnpaidBalancesGroup group;
   final NumberFormat currency;
-
-  const _BuyerDebtCard({required this.group, required this.currency});
 
   @override
   State<_BuyerDebtCard> createState() => _BuyerDebtCardState();
@@ -179,7 +184,7 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
             title: InkWell(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => BuyerDetailScreen(buyerId: group.buyerId),
                 ),
               ),
@@ -195,9 +200,9 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
                 Text(
                   widget.currency.format(group.totalOwed),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 Icon(_expanded ? Icons.expand_less : Icons.expand_more),
@@ -211,7 +216,7 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
                 dense: true,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => SaleDetailScreen(saleId: sale.id),
                   ),
                 ),
@@ -219,8 +224,8 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
                   sale.items.isEmpty
                       ? '—'
                       : sale.items.length == 1
-                          ? sale.items.first.description
-                          : '${sale.items.length} items',
+                      ? sale.items.first.description
+                      : '${sale.items.length} items',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

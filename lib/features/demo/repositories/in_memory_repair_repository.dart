@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import '../../repairs/models/repair.dart';
-import '../../repairs/repositories/repair_repository.dart';
-import '../demo_data.dart';
+import 'package:latitude_tracker/features/demo/demo_data.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
 
 class InMemoryRepairRepository implements RepairRepository {
   final _repairs = <Repair>[];
@@ -34,8 +34,9 @@ class InMemoryRepairRepository implements RepairRepository {
   @override
   Stream<Repair?> watchRepair(String id) async* {
     yield _repairs.where((r) => r.id == id).firstOrNull;
-    yield* _controller.stream
-        .map((_) => _repairs.where((r) => r.id == id).firstOrNull);
+    yield* _controller.stream.map(
+      (_) => _repairs.where((r) => r.id == id).firstOrNull,
+    );
   }
 
   @override
@@ -81,8 +82,10 @@ class InMemoryRepairRepository implements RepairRepository {
       _repairs.where((r) => r.createdAt.year == year).toList();
 
   @override
-  Future<void> deleteAllRepairsForYear(int year,
-      {bool deletePhotos = false}) async {
+  Future<void> deleteAllRepairsForYear(
+    int year, {
+    bool deletePhotos = false,
+  }) async {
     _repairs.removeWhere((r) => r.createdAt.year == year);
     _emit();
   }

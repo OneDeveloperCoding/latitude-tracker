@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
 import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test/test.dart';
 
 void main() {
   setUp(() {
@@ -42,21 +42,29 @@ void main() {
       expect(prefs.getString('test_$key'), isNull);
     });
 
-    test('evicts entry aged exactly ttlDays days (boundary: >= not >)', () async {
-      final prefs = await SharedPreferences.getInstance();
-      const key = 'boundary';
-      final exactlyOnBoundary = DateTime.now().subtract(const Duration(days: 30));
-      await prefs.setString(
-        'test_$key',
-        jsonEncode({'value': 1, 'cachedAt': exactlyOnBoundary.millisecondsSinceEpoch}),
-      );
+    test(
+      'evicts entry aged exactly ttlDays days (boundary: >= not >)',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        const key = 'boundary';
+        final exactlyOnBoundary = DateTime.now().subtract(
+          const Duration(days: 30),
+        );
+        await prefs.setString(
+          'test_$key',
+          jsonEncode({
+            'value': 1,
+            'cachedAt': exactlyOnBoundary.millisecondsSinceEpoch,
+          }),
+        );
 
-      final cache = SharedPrefsCache('test_');
-      final result = await cache.get(key, ttlDays: (_) => 30);
+        final cache = SharedPrefsCache('test_');
+        final result = await cache.get(key, ttlDays: (_) => 30);
 
-      expect(result, isNull);
-      expect(prefs.getString('test_$key'), isNull);
-    });
+        expect(result, isNull);
+        expect(prefs.getString('test_$key'), isNull);
+      },
+    );
 
     test('evicts and returns null for entry with missing cachedAt', () async {
       final prefs = await SharedPreferences.getInstance();
@@ -110,8 +118,7 @@ void main() {
       );
 
       final cache = SharedPrefsCache('test_');
-      int ttlResolver(Map<String, dynamic> m) =>
-          m['miss'] == true ? 7 : 180;
+      int ttlResolver(Map<String, dynamic> m) => m['miss'] == true ? 7 : 180;
 
       final missResult = await cache.get('miss', ttlDays: ttlResolver);
       final hitResult = await cache.get('hit', ttlDays: ttlResolver);
