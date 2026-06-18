@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:test/test.dart';
 
 BuyerAddress _address({
   String street = 'Rua das Flores',
@@ -35,7 +35,7 @@ void main() {
     });
 
     test('omits country line for Portugal', () {
-      final result = _address(country: 'Portugal').formattedAddress('Ana Silva');
+      final result = _address().formattedAddress('Ana Silva');
       expect(result.split('\n').length, 3);
       expect(result, isNot(contains('Portugal')));
     });
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('omits fraction when null', () {
-      final result = _address(fraction: null).formattedAddress('Ana Silva');
+      final result = _address().formattedAddress('Ana Silva');
       expect(result.split('\n')[1], 'Rua das Flores, 12');
     });
 
@@ -156,7 +156,7 @@ void main() {
     });
 
     test('omits fraction from query when null', () {
-      final uri = _address(fraction: null).mapsUri;
+      final uri = _address().mapsUri;
       expect(uri.queryParameters['q'], isNot(contains('null')));
     });
 
@@ -168,7 +168,7 @@ void main() {
     });
 
     test('omits country from query for Portugal', () {
-      final uri = _address(country: 'Portugal').mapsUri;
+      final uri = _address().mapsUri;
       expect(uri.queryParameters['q'], isNot(contains('Portugal')));
     });
 

@@ -1,8 +1,8 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/id_gen.dart';
-import '../../../core/services/base_photo_service.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/services/base_photo_service.dart';
 
 class PhotoService extends BasePhotoService {
   Reference _itemPhotoRef(String saleId, String itemId, String photoId) =>

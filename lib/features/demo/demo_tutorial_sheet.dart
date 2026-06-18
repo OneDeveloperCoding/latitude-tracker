@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
 class DemoTutorialSheet extends StatefulWidget {
   const DemoTutorialSheet({super.key});
 
   static void show(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -146,9 +146,9 @@ class _DemoTutorialSheetState extends State<DemoTutorialSheet> {
 // ── Sub-widgets ───────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
-  final String title;
 
   const _Header({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -180,13 +180,6 @@ class _Header extends StatelessWidget {
 }
 
 class _Footer extends StatelessWidget {
-  final int page;
-  final int total;
-  final ColorScheme colorScheme;
-  final String backLabel;
-  final String nextLabel;
-  final VoidCallback onBack;
-  final VoidCallback onNext;
 
   const _Footer({
     required this.page,
@@ -197,6 +190,13 @@ class _Footer extends StatelessWidget {
     required this.onBack,
     required this.onNext,
   });
+  final int page;
+  final int total;
+  final ColorScheme colorScheme;
+  final String backLabel;
+  final String nextLabel;
+  final VoidCallback onBack;
+  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -247,9 +247,9 @@ class _Footer extends StatelessWidget {
 }
 
 class _PageContent extends StatelessWidget {
-  final _TutorialPage page;
 
   const _PageContent({required this.page});
+  final _TutorialPage page;
 
   @override
   Widget build(BuildContext context) {
@@ -294,9 +294,9 @@ class _PageContent extends StatelessWidget {
 }
 
 class _GemCard extends StatelessWidget {
-  final _Gem gem;
 
   const _GemCard({required this.gem});
+  final _Gem gem;
 
   @override
   Widget build(BuildContext context) {
@@ -346,11 +346,6 @@ class _GemCard extends StatelessWidget {
 // ── Models ────────────────────────────────────────────────────────────────────
 
 class _TutorialPage {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String body;
-  final List<_Gem>? gems;
 
   const _TutorialPage({
     required this.icon,
@@ -359,13 +354,18 @@ class _TutorialPage {
     required this.body,
     this.gems,
   });
-}
-
-class _Gem {
   final IconData icon;
   final Color color;
   final String title;
   final String body;
+  final List<_Gem>? gems;
+}
+
+class _Gem {
 
   const _Gem(this.icon, this.color, this.title, this.body);
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
 }

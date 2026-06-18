@@ -47,6 +47,6 @@ Sale makeSale({
       payment: SalePayment(status: payment, method: method),
       shipment: SaleShipment(type: delivery, status: shipmentStatus),
       requiresNif: requiresNif,
-      createdAt: createdAt ?? DateTime(2026, 1, 1),
+      createdAt: createdAt ?? DateTime(2026),
       scheduledDate: scheduledDate,
     );

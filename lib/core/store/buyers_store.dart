@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
-
-import '../../features/buyers/models/buyer.dart';
-import '../../features/buyers/repositories/buyer_repository.dart';
-import 'store_state.dart';
-import 'stream_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/store/stream_store.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
 
 class BuyersStore {
   BuyersStore._();

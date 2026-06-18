@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
 class StoreErrorWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
 
   const StoreErrorWidget({
-    super.key,
-    required this.message,
-    required this.onRetry,
+    required this.message, required this.onRetry, super.key,
   });
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {

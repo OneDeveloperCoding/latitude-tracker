@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/constants.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../buyers/screens/unpaid_balances_screen.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/models/sale_filter.dart';
-import '../../sales/screens/nif_pending_screen.dart';
-import '../../sales/screens/sales_list_screen.dart';
-import '../../sales/screens/shopping_list_screen.dart';
-import '../models/dashboard_stats.dart';
-import 'analytics_screen.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/features/buyers/screens/unpaid_balances_screen.dart';
+import 'package:latitude_tracker/features/dashboard/models/dashboard_stats.dart';
+import 'package:latitude_tracker/features/dashboard/screens/analytics_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
+import 'package:latitude_tracker/features/sales/screens/nif_pending_screen.dart';
+import 'package:latitude_tracker/features/sales/screens/sales_list_screen.dart';
+import 'package:latitude_tracker/features/sales/screens/shopping_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -58,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 stats: stats,
                 onInsights: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) =>
                         const AnalyticsScreen(initialPeriod: DashboardPeriod.monthly),
                   ),
@@ -83,13 +82,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _MonthTabsControl extends StatefulWidget {
-  final DateTime selectedMonth;
-  final ValueChanged<DateTime> onMonthSelected;
 
   const _MonthTabsControl({
     required this.selectedMonth,
     required this.onMonthSelected,
   });
+  final DateTime selectedMonth;
+  final ValueChanged<DateTime> onMonthSelected;
 
   @override
   State<_MonthTabsControl> createState() => _MonthTabsControlState();
@@ -153,10 +152,10 @@ class _MonthTabsControlState extends State<_MonthTabsControl> {
 }
 
 class _RevenueCard extends StatelessWidget {
-  final DashboardStats stats;
-  final VoidCallback onInsights;
 
   const _RevenueCard({required this.stats, required this.onInsights});
+  final DashboardStats stats;
+  final VoidCallback onInsights;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +168,6 @@ class _RevenueCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Column(
@@ -230,9 +228,9 @@ class _RevenueCard extends StatelessWidget {
 }
 
 class _ActionGrid extends StatelessWidget {
-  final DashboardStats stats;
 
   const _ActionGrid({required this.stats});
+  final DashboardStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -309,9 +307,9 @@ class _ActionGrid extends StatelessWidget {
 }
 
 class _ActionGroupHeader extends StatelessWidget {
-  final String label;
 
   const _ActionGroupHeader({required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -329,12 +327,6 @@ class _ActionGroupHeader extends StatelessWidget {
 }
 
 class _ActionRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final int count;
-  final Color color;
-  final Widget destination;
-  final String? subtitle;
 
   const _ActionRow({
     required this.icon,
@@ -344,6 +336,12 @@ class _ActionRow extends StatelessWidget {
     required this.destination,
     this.subtitle,
   });
+  final IconData icon;
+  final String label;
+  final int count;
+  final Color color;
+  final Widget destination;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -357,7 +355,7 @@ class _ActionRow extends StatelessWidget {
         onTap: isActive
             ? () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => destination),
+                  MaterialPageRoute<void>(builder: (_) => destination),
                 )
             : null,
         child: Padding(
@@ -413,4 +411,3 @@ class _ActionRow extends StatelessWidget {
     );
   }
 }
-

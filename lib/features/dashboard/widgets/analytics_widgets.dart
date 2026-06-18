@@ -2,10 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../sales/widgets/payment_method_display.dart';
-import '../../sales/models/sale.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
 
 enum AnalyticsMetric { revenue, count }
 
@@ -33,16 +32,15 @@ Color analyticsColorForCategory(String category, List<String> ordered) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsPeriodHeader extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
 
   const AnalyticsPeriodHeader({
-    super.key,
-    required this.label,
+    required this.label, super.key,
     this.onPrevious,
     this.onNext,
   });
+  final String label;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +79,12 @@ class AnalyticsPeriodHeader extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsMetricToggle extends StatelessWidget {
-  final AnalyticsMetric metric;
-  final ValueChanged<AnalyticsMetric> onChanged;
 
   const AnalyticsMetricToggle({
-    super.key,
-    required this.metric,
-    required this.onChanged,
+    required this.metric, required this.onChanged, super.key,
   });
+  final AnalyticsMetric metric;
+  final ValueChanged<AnalyticsMetric> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -118,16 +114,13 @@ class AnalyticsMetricToggle extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsRevenueSummaryCard extends StatelessWidget {
+
+  const AnalyticsRevenueSummaryCard({
+    required this.currentStats, required this.prevStats, required this.metric, super.key,
+  });
   final ({double revenue, int count}) currentStats;
   final ({double revenue, int count}) prevStats;
   final AnalyticsMetric metric;
-
-  const AnalyticsRevenueSummaryCard({
-    super.key,
-    required this.currentStats,
-    required this.prevStats,
-    required this.metric,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +134,7 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
     final prevValue = metric == AnalyticsMetric.revenue
         ? prevStats.revenue
         : prevStats.count.toDouble();
-    final double? trendPct =
+    final trendPct =
         prevValue > 0 ? (currentValue - prevValue) / prevValue * 100 : null;
 
     final primary = metric == AnalyticsMetric.revenue
@@ -220,14 +213,12 @@ class AnalyticsRevenueSummaryCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsStackedBarChart extends StatefulWidget {
-  final List<List<({String category, double revenue})>> periodsData;
-  final List<String> periodLabels;
 
   const AnalyticsStackedBarChart({
-    super.key,
-    required this.periodsData,
-    required this.periodLabels,
+    required this.periodsData, required this.periodLabels, super.key,
   });
+  final List<List<({String category, double revenue})>> periodsData;
+  final List<String> periodLabels;
 
   @override
   State<AnalyticsStackedBarChart> createState() =>
@@ -281,7 +272,7 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
     final orderedCategories = _orderedCategories();
 
     final periodTotals = widget.periodsData
-        .map((p) => p.fold(0.0, (sum, e) => sum + e.revenue))
+        .map((p) => p.fold<double>(0, (sum, e) => sum + e.revenue))
         .toList();
 
     final categoryValues = {
@@ -289,14 +280,14 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
         cat: widget.periodsData
             .map((period) => period
                 .where((e) => e.category == cat)
-                .fold(0.0, (sum, e) => sum + e.revenue))
+                .fold<double>(0, (sum, e) => sum + e.revenue))
             .toList(),
     };
 
     final shownCategories = _selectedCategories.isEmpty
         ? orderedCategories
         : orderedCategories
-            .where((cat) => _selectedCategories.contains(cat))
+            .where(_selectedCategories.contains)
             .toList();
 
     return Card(
@@ -471,10 +462,6 @@ class _AnalyticsStackedBarChartState extends State<AnalyticsStackedBarChart> {
 }
 
 class _AnalyticsStackedBarPainter extends CustomPainter {
-  final List<List<({String category, double revenue})>> periodsData;
-  final List<String> orderedCategories;
-  final Set<String> selectedCategories;
-  final bool allHighlighted;
 
   const _AnalyticsStackedBarPainter({
     required this.periodsData,
@@ -482,14 +469,18 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
     required this.selectedCategories,
     required this.allHighlighted,
   });
+  final List<List<({String category, double revenue})>> periodsData;
+  final List<String> orderedCategories;
+  final Set<String> selectedCategories;
+  final bool allHighlighted;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (periodsData.isEmpty) return;
 
-    double maxTotal = 0;
+    var maxTotal = 0.0;
     for (final period in periodsData) {
-      final total = period.fold(0.0, (s, e) => s + e.revenue);
+      final total = period.fold<double>(0, (s, e) => s + e.revenue);
       if (total > maxTotal) maxTotal = total;
     }
     if (maxTotal == 0) return;
@@ -498,30 +489,31 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
     const gap = 4.0;
     final lastIndex = periodsData.length - 1;
 
-    for (int i = 0; i < periodsData.length; i++) {
+    for (var i = 0; i < periodsData.length; i++) {
       final period = periodsData[i];
       if (period.isEmpty) continue;
 
       final periodAlpha = (allHighlighted || i == lastIndex) ? 1.0 : 0.4;
-      final total = period.fold(0.0, (s, e) => s + e.revenue);
+      final total = period.fold<double>(0, (s, e) => s + e.revenue);
       final totalBarH = (total / maxTotal) * size.height;
       final barLeft = i * barWidth + gap / 2;
       final barRight = (i + 1) * barWidth - gap / 2;
 
-      canvas.save();
-      canvas.clipRRect(RRect.fromLTRBR(
-        barLeft,
-        size.height - totalBarH,
-        barRight,
-        size.height,
-        const Radius.circular(3),
-      ));
+      canvas
+        ..save()
+        ..clipRRect(RRect.fromLTRBR(
+          barLeft,
+          size.height - totalBarH,
+          barRight,
+          size.height,
+          const Radius.circular(3),
+        ));
 
-      double bottomY = size.height;
+      var bottomY = size.height;
       for (final e in period) {
-        final bool categoryActive = selectedCategories.isEmpty ||
+        final categoryActive = selectedCategories.isEmpty ||
             selectedCategories.contains(e.category);
-        final Color effectiveColor = categoryActive
+        final effectiveColor = categoryActive
             ? analyticsColorForCategory(e.category, orderedCategories)
                 .withAlpha((255 * periodAlpha).round())
             : Colors.grey.withAlpha(35);
@@ -552,18 +544,14 @@ class _AnalyticsStackedBarPainter extends CustomPainter {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsComparisonRow extends StatelessWidget {
+
+  const AnalyticsComparisonRow({
+    required this.label, required this.currentStats, required this.comparisonStats, required this.metric, super.key,
+  });
   final String label;
   final ({double revenue, int count}) currentStats;
   final ({double revenue, int count}) comparisonStats;
   final AnalyticsMetric metric;
-
-  const AnalyticsComparisonRow({
-    super.key,
-    required this.label,
-    required this.currentStats,
-    required this.comparisonStats,
-    required this.metric,
-  });
 
   double get _currentValue => metric == AnalyticsMetric.revenue
       ? currentStats.revenue
@@ -635,10 +623,10 @@ class AnalyticsComparisonRow extends StatelessWidget {
 }
 
 class AnalyticsTrendBadge extends StatelessWidget {
+
+  const AnalyticsTrendBadge({required this.pct, required this.up, super.key});
   final double pct;
   final bool up;
-
-  const AnalyticsTrendBadge({super.key, required this.pct, required this.up});
 
   @override
   Widget build(BuildContext context) {
@@ -665,9 +653,9 @@ class AnalyticsTrendBadge extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsPaymentMethodSection extends StatelessWidget {
-  final Map<PaymentMethod, ({double revenue, int count})> breakdown;
 
-  const AnalyticsPaymentMethodSection({super.key, required this.breakdown});
+  const AnalyticsPaymentMethodSection({required this.breakdown, super.key});
+  final Map<PaymentMethod, ({double revenue, int count})> breakdown;
 
   @override
   Widget build(BuildContext context) {
@@ -676,7 +664,7 @@ class AnalyticsPaymentMethodSection extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final totalRevenue =
-        breakdown.values.fold(0.0, (sum, e) => sum + e.revenue);
+        breakdown.values.fold<double>(0, (sum, e) => sum + e.revenue);
     final sorted = breakdown.entries.toList()
       ..sort((a, b) => b.value.revenue.compareTo(a.value.revenue));
 
@@ -721,9 +709,9 @@ class AnalyticsPaymentMethodSection extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsTopCategoriesSection extends StatelessWidget {
-  final List<({String category, double revenue})> breakdown;
 
-  const AnalyticsTopCategoriesSection({super.key, required this.breakdown});
+  const AnalyticsTopCategoriesSection({required this.breakdown, super.key});
+  final List<({String category, double revenue})> breakdown;
 
   @override
   Widget build(BuildContext context) {
@@ -770,20 +758,15 @@ class AnalyticsTopCategoriesSection extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnalyticsBarRow extends StatelessWidget {
+
+  const AnalyticsBarRow({
+    required this.label, required this.sublabel, required this.fraction, required this.barColor, required this.trackColor, super.key,
+  });
   final String label;
   final String sublabel;
   final double fraction;
   final Color barColor;
   final Color trackColor;
-
-  const AnalyticsBarRow({
-    super.key,
-    required this.label,
-    required this.sublabel,
-    required this.fraction,
-    required this.barColor,
-    required this.trackColor,
-  });
 
   @override
   Widget build(BuildContext context) {

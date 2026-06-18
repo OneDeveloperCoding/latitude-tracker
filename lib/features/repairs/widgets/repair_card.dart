@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_status_colors.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../../sales/models/sale.dart';
-import '../models/repair.dart';
-import 'repair_status_colors.dart';
-
-const _kDeliveryStatuses = {RepairStatus.done, RepairStatus.returned};
+const Set<RepairStatus> _kDeliveryStatuses = {RepairStatus.done, RepairStatus.returned};
 
 class RepairCard extends StatelessWidget {
+
+  const RepairCard({
+    required this.repair, required this.onTap, super.key,
+    this.selected = false,
+  });
   final Repair repair;
   final VoidCallback onTap;
   final bool selected;
-
-  const RepairCard({
-    super.key,
-    required this.repair,
-    required this.onTap,
-    this.selected = false,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -122,9 +119,9 @@ class RepairCard extends StatelessWidget {
 }
 
 class _ReturnDeliveryIndicator extends StatelessWidget {
-  final RepairReturnDelivery delivery;
 
   const _ReturnDeliveryIndicator({required this.delivery});
+  final RepairReturnDelivery delivery;
 
   @override
   Widget build(BuildContext context) {
@@ -165,10 +162,10 @@ class _ReturnDeliveryIndicator extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  final RepairStatus status;
-  final AppStrings s;
 
   const _StatusChip({required this.status, required this.s});
+  final RepairStatus status;
+  final AppStrings s;
 
   @override
   Widget build(BuildContext context) {

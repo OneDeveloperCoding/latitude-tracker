@@ -1,24 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Buyer {
-  final String id;
-  final String name;
-  final String? instagramHandle;
-  final String? phone;
-  final String? nif;
-  final List<String> tags;
-  final String? notes;
-  final DateTime createdAt;
 
   const Buyer({
     required this.id,
     required this.name,
-    this.instagramHandle,
+    required this.createdAt, this.instagramHandle,
     this.phone,
     this.nif,
     this.tags = const [],
     this.notes,
-    required this.createdAt,
   });
 
   factory Buyer.fromArchiveMap(Map<String, dynamic> map) => Buyer(
@@ -46,6 +37,14 @@ class Buyer {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
+  final String id;
+  final String name;
+  final String? instagramHandle;
+  final String? phone;
+  final String? nif;
+  final List<String> tags;
+  final String? notes;
+  final DateTime createdAt;
 
   Map<String, dynamic> toFirestore() => {
         'name': name,

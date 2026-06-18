@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 enum RepairStatus {
   received,
@@ -11,10 +11,6 @@ enum RepairStatus {
 }
 
 class RepairReturnDelivery {
-  final DeliveryType type;
-  final ShipmentStatus status;
-  final String? trackingCode;
-  final String? postalCode;
 
   const RepairReturnDelivery({
     required this.type,
@@ -36,6 +32,10 @@ class RepairReturnDelivery {
         trackingCode: map['trackingCode'] as String?,
         postalCode: map['postalCode'] as String?,
       );
+  final DeliveryType type;
+  final ShipmentStatus status;
+  final String? trackingCode;
+  final String? postalCode;
 
   Map<String, dynamic> toMap() => {
         'type': type.name,
@@ -61,58 +61,20 @@ class RepairReturnDelivery {
 }
 
 class Repair {
-  final String id;
-
-  // Contact: at least one of buyerId or freeTextContact is non-null.
-  final String? buyerId;
-  final String? buyerName;
-  final String? freeTextContact;
-
-  final String? linkedSaleId;
-
-  final String itemDescription;
-  final String itemCategory;
-  final String problemDescription;
-  final String workDone;
-  final double? materialsCost;
-
-  final RepairStatus status;
-  final SalePayment payment;
-  final RepairReturnDelivery returnDelivery;
-
-  final List<String> photoUrls;
-  final DateTime createdAt;
 
   const Repair({
     required this.id,
-    this.buyerId,
+    required this.itemDescription, required this.itemCategory, required this.problemDescription, required this.status, required this.payment, required this.returnDelivery, required this.createdAt, this.buyerId,
     this.buyerName,
     this.freeTextContact,
     this.linkedSaleId,
-    required this.itemDescription,
-    required this.itemCategory,
-    required this.problemDescription,
     this.workDone = '',
     this.materialsCost,
-    required this.status,
-    required this.payment,
-    required this.returnDelivery,
     this.photoUrls = const [],
-    required this.createdAt,
   }) : assert(
           buyerId != null || freeTextContact != null,
           'A Repair must have either a buyerId or a freeTextContact',
         );
-
-  // Display name for the contact regardless of type.
-  String get contactName => buyerName ?? freeTextContact ?? '';
-
-  bool get isLinkedToBuyer => buyerId != null;
-
-  // A Repair is active (shown in default list) unless returned AND delivery confirmed.
-  bool get isActive =>
-      !(status == RepairStatus.returned &&
-          returnDelivery.status == ShipmentStatus.delivered);
 
   factory Repair.fromArchiveMap(Map<String, dynamic> map) => Repair(
         id: map['id'] as String? ?? '',
@@ -141,17 +103,6 @@ class Repair {
         createdAt: _parseArchiveDate(map['createdAt']),
       );
 
-  static DateTime _parseArchiveDate(dynamic value) {
-    if (value is String) {
-      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
-    }
-    if (value is Map && value['_seconds'] != null) {
-      return DateTime.fromMillisecondsSinceEpoch(
-          (value['_seconds'] as int) * 1000);
-    }
-    return DateTime.fromMillisecondsSinceEpoch(0);
-  }
-
   factory Repair.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Repair(
@@ -179,6 +130,48 @@ class Repair {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
+  }
+  final String id;
+
+  // Contact: at least one of buyerId or freeTextContact is non-null.
+  final String? buyerId;
+  final String? buyerName;
+  final String? freeTextContact;
+
+  final String? linkedSaleId;
+
+  final String itemDescription;
+  final String itemCategory;
+  final String problemDescription;
+  final String workDone;
+  final double? materialsCost;
+
+  final RepairStatus status;
+  final SalePayment payment;
+  final RepairReturnDelivery returnDelivery;
+
+  final List<String> photoUrls;
+  final DateTime createdAt;
+
+  // Display name for the contact regardless of type.
+  String get contactName => buyerName ?? freeTextContact ?? '';
+
+  bool get isLinkedToBuyer => buyerId != null;
+
+  // A Repair is active (shown in default list) unless returned AND delivery confirmed.
+  bool get isActive =>
+      !(status == RepairStatus.returned &&
+          returnDelivery.status == ShipmentStatus.delivered);
+
+  static DateTime _parseArchiveDate(dynamic value) {
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    if (value is Map && value['_seconds'] != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+          (value['_seconds'] as int) * 1000);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Map<String, dynamic> toFirestore() => {

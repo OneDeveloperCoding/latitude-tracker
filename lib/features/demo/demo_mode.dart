@@ -1,12 +1,11 @@
 import 'package:flutter/foundation.dart';
-
-import '../settings/repositories/catalogue_repository.dart';
-import 'repositories/in_memory_buyer_repository.dart';
-import 'repositories/in_memory_repair_repository.dart';
-import 'repositories/in_memory_sale_repository.dart';
-import '../../../core/store/buyers_store.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/demo/repositories/in_memory_buyer_repository.dart';
+import 'package:latitude_tracker/features/demo/repositories/in_memory_repair_repository.dart';
+import 'package:latitude_tracker/features/demo/repositories/in_memory_sale_repository.dart';
+import 'package:latitude_tracker/features/settings/repositories/catalogue_repository.dart';
 
 class DemoMode {
   DemoMode._();

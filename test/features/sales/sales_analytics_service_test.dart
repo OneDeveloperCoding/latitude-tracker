@@ -1,20 +1,20 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/services/sales_analytics_service.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
 void main() {
-  final jan = DateTime(2026, 1, 1);
-  final feb = DateTime(2026, 2, 1);
-  final mar = DateTime(2026, 3, 1);
+  final jan = DateTime(2026);
+  final feb = DateTime(2026, 2);
+  final mar = DateTime(2026, 3);
 
   group('SalesAnalyticsService.computePeriodStats', () {
     test('counts only paid sales within the period', () {
       final sales = [
-        makeSale(payment: PaymentStatus.paid, price: 100, createdAt: jan),
-        makeSale(payment: PaymentStatus.unpaid, price: 50, createdAt: jan),
-        makeSale(payment: PaymentStatus.paid, price: 200, createdAt: mar),
+        makeSale(price: 100, createdAt: jan),
+        makeSale(payment: PaymentStatus.unpaid, createdAt: jan),
+        makeSale(price: 200, createdAt: mar),
       ];
 
       final result = SalesAnalyticsService.computePeriodStats(sales, jan, feb);
@@ -25,8 +25,8 @@ void main() {
 
     test('sums revenue of all paid sales in period', () {
       final sales = [
-        makeSale(payment: PaymentStatus.paid, price: 40, createdAt: jan),
-        makeSale(payment: PaymentStatus.paid, price: 60, createdAt: jan),
+        makeSale(price: 40, createdAt: jan),
+        makeSale(price: 60, createdAt: jan),
       ];
 
       final result = SalesAnalyticsService.computePeriodStats(sales, jan, feb);
@@ -62,7 +62,7 @@ void main() {
     test('with category filter excludes sales with no matching items', () {
       final sales = [
         makeSale(category: 'Colares', price: 80, createdAt: jan),
-        makeSale(category: 'Brincos', price: 50, createdAt: jan),
+        makeSale(category: 'Brincos', createdAt: jan),
       ];
 
       final result = SalesAnalyticsService.computePeriodStats(
@@ -141,7 +141,7 @@ void main() {
       final sales = [
         makeSale(category: 'Brincos', price: 30, createdAt: jan),
         makeSale(category: 'Colares', price: 80, createdAt: jan),
-        makeSale(category: 'Chapéus', price: 50, createdAt: jan),
+        makeSale(category: 'Chapéus', createdAt: jan),
       ];
 
       final result =
@@ -155,9 +155,9 @@ void main() {
   group('SalesAnalyticsService.computePaymentMethodBreakdown', () {
     test('groups paid sales by payment method', () {
       final sales = [
-        makeSale(method: PaymentMethod.mbWay, price: 60, createdAt: jan),
+        makeSale(price: 60, createdAt: jan),
         makeSale(method: PaymentMethod.cash, price: 40, createdAt: jan),
-        makeSale(method: PaymentMethod.mbWay, price: 30, createdAt: jan),
+        makeSale(price: 30, createdAt: jan),
       ];
 
       final result =
@@ -172,7 +172,6 @@ void main() {
     test('excludes unpaid sales', () {
       final sales = [
         makeSale(
-            method: PaymentMethod.mbWay,
             price: 100,
             createdAt: jan,
             payment: PaymentStatus.unpaid),
@@ -186,7 +185,7 @@ void main() {
 
     test('excludes sales outside the period', () {
       final sales = [
-        makeSale(method: PaymentMethod.mbWay, price: 100, createdAt: mar),
+        makeSale(price: 100, createdAt: mar),
       ];
 
       final result =

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/services/sale_grouper.dart';
-import '../../sales/screens/sale_detail_screen.dart';
-import 'buyer_detail_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
 
 class UnpaidBalancesScreen extends StatefulWidget {
   const UnpaidBalancesScreen({super.key});
@@ -18,16 +17,16 @@ class UnpaidBalancesScreen extends StatefulWidget {
 }
 
 class _UnpaidBalancesGroup {
-  final String buyerId;
-  final String buyerName;
-  final List<Sale> unpaidSales;
-  final double totalOwed;
 
   _UnpaidBalancesGroup({
     required this.buyerId,
     required this.buyerName,
     required this.unpaidSales,
-  }) : totalOwed = unpaidSales.fold(0.0, (sum, s) => sum + s.totalPrice);
+  }) : totalOwed = unpaidSales.fold(0, (sum, s) => sum + s.totalPrice);
+  final String buyerId;
+  final String buyerName;
+  final List<Sale> unpaidSales;
+  final double totalOwed;
 }
 
 class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
@@ -60,7 +59,7 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
 
     setState(() {
       _groups = groups;
-      _grandTotal = groups.fold(0.0, (sum, g) => sum + g.totalOwed);
+      _grandTotal = groups.fold(0, (sum, g) => sum + g.totalOwed);
     });
   }
 
@@ -152,10 +151,10 @@ class _UnpaidBalancesScreenState extends State<UnpaidBalancesScreen> {
 }
 
 class _BuyerDebtCard extends StatefulWidget {
-  final _UnpaidBalancesGroup group;
-  final NumberFormat currency;
 
   const _BuyerDebtCard({required this.group, required this.currency});
+  final _UnpaidBalancesGroup group;
+  final NumberFormat currency;
 
   @override
   State<_BuyerDebtCard> createState() => _BuyerDebtCardState();
@@ -179,7 +178,7 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
             title: InkWell(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => BuyerDetailScreen(buyerId: group.buyerId),
                 ),
               ),
@@ -211,7 +210,7 @@ class _BuyerDebtCardState extends State<_BuyerDebtCard> {
                 dense: true,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => SaleDetailScreen(saleId: sale.id),
                   ),
                 ),

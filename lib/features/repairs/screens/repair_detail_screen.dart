@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/id_gen.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/error_reporter.dart';
-import '../../../core/store/sales_store.dart';
-import '../../buyers/models/buyer.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../buyers/screens/buyer_detail_screen.dart';
-import '../../demo/demo_mode.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/screens/sale_detail_screen.dart';
-import '../../sales/widgets/photo_grid.dart';
-import '../models/repair.dart';
-import '../repositories/repair_repository.dart';
-import '../widgets/repair_status_colors.dart';
-import 'new_repair_screen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
+import 'package:latitude_tracker/features/repairs/screens/new_repair_screen.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_status_colors.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
 
 class RepairDetailScreen extends StatefulWidget {
-  final String repairId;
 
-  const RepairDetailScreen({super.key, required this.repairId});
+  const RepairDetailScreen({required this.repairId, super.key});
+  final String repairId;
 
   @override
   State<RepairDetailScreen> createState() => _RepairDetailScreenState();
@@ -106,10 +104,10 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
 }
 
 class _RepairDetailBody extends StatelessWidget {
-  final Repair repair;
-  final Future<void> Function(BuildContext, Repair) onDelete;
 
   const _RepairDetailBody({required this.repair, required this.onDelete});
+  final Repair repair;
+  final Future<void> Function(BuildContext, Repair) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +123,7 @@ class _RepairDetailBody extends StatelessWidget {
               icon: const Icon(Icons.edit_outlined),
               tooltip: s.edit,
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => NewRepairScreen(existing: repair),
                 ),
               ),
@@ -209,7 +207,7 @@ class _RepairDetailBody extends StatelessWidget {
                               size: 80,
                               onTap: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(
+                                MaterialPageRoute<void>(
                                   builder: (_) => PhotoViewer(
                                     urls: repair.photoUrls,
                                     initialIndex: e.key,
@@ -288,9 +286,9 @@ class _RepairDetailBody extends StatelessWidget {
 }
 
 class _ContactRow extends StatelessWidget {
-  final Repair repair;
 
   const _ContactRow({required this.repair});
+  final Repair repair;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +301,7 @@ class _ContactRow extends StatelessWidget {
         subtitle: Text(s.buyer),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
+          MaterialPageRoute<void>(
             builder: (_) => BuyerDetailScreen(buyerId: repair.buyerId!),
           ),
         ),
@@ -357,7 +355,6 @@ class _ContactRow extends StatelessWidget {
         id: repair.id,
         buyerId: newBuyer.id,
         buyerName: newBuyer.name,
-        freeTextContact: null,
         linkedSaleId: repair.linkedSaleId,
         itemDescription: repair.itemDescription,
         itemCategory: repair.itemCategory,
@@ -388,9 +385,9 @@ class _ContactRow extends StatelessWidget {
 }
 
 class _LinkedSaleRow extends StatelessWidget {
-  final String saleId;
 
   const _LinkedSaleRow({required this.saleId});
+  final String saleId;
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +404,7 @@ class _LinkedSaleRow extends StatelessWidget {
       title: Text(title),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (_) => SaleDetailScreen(saleId: saleId),
         ),
       ),
@@ -417,9 +414,9 @@ class _LinkedSaleRow extends StatelessWidget {
 
 
 class _RepairStatusPicker extends StatefulWidget {
-  final Repair repair;
 
   const _RepairStatusPicker({required this.repair});
+  final Repair repair;
 
   @override
   State<_RepairStatusPicker> createState() => _RepairStatusPickerState();
@@ -523,9 +520,9 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
 }
 
 class _ReturnDeliveryActions extends StatefulWidget {
-  final Repair repair;
 
   const _ReturnDeliveryActions({required this.repair});
+  final Repair repair;
 
   @override
   State<_ReturnDeliveryActions> createState() => _ReturnDeliveryActionsState();
@@ -602,10 +599,10 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
 }
 
 class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
 
   const _SectionCard({required this.title, required this.children});
+  final String title;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {

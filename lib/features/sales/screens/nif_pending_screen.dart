@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/constants.dart';
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/buyers_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../buyers/models/buyer.dart';
-import '../models/sale.dart';
-import '../repositories/sale_repository.dart';
-import 'sale_detail_screen.dart';
+import 'package:latitude_tracker/core/constants.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
 
 class NifPendingScreen extends StatefulWidget {
   const NifPendingScreen({super.key});
@@ -51,7 +51,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
 
   void _onBuyersChanged() {
     setState(() {
-      _buyersById = {for (final b in BuyersStore.current ?? []) b.id: b};
+      _buyersById = {for (final b in BuyersStore.current ?? <Buyer>[]) b.id: b};
     });
   }
 
@@ -127,7 +127,7 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
                           child: ListTile(
                             onTap: () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (_) =>
                                     SaleDetailScreen(saleId: sale.id),
                               ),
@@ -215,9 +215,9 @@ class _NifPendingScreenState extends State<NifPendingScreen> {
 }
 
 class _NifRow extends StatelessWidget {
-  final String? nif;
 
   const _NifRow({required this.nif});
+  final String? nif;
 
   @override
   Widget build(BuildContext context) {

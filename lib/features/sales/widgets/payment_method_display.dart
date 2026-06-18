@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/l10n/app_strings.dart';
-import '../models/sale.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 /// Brand-inspired colours for each payment method.
 /// Chosen for visual distinctiveness within the app — not exact brand hex codes.
@@ -16,9 +16,9 @@ Color paymentMethodColor(PaymentMethod m) => switch (m) {
 
 /// Coloured dot + label row used in payment method dropdowns.
 class PaymentMethodDropdownItem extends StatelessWidget {
-  final PaymentMethod method;
 
   const PaymentMethodDropdownItem(this.method, {super.key});
+  final PaymentMethod method;
 
   @override
   Widget build(BuildContext context) {

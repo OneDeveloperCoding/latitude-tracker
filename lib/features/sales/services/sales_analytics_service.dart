@@ -1,4 +1,4 @@
-import '../models/sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 class SalesAnalyticsService {
   const SalesAnalyticsService._();
@@ -10,7 +10,7 @@ class SalesAnalyticsService {
     String? category,
   }) {
     double revenue = 0;
-    int count = 0;
+    var count = 0;
     for (final s in all) {
       if (!s.inPeriod(start, end)) continue;
       if (s.payment.status != PaymentStatus.paid) continue;
@@ -20,7 +20,7 @@ class SalesAnalyticsService {
       } else {
         final itemRevenue = s.items
             .where((i) => i.category == category)
-            .fold(0.0, (sum, i) => sum + i.price);
+            .fold<double>(0, (sum, i) => sum + i.price);
         if (itemRevenue > 0) {
           revenue += itemRevenue;
           count++;

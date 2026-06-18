@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
-
-import '../../features/repairs/models/repair.dart';
-import '../../features/repairs/repositories/repair_repository.dart';
-import 'store_state.dart';
-import 'stream_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/store/stream_store.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
 
 class RepairsStore {
   RepairsStore._();

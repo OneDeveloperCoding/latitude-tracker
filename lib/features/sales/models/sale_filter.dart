@@ -1,4 +1,4 @@
-import 'sale.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 /// Returns true if [sale] passes every filter in [filters] AND the optional
 /// date range. AND logic — the sale must match all active filters.

@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/buyers_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../../../core/widgets/store_error_widget.dart';
-import '../../sales/services/sale_grouper.dart';
-import '../models/buyer.dart';
-import '../models/buyer_stats.dart';
-import 'buyer_detail_screen.dart';
-import 'buyer_form_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/buyers_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/store_error_widget.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_form_screen.dart';
+import 'package:latitude_tracker/features/sales/services/sale_grouper.dart';
 
 enum _SortMode { alphabetical, lastPurchase, ranking }
 
 enum _RankingMetric { totalSpent, frequency, averageSale, unpaidBalance }
 
 class _BuyerWithStats {
-  final Buyer buyer;
-  final BuyerStats stats;
 
   const _BuyerWithStats({required this.buyer, required this.stats});
+  final Buyer buyer;
+  final BuyerStats stats;
 
   DateTime? get lastPurchaseAt => stats.lastPurchaseAt;
   int get saleCount => stats.saleCount;
@@ -74,7 +73,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   void _rebuildStats() {
     final byBuyer = SaleGrouper.byBuyerId(SalesStore.current ?? []);
     _statsCache = {
-      for (final buyer in BuyersStore.current ?? [])
+      for (final buyer in BuyersStore.current ?? <Buyer>[])
         buyer.id: _BuyerWithStats(
           buyer: buyer,
           stats: BuyerStats.compute(byBuyer[buyer.id] ?? []),
@@ -138,12 +137,14 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 
     final items = <Object>[];
     for (final entry in groups.entries) {
-      items.add(entry.key);
-      items.addAll(entry.value);
+      items
+        ..add(entry.key)
+        ..addAll(entry.value);
     }
     if (noPurchase.isNotEmpty) {
-      items.add(neverPurchasedLabel);
-      items.addAll(noPurchase);
+      items
+        ..add(neverPurchasedLabel)
+        ..addAll(noPurchase);
     }
     return items;
   }
@@ -151,7 +152,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
   void _openBuyer(Buyer buyer) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => BuyerDetailScreen(buyerId: buyer.id)),
+      MaterialPageRoute<void>(builder: (_) => BuyerDetailScreen(buyerId: buyer.id)),
     );
   }
 
@@ -237,7 +238,7 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
         heroTag: null,
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const BuyerFormScreen()),
+          MaterialPageRoute<void>(builder: (_) => const BuyerFormScreen()),
         ),
         child: const Icon(Icons.person_add),
       ),
@@ -280,7 +281,6 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
                   FilterChip(
                     avatar: const Icon(Icons.search, size: 18),
                     label: Text(s.searchBuyers),
-                    selected: false,
                     onSelected: (_) => setState(() => _searchExpanded = true),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -365,15 +365,15 @@ class _BuyersListScreenState extends State<BuyersListScreen> {
 }
 
 class _RankingMetricBar extends StatelessWidget {
-  final _RankingMetric selected;
-  final String Function(_RankingMetric) metricLabel;
-  final ValueChanged<_RankingMetric> onSelected;
 
   const _RankingMetricBar({
     required this.selected,
     required this.metricLabel,
     required this.onSelected,
   });
+  final _RankingMetric selected;
+  final String Function(_RankingMetric) metricLabel;
+  final ValueChanged<_RankingMetric> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -397,9 +397,9 @@ class _RankingMetricBar extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String label;
 
   const _SectionHeader({required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -417,15 +417,15 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _BuyerTile extends StatelessWidget {
-  final _BuyerWithStats stats;
-  final _SortMode sortMode;
-  final VoidCallback onTap;
 
   const _BuyerTile({
     required this.stats,
     required this.sortMode,
     required this.onTap,
   });
+  final _BuyerWithStats stats;
+  final _SortMode sortMode;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -543,10 +543,6 @@ class _BuyerTile extends StatelessWidget {
 }
 
 class _RankedBuyerTile extends StatelessWidget {
-  final _BuyerWithStats stats;
-  final int rank;
-  final _RankingMetric metric;
-  final VoidCallback onTap;
 
   const _RankedBuyerTile({
     required this.stats,
@@ -554,6 +550,10 @@ class _RankedBuyerTile extends StatelessWidget {
     required this.metric,
     required this.onTap,
   });
+  final _BuyerWithStats stats;
+  final int rank;
+  final _RankingMetric metric;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +561,7 @@ class _RankedBuyerTile extends StatelessWidget {
     final currency = NumberFormat.currency(locale: 'pt_PT', symbol: '€');
     final buyer = stats.buyer;
 
-    final Color rankColor = switch (rank) {
+    final rankColor = switch (rank) {
       1 => const Color(0xFFFFD700),
       2 => const Color(0xFFC0C0C0),
       3 => const Color(0xFFCD7F32),

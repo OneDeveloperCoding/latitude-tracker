@@ -1,16 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/auth_revoked_exception.dart';
-import '../services/archive_service.dart';
-import 'archive_analytics_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/auth_revoked_exception.dart';
+import 'package:latitude_tracker/features/settings/screens/archive_analytics_screen.dart';
+import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 
 class ArchiveImportScreen extends StatefulWidget {
-  final Map<String, dynamic> archive;
 
-  const ArchiveImportScreen({super.key, required this.archive});
+  const ArchiveImportScreen({required this.archive, super.key});
+  final Map<String, dynamic> archive;
 
   @override
   State<ArchiveImportScreen> createState() => _ArchiveImportScreenState();
@@ -95,7 +94,6 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(parts.join(' · ')),
-        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -128,7 +126,7 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
             icon: const Icon(Icons.bar_chart),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
+              MaterialPageRoute<void>(
                 builder: (_) =>
                     ArchiveAnalyticsScreen(archive: widget.archive),
               ),
@@ -236,10 +234,10 @@ class _ArchiveImportScreenState extends State<ArchiveImportScreen> {
 }
 
 class _StatRow extends StatelessWidget {
-  final String label;
-  final String value;
 
   const _StatRow({required this.label, required this.value});
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -261,9 +259,9 @@ class _StatRow extends StatelessWidget {
 }
 
 class _ArchivedSaleTile extends StatelessWidget {
-  final Map<String, dynamic> sale;
 
   const _ArchivedSaleTile({required this.sale});
+  final Map<String, dynamic> sale;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +275,7 @@ class _ArchivedSaleTile extends StatelessWidget {
     final photoUrls = allPhotoUrls.take(4).toList();
 
     final createdAt = sale['createdAt'];
-    String dateStr = '';
+    var dateStr = '';
     if (createdAt is String) {
       dateStr = DateFormat('dd MMM yyyy').format(DateTime.parse(createdAt));
     } else if (createdAt is Map && createdAt['_seconds'] != null) {

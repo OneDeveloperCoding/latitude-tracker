@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import '../../buyers/models/buyer.dart';
-import '../../buyers/models/buyer_address.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../demo_data.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/demo/demo_data.dart';
 
 class InMemoryBuyerRepository implements BuyerRepository {
   final _buyers = <Buyer>[];
@@ -16,7 +16,7 @@ class InMemoryBuyerRepository implements BuyerRepository {
 
   StreamController<List<BuyerAddress>> _addressController(String buyerId) =>
       _addressControllers.putIfAbsent(
-          buyerId, () => StreamController<List<BuyerAddress>>.broadcast());
+          buyerId, StreamController<List<BuyerAddress>>.broadcast);
 
   List<Buyer> get _sorted =>
       List.from(_buyers)..sort((a, b) => a.name.compareTo(b.name));
@@ -40,9 +40,7 @@ class InMemoryBuyerRepository implements BuyerRepository {
       ..clear()
       ..addAll(DemoData.addresses());
     _emitBuyers();
-    for (final id in _addresses.keys) {
-      _emitAddresses(id);
-    }
+    _addresses.keys.forEach(_emitAddresses);
   }
 
   void clear() {

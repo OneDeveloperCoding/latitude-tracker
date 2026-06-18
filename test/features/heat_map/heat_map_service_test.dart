@@ -1,11 +1,11 @@
-import 'package:test/test.dart';
 import 'package:latitude_tracker/features/heat_map/services/heat_map_service.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:test/test.dart';
 
 import '../../helpers/sale_factory.dart';
 
 Sale _shippingSale(String? postalCode) => makeSale(
-      delivery: DeliveryType.shipping,
+      
     ).copyWith(
       shipment: SaleShipment(
         type: DeliveryType.shipping,

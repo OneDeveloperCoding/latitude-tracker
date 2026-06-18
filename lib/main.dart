@@ -5,10 +5,10 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'app.dart';
-import 'core/l10n/locale_settings.dart';
-import 'core/theme/theme_settings.dart';
-import 'firebase_options.dart';
+import 'package:latitude_tracker/app.dart';
+import 'package:latitude_tracker/core/l10n/locale_settings.dart';
+import 'package:latitude_tracker/core/theme/theme_settings.dart';
+import 'package:latitude_tracker/firebase_options.dart';
 
 void main() {
   runZonedGuarded(() async {

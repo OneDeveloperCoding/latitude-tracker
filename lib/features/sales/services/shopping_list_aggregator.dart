@@ -1,25 +1,21 @@
-import '../models/sale.dart';
-import 'sale_urgency.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 
 /// One contributing SaleItem for an [AggregatedComponent].
 class ComponentSource {
-  final Sale sale;
-  final SaleItem item;
-  final ComponentItem component;
 
   const ComponentSource({
     required this.sale,
     required this.item,
     required this.component,
   });
+  final Sale sale;
+  final SaleItem item;
+  final ComponentItem component;
 }
 
 /// A component name merged across all open SaleItems, with quantities summed.
 class AggregatedComponent {
-  final String name;
-  final int totalQuantity;
-  final UrgencyLevel worstUrgency;
-  final List<ComponentSource> sources;
 
   const AggregatedComponent({
     required this.name,
@@ -27,6 +23,10 @@ class AggregatedComponent {
     required this.worstUrgency,
     required this.sources,
   });
+  final String name;
+  final int totalQuantity;
+  final UrgencyLevel worstUrgency;
+  final List<ComponentSource> sources;
 }
 
 /// Groups unacquired [ComponentItem]s by name (case-insensitive) across all

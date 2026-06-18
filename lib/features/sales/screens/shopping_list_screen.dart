@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/sales_store.dart';
-import '../../../core/store/store_state.dart';
-import '../models/sale.dart';
-import '../services/sale_urgency.dart';
-import '../services/shopping_list_aggregator.dart';
-import '../widgets/component_detail_sheet.dart';
-import 'sale_detail_screen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
+import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
+import 'package:latitude_tracker/features/sales/services/shopping_list_aggregator.dart';
+import 'package:latitude_tracker/features/sales/widgets/component_detail_sheet.dart';
 
 class ShoppingListScreen extends StatelessWidget {
   const ShoppingListScreen({super.key});
@@ -72,15 +71,15 @@ class ShoppingListScreen extends StatelessWidget {
 }
 
 class _ShoppingListHeader extends StatelessWidget {
-  final int totalMaterials;
-  final int totalSources;
-  final int urgentCount;
 
   const _ShoppingListHeader({
     required this.totalMaterials,
     required this.totalSources,
     required this.urgentCount,
   });
+  final int totalMaterials;
+  final int totalSources;
+  final int urgentCount;
 
   @override
   Widget build(BuildContext context) {
@@ -119,9 +118,9 @@ class _ShoppingListHeader extends StatelessWidget {
 }
 
 class _AggregatedComponentTile extends StatefulWidget {
-  final AggregatedComponent aggregated;
 
   const _AggregatedComponentTile({required this.aggregated});
+  final AggregatedComponent aggregated;
 
   @override
   State<_AggregatedComponentTile> createState() =>
@@ -204,9 +203,9 @@ class _AggregatedComponentTileState extends State<_AggregatedComponentTile> {
 }
 
 class _SourceRow extends StatelessWidget {
-  final ComponentSource source;
 
   const _SourceRow({required this.source});
+  final ComponentSource source;
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +216,7 @@ class _SourceRow extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
             builder: (_) => SaleDetailScreen(saleId: sale.id)),
       ),
       child: Padding(
@@ -296,9 +295,9 @@ class _SourceRow extends StatelessWidget {
 }
 
 class _DueDateLabel extends StatelessWidget {
-  final Sale sale;
 
   const _DueDateLabel({required this.sale});
+  final Sale sale;
 
   @override
   Widget build(BuildContext context) {
@@ -313,13 +312,13 @@ class _DueDateLabel extends StatelessWidget {
     );
     final days = scheduled.difference(today).inDays;
 
-    final Color color = switch (urgency) {
+    final color = switch (urgency) {
       UrgencyLevel.overdue => Theme.of(context).colorScheme.error,
       UrgencyLevel.thisWeek => Colors.amber[700]!,
       UrgencyLevel.none => Theme.of(context).colorScheme.onSurfaceVariant,
     };
 
-    final String label = urgency == UrgencyLevel.overdue
+    final label = urgency == UrgencyLevel.overdue
         ? s.daysOverdue(days.abs())
         : days == 0
             ? s.today

@@ -1,9 +1,9 @@
 import 'dart:math';
 
-import '../buyers/models/buyer.dart';
-import '../buyers/models/buyer_address.dart';
-import '../repairs/models/repair.dart';
-import '../sales/models/sale.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 class DemoData {
   DemoData._();
@@ -126,7 +126,7 @@ class DemoData {
               id: 'demo-item-1-1',
               description: 'Silver necklace with natural pearls',
               category: 'Colares',
-              price: 45.00,
+              price: 45,
               assemblyStatus: AssemblyStatus.inProgress,
               components: [
                 ComponentItem(
@@ -154,7 +154,6 @@ class DemoData {
             addressId: 'demo-addr-1',
           ),
           requiresNif: true,
-          atSubmissionDone: false,
           createdAt: _ago(21),
           scheduledDate: _ago(5),
         ),
@@ -169,7 +168,7 @@ class DemoData {
               id: 'demo-item-2-1',
               description: 'Azulejo pattern linen tote bag',
               category: 'Tote Bags',
-              price: 35.00,
+              price: 35,
               assemblyStatus: AssemblyStatus.notStarted,
               components: [
                 ComponentItem(
@@ -207,7 +206,7 @@ class DemoData {
               id: 'demo-item-3-1',
               description: 'Custom wooden bead necklace',
               category: 'Colares',
-              price: 28.00,
+              price: 28,
               assemblyStatus: AssemblyStatus.waitingForMaterials,
               components: [
                 ComponentItem(
@@ -288,7 +287,7 @@ class DemoData {
               id: 'demo-item-5-1',
               description: 'Engraved vegan leather coin purse',
               category: 'Crachás',
-              price: 18.00,
+              price: 18,
               assemblyStatus: AssemblyStatus.ready,
               photoUrls: ['demo://photo2'],
             ),
@@ -318,7 +317,7 @@ class DemoData {
               id: 'demo-item-6-1',
               description: 'Ocean blue resin drop earrings',
               category: 'Brincos',
-              price: 24.00,
+              price: 24,
               assemblyStatus: AssemblyStatus.ready,
               components: [
                 ComponentItem(
@@ -361,7 +360,7 @@ class DemoData {
               id: 'demo-item-7-1',
               description: 'Gold hoop earrings 40mm',
               category: 'Brincos',
-              price: 16.00,
+              price: 16,
               assemblyStatus: AssemblyStatus.notStarted,
             ),
           ],
@@ -387,7 +386,7 @@ class DemoData {
               id: 'demo-item-8-1',
               description: 'Gold-fill layered necklace',
               category: 'Colares',
-              price: 38.00,
+              price: 38,
               assemblyStatus: AssemblyStatus.inProgress,
               components: [
                 ComponentItem(
@@ -405,7 +404,7 @@ class DemoData {
               id: 'demo-item-8-2',
               description: 'Matching gold-fill stud earrings',
               category: 'Brincos',
-              price: 22.00,
+              price: 22,
               assemblyStatus: AssemblyStatus.ready,
               components: [
                 ComponentItem(
@@ -442,7 +441,7 @@ class DemoData {
               id: 'demo-item-9-1',
               description: 'Labradorite pendant necklace',
               category: 'Colares',
-              price: 48.00,
+              price: 48,
               assemblyStatus: AssemblyStatus.waitingForMaterials,
               components: [
                 ComponentItem(
@@ -459,7 +458,7 @@ class DemoData {
               id: 'demo-item-9-2',
               description: 'Labradorite drop earrings',
               category: 'Brincos',
-              price: 32.00,
+              price: 32,
               assemblyStatus: AssemblyStatus.waitingForMaterials,
               components: [
                 ComponentItem(
@@ -476,7 +475,7 @@ class DemoData {
               id: 'demo-item-9-3',
               description: 'Linen gift pouch',
               category: 'Tote Bags',
-              price: 8.00,
+              price: 8,
               assemblyStatus: AssemblyStatus.notStarted,
               components: [
                 ComponentItem(
@@ -495,7 +494,6 @@ class DemoData {
             addressId: 'demo-addr-6',
           ),
           requiresNif: true,
-          atSubmissionDone: false,
           createdAt: _ago(2),
           scheduledDate: _from(14),
         ),
@@ -681,7 +679,7 @@ class DemoData {
   ];
 
   // MBWay appears 3× to reflect its dominance in Portuguese handmade markets.
-  static const _paymentPool = [
+  static const List<PaymentMethod> _paymentPool = [
     PaymentMethod.mbWay,
     PaymentMethod.mbWay,
     PaymentMethod.mbWay,
@@ -696,11 +694,11 @@ class DemoData {
   static List<Sale> _generateHistorical(Random rng) {
     final now = DateTime.now();
     final sales = <Sale>[];
-    int seq = 1;
+    var seq = 1;
 
-    for (int monthsBack = 1; monthsBack <= 18; monthsBack++) {
-      int month = now.month - monthsBack;
-      int year = now.year;
+    for (var monthsBack = 1; monthsBack <= 18; monthsBack++) {
+      var month = now.month - monthsBack;
+      var year = now.year;
       while (month <= 0) {
         month += 12;
         year--;
@@ -709,7 +707,7 @@ class DemoData {
       final count = _monthWeights[month - 1];
       final daysInMonth = DateTime(year, month + 1, 0).day;
 
-      for (int i = 0; i < count; i++) {
+      for (var i = 0; i < count; i++) {
         final day = rng.nextInt(daysInMonth) + 1;
         final createdAt = DateTime(year, month, day);
         if (createdAt.isAfter(now)) continue;
@@ -745,7 +743,7 @@ class DemoData {
             : null;
 
         final trackingCode = isShipping
-            ? 'RY${(100000000 + rng.nextInt(899999999)).toString()}PT'
+            ? 'RY${100000000 + rng.nextInt(899999999)}PT'
             : null;
 
         sales.add(Sale(
@@ -852,7 +850,7 @@ class DemoData {
           itemCategory: 'Tote Bags',
           problemDescription: 'Handle stitching fraying on both sides',
           workDone: 'Replaced both handles with reinforced canvas straps.',
-          materialsCost: 8.00,
+          materialsCost: 8,
           status: RepairStatus.returned,
           payment: const SalePayment(
               status: PaymentStatus.paid, method: PaymentMethod.mbWay),

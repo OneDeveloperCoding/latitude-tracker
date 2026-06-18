@@ -1,26 +1,25 @@
-import '../../../core/id_gen.dart';
-import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../buyers/models/buyer.dart';
-import '../../buyers/models/buyer_address.dart';
-import '../../buyers/models/buyer_stats.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../buyers/screens/buyer_address_form_screen.dart';
-import '../models/sale.dart';
-import '../repositories/sale_repository.dart';
-import '../services/photo_service.dart';
-import '../widgets/buyer_picker_screen.dart';
-import '../widgets/payment_method_display.dart';
-import 'sale_item_screen.dart';
+import 'package:latitude_tracker/core/id_gen.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
+import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/buyers/screens/buyer_address_form_screen.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_item_screen.dart';
+import 'package:latitude_tracker/features/sales/services/photo_service.dart';
+import 'package:latitude_tracker/features/sales/widgets/buyer_picker_screen.dart';
+import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
 
 class NewSaleScreen extends StatefulWidget {
-  final Sale? sale;
-  final bool isDuplicate;
 
   const NewSaleScreen({super.key, this.sale, this.isDuplicate = false});
+  final Sale? sale;
+  final bool isDuplicate;
 
   @override
   State<NewSaleScreen> createState() => _NewSaleScreenState();
@@ -94,7 +93,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 components: item.components
                     .map((c) => c.copyWith(isAvailable: false))
                     .toList(),
-                photoUrls: const [],
               ))
           .toList();
       _originalItemIds = {};
@@ -139,7 +137,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     if (_isEditing) return;
     final buyer = await Navigator.push<Buyer>(
       context,
-      MaterialPageRoute(builder: (_) => const BuyerPickerScreen()),
+      MaterialPageRoute<Buyer>(builder: (_) => const BuyerPickerScreen()),
     );
     if (buyer == null) return;
     final results = await Future.wait([
@@ -165,7 +163,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final existingIds = {for (final a in _buyerAddresses) a.id};
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => BuyerAddressFormScreen(buyerId: _selectedBuyer!.id),
       ),
     );
@@ -312,7 +310,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
   }
 
-  double get _totalPrice => _items.fold(0.0, (acc, item) => acc + item.price);
+  double get _totalPrice => _items.fold(0, (acc, item) => acc + item.price);
 
   @override
   Widget build(BuildContext context) {
@@ -582,15 +580,15 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 }
 
 class _ItemRow extends StatelessWidget {
-  final SaleItem item;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const _ItemRow({
     required this.item,
     required this.onEdit,
     required this.onDelete,
   });
+  final SaleItem item;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -626,15 +624,15 @@ class _ItemRow extends StatelessWidget {
 }
 
 class _ScheduledDatePicker extends StatelessWidget {
-  final DateTime? date;
-  final bool isPickup;
-  final ValueChanged<DateTime?> onChanged;
 
   const _ScheduledDatePicker({
     required this.date,
     required this.isPickup,
     required this.onChanged,
   });
+  final DateTime? date;
+  final bool isPickup;
+  final ValueChanged<DateTime?> onChanged;
 
   Future<void> _pick(BuildContext context) async {
     final first = DateTime(DateTime.now().year - 5);
@@ -687,11 +685,11 @@ class _ScheduledDatePicker extends StatelessWidget {
 }
 
 class _FormCard extends StatelessWidget {
+
+  const _FormCard({required this.title, required this.child, this.trailing});
   final String title;
   final Widget? trailing;
   final Widget child;
-
-  const _FormCard({required this.title, required this.child, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +701,6 @@ class _FormCard extends StatelessWidget {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   title,
@@ -724,11 +721,6 @@ class _FormCard extends StatelessWidget {
 }
 
 class _BuyerSelector extends StatelessWidget {
-  final Buyer? buyer;
-  final String label;
-  final String placeholder;
-  final bool isEditing;
-  final VoidCallback onTap;
 
   const _BuyerSelector({
     required this.buyer,
@@ -737,6 +729,11 @@ class _BuyerSelector extends StatelessWidget {
     required this.isEditing,
     required this.onTap,
   });
+  final Buyer? buyer;
+  final String label;
+  final String placeholder;
+  final bool isEditing;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -761,4 +758,3 @@ class _BuyerSelector extends StatelessWidget {
     );
   }
 }
-

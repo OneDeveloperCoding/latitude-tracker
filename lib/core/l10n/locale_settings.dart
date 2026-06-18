@@ -29,17 +29,15 @@ class LocaleSettings {
 }
 
 /// Propagates the active [Locale] down the widget tree via InheritedWidget so
-/// that any widget calling [AppLocaleScope.of] (or [context.s]) rebuilds
+/// that any widget calling [AppLocaleScope.of] (or `context.s`) rebuilds
 /// automatically when the locale changes — without needing explicit
 /// ValueListenableBuilder wrappers at each call site.
 class AppLocaleScope extends InheritedWidget {
-  final Locale locale;
 
   const AppLocaleScope({
-    super.key,
-    required this.locale,
-    required super.child,
+    required this.locale, required super.child, super.key,
   });
+  final Locale locale;
 
   static Locale of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AppLocaleScope>()?.locale ??

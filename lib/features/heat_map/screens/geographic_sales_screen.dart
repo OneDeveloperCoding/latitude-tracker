@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
+import 'package:latitude_tracker/features/dashboard/widgets/analytics_widgets.dart';
+import 'package:latitude_tracker/features/heat_map/services/geographic_sales_service.dart';
+import 'package:latitude_tracker/features/heat_map/services/heat_map_service.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sales_list_screen.dart';
 import 'package:latlong2/latlong.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/services/error_reporter.dart';
-import '../../../core/store/sales_store.dart';
-import '../../buyers/repositories/buyer_repository.dart';
-import '../../dashboard/widgets/analytics_widgets.dart';
-import '../../sales/models/sale.dart';
-import '../../sales/screens/sales_list_screen.dart';
-import '../services/geographic_sales_service.dart';
-import '../services/heat_map_service.dart';
 
 class GeographicSalesScreen extends StatefulWidget {
   const GeographicSalesScreen({super.key});
@@ -174,21 +173,17 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
         return false;
       }).toList();
 
-  List<LocalityRow> get _sortedLocalities {
-    final rows = List<LocalityRow>.from(_ranking?.localities ?? []);
-    rows.sort((a, b) => _metric == AnalyticsMetric.revenue
-        ? b.revenue.compareTo(a.revenue)
-        : b.count.compareTo(a.count));
-    return rows;
-  }
+  List<LocalityRow> get _sortedLocalities =>
+      (List<LocalityRow>.from(_ranking?.localities ?? []))
+        ..sort((a, b) => _metric == AnalyticsMetric.revenue
+            ? b.revenue.compareTo(a.revenue)
+            : b.count.compareTo(a.count));
 
-  List<CountryRow> get _sortedCountries {
-    final rows = List<CountryRow>.from(_ranking?.countries ?? []);
-    rows.sort((a, b) => _metric == AnalyticsMetric.revenue
-        ? b.revenue.compareTo(a.revenue)
-        : b.count.compareTo(a.count));
-    return rows;
-  }
+  List<CountryRow> get _sortedCountries =>
+      (List<CountryRow>.from(_ranking?.countries ?? []))
+        ..sort((a, b) => _metric == AnalyticsMetric.revenue
+            ? b.revenue.compareTo(a.revenue)
+            : b.count.compareTo(a.count));
 
   double _markerSize(int count) => (32 + (count - 1) * 8).clamp(32, 80).toDouble();
 
@@ -232,7 +227,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
       children: [
         FlutterMap(
           options: const MapOptions(
-            initialCenter: LatLng(39.5, -8.0),
+            initialCenter: LatLng(39.5, -8),
             initialZoom: 6.5,
             minZoom: 5,
             maxZoom: 14,
@@ -315,7 +310,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
                     row: row,
                     metric: _metric,
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (_) => SalesListScreen(
                           postalCodePrefix: row.postalCode,
                           appBarTitle: '${row.locality} · ${row.postalCode}',
@@ -342,10 +337,6 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
 // ─── Shared year filter bar ───────────────────────────────────────────────────
 
 class _YearFilterBar extends StatelessWidget {
-  final List<int> years;
-  final int? selected;
-  final String allLabel;
-  final void Function(int?) onSelected;
 
   const _YearFilterBar({
     required this.years,
@@ -353,6 +344,10 @@ class _YearFilterBar extends StatelessWidget {
     required this.allLabel,
     required this.onSelected,
   });
+  final List<int> years;
+  final int? selected;
+  final String allLabel;
+  final void Function(int?) onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -386,9 +381,9 @@ class _YearFilterBar extends StatelessWidget {
 // ─── List view widgets ────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  final String label;
 
   const _SectionHeader({required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -407,10 +402,6 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _LocalityTile extends StatelessWidget {
-  final int rank;
-  final LocalityRow row;
-  final AnalyticsMetric metric;
-  final VoidCallback onTap;
 
   const _LocalityTile({
     required this.rank,
@@ -418,6 +409,10 @@ class _LocalityTile extends StatelessWidget {
     required this.metric,
     required this.onTap,
   });
+  final int rank;
+  final LocalityRow row;
+  final AnalyticsMetric metric;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -454,15 +449,15 @@ class _LocalityTile extends StatelessWidget {
 }
 
 class _CountryTile extends StatelessWidget {
-  final int rank;
-  final CountryRow row;
-  final AnalyticsMetric metric;
 
   const _CountryTile({
     required this.rank,
     required this.row,
     required this.metric,
   });
+  final int rank;
+  final CountryRow row;
+  final AnalyticsMetric metric;
 
   @override
   Widget build(BuildContext context) {
@@ -499,10 +494,10 @@ class _CountryTile extends StatelessWidget {
 // ─── Map sub-mode widgets ─────────────────────────────────────────────────────
 
 class _MapMarker extends StatelessWidget {
-  final int count;
-  final double size;
 
   const _MapMarker({required this.count, required this.size});
+  final int count;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -532,10 +527,10 @@ class _MapMarker extends StatelessWidget {
 }
 
 class _MapLegend extends StatelessWidget {
-  final List<HeatMapPoint> points;
-  final AppStrings s;
 
   const _MapLegend({required this.points, required this.s});
+  final List<HeatMapPoint> points;
+  final AppStrings s;
 
   @override
   Widget build(BuildContext context) {
@@ -560,13 +555,13 @@ class _MapLegend extends StatelessWidget {
 // ─── Shared overlays ──────────────────────────────────────────────────────────
 
 class _LoadingOverlay extends StatelessWidget {
-  final String status;
 
   const _LoadingOverlay({required this.status});
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ColoredBox(
       color: Colors.black54,
       child: Center(
         child: Card(
@@ -588,9 +583,9 @@ class _LoadingOverlay extends StatelessWidget {
 }
 
 class _EmptyOverlay extends StatelessWidget {
-  final AppStrings s;
 
   const _EmptyOverlay({required this.s});
+  final AppStrings s;
 
   @override
   Widget build(BuildContext context) {

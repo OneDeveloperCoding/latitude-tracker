@@ -1,12 +1,12 @@
-import '../../../core/services/error_reporter.dart';
 import 'package:flutter/material.dart';
-
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/store/repairs_store.dart';
-import '../../../core/store/sales_store.dart';
-import '../../demo/demo_mode.dart';
-import '../../sales/models/sale.dart';
-import '../services/category_service.dart';
+import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/repairs/models/repair.dart';
+import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/settings/services/category_service.dart';
 
 class CategoryMaintenanceScreen extends StatefulWidget {
   const CategoryMaintenanceScreen({super.key});
@@ -47,12 +47,12 @@ class _CategoryMaintenanceScreenState
   List<_CategoryEntry> _buildEntries() {
     final counts = <String, int>{};
 
-    for (final sale in SalesStore.current ?? []) {
+    for (final sale in SalesStore.current ?? <Sale>[]) {
       for (final item in sale.items) {
         counts[item.category] = (counts[item.category] ?? 0) + 1;
       }
     }
-    for (final repair in RepairsStore.current ?? []) {
+    for (final repair in RepairsStore.current ?? <Repair>[]) {
       counts[repair.itemCategory] =
           (counts[repair.itemCategory] ?? 0) + 1;
     }
@@ -243,7 +243,7 @@ class _CategoryMaintenanceScreenState
     Future<void> Function() action,
   ) async {
     if (!mounted) return;
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -265,24 +265,20 @@ class _CategoryMaintenanceScreenState
 }
 
 class _CategoryEntry {
-  final String name;
-  final int useCount;
-  final bool isHidden;
 
   const _CategoryEntry({
     required this.name,
     required this.useCount,
     required this.isHidden,
   });
+  final String name;
+  final int useCount;
+  final bool isHidden;
 }
 
 enum _CategoryAction { rename, toggleHide, delete }
 
 class _CategoryTile extends StatelessWidget {
-  final _CategoryEntry entry;
-  final VoidCallback onRename;
-  final VoidCallback onToggleHide;
-  final VoidCallback onDelete;
 
   const _CategoryTile({
     required this.entry,
@@ -290,6 +286,10 @@ class _CategoryTile extends StatelessWidget {
     required this.onToggleHide,
     required this.onDelete,
   });
+  final _CategoryEntry entry;
+  final VoidCallback onRename;
+  final VoidCallback onToggleHide;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
