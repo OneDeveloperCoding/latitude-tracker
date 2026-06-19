@@ -16,12 +16,24 @@ enum ThemePreset {
 }
 
 class AppTheme {
+  // 12 possible combinations (6 presets × 2 brightnesses) — cache them all.
+  static final Map<(ThemePreset, Brightness), ThemeData> _cache = {};
+
   static ThemeData forPreset(ThemePreset preset, Brightness brightness) =>
-      ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: preset.seed,
-          brightness: brightness,
+      _cache.putIfAbsent(
+        (preset, brightness),
+        () => ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: preset.seed,
+            brightness: brightness,
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
       );
+
+  static ColorScheme colorSchemeForPreset(
+    ThemePreset preset,
+    Brightness brightness,
+  ) =>
+      forPreset(preset, brightness).colorScheme;
 }

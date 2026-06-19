@@ -365,7 +365,6 @@ enum AppStrings {
         "Removes a year's sales — photos are kept for archive viewing",
     version: 'Version',
     language: 'Language',
-    darkMode: 'Dark mode',
     exportWhichYear: 'Export which year?',
     deleteWhichYear: 'Delete which year?',
     alsoDeletePhotos: 'Also delete photos',
@@ -834,7 +833,6 @@ enum AppStrings {
         'Remove as vendas de um ano — as fotos são mantidas para visualização',
     version: 'Versão',
     language: 'Idioma',
-    darkMode: 'Modo escuro',
     exportWhichYear: 'Exportar qual ano?',
     deleteWhichYear: 'Eliminar qual ano?',
     alsoDeletePhotos: 'Também eliminar fotos',
@@ -1259,7 +1257,6 @@ enum AppStrings {
     required this.deleteArchivedYearSubtitle,
     required this.version,
     required this.language,
-    required this.darkMode,
     required this.exportWhichYear,
     required this.deleteWhichYear,
     required this.alsoDeletePhotos,
@@ -1720,7 +1717,6 @@ enum AppStrings {
   final String deleteArchivedYearSubtitle;
   final String version;
   final String language;
-  final String darkMode;
   final String exportWhichYear;
   final String deleteWhichYear;
   final String alsoDeletePhotos;
