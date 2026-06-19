@@ -14,42 +14,45 @@ class LatitudeTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeSettings.themeMode,
-      builder: (context, themeMode, child) => ValueListenableBuilder<Locale>(
-        valueListenable: LocaleSettings.locale,
-        builder: (context, locale, _) => AppLocaleScope(
-          locale: locale,
-          child: MaterialApp(
-            title: 'Latitude Tracker',
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: themeMode,
+    return ValueListenableBuilder<ThemePreset>(
+      valueListenable: ThemeSettings.preset,
+      builder: (context, activePreset, _) =>
+          ValueListenableBuilder<Brightness>(
+        valueListenable: ThemeSettings.brightness,
+        builder: (context, activeBrightness, _) =>
+            ValueListenableBuilder<Locale>(
+          valueListenable: LocaleSettings.locale,
+          builder: (context, locale, _) => AppLocaleScope(
             locale: locale,
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale('pt'), Locale('en')],
-            home: ValueListenableBuilder<bool>(
-              valueListenable: DemoMode.active,
-              builder: (context, demoActive, _) {
-                if (demoActive) return const MainNav();
-                return StreamBuilder<User?>(
-                  stream: FirebaseAuth.instance.authStateChanges(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Scaffold(
-                        body: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return snapshot.hasData
-                        ? const MainNav()
-                        : const LoginScreen();
-                  },
-                );
-              },
+            child: MaterialApp(
+              title: 'Latitude Tracker',
+              theme: AppTheme.forPreset(activePreset, activeBrightness),
+              locale: locale,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('pt'), Locale('en')],
+              home: ValueListenableBuilder<bool>(
+                valueListenable: DemoMode.active,
+                builder: (context, demoActive, _) {
+                  if (demoActive) return const MainNav();
+                  return StreamBuilder<User?>(
+                    stream: FirebaseAuth.instance.authStateChanges(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      return snapshot.hasData
+                          ? const MainNav()
+                          : const LoginScreen();
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ),
