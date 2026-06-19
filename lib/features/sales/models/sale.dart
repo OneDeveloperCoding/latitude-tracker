@@ -35,6 +35,8 @@ enum DeliveryType { shipping, pickup, handDelivery }
 
 enum ShipmentStatus { pending, shipped, delivered }
 
+enum SaleStage { assembly, payment, shipment, done }
+
 extension PaymentMethodLabel on PaymentMethod {
   String get label => switch (this) {
     PaymentMethod.mbWay => 'MB Way',
@@ -353,6 +355,15 @@ class Sale {
       }
     }
     return worst;
+  }
+
+  SaleStage get stage {
+    if (derivedAssemblyStatus != AssemblyStatus.ready) {
+      return SaleStage.assembly;
+    }
+    if (payment.status == PaymentStatus.unpaid) return SaleStage.payment;
+    if (shipment.status != ShipmentStatus.delivered) return SaleStage.shipment;
+    return SaleStage.done;
   }
 
   static DateTime _parseArchiveDate(dynamic value) {
