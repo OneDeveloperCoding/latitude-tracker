@@ -446,6 +446,15 @@ enum AppStrings {
     archiveNoSales: 'No sales in this archive.',
     archiveUnknown: 'Unknown',
     archiveNothingToImport: 'Nothing to import — all records already exist',
+    appearance: 'Appearance',
+    themePreset: 'Colour palette',
+    themeBrightness: 'Brightness',
+    presetTerracotta: 'Terracotta',
+    presetOcean: 'Ocean',
+    presetForest: 'Forest',
+    presetSlate: 'Slate',
+    presetFuchsia: 'Fuchsia',
+    presetIndigo: 'Indigo',
     catalogueSection: 'Catalogue',
     categoriesTitle: 'Categories',
     categoriesSubtitle: 'Rename, hide, or remove item categories',
@@ -907,6 +916,15 @@ enum AppStrings {
     archiveNoSales: 'Sem vendas neste arquivo.',
     archiveUnknown: 'Desconhecido',
     archiveNothingToImport: 'Nada para importar — todos os registos já existem',
+    appearance: 'Aparência',
+    themePreset: 'Paleta de cores',
+    themeBrightness: 'Brilho',
+    presetTerracotta: 'Terracota',
+    presetOcean: 'Oceano',
+    presetForest: 'Floresta',
+    presetSlate: 'Ardósia',
+    presetFuchsia: 'Fúcsia',
+    presetIndigo: 'Índigo',
     catalogueSection: 'Catálogo',
     categoriesTitle: 'Categorias',
     categoriesSubtitle: 'Renomear, ocultar ou remover categorias',
@@ -1314,6 +1332,15 @@ enum AppStrings {
     required this.archiveNoSales,
     required this.archiveUnknown,
     required this.archiveNothingToImport,
+    required this.appearance,
+    required this.themePreset,
+    required this.themeBrightness,
+    required this.presetTerracotta,
+    required this.presetOcean,
+    required this.presetForest,
+    required this.presetSlate,
+    required this.presetFuchsia,
+    required this.presetIndigo,
     required this.catalogueSection,
     required this.categoriesTitle,
     required this.categoriesSubtitle,
@@ -1770,6 +1797,17 @@ enum AppStrings {
   final String archiveNoSales;
   final String archiveUnknown;
   final String archiveNothingToImport;
+
+  // ── Appearance ───────────────────────────────────────────────────────────
+  final String appearance;
+  final String themePreset;
+  final String themeBrightness;
+  final String presetTerracotta;
+  final String presetOcean;
+  final String presetForest;
+  final String presetSlate;
+  final String presetFuchsia;
+  final String presetIndigo;
 
   // ── Category maintenance ──────────────────────────────────────────────────
   final String catalogueSection;

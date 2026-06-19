@@ -8,6 +8,7 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/l10n/locale_settings.dart'
     show AppLocaleScope, LocaleSettings;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/theme/app_theme.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
@@ -62,6 +63,10 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             const Divider(),
+            _SectionHeader(s.appearance),
+            _ThemePresetTile(),
+            _ThemeBrightnessTile(),
+            const Divider(),
             _SectionHeader(s.archive),
             ListTile(
               leading: const Icon(Icons.upload),
@@ -92,7 +97,6 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => DemoTutorialSheet.show(context),
             ),
             _LanguageTile(),
-            _ThemeModeTile(),
             FutureBuilder<PackageInfo>(
               future: PackageInfo.fromPlatform(),
               builder: (context, snapshot) {
@@ -393,32 +397,100 @@ class _LanguageTile extends StatelessWidget {
   }
 }
 
-class _ThemeModeTile extends StatelessWidget {
+class _ThemePresetTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final presetLabels = {
+      ThemePreset.terracotta: s.presetTerracotta,
+      ThemePreset.ocean: s.presetOcean,
+      ThemePreset.forest: s.presetForest,
+      ThemePreset.slate: s.presetSlate,
+      ThemePreset.fuchsia: s.presetFuchsia,
+      ThemePreset.indigo: s.presetIndigo,
+    };
+
+    return ListTile(
+      leading: const Icon(Icons.palette_outlined),
+      title: Text(s.themePreset),
+      subtitle: ValueListenableBuilder<ThemePreset>(
+        valueListenable: ThemeSettings.preset,
+        builder: (context, activePreset, _) => Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            children: ThemePreset.values.map((preset) {
+              final isSelected = preset == activePreset;
+              return GestureDetector(
+                onTap: () => ThemeSettings.setPreset(preset),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: preset.seed,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                width: 2.5,
+                              )
+                            : null,
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check,
+                              color: ThemeData(
+                                colorScheme: ColorScheme.fromSeed(
+                                  seedColor: preset.seed,
+                                ),
+                              ).colorScheme.onPrimary,
+                              size: 20,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      presetLabels[preset]!,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeBrightnessTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     return ListTile(
       leading: const Icon(Icons.contrast),
-      title: Text(s.darkMode),
-      trailing: ValueListenableBuilder<ThemeMode>(
-        valueListenable: ThemeSettings.themeMode,
-        builder: (context, mode, _) => SegmentedButton<ThemeMode>(
+      title: Text(s.themeBrightness),
+      trailing: ValueListenableBuilder<Brightness>(
+        valueListenable: ThemeSettings.brightness,
+        builder: (context, activeBrightness, _) =>
+            SegmentedButton<Brightness>(
           segments: const [
             ButtonSegment(
-              value: ThemeMode.light,
+              value: Brightness.light,
               icon: Icon(Icons.light_mode_outlined),
             ),
             ButtonSegment(
-              value: ThemeMode.system,
-              icon: Icon(Icons.brightness_auto_outlined),
-            ),
-            ButtonSegment(
-              value: ThemeMode.dark,
+              value: Brightness.dark,
               icon: Icon(Icons.dark_mode_outlined),
             ),
           ],
-          selected: {mode},
-          onSelectionChanged: (v) => ThemeSettings.setThemeMode(v.first),
+          selected: {activeBrightness},
+          onSelectionChanged: (v) => ThemeSettings.setBrightness(v.first),
           style: const ButtonStyle(
             visualDensity: VisualDensity.compact,
           ),
