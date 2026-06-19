@@ -14,11 +14,23 @@ import 'package:latitude_tracker/features/sales/models/sale.dart';
 class GeocodingWarmUp {
   GeocodingWarmUp._();
 
-  static void attach() =>
-      SalesStore.state.addListener(_onStoreChanged);
+  static bool _attached = false;
+  static bool _warming = false;
 
-  static void detach() =>
-      SalesStore.state.removeListener(_onStoreChanged);
+  /// Idempotent — safe to call multiple times (e.g. after a DemoMode
+  /// transition where the old MainNav.dispose() removes the listener the new
+  /// MainNav.initState() just added).
+  static void attach() {
+    if (_attached) return;
+    _attached = true;
+    SalesStore.state.addListener(_onStoreChanged);
+  }
+
+  static void detach() {
+    if (!_attached) return;
+    _attached = false;
+    SalesStore.state.removeListener(_onStoreChanged);
+  }
 
   static void _onStoreChanged() {
     final state = SalesStore.state.value;
@@ -27,6 +39,18 @@ class GeocodingWarmUp {
         .map((s) => HeatMapService.localityPrefix(s.shipment.postalCode))
         .whereType<String>()
         .toSet();
-    unawaited(GeocodingService.warmUp(prefixes));
+    unawaited(_runWarmUp(prefixes));
+  }
+
+  // Skips if a warm-up is already in progress — prevents concurrent Nominatim
+  // requests for the same uncached prefixes when store emits rapidly.
+  static Future<void> _runWarmUp(Set<String> prefixes) async {
+    if (_warming) return;
+    _warming = true;
+    try {
+      await GeocodingService.warmUp(prefixes);
+    } finally {
+      _warming = false;
+    }
   }
 }

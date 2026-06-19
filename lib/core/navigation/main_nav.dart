@@ -35,16 +35,18 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.init();
     BuyersStore.init();
     RepairsStore.init();
-    GeocodingWarmUp.attach();
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     // After a DemoMode transition the old MainNav's dispose() runs after this
     // initState — tearing down the subscription init() just created. The
     // post-frame callback re-subscribes once the frame has fully settled.
+    // GeocodingWarmUp.attach() is also deferred here: the old dispose() calls
+    // detach() after this initState(), so attaching early would be undone.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       SalesStore.ensureSubscribed();
       BuyersStore.ensureSubscribed();
       RepairsStore.ensureSubscribed();
+      GeocodingWarmUp.attach();
     });
   }
 
