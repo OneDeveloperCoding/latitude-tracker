@@ -6,11 +6,10 @@ import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
-import 'package:latitude_tracker/features/sales/screens/sale_progress_path.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 
-class SaleCard extends StatelessWidget {
+class SaleCard extends StatefulWidget {
   const SaleCard({
     required this.sale,
     required this.buyerNif,
@@ -18,7 +17,6 @@ class SaleCard extends StatelessWidget {
     super.key,
     this.isSelected = false,
   });
-  static final _dateFormat = DateFormat('dd MMM yyyy');
 
   final Sale sale;
   final String? buyerNif;
@@ -26,7 +24,16 @@ class SaleCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<SaleCard> createState() => _SaleCardState();
+}
+
+class _SaleCardState extends State<SaleCard> {
+  bool _expanded = false;
+  static final _dateFormat = DateFormat('dd MMM yyyy');
+
+  @override
   Widget build(BuildContext context) {
+    final sale = widget.sale;
     final level = sale.urgencyLevel();
     final reasons = sale.urgencyReasons(level: level);
     final cs = Theme.of(context).colorScheme;
@@ -39,14 +46,14 @@ class SaleCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 12),
-      color: isSelected ? cs.primaryContainer : null,
+      color: widget.isSelected ? cs.primaryContainer : null,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: Container(
           decoration: accentColor != null
               ? BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: accentColor, width: 4),
+                    left: BorderSide(color: accentColor, width: 7),
                   ),
                 )
               : null,
@@ -75,37 +82,30 @@ class SaleCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
-              _ItemDescriptions(
+              _ItemsRow(
                 sale: sale,
                 reasons: reasons,
-                buyerNif: buyerNif,
+                buyerNif: widget.buyerNif,
+                expanded: _expanded,
+                onToggle: () => setState(() => _expanded = !_expanded),
+                onCardTap: widget.onTap,
               ),
               const SizedBox(height: 4),
-              _CategoryChips(sale: sale),
               Row(
                 children: [
                   Text(
                     _dateFormat.format(sale.createdAt),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: cs.onSurfaceVariant,
                         ),
                   ),
-                  const SizedBox(width: 6),
-                  _AgeLabel(sale: sale),
                   const Spacer(),
                   if (sale.scheduledDate != null)
                     Flexible(child: _ScheduledDateLabel(sale: sale)),
                 ],
               ),
-              Column(
-                children: [
-                  const SizedBox(height: 8),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-                  SaleProgressPath(sale: sale),
-                ],
-              ),
+              const SizedBox(height: 8),
+              _SaleStageChip(sale: sale),
             ],
           ),
         ),
@@ -114,65 +114,106 @@ class SaleCard extends StatelessWidget {
   }
 }
 
-class _ItemDescriptions extends StatelessWidget {
-  const _ItemDescriptions({
+class _ItemsRow extends StatelessWidget {
+  const _ItemsRow({
     required this.sale,
     required this.reasons,
     required this.buyerNif,
+    required this.expanded,
+    required this.onToggle,
+    required this.onCardTap,
   });
+
   final Sale sale;
   final List<UrgencyReasonType> reasons;
   final String? buyerNif;
+  final bool expanded;
+  final VoidCallback onToggle;
+  final VoidCallback onCardTap;
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final items = sale.items;
-    final shown = items.take(3).toList();
-    final overflow = items.length - 3;
+    final hasMultiple = items.length > 1;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...shown.map((item) => Text(
-                    item.description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  )),
-              if (overflow > 0)
-                Text(
-                  s.andXMore(overflow),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                ),
-            ],
+          child: InkWell(
+            onTap: hasMultiple ? onToggle : onCardTap,
+            borderRadius: BorderRadius.circular(4),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Row(
+                children: [
+                  if (hasMultiple)
+                    Icon(
+                      expanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  if (hasMultiple) const SizedBox(width: 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: expanded
+                          ? items
+                              .map((i) => _itemLine(context, i.description))
+                              .toList()
+                          : [_itemLine(context, items.first.description)],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         AttentionBadges(sale: sale, reasons: reasons, buyerNif: buyerNif),
       ],
     );
   }
+
+  Widget _itemLine(BuildContext context, String description) => Text(
+        description,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall,
+      );
 }
 
-class _CategoryChips extends StatelessWidget {
-  const _CategoryChips({required this.sale});
+class _SaleStageChip extends StatelessWidget {
+  const _SaleStageChip({required this.sale});
   final Sale sale;
 
   @override
   Widget build(BuildContext context) {
-    final uniqueCategories = sale.items.map((i) => i.category).toSet().toList();
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: uniqueCategories
-          .map((cat) => CategoryChip(category: cat))
-          .toList(),
+    final s = context.s;
+    final cs = Theme.of(context).colorScheme;
+    final stage = sale.stage;
+
+    final (Color bg, Color fg) = switch (stage) {
+      SaleStage.assembly => (cs.errorContainer, cs.onErrorContainer),
+      SaleStage.payment  => (cs.tertiaryContainer, cs.onTertiaryContainer),
+      SaleStage.shipment => (cs.secondaryContainer, cs.onSecondaryContainer),
+      SaleStage.done     => (cs.primaryContainer, cs.onPrimaryContainer),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        s.saleStageLabel(stage),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }
@@ -254,7 +295,7 @@ class AttentionBadges extends StatelessWidget {
                 Icons.sticky_note_2_outlined,
                 size: 22,
                 semanticLabel: s.sectionNotes,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: cs.onSurfaceVariant,
               ),
             ),
           ),
@@ -316,26 +357,6 @@ class AttentionBadges extends StatelessWidget {
         ],
       ],
     );
-  }
-}
-
-class _AgeLabel extends StatelessWidget {
-  const _AgeLabel({required this.sale});
-  final Sale sale;
-
-  @override
-  Widget build(BuildContext context) {
-    final days = sale.daysOpen();
-    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
-
-    if (isDelivered || days < 14) return const SizedBox.shrink();
-
-    final cs = Theme.of(context).colorScheme;
-    final (icon, color) = days < 30
-        ? (Icons.hourglass_top, cs.warning)
-        : (Icons.hourglass_bottom, cs.error);
-
-    return Icon(icon, size: 14, color: color);
   }
 }
 

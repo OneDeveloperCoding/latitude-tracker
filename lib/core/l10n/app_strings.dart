@@ -136,7 +136,7 @@ enum AppStrings {
     clearAllFilters: 'Clear all',
     year: 'Year',
     buyer: 'Buyer',
-    legendTitle: 'Sale progress',
+    stageDone: 'Done',
     nifSheetTitle: 'NIF receipt required',
     nifSheetBody:
         "Payment received — file this sale's receipt with AT."
@@ -266,7 +266,6 @@ enum AppStrings {
     timelineLater: 'Later',
     today: 'Today',
     tomorrow: 'Tomorrow',
-    pickupNoShipment: 'Pickup (no shipment needed)',
     buyers: 'Buyers',
     searchBuyers: 'Search buyers...',
     changeView: 'Change view',
@@ -602,7 +601,7 @@ enum AppStrings {
     clearAllFilters: 'Limpar tudo',
     year: 'Ano',
     buyer: 'Comprador',
-    legendTitle: 'Progresso da venda',
+    stageDone: 'Concluída',
     nifSheetTitle: 'Recibo NIF necessário',
     nifSheetBody:
         'Pagamento recebido — submeta o recibo desta venda na AT. O NIF do'
@@ -732,7 +731,6 @@ enum AppStrings {
     timelineLater: 'Mais tarde',
     today: 'Hoje',
     tomorrow: 'Amanhã',
-    pickupNoShipment: 'Levantamento (sem envio)',
     buyers: 'Compradores',
     searchBuyers: 'Pesquisar compradores...',
     changeView: 'Alterar vista',
@@ -1044,7 +1042,7 @@ enum AppStrings {
     required this.year,
     required this.buyer,
 
-    required this.legendTitle,
+    required this.stageDone,
     required this.nifSheetTitle,
     required this.nifSheetBody,
     required this.readyButUnpaidTitle,
@@ -1170,7 +1168,6 @@ enum AppStrings {
     required this.timelineLater,
     required this.today,
     required this.tomorrow,
-    required this.pickupNoShipment,
     required this.buyers,
     required this.searchBuyers,
     required this.changeView,
@@ -1476,8 +1473,8 @@ enum AppStrings {
   final String year;
   final String buyer;
 
-  // ── Progress path / legend ───────────────────────────────────────────────
-  final String legendTitle;
+  // ── Sale card ────────────────────────────────────────────────────────────
+  final String stageDone;
   final String nifSheetTitle;
   final String nifSheetBody;
   final String readyButUnpaidTitle;
@@ -1612,7 +1609,6 @@ enum AppStrings {
   final String timelineLater;
   final String today;
   final String tomorrow;
-  final String pickupNoShipment;
 
   // ── Buyers list ──────────────────────────────────────────────────────────
   final String buyers;
@@ -2169,6 +2165,13 @@ enum AppStrings {
 
   // Maps English timeline keys (used for ordering) to translated display
   // labels.
+  String saleStageLabel(SaleStage stage) => switch (stage) {
+        SaleStage.assembly => assemblyLegendHeader,
+        SaleStage.payment => paymentLegendHeader,
+        SaleStage.shipment => shipmentLegendHeader,
+        SaleStage.done => stageDone,
+      };
+
   String urgencyReasonLabel(UrgencyReasonType type) => switch (type) {
         UrgencyReasonType.waitingForMaterials => urgencyWaitingForMaterials,
         UrgencyReasonType.assemblyNotReady => urgencyAssemblyNotReady,
