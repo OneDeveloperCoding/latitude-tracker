@@ -15,7 +15,7 @@ The SalesHeatMap geocodes Portuguese postal-code prefixes to map coordinates usi
 - Failed lookups (Nominatim returned no result): 7 days (retry eventually in case of transient error)
 - Cache key is versioned (`v2`) — bumping the version invalidates stale entries that predate the `locality` field addition without manual cache clearing.
 
-**Background warm-up:** `MainNav` calls `GeocodingService.warmUp()` every time `SalesStore` emits new data. By the time the user navigates to the heat map, most prefixes are already cached and the map loads instantly.
+**Background warm-up:** `GeocodingWarmUp` (in `lib/features/heat_map/services/`) listens to `SalesStore.state` and calls `GeocodingService.warmUp()` on every `StoreLoaded` emission. `MainNav` attaches and detaches the listener as part of its store lifecycle. Prefixes are extracted via `HeatMapService.localityPrefix()` — the same regex-validated extraction used at runtime — so the warm-up primes exactly the cache keys that `GeographicSalesService.buildRanking` and `HeatMapService.buildPoints` will request. By the time the user navigates to GeographicSalesView, most prefixes are already cached and the screen opens instantly.
 
 ## Considered options
 
