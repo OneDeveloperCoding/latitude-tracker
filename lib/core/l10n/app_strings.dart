@@ -136,7 +136,7 @@ enum AppStrings {
     clearAllFilters: 'Clear all',
     year: 'Year',
     buyer: 'Buyer',
-    legendTitle: 'Sale progress',
+    stageDone: 'Done',
     nifSheetTitle: 'NIF receipt required',
     nifSheetBody:
         "Payment received — file this sale's receipt with AT."
@@ -266,7 +266,6 @@ enum AppStrings {
     timelineLater: 'Later',
     today: 'Today',
     tomorrow: 'Tomorrow',
-    pickupNoShipment: 'Pickup (no shipment needed)',
     buyers: 'Buyers',
     searchBuyers: 'Search buyers...',
     changeView: 'Change view',
@@ -365,7 +364,6 @@ enum AppStrings {
         "Removes a year's sales — photos are kept for archive viewing",
     version: 'Version',
     language: 'Language',
-    darkMode: 'Dark mode',
     exportWhichYear: 'Export which year?',
     deleteWhichYear: 'Delete which year?',
     alsoDeletePhotos: 'Also delete photos',
@@ -446,6 +444,15 @@ enum AppStrings {
     archiveNoSales: 'No sales in this archive.',
     archiveUnknown: 'Unknown',
     archiveNothingToImport: 'Nothing to import — all records already exist',
+    appearance: 'Appearance',
+    themePreset: 'Colour palette',
+    themeBrightness: 'Brightness',
+    presetTerracotta: 'Terracotta',
+    presetOcean: 'Ocean',
+    presetForest: 'Forest',
+    presetSlate: 'Slate',
+    presetFuchsia: 'Fuchsia',
+    presetIndigo: 'Indigo',
     catalogueSection: 'Catalogue',
     categoriesTitle: 'Categories',
     categoriesSubtitle: 'Rename, hide, or remove item categories',
@@ -594,7 +601,7 @@ enum AppStrings {
     clearAllFilters: 'Limpar tudo',
     year: 'Ano',
     buyer: 'Comprador',
-    legendTitle: 'Progresso da venda',
+    stageDone: 'Concluída',
     nifSheetTitle: 'Recibo NIF necessário',
     nifSheetBody:
         'Pagamento recebido — submeta o recibo desta venda na AT. O NIF do'
@@ -724,7 +731,6 @@ enum AppStrings {
     timelineLater: 'Mais tarde',
     today: 'Hoje',
     tomorrow: 'Amanhã',
-    pickupNoShipment: 'Levantamento (sem envio)',
     buyers: 'Compradores',
     searchBuyers: 'Pesquisar compradores...',
     changeView: 'Alterar vista',
@@ -825,7 +831,6 @@ enum AppStrings {
         'Remove as vendas de um ano — as fotos são mantidas para visualização',
     version: 'Versão',
     language: 'Idioma',
-    darkMode: 'Modo escuro',
     exportWhichYear: 'Exportar qual ano?',
     deleteWhichYear: 'Eliminar qual ano?',
     alsoDeletePhotos: 'Também eliminar fotos',
@@ -907,6 +912,15 @@ enum AppStrings {
     archiveNoSales: 'Sem vendas neste arquivo.',
     archiveUnknown: 'Desconhecido',
     archiveNothingToImport: 'Nada para importar — todos os registos já existem',
+    appearance: 'Aparência',
+    themePreset: 'Paleta de cores',
+    themeBrightness: 'Brilho',
+    presetTerracotta: 'Terracota',
+    presetOcean: 'Oceano',
+    presetForest: 'Floresta',
+    presetSlate: 'Ardósia',
+    presetFuchsia: 'Fúcsia',
+    presetIndigo: 'Índigo',
     catalogueSection: 'Catálogo',
     categoriesTitle: 'Categorias',
     categoriesSubtitle: 'Renomear, ocultar ou remover categorias',
@@ -1028,7 +1042,7 @@ enum AppStrings {
     required this.year,
     required this.buyer,
 
-    required this.legendTitle,
+    required this.stageDone,
     required this.nifSheetTitle,
     required this.nifSheetBody,
     required this.readyButUnpaidTitle,
@@ -1154,7 +1168,6 @@ enum AppStrings {
     required this.timelineLater,
     required this.today,
     required this.tomorrow,
-    required this.pickupNoShipment,
     required this.buyers,
     required this.searchBuyers,
     required this.changeView,
@@ -1241,7 +1254,6 @@ enum AppStrings {
     required this.deleteArchivedYearSubtitle,
     required this.version,
     required this.language,
-    required this.darkMode,
     required this.exportWhichYear,
     required this.deleteWhichYear,
     required this.alsoDeletePhotos,
@@ -1314,6 +1326,15 @@ enum AppStrings {
     required this.archiveNoSales,
     required this.archiveUnknown,
     required this.archiveNothingToImport,
+    required this.appearance,
+    required this.themePreset,
+    required this.themeBrightness,
+    required this.presetTerracotta,
+    required this.presetOcean,
+    required this.presetForest,
+    required this.presetSlate,
+    required this.presetFuchsia,
+    required this.presetIndigo,
     required this.catalogueSection,
     required this.categoriesTitle,
     required this.categoriesSubtitle,
@@ -1452,8 +1473,8 @@ enum AppStrings {
   final String year;
   final String buyer;
 
-  // ── Progress path / legend ───────────────────────────────────────────────
-  final String legendTitle;
+  // ── Sale card ────────────────────────────────────────────────────────────
+  final String stageDone;
   final String nifSheetTitle;
   final String nifSheetBody;
   final String readyButUnpaidTitle;
@@ -1588,7 +1609,6 @@ enum AppStrings {
   final String timelineLater;
   final String today;
   final String tomorrow;
-  final String pickupNoShipment;
 
   // ── Buyers list ──────────────────────────────────────────────────────────
   final String buyers;
@@ -1693,7 +1713,6 @@ enum AppStrings {
   final String deleteArchivedYearSubtitle;
   final String version;
   final String language;
-  final String darkMode;
   final String exportWhichYear;
   final String deleteWhichYear;
   final String alsoDeletePhotos;
@@ -1770,6 +1789,17 @@ enum AppStrings {
   final String archiveNoSales;
   final String archiveUnknown;
   final String archiveNothingToImport;
+
+  // ── Appearance ───────────────────────────────────────────────────────────
+  final String appearance;
+  final String themePreset;
+  final String themeBrightness;
+  final String presetTerracotta;
+  final String presetOcean;
+  final String presetForest;
+  final String presetSlate;
+  final String presetFuchsia;
+  final String presetIndigo;
 
   // ── Category maintenance ──────────────────────────────────────────────────
   final String catalogueSection;
@@ -2135,6 +2165,13 @@ enum AppStrings {
 
   // Maps English timeline keys (used for ordering) to translated display
   // labels.
+  String saleStageLabel(SaleStage stage) => switch (stage) {
+        SaleStage.assembly => assemblyLegendHeader,
+        SaleStage.payment => paymentLegendHeader,
+        SaleStage.shipment => shipmentLegendHeader,
+        SaleStage.done => stageDone,
+      };
+
   String urgencyReasonLabel(UrgencyReasonType type) => switch (type) {
         UrgencyReasonType.waitingForMaterials => urgencyWaitingForMaterials,
         UrgencyReasonType.assemblyNotReady => urgencyAssemblyNotReady,

@@ -12,7 +12,6 @@ import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
 import 'package:latitude_tracker/features/sales/models/sales_list_filters.dart';
 import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
-import 'package:latitude_tracker/features/sales/screens/sale_progress_path.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_timeline_view.dart';
 import 'package:latitude_tracker/features/sales/screens/sales_filter_sheet.dart';
 import 'package:latitude_tracker/features/sales/services/sales_list_presenter.dart';
@@ -219,11 +218,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   MaterialPageRoute<void>(
                       builder: (_) => const GeographicSalesScreen()),
                 )),
-              ),
-              IconButton(
-                icon: const Icon(Icons.info_outline),
-                tooltip: s.legendTitle,
-                onPressed: () => showPathLegend(context, s),
               ),
             ],
           ),

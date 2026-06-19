@@ -158,6 +158,15 @@ jobs:
       - name: Test
         run: flutter test --no-pub
 
+      # Bump pubspec.yaml before building so the version is baked into the APK.
+      - name: Bump version in pubspec.yaml
+        run: |
+          NEW_TAG="${{ steps.next_version.outputs.new_tag }}"
+          VERSION_NAME="${NEW_TAG#v}"
+          VERSION_CODE="${{ steps.next_version.outputs.version_code }}"
+          sed -i "s/^version: .*/version: ${VERSION_NAME}+${VERSION_CODE}/" pubspec.yaml
+          echo "Updated pubspec.yaml to version: ${VERSION_NAME}+${VERSION_CODE}"
+
       - name: Build APK
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/android/release.keystore
@@ -173,12 +182,6 @@ jobs:
       - name: Commit version bump, tag, and push
         run: |
           NEW_TAG="${{ steps.next_version.outputs.new_tag }}"
-          VERSION_NAME="${NEW_TAG#v}"
-          VERSION_CODE="${{ steps.next_version.outputs.version_code }}"
-
-          sed -i "s/^version: .*/version: ${VERSION_NAME}+${VERSION_CODE}/" pubspec.yaml
-          echo "Updated pubspec.yaml to version: ${VERSION_NAME}+${VERSION_CODE}"
-
           git add pubspec.yaml
           git commit -m "chore: bump version to ${NEW_TAG}"
           git tag "${NEW_TAG}"
