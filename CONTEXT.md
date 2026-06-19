@@ -59,6 +59,10 @@ _Avoid_: Repair state, job status
 The logistics of returning a repaired item to the customer. Has a `DeliveryType` (`shipping`, `pickup`, or `handDelivery`), a status (pending / shipped / delivered), an optional CTT tracking code, and an optional postal code (for `shipping` returns only). `handDelivery` requires an address but no tracking code, same as on a Sale Shipment. Separate from RepairStatus — a Repair can be `done` while ReturnDelivery is still `pending` (item ready but not yet dispatched). Mirrors the Shipment pattern on a Sale.
 _Avoid_: Return shipment, return tracking
 
+**ThemePreset**:
+A named colour palette used to generate the app's `ColorScheme` via `ColorScheme.fromSeed`. Six curated presets ship with the app: Terracotta (seed `0xFFB5714A`, the default), Ocean (`0xFF2E86AB`), Forest (`0xFF4A7C59`), Slate (`0xFF546E7A`), Fuchsia (`0xFFD81B60`), and Indigo (`0xFF3949AB`). Each preset has a light and dark variant — brightness is toggled independently via the brightness control. The selected preset and brightness are persisted per-device in SharedPreferences. Free colour picking is intentionally excluded — curated palettes always look harmonious; arbitrary picker values often don't.
+_Avoid_: Theme, colour scheme, skin
+
 **Dashboard**:
 A summary screen showing revenue and action counts for a selected period (yearly / monthly / weekly). Displays paid and pending revenue, plus counts for unpaid Sales, pending Shipments, assembly-not-ready Items, NIF-required Sales, and overdue deliveries. Tapping a count navigates to the filtered Sales list.
 _Avoid_: Report, analytics, overview
@@ -262,7 +266,9 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 11. **Geographic Sales View** — standalone screen pushed from the Sales list AppBar (map icon). Independent year scope: all-time by default with a year chip bar in the AppBar, decoupled from the Sales list filters. Default view is a ranked list: Portugal section (CP4 localities sorted by active metric) + International section (one row per country). AppBar metric toggle (revenue / count) and hand-delivery toggle (`directions_walk`). An AppBar icon button switches to map sub-mode (heat map over flutter_map, markers sized by sale count, tap → locality name + count). Geocoding via Nominatim with a layered cache (in-memory L1 + 180-day SharedPreferences L2); warm-up runs on every SalesStore data load.
 
-12. **Settings** — sign out; export year to JSON (share sheet); import archive (read-only preview → Import button writes to Firestore, skipping existing records); delete year (optional photo deletion toggle); language toggle (PT / EN, persisted); app version
+12. **Settings** — organised into sections: **Account** (sign out), **Catalogue** (categories), **Appearance** (theme preset + brightness), **Archive** (export/import/delete year), **App** (tour, language, version), **Danger zone** (reset app). Language toggle is PT / EN, persisted per device via SharedPreferences. App version display only.
+
+**Appearance section** — two `ListTile`s: (1) a **ThemePreset** picker rendered as a 3×2 circle grid, each circle filled with the preset's primary colour and labelled below; the selected preset shows a checkmark; (2) a brightness `SegmentedButton` with two options: light / dark (no system/auto option). Both choices are persisted per-device via SharedPreferences via `ThemeSettings`.
 
 ## Example dialogue
 
