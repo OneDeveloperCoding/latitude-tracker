@@ -9,6 +9,8 @@ import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 
+const _kBadgeRadius = BorderRadius.all(Radius.circular(20));
+
 class SaleCard extends StatefulWidget {
   const SaleCard({
     required this.sale,
@@ -88,7 +90,6 @@ class _SaleCardState extends State<SaleCard> {
                 buyerNif: widget.buyerNif,
                 expanded: _expanded,
                 onToggle: () => setState(() => _expanded = !_expanded),
-                onCardTap: widget.onTap,
               ),
               const SizedBox(height: 4),
               Row(
@@ -121,7 +122,6 @@ class _ItemsRow extends StatelessWidget {
     required this.buyerNif,
     required this.expanded,
     required this.onToggle,
-    required this.onCardTap,
   });
 
   final Sale sale;
@@ -129,18 +129,20 @@ class _ItemsRow extends StatelessWidget {
   final String? buyerNif;
   final bool expanded;
   final VoidCallback onToggle;
-  final VoidCallback onCardTap;
 
   @override
   Widget build(BuildContext context) {
     final items = sale.items;
+    if (items.isEmpty) return const SizedBox.shrink();
     final hasMultiple = items.length > 1;
 
     return Row(
       children: [
         Expanded(
           child: InkWell(
-            onTap: hasMultiple ? onToggle : onCardTap,
+            // Null for single-item cards: the outer card InkWell handles the
+            // tap, avoiding a duplicate navigation call.
+            onTap: hasMultiple ? onToggle : null,
             borderRadius: BorderRadius.circular(4),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
@@ -148,9 +150,7 @@ class _ItemsRow extends StatelessWidget {
                 children: [
                   if (hasMultiple)
                     Icon(
-                      expanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
+                      expanded ? Icons.expand_less : Icons.expand_more,
                       size: 18,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -203,38 +203,12 @@ class _SaleStageChip extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: _kBadgeRadius),
       child: Text(
         s.saleStageLabel(stage),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: fg,
               fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-}
-
-class CategoryChip extends StatelessWidget {
-  const CategoryChip({required this.category, super.key});
-  final String category;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        category,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSecondaryContainer,
             ),
       ),
     );
@@ -288,7 +262,7 @@ class AttentionBadges extends StatelessWidget {
           const SizedBox(width: 4),
           InkWell(
             onTap: () => _showNotePreview(context, sale.notes!),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: _kBadgeRadius,
             child: Padding(
               padding: const EdgeInsets.all(11),
               child: Icon(
@@ -305,7 +279,7 @@ class AttentionBadges extends StatelessWidget {
           InkWell(
             onTap: () =>
                 _showNifDetail(context, buyerHasNif, sale.atSubmissionDone),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: _kBadgeRadius,
             child: Padding(
               padding: const EdgeInsets.all(11),
               child: Icon(
@@ -321,7 +295,7 @@ class AttentionBadges extends StatelessWidget {
           const SizedBox(width: 4),
           InkWell(
             onTap: () => _showReadyButUnpaidDetail(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: _kBadgeRadius,
             child: Padding(
               padding: const EdgeInsets.all(11),
               child: Icon(
@@ -337,7 +311,7 @@ class AttentionBadges extends StatelessWidget {
           const SizedBox(width: 4),
           InkWell(
             onTap: () => _showUrgencyDetail(context, reasons),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: _kBadgeRadius,
             child: Padding(
               padding: const EdgeInsets.all(11),
               child: Icon(
@@ -365,39 +339,28 @@ class _ScheduledDateLabel extends StatelessWidget {
   static final _dateFormat = DateFormat('dd MMM');
   final Sale sale;
 
+  Color _color(BuildContext context, int days, bool isDelivered) {
+    final cs = Theme.of(context).colorScheme;
+    if (isDelivered || days > 3) return cs.onSurfaceVariant;
+    if (days <= 2) return cs.error;
+    return cs.warning;
+  }
+
+  String _label(AppStrings s, int days, bool isDelivered) {
+    final formatted = _dateFormat.format(sale.scheduledDate!);
+    if (isDelivered) return formatted;
+    if (days < 0) return '$formatted (${s.daysOverdue(days.abs())})';
+    if (days == 0) return s.today;
+    if (days == 1) return s.tomorrow;
+    return formatted;
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final days = sale.daysUntilScheduled()!;
     final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
-
-    final Color color;
-    if (isDelivered) {
-      color = Theme.of(context).colorScheme.onSurfaceVariant;
-    } else if (days < 0) {
-      color = Theme.of(context).colorScheme.error;
-    } else if (days <= 2) {
-      color = Theme.of(context).colorScheme.error;
-    } else if (days <= 3) {
-      color = Theme.of(context).colorScheme.warning;
-    } else {
-      color = Theme.of(context).colorScheme.onSurfaceVariant;
-    }
-
-    final formattedDate = _dateFormat.format(sale.scheduledDate!);
-    final String label;
-    if (isDelivered) {
-      label = formattedDate;
-    } else if (days < 0) {
-      label = '$formattedDate (${s.daysOverdue(days.abs())})';
-    } else if (days == 0) {
-      label = s.today;
-    } else if (days == 1) {
-      label = s.tomorrow;
-    } else {
-      label = formattedDate;
-    }
-
+    final color = _color(context, days, isDelivered);
     final textStyle = Theme.of(context)
         .textTheme
         .labelSmall
@@ -410,7 +373,7 @@ class _ScheduledDateLabel extends StatelessWidget {
         const SizedBox(width: 3),
         Flexible(
           child: Text(
-            label,
+            _label(s, days, isDelivered),
             style: textStyle,
             overflow: TextOverflow.ellipsis,
             softWrap: false,
