@@ -15,6 +15,8 @@ void main() {
             sale: sale,
             buyerNif: null,
             onTap: () {},
+            onMarkPaid: (_) {},
+            onMarkShipped: ({trackingCode}) {},
           ),
         ),
       ),
