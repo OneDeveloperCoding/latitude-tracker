@@ -223,7 +223,21 @@ class _ItemsRow extends StatelessWidget {
                           ? items
                               .map((i) => _itemLine(context, i.description))
                               .toList()
-                          : [_itemLine(context, items.first.description)],
+                          : [
+                              _itemLine(context, items.first.description),
+                              if (hasMultiple)
+                                Text(
+                                  context.s.nMoreItems(items.length - 1),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                ),
+                            ],
                     ),
                   ),
                 ],
