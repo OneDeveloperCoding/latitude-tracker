@@ -13,10 +13,12 @@ import 'package:path_provider/path_provider.dart';
 
 // Version 1.1 adds a `repairs` array. Version 1.2 adds `handDelivery` type.
 // Version 1.3 expands components with `photoUrls` and `notes`.
-// Version 1.4 adds `quantity` to each ComponentItem (older archives default to
-// 1).
-const _kCurrentArchiveVersion = '1.4';
-const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2', '1.3', '1.4'};
+// Version 1.4 adds `quantity` to each ComponentItem (older archives
+// default to 1).
+// Version 1.5 adds `shippedAt` to the shipment object (older archives
+// default to null).
+const _kCurrentArchiveVersion = '1.5';
+const _kSupportedArchiveVersions = {'1.0', '1.1', '1.2', '1.3', '1.4', '1.5'};
 
 class ImportResult {
   const ImportResult({
