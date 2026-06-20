@@ -8,6 +8,8 @@ class TimelineView extends StatelessWidget {
     required this.groups,
     required this.buyerNifById,
     required this.onSaleTap,
+    required this.onMarkPaid,
+    required this.onMarkShipped,
     super.key,
     this.selectedSaleId,
   });
@@ -15,6 +17,8 @@ class TimelineView extends StatelessWidget {
   final Map<String, String?> buyerNifById;
   final String? selectedSaleId;
   final void Function(Sale) onSaleTap;
+  final void Function(Sale sale, PaymentMethod method) onMarkPaid;
+  final void Function(Sale sale, {String? trackingCode}) onMarkShipped;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,9 @@ class TimelineView extends StatelessWidget {
                     buyerNif: buyerNifById[sale.buyerId],
                     isSelected: sale.id == selectedSaleId,
                     onTap: () => onSaleTap(sale),
+                    onMarkPaid: (method) => onMarkPaid(sale, method),
+                    onMarkShipped: ({trackingCode}) =>
+                        onMarkShipped(sale, trackingCode: trackingCode),
                   ),
                 )),
             const Divider(height: 1),

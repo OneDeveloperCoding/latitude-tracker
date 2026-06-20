@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_card_sheets.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 
@@ -16,6 +18,8 @@ class SaleCard extends StatefulWidget {
     required this.sale,
     required this.buyerNif,
     required this.onTap,
+    required this.onMarkPaid,
+    required this.onMarkShipped,
     super.key,
     this.isSelected = false,
   });
@@ -24,6 +28,8 @@ class SaleCard extends StatefulWidget {
   final String? buyerNif;
   final bool isSelected;
   final VoidCallback onTap;
+  final void Function(PaymentMethod method) onMarkPaid;
+  final void Function({String? trackingCode}) onMarkShipped;
 
   @override
   State<SaleCard> createState() => _SaleCardState();
@@ -39,81 +45,139 @@ class _SaleCardState extends State<SaleCard> {
     final level = sale.urgencyLevel();
     final reasons = sale.urgencyReasons(level: level);
     final cs = Theme.of(context).colorScheme;
+    final s = context.s;
+
     final accentColor = reasons.isEmpty
         ? null
         : level == UrgencyLevel.overdue
             ? cs.error
             : cs.warning;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: widget.isSelected ? cs.primaryContainer : null,
-      child: InkWell(
-        onTap: widget.onTap,
-        child: Container(
-          decoration: accentColor != null
-              ? BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: accentColor, width: 7),
-                  ),
-                )
-              : null,
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      sale.buyerName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                      overflow: TextOverflow.ellipsis,
+    final canMarkPaid = sale.payment.status == PaymentStatus.unpaid;
+    final canMarkShipped =
+        sale.shipment.type == DeliveryType.shipping &&
+        sale.shipment.status == ShipmentStatus.pending;
+
+    return Slidable(
+      key: ValueKey(sale.id),
+      startActionPane: canMarkPaid
+          ? ActionPane(
+              motion: const DrawerMotion(),
+              extentRatio: 0.35,
+              children: [
+                SlidableAction(
+                  onPressed: (_) async {
+                    final method = await showMarkPaidSheet(
+                      context,
+                      sale.payment,
+                    );
+                    if (!mounted || method == null) return;
+                    widget.onMarkPaid(method);
+                  },
+                  backgroundColor: cs.primaryContainer,
+                  foregroundColor: cs.onPrimaryContainer,
+                  icon: Icons.payments_outlined,
+                  label: s.swipeActionMarkPaid,
+                ),
+              ],
+            )
+          : null,
+      endActionPane: canMarkShipped
+          ? ActionPane(
+              motion: const DrawerMotion(),
+              extentRatio: 0.35,
+              children: [
+                SlidableAction(
+                  onPressed: (_) async {
+                    final code = await showMarkShippedSheet(
+                      context,
+                      sale.shipment,
+                    );
+                    if (!mounted || code == null) return;
+                    widget.onMarkShipped(
+                      trackingCode: code.isEmpty ? null : code,
+                    );
+                  },
+                  backgroundColor: cs.secondaryContainer,
+                  foregroundColor: cs.onSecondaryContainer,
+                  icon: Icons.local_shipping_outlined,
+                  label: s.swipeActionMarkShipped,
+                ),
+              ],
+            )
+          : null,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        margin: const EdgeInsets.only(bottom: 12),
+        color: widget.isSelected ? cs.primaryContainer : null,
+        child: InkWell(
+          onTap: widget.onTap,
+          child: Container(
+            decoration: accentColor != null
+                ? BoxDecoration(
+                    border: Border(
+                      left: BorderSide(color: accentColor, width: 7),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '€${sale.totalPrice.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              _ItemsRow(
-                sale: sale,
-                reasons: reasons,
-                buyerNif: widget.buyerNif,
-                expanded: _expanded,
-                onToggle: () => setState(() => _expanded = !_expanded),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    _dateFormat.format(sale.createdAt),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                  ),
-                  const Spacer(),
-                  if (sale.scheduledDate != null)
-                    Flexible(child: _ScheduledDateLabel(sale: sale)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _SaleStageChip(sale: sale),
-            ],
+                  )
+                : null,
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        sale.buyerName,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '€${sale.totalPrice.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                _ItemsRow(
+                  sale: sale,
+                  reasons: reasons,
+                  buyerNif: widget.buyerNif,
+                  expanded: _expanded,
+                  onToggle: () => setState(() => _expanded = !_expanded),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      _dateFormat.format(sale.createdAt),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                    ),
+                    const Spacer(),
+                    if (sale.scheduledDate != null)
+                      Flexible(child: _ScheduledDateLabel(sale: sale)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _SaleStageChip(sale: sale),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
 
 class _ItemsRow extends StatelessWidget {
   const _ItemsRow({
