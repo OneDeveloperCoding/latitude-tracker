@@ -265,19 +265,6 @@ class _SaleDetailBody extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
         _SectionCard(
-          title: s.sectionItems,
-          indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
-          child: Column(
-            children: [
-              ...sale.items.map((item) => _ItemSummaryTile(
-                    item: item,
-                    onTap: () => _openItemDetail(context, item),
-                  )),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
           title: s.sectionPayment,
           indicator: paymentDot(sale.payment, cs),
           child: Column(
@@ -325,6 +312,19 @@ class _SaleDetailBody extends StatelessWidget {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: s.sectionItems,
+          indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
+          child: Column(
+            children: [
+              ...sale.items.map((item) => _ItemSummaryTile(
+                    item: item,
+                    onTap: () => _openItemDetail(context, item),
+                  )),
             ],
           ),
         ),
@@ -1028,8 +1028,16 @@ class _SectionCard extends StatelessWidget {
             Row(
               children: [
                 if (indicator != null) ...[
-                  Icon(indicator!.icon, size: 16, color: indicator!.color),
-                  const SizedBox(width: 6),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: indicator!.color,
+                    ),
+                    child: Icon(indicator!.icon, size: 17, color: Colors.white),
+                  ),
+                  const SizedBox(width: 10),
                 ],
                 Text(
                   title,
