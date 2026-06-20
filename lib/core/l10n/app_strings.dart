@@ -1872,7 +1872,7 @@ enum AppStrings {
 
   String nUrgent(int n) => _pt ? '$n urgente${n == 1 ? '' : 's'}' : '$n urgent';
   String andXMore(int n) => _pt ? 'e mais $n' : 'and $n more';
-  String nMoreItems(int n) => _pt ? '+ $n mais' : '+ $n more';
+  String nMoreItems(int n) => _pt ? '+ $n' : '+ $n';
 
   String nUnpaid(int n) => _pt ? '$n por pagar' : '$n unpaid';
 
