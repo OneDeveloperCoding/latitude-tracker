@@ -142,7 +142,8 @@ class _RepairDetailBody extends StatelessWidget {
               child: const Icon(Icons.edit),
             ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.fromLTRB(
+          16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
         children: [
           _SectionCard(
             title: s.repairSectionContact,
