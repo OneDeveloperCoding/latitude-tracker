@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/store/buyers_store.dart';
@@ -97,12 +98,17 @@ class _SalesListScreenState extends State<SalesListScreen> {
     }
   }
 
-  Future<void> _markSaleShipped(Sale sale, {String? trackingCode}) async {
+  Future<void> _markSaleShipped(
+    Sale sale, {
+    required DateTime shippedAt,
+    String? trackingCode,
+  }) async {
     try {
       await _repository.patchSale(sale.id, {
         'shipment.status': ShipmentStatus.shipped.name,
         // null explicitly clears a previously-set tracking code in Firestore.
         'shipment.trackingCode': trackingCode,
+        'shipment.shippedAt': Timestamp.fromDate(shippedAt),
       });
     } on Object catch (e) {
       if (!mounted) return;

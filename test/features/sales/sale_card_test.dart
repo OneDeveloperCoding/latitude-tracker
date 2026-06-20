@@ -16,7 +16,7 @@ void main() {
             buyerNif: null,
             onTap: () {},
             onMarkPaid: (_) {},
-            onMarkShipped: ({trackingCode}) {},
+            onMarkShipped: ({required shippedAt, trackingCode}) {},
           ),
         ),
       ),
