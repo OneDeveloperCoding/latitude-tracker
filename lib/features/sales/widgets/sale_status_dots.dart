@@ -38,7 +38,7 @@ StatusIndicatorDot shipmentDot(SaleShipment shipment, ColorScheme cs) {
 }
 
 List<StatusIndicatorDot> saleStatusDots(Sale sale, ColorScheme cs) => [
-      assemblyDot(sale.derivedAssemblyStatus, cs),
       paymentDot(sale.payment, cs),
+      assemblyDot(sale.derivedAssemblyStatus, cs),
       shipmentDot(sale.shipment, cs),
     ];

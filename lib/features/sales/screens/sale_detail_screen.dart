@@ -265,19 +265,6 @@ class _SaleDetailBody extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
         _SectionCard(
-          title: s.sectionItems,
-          indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
-          child: Column(
-            children: [
-              ...sale.items.map((item) => _ItemSummaryTile(
-                    item: item,
-                    onTap: () => _openItemDetail(context, item),
-                  )),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
           title: s.sectionPayment,
           indicator: paymentDot(sale.payment, cs),
           child: Column(
@@ -325,6 +312,19 @@ class _SaleDetailBody extends StatelessWidget {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: s.sectionItems,
+          indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
+          child: Column(
+            children: [
+              ...sale.items.map((item) => _ItemSummaryTile(
+                    item: item,
+                    onTap: () => _openItemDetail(context, item),
+                  )),
             ],
           ),
         ),
@@ -540,6 +540,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     super.dispose();
   }
 
+  void _applyItemUpdate(SaleItem updated) {
+    setState(() => _item = updated);
+    widget.onUpdateItem(updated);
+  }
+
   void _toggleComponent(ComponentItem c) {
     final updated = _item.copyWith(
       components: _item.components
@@ -582,15 +587,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       component: c,
       saleId: widget.saleId,
       itemId: _item.id,
-      onChanged: (updated) {
-        final newItem = _item.copyWith(
+      onChanged: (updated) => _applyItemUpdate(
+        _item.copyWith(
           components: _item.components
               .map((ci) => ci.id == updated.id ? updated : ci)
               .toList(),
-        );
-        setState(() => _item = newItem);
-        widget.onUpdateItem(newItem);
-      },
+        ),
+      ),
       onPhotoAdded: _sessionComponentUploads.add,
       onPhotoRemoved: (url) {
         _sessionComponentUploads.remove(url);
@@ -664,8 +667,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 .map((st) => DropdownMenuItem(
                     value: st, child: Text(s.assemblyLabel(st))))
                 .toList(),
-            onChanged: (v) =>
-                widget.onUpdateItem(_item.copyWith(assemblyStatus: v)),
+            onChanged: (v) {
+              if (v == null) return;
+              _applyItemUpdate(_item.copyWith(assemblyStatus: v));
+            },
           ),
           if (_item.photoUrls.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -679,7 +684,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               itemId: _item.id,
               photoUrls: _item.photoUrls,
               onChanged: (urls) =>
-                  widget.onUpdateItem(_item.copyWith(photoUrls: urls)),
+                  _applyItemUpdate(_item.copyWith(photoUrls: urls)),
             ),
           ],
           const SizedBox(height: 16),
@@ -1028,8 +1033,13 @@ class _SectionCard extends StatelessWidget {
             Row(
               children: [
                 if (indicator != null) ...[
-                  Icon(indicator!.icon, size: 16, color: indicator!.color),
-                  const SizedBox(width: 6),
+                  StatusBubble(
+                    icon: indicator!.icon,
+                    color: indicator!.color,
+                    size: 32,
+                    iconSize: 17,
+                  ),
+                  const SizedBox(width: 10),
                 ],
                 Text(
                   title,
