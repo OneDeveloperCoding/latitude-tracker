@@ -118,11 +118,13 @@ class _RepairDetailBody extends StatelessWidget {
     final s = context.s;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
+    return ValueListenableBuilder<bool>(
+      valueListenable: DemoMode.active,
+      builder: (context, isDemo, _) => Scaffold(
       appBar: AppBar(
         title: Text(repair.itemDescription),
         actions: [
-          if (!DemoMode.active.value)
+          if (!isDemo)
             IconButton(
               icon: const Icon(Icons.delete_outline),
               tooltip: s.deleteRepair,
@@ -130,7 +132,7 @@ class _RepairDetailBody extends StatelessWidget {
             ),
         ],
       ),
-      floatingActionButton: DemoMode.active.value
+      floatingActionButton: isDemo
           ? null
           : FloatingActionButton(
               tooltip: s.edit,
@@ -289,7 +291,7 @@ class _RepairDetailBody extends StatelessWidget {
           ],
         ],
       ),
-    );
+    ));
   }
 
 }

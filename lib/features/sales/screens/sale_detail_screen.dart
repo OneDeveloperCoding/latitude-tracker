@@ -17,7 +17,6 @@ import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
 import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
-import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
@@ -175,9 +174,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               ),
             ],
           ),
-          floatingActionButton: DemoMode.active.value
-              ? null
-              : FloatingActionButton(
+          floatingActionButton: FloatingActionButton(
                   tooltip: context.s.editSale,
                   onPressed: () => Navigator.push(
                     context,
@@ -968,15 +965,15 @@ class _ShippedAtField extends StatelessWidget {
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: kShippedAtFirstDate,
+      lastDate: DateTime.now().add(kShippedAtMaxFutureOffset),
     );
     if (date == null || !context.mounted) return;
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
     );
-    if (time == null) return;
+    if (time == null || !context.mounted) return;
     onChanged(DateTime(
       date.year, date.month, date.day, time.hour, time.minute));
   }

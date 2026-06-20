@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
@@ -143,8 +144,8 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
     final date = await showDatePicker(
       context: context,
       initialDate: _shippedAt,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: kShippedAtFirstDate,
+      lastDate: DateTime.now().add(kShippedAtMaxFutureOffset),
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
@@ -155,7 +156,6 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
     setState(() {
       _shippedAt = DateTime(
         date.year, date.month, date.day, time.hour, time.minute);
-
     });
   }
 

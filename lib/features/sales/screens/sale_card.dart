@@ -365,26 +365,30 @@ class AttentionBadges extends StatelessWidget {
 }
 
 /// Three-slot date row: bought (left) · shipped (centre) · scheduled (right).
-/// Slots that have no value are omitted; remaining slots keep their positions
-/// using a [Stack] so absent slots don't shift siblings.
+/// Present slots are spread with [Spacer] widgets; absent slots are omitted so
+/// siblings shift inward to fill the space.
 class _DatesRow extends StatelessWidget {
   const _DatesRow({required this.sale});
   static final _shortFormat = DateFormat('dd MMM');
   static final _longFormat = DateFormat('dd MMM yyyy');
   final Sale sale;
 
-  Color _scheduledColor(BuildContext context) {
+  Color _scheduledColor(
+    BuildContext context, {
+    required int days,
+    required bool isDelivered,
+  }) {
     final cs = Theme.of(context).colorScheme;
-    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
-    final days = sale.daysUntilScheduled()!;
     if (isDelivered || days > 3) return cs.onSurfaceVariant;
     if (days <= 2) return cs.error;
     return cs.warning;
   }
 
-  String _scheduledLabel(AppStrings s) {
-    final days = sale.daysUntilScheduled()!;
-    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
+  String _scheduledLabel(
+    AppStrings s, {
+    required int days,
+    required bool isDelivered,
+  }) {
     final formatted = _shortFormat.format(sale.scheduledDate!);
     if (isDelivered) return formatted;
     if (days < 0) return '$formatted (${s.daysOverdue(days.abs())})';
@@ -427,6 +431,9 @@ class _DatesRow extends StatelessWidget {
     final hasShipped = sale.shipment.type == DeliveryType.shipping &&
         sale.shipment.shippedAt != null;
     final hasScheduled = sale.scheduledDate != null;
+    // Compute once — shared by _scheduledColor and _scheduledLabel.
+    final scheduledDays = hasScheduled ? sale.daysUntilScheduled()! : 0;
+    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
 
     return Row(
       children: [
@@ -452,8 +459,10 @@ class _DatesRow extends StatelessWidget {
           _slot(
             context,
             icon: Icons.event,
-            text: _scheduledLabel(s),
-            color: _scheduledColor(context),
+            text: _scheduledLabel(s,
+                days: scheduledDays, isDelivered: isDelivered),
+            color: _scheduledColor(context,
+                days: scheduledDays, isDelivered: isDelivered),
             fontWeight: FontWeight.w500,
           ),
         ],
