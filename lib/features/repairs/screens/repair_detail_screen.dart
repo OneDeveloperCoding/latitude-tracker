@@ -122,26 +122,28 @@ class _RepairDetailBody extends StatelessWidget {
       appBar: AppBar(
         title: Text(repair.itemDescription),
         actions: [
-          if (!DemoMode.active.value) ...[
+          if (!DemoMode.active.value)
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: s.deleteRepair,
+              onPressed: () => onDelete(context, repair),
+            ),
+        ],
+      ),
+      floatingActionButton: DemoMode.active.value
+          ? null
+          : FloatingActionButton(
               tooltip: s.edit,
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => NewRepairScreen(existing: repair),
                 ),
               ),
+              child: const Icon(Icons.edit),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: s.deleteRepair,
-              onPressed: () => onDelete(context, repair),
-            ),
-          ],
-        ],
-      ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.fromLTRB(
+          16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
         children: [
           _SectionCard(
             title: s.repairSectionContact,

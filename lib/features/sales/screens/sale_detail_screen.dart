@@ -17,6 +17,7 @@ import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
 import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
@@ -157,16 +158,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             title: Text(sale.buyerName),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit),
-                tooltip: context.s.editSale,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => NewSaleScreen(sale: sale),
-                  ),
-                ),
-              ),
-              IconButton(
                 icon: const Icon(Icons.copy_outlined),
                 tooltip: context.s.duplicateSaleTooltip,
                 onPressed: () => Navigator.push(
@@ -184,6 +175,18 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               ),
             ],
           ),
+          floatingActionButton: DemoMode.active.value
+              ? null
+              : FloatingActionButton(
+                  tooltip: context.s.editSale,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => NewSaleScreen(sale: sale),
+                    ),
+                  ),
+                  child: const Icon(Icons.edit),
+                ),
           body: _SaleDetailBody(sale: sale, repository: _repository),
         );
       },
