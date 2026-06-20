@@ -10,6 +10,7 @@ import 'package:latitude_tracker/features/heat_map/screens/geographic_sales_scre
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/models/sale_filter.dart';
 import 'package:latitude_tracker/features/sales/models/sales_list_filters.dart';
+import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
 import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_timeline_view.dart';
@@ -39,6 +40,7 @@ class SalesListScreen extends StatefulWidget {
 class _SalesListScreenState extends State<SalesListScreen> {
   late SalesListFilters _filters;
   late SalesListResult _result;
+  final _repository = SaleRepository();
 
   final _searchController = TextEditingController();
   bool _searchExpanded = false;
@@ -79,6 +81,35 @@ class _SalesListScreenState extends State<SalesListScreen> {
       BuyersStore.currentOrEmpty,
       _filters,
     );
+  }
+
+  Future<void> _markSalePaid(Sale sale, PaymentMethod method) async {
+    try {
+      await _repository.patchSale(sale.id, {
+        'payment.status': PaymentStatus.paid.name,
+        'payment.method': method.name,
+      });
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.errorSavingSaleMsg(e))),
+      );
+    }
+  }
+
+  Future<void> _markSaleShipped(Sale sale, {String? trackingCode}) async {
+    try {
+      await _repository.patchSale(sale.id, {
+        'shipment.status': ShipmentStatus.shipped.name,
+        // null explicitly clears a previously-set tracking code in Firestore.
+        'shipment.trackingCode': trackingCode,
+      });
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.errorSavingSaleMsg(e))),
+      );
+    }
   }
 
   @override
@@ -238,6 +269,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
                           selectedSaleId:
                               isTablet ? _selectedSale?.id : null,
                           onSaleTap: _selectSale,
+                          onMarkPaid: _markSalePaid,
+                          onMarkShipped: _markSaleShipped,
                         ),
         ),
       ],
