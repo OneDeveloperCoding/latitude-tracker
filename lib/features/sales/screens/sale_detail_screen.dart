@@ -12,6 +12,7 @@ import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/store_state.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
@@ -25,6 +26,7 @@ import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 import 'package:latitude_tracker/features/sales/widgets/component_detail_sheet.dart';
 import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
+import 'package:latitude_tracker/features/sales/widgets/sale_status_dots.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -264,6 +266,7 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionItems,
+          indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
           child: Column(
             children: [
               ...sale.items.map((item) => _ItemSummaryTile(
@@ -276,6 +279,7 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionPayment,
+          indicator: paymentDot(sale.payment, cs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -340,6 +344,7 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionDelivery,
+          indicator: shipmentDot(sale.shipment, cs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1002,22 +1007,38 @@ class _AddressDisplayState extends State<_AddressDisplay> {
 
 class _SectionCard extends StatelessWidget {
 
-  const _SectionCard({required this.title, required this.child});
+  const _SectionCard({
+    required this.title,
+    required this.child,
+    this.indicator,
+  });
   final String title;
   final Widget child;
+  final StatusIndicatorDot? indicator;
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    )),
+            Row(
+              children: [
+                if (indicator != null) ...[
+                  Icon(indicator!.icon, size: 16, color: indicator!.color),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: cs.primary,
+                      ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             child,
           ],
