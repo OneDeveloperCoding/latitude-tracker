@@ -80,6 +80,28 @@ class InMemorySaleRepository implements SaleRepository {
   }
 
   @override
+  Future<void> patchSale(String id, Map<String, dynamic> fields) async {
+    final idx = _sales.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final sale = _sales[idx];
+    final paymentData = sale.payment.toMap();
+    final shipmentData = sale.shipment.toMap();
+    for (final entry in fields.entries) {
+      final parts = entry.key.split('.');
+      if (parts[0] == 'payment') {
+        paymentData[parts[1]] = entry.value;
+      } else if (parts[0] == 'shipment') {
+        shipmentData[parts[1]] = entry.value;
+      }
+    }
+    _sales[idx] = sale.copyWith(
+      payment: SalePayment.fromMap(paymentData),
+      shipment: SaleShipment.fromMap(shipmentData),
+    );
+    _emit();
+  }
+
+  @override
   Future<void> deleteSale(String id) async {
     _sales.removeWhere((s) => s.id == id);
     _emit();
