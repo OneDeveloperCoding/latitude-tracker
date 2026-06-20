@@ -465,6 +465,10 @@ enum AppStrings {
     unhide: 'Show',
     hiddenLabel: 'hidden',
     renamingCategory: 'Renaming…',
+    swipeActionMarkPaid: 'Mark Paid',
+    swipeActionMarkShipped: 'Mark Shipped',
+    markAsPaidTitle: 'Mark as Paid',
+    markAsShippedTitle: 'Confirm Shipment',
     saleSingular: 'sale',
     salePlural: 'sales',
     photoSingular: 'photo',
@@ -933,6 +937,10 @@ enum AppStrings {
     unhide: 'Mostrar',
     hiddenLabel: 'oculta',
     renamingCategory: 'A renomear…',
+    swipeActionMarkPaid: 'Marcar Pago',
+    swipeActionMarkShipped: 'Marcar Enviado',
+    markAsPaidTitle: 'Marcar como Pago',
+    markAsShippedTitle: 'Confirmar Envio',
     saleSingular: 'venda',
     salePlural: 'vendas',
     photoSingular: 'foto',
@@ -1347,6 +1355,10 @@ enum AppStrings {
     required this.unhide,
     required this.hiddenLabel,
     required this.renamingCategory,
+    required this.swipeActionMarkPaid,
+    required this.swipeActionMarkShipped,
+    required this.markAsPaidTitle,
+    required this.markAsShippedTitle,
     required String saleSingular,
     required String salePlural,
     required String photoSingular,
@@ -1814,6 +1826,12 @@ enum AppStrings {
   final String unhide;
   final String hiddenLabel;
   final String renamingCategory;
+
+  // ── Swipe actions ────────────────────────────────────────────────────────
+  final String swipeActionMarkPaid;
+  final String swipeActionMarkShipped;
+  final String markAsPaidTitle;
+  final String markAsShippedTitle;
 
   // ── Plural word stems (used in methods below) ─────────────────────────────
   final String _saleSingular;
