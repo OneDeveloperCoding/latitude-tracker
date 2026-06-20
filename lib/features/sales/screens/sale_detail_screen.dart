@@ -25,6 +25,7 @@ import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 import 'package:latitude_tracker/features/sales/widgets/component_detail_sheet.dart';
 import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
+import 'package:latitude_tracker/features/sales/widgets/sale_status_dots.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -264,6 +265,10 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionItems,
+          leadingIcon: sale.derivedAssemblyStatus == AssemblyStatus.ready
+              ? Icons.build
+              : Icons.build_outlined,
+          iconColor: assemblyDot(sale.derivedAssemblyStatus, cs).color,
           child: Column(
             children: [
               ...sale.items.map((item) => _ItemSummaryTile(
@@ -276,6 +281,10 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionPayment,
+          leadingIcon: sale.payment.status == PaymentStatus.paid
+              ? Icons.payments
+              : Icons.payments_outlined,
+          iconColor: paymentDot(sale.payment, cs).color,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -340,6 +349,12 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionDelivery,
+          leadingIcon: switch (sale.shipment.type) {
+            DeliveryType.shipping => Icons.local_shipping_outlined,
+            DeliveryType.pickup => Icons.store,
+            DeliveryType.handDelivery => Icons.directions_walk,
+          },
+          iconColor: shipmentDot(sale.shipment, cs).color,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1002,22 +1017,40 @@ class _AddressDisplayState extends State<_AddressDisplay> {
 
 class _SectionCard extends StatelessWidget {
 
-  const _SectionCard({required this.title, required this.child});
+  const _SectionCard({
+    required this.title,
+    required this.child,
+    this.leadingIcon,
+    this.iconColor,
+  });
   final String title;
   final Widget child;
+  final IconData? leadingIcon;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    )),
+            Row(
+              children: [
+                if (leadingIcon != null) ...[
+                  Icon(leadingIcon, size: 16, color: iconColor),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: cs.primary,
+                      ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             child,
           ],

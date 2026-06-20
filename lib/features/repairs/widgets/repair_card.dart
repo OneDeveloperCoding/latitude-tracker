@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
-import 'package:latitude_tracker/features/repairs/widgets/repair_status_colors.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_status_dots.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 const Set<RepairStatus> _kDeliveryStatuses = {
@@ -23,11 +24,8 @@ class RepairCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    final statusColor = _statusColor(repair.status, colorScheme);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -39,26 +37,24 @@ class RepairCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 4, color: statusColor),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                child: StatusIndicatorStrip(
+                  dots: repairStatusDots(repair, colorScheme),
+                ),
+              ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              repair.contactName,
-                              style: theme.textTheme.titleSmall,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          _StatusChip(status: repair.status, s: s),
-                        ],
+                      Text(
+                        repair.contactName,
+                        style: theme.textTheme.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -84,15 +80,6 @@ class RepairCard extends StatelessWidget {
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          if (repair.payment.status ==
-                              PaymentStatus.unpaid) ...[
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.payments_outlined,
-                              size: 16,
-                              color: colorScheme.error,
-                            ),
-                          ],
                         ],
                       ),
                       if (_kDeliveryStatuses.contains(repair.status)) ...[
@@ -113,14 +100,6 @@ class RepairCard extends StatelessWidget {
       ),
     );
   }
-
-  Color _statusColor(RepairStatus status, ColorScheme cs) => switch (status) {
-    RepairStatus.received => cs.tertiary,
-    RepairStatus.waitingForMaterials => cs.error,
-    RepairStatus.inProgress => cs.primary,
-    RepairStatus.done => Colors.green,
-    RepairStatus.returned => cs.onSurfaceVariant,
-  };
 }
 
 class _ReturnDeliveryIndicator extends StatelessWidget {
@@ -163,28 +142,4 @@ class _ReturnDeliveryIndicator extends StatelessWidget {
   }
 
   String _label(AppStrings s) => s.shipmentStatusLabel(delivery.status);
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status, required this.s});
-  final RepairStatus status;
-  final AppStrings s;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final (color, onColor) = repairStatusContainerColors(status, cs);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        s.repairStatusLabelFor(status),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: onColor),
-      ),
-    );
-  }
 }

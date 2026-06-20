@@ -6,10 +6,12 @@ import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_card_sheets.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
+import 'package:latitude_tracker/features/sales/widgets/sale_status_dots.dart';
 
 const _kBadgeRadius = BorderRadius.all(Radius.circular(20));
 
@@ -46,12 +48,6 @@ class _SaleCardState extends State<SaleCard> {
     final reasons = sale.urgencyReasons(level: level);
     final cs = Theme.of(context).colorScheme;
     final s = context.s;
-
-    final accentColor = reasons.isEmpty
-        ? null
-        : level == UrgencyLevel.overdue
-            ? cs.error
-            : cs.warning;
 
     final canMarkPaid = sale.payment.status == PaymentStatus.unpaid;
     final canMarkShipped =
@@ -112,62 +108,71 @@ class _SaleCardState extends State<SaleCard> {
         color: widget.isSelected ? cs.primaryContainer : null,
         child: InkWell(
           onTap: widget.onTap,
-          child: Container(
-            decoration: accentColor != null
-                ? BoxDecoration(
-                    border: Border(
-                      left: BorderSide(color: accentColor, width: 7),
-                    ),
-                  )
-                : null,
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        sale.buyerName,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '€${sale.totalPrice.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ],
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  child: StatusIndicatorStrip(
+                    dots: saleStatusDots(sale, cs),
+                  ),
                 ),
-                const SizedBox(height: 2),
-                _ItemsRow(
-                  sale: sale,
-                  reasons: reasons,
-                  buyerNif: widget.buyerNif,
-                  expanded: _expanded,
-                  onToggle: () => setState(() => _expanded = !_expanded),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      _dateFormat.format(sale.createdAt),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 12, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                sale.buyerName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '€${sale.totalPrice.toStringAsFixed(2)}',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        _ItemsRow(
+                          sale: sale,
+                          reasons: reasons,
+                          buyerNif: widget.buyerNif,
+                          expanded: _expanded,
+                          onToggle: () =>
+                              setState(() => _expanded = !_expanded),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              _dateFormat.format(sale.createdAt),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: cs.onSurfaceVariant),
+                            ),
+                            const Spacer(),
+                            if (sale.scheduledDate != null)
+                              Flexible(child: _ScheduledDateLabel(sale: sale)),
+                          ],
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    if (sale.scheduledDate != null)
-                      Flexible(child: _ScheduledDateLabel(sale: sale)),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                _SaleStageChip(sale: sale),
               ],
             ),
           ),
@@ -248,36 +253,6 @@ class _ItemsRow extends StatelessWidget {
       );
 }
 
-class _SaleStageChip extends StatelessWidget {
-  const _SaleStageChip({required this.sale});
-  final Sale sale;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    final cs = Theme.of(context).colorScheme;
-    final stage = sale.stage;
-
-    final (Color bg, Color fg) = switch (stage) {
-      SaleStage.assembly => (cs.errorContainer, cs.onErrorContainer),
-      SaleStage.payment  => (cs.tertiaryContainer, cs.onTertiaryContainer),
-      SaleStage.shipment => (cs.secondaryContainer, cs.onSecondaryContainer),
-      SaleStage.done     => (cs.primaryContainer, cs.onPrimaryContainer),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: _kBadgeRadius),
-      child: Text(
-        s.saleStageLabel(stage),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-}
 
 class AttentionBadges extends StatelessWidget {
   const AttentionBadges({
