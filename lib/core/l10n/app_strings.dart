@@ -239,6 +239,8 @@ enum AppStrings {
     atFiled: 'Filed',
     atPending: 'Pending',
     setScheduledDate: 'Set scheduled date',
+    shippedAtLabel: 'Shipped at',
+    setShippedAt: 'Set shipped date & time',
     addNotes: 'Add notes',
     notesHintDetail: 'e.g. Gift wrap requested, specific colour...',
     errorDeletingSale: 'Error deleting sale',
@@ -708,6 +710,8 @@ enum AppStrings {
     atFiled: 'Submetido',
     atPending: 'Pendente',
     setScheduledDate: 'Definir data agendada',
+    shippedAtLabel: 'Enviado a',
+    setShippedAt: 'Definir data e hora de envio',
     addNotes: 'Adicionar notas',
     notesHintDetail: 'ex. Embrulho para oferta, cor específica...',
     errorDeletingSale: 'Erro ao eliminar venda',
@@ -1149,6 +1153,8 @@ enum AppStrings {
     required this.atFiled,
     required this.atPending,
     required this.setScheduledDate,
+    required this.shippedAtLabel,
+    required this.setShippedAt,
     required this.addNotes,
     required this.notesHintDetail,
     required this.errorDeletingSale,
@@ -1592,6 +1598,8 @@ enum AppStrings {
   final String atFiled;
   final String atPending;
   final String setScheduledDate;
+  final String shippedAtLabel;
+  final String setShippedAt;
   final String addNotes;
   final String notesHintDetail;
   final String errorDeletingSale;

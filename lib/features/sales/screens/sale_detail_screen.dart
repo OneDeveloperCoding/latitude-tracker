@@ -333,19 +333,6 @@ class _SaleDetailBody extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _SectionCard(
-          title: sale.shipment.type == DeliveryType.pickup
-              ? s.readyBy
-              : s.scheduledLabel,
-          child: _ScheduledDateField(
-            date: sale.scheduledDate,
-            onChanged: (date) => _update(
-              context,
-              sale.copyWith(scheduledDate: date),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
           title: s.sectionDelivery,
           indicator: shipmentDot(sale.shipment, cs),
           child: Column(
@@ -399,19 +386,42 @@ class _SaleDetailBody extends StatelessWidget {
                     icon: Icons.location_on,
                     text: sale.shipment.postalCode!,
                   ),
-                if (sale.shipment.type == DeliveryType.shipping)
-                _TrackingCodeField(
-                  initialValue: sale.shipment.trackingCode ?? '',
-                  onSave: (code) => _update(
-                    context,
-                    sale.copyWith(
-                        shipment: sale.shipment.copyWith(
-                      trackingCode: code.isEmpty ? null : code,
-                    )),
+                if (sale.shipment.type == DeliveryType.shipping) ...[
+                  _TrackingCodeField(
+                    initialValue: sale.shipment.trackingCode ?? '',
+                    onSave: (code) => _update(
+                      context,
+                      sale.copyWith(
+                          shipment: sale.shipment.copyWith(
+                        trackingCode: code.isEmpty ? null : code,
+                      )),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  _ShippedAtField(
+                    shippedAt: sale.shipment.shippedAt,
+                    onChanged: (dt) => _update(
+                      context,
+                      sale.copyWith(
+                          shipment: sale.shipment.copyWith(shippedAt: dt)),
+                    ),
+                  ),
+                ],
               ],
             ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: sale.shipment.type == DeliveryType.pickup
+              ? s.readyBy
+              : s.scheduledLabel,
+          child: _ScheduledDateField(
+            date: sale.scheduledDate,
+            onChanged: (date) => _update(
+              context,
+              sale.copyWith(scheduledDate: date),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -934,6 +944,58 @@ class _ScheduledDateField extends StatelessWidget {
         const Icon(Icons.event, size: 16),
         const SizedBox(width: 8),
         Expanded(child: Text(_dateFormat.format(date!))),
+        TextButton(
+          onPressed: () => _pick(context),
+          child: Text(s.change),
+        ),
+        TextButton(
+          onPressed: () => onChanged(null),
+          child: Text(s.clear),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShippedAtField extends StatelessWidget {
+  const _ShippedAtField({required this.shippedAt, required this.onChanged});
+  static final _dateTimeFormat = DateFormat('EEE, dd MMM yyyy, HH:mm');
+  final DateTime? shippedAt;
+  final ValueChanged<DateTime?> onChanged;
+
+  Future<void> _pick(BuildContext context) async {
+    final initial = shippedAt ?? DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (date == null || !context.mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return;
+    onChanged(DateTime(
+      date.year, date.month, date.day, time.hour, time.minute));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    if (shippedAt == null) {
+      return TextButton.icon(
+        onPressed: () => _pick(context),
+        icon: const Icon(Icons.local_shipping_outlined),
+        label: Text(s.setShippedAt),
+      );
+    }
+    return Row(
+      children: [
+        const Icon(Icons.local_shipping_outlined, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(_dateTimeFormat.format(shippedAt!))),
         TextButton(
           onPressed: () => _pick(context),
           child: Text(s.change),

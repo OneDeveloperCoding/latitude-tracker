@@ -153,6 +153,29 @@ class _RepairDetailBody extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _SectionCard(
+            title: s.sectionPayment,
+            indicator: paymentDot(repair.payment, colorScheme),
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  repair.payment.status == PaymentStatus.paid
+                      ? Icons.check_circle_outline
+                      : Icons.radio_button_unchecked,
+                  color: repair.payment.status == PaymentStatus.paid
+                      ? Colors.green
+                      : colorScheme.error,
+                ),
+                title: Text(repair.payment.status == PaymentStatus.paid
+                    ? s.paid
+                    : s.unpaid),
+                subtitle:
+                    Text(s.paymentMethodLabel(repair.payment.method)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _SectionCard(
             title: s.repairSectionItem,
             children: [
               ListTile(
@@ -196,6 +219,33 @@ class _RepairDetailBody extends StatelessWidget {
                 ),
             ],
           ),
+          const SizedBox(height: 12),
+          _SectionCard(
+            title: s.repairSectionReturn,
+            indicator: contextualReturnDeliveryDot(repair, colorScheme),
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.local_shipping_outlined),
+                title: Text(switch (repair.returnDelivery.type) {
+                  DeliveryType.shipping => s.shipping,
+                  DeliveryType.pickup => s.inPersonPickup,
+                  DeliveryType.handDelivery => s.handDelivery,
+                }),
+                subtitle: Text(
+                    s.shipmentStatusLabel(repair.returnDelivery.status)),
+              ),
+              if (repair.returnDelivery.trackingCode != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.qr_code),
+                  title: Text(repair.returnDelivery.trackingCode!),
+                  subtitle: Text(s.cttTrackingLabel),
+                ),
+              if (!DemoMode.active.value)
+                _ReturnDeliveryActions(repair: repair),
+            ],
+          ),
           if (repair.photoUrls.isNotEmpty) ...[
             const SizedBox(height: 12),
             _SectionCard(
@@ -228,56 +278,6 @@ class _RepairDetailBody extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 12),
-          _SectionCard(
-            title: s.sectionPayment,
-            indicator: paymentDot(repair.payment, colorScheme),
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  repair.payment.status == PaymentStatus.paid
-                      ? Icons.check_circle_outline
-                      : Icons.radio_button_unchecked,
-                  color: repair.payment.status == PaymentStatus.paid
-                      ? Colors.green
-                      : colorScheme.error,
-                ),
-                title: Text(repair.payment.status == PaymentStatus.paid
-                    ? s.paid
-                    : s.unpaid),
-                subtitle:
-                    Text(s.paymentMethodLabel(repair.payment.method)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SectionCard(
-            title: s.repairSectionReturn,
-            indicator: contextualReturnDeliveryDot(repair, colorScheme),
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.local_shipping_outlined),
-                title: Text(switch (repair.returnDelivery.type) {
-                  DeliveryType.shipping => s.shipping,
-                  DeliveryType.pickup => s.inPersonPickup,
-                  DeliveryType.handDelivery => s.handDelivery,
-                }),
-                subtitle: Text(
-                    s.shipmentStatusLabel(repair.returnDelivery.status)),
-              ),
-              if (repair.returnDelivery.trackingCode != null)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.qr_code),
-                  title: Text(repair.returnDelivery.trackingCode!),
-                  subtitle: Text(s.cttTrackingLabel),
-                ),
-              if (!DemoMode.active.value)
-                _ReturnDeliveryActions(repair: repair),
-            ],
-          ),
           if (repair.linkedSaleId != null) ...[
             const SizedBox(height: 12),
             _SectionCard(

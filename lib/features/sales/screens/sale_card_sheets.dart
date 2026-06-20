@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
@@ -13,17 +14,18 @@ Future<PaymentMethod?> showMarkPaidSheet(
       builder: (_) => MarkPaidSheet(currentMethod: payment.method),
     );
 
-/// Returns the entered tracking code string on confirm (may be empty),
-/// or null if the user cancelled.
-Future<String?> showMarkShippedSheet(
+/// Returns the tracking code and shipped timestamp on confirm, or null if
+/// cancelled.
+Future<({String trackingCode, DateTime shippedAt})?> showMarkShippedSheet(
   BuildContext context,
   SaleShipment shipment,
 ) =>
-    showModalBottomSheet<String>(
+    showModalBottomSheet<({String trackingCode, DateTime shippedAt})>(
       context: context,
       isScrollControlled: true,
       builder: (_) => MarkShippedSheet(
         initialTrackingCode: shipment.trackingCode ?? '',
+        initialShippedAt: shipment.shippedAt ?? DateTime.now(),
       ),
     );
 
@@ -107,26 +109,54 @@ class _MarkPaidSheetState extends State<MarkPaidSheet> {
 // ── MarkShippedSheet ─────────────────────────────────────────────────────────
 
 class MarkShippedSheet extends StatefulWidget {
-  const MarkShippedSheet({required this.initialTrackingCode, super.key});
+  const MarkShippedSheet({
+    required this.initialTrackingCode,
+    required this.initialShippedAt,
+    super.key,
+  });
   final String initialTrackingCode;
+  final DateTime initialShippedAt;
 
   @override
   State<MarkShippedSheet> createState() => _MarkShippedSheetState();
 }
 
 class _MarkShippedSheetState extends State<MarkShippedSheet> {
+  static final _dateTimeFormat = DateFormat('dd MMM yyyy, HH:mm');
   late final TextEditingController _controller;
+  late DateTime _shippedAt;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialTrackingCode);
+    _shippedAt = widget.initialShippedAt;
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _shippedAt,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_shippedAt),
+    );
+    if (time == null || !mounted) return;
+    setState(() {
+      _shippedAt = DateTime(
+        date.year, date.month, date.day, time.hour, time.minute);
+
+    });
   }
 
   @override
@@ -155,6 +185,19 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
               ],
             ),
             const SizedBox(height: 16),
+            InkWell(
+              onTap: _pickDateTime,
+              borderRadius: BorderRadius.circular(4),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: s.shippedAtLabel,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: const Icon(Icons.edit_calendar_outlined),
+                ),
+                child: Text(_dateTimeFormat.format(_shippedAt)),
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _controller,
               decoration: InputDecoration(
@@ -174,8 +217,10 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(_controller.text.trim()),
+                  onPressed: () => Navigator.of(context).pop((
+                    trackingCode: _controller.text.trim(),
+                    shippedAt: _shippedAt,
+                  )),
                   child: Text(s.save),
                 ),
               ],
