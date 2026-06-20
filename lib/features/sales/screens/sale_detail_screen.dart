@@ -664,8 +664,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 .map((st) => DropdownMenuItem(
                     value: st, child: Text(s.assemblyLabel(st))))
                 .toList(),
-            onChanged: (v) =>
-                widget.onUpdateItem(_item.copyWith(assemblyStatus: v)),
+            onChanged: (v) {
+              final updated = _item.copyWith(assemblyStatus: v);
+              setState(() => _item = updated);
+              widget.onUpdateItem(updated);
+            },
           ),
           if (_item.photoUrls.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -678,8 +681,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               saleId: widget.saleId,
               itemId: _item.id,
               photoUrls: _item.photoUrls,
-              onChanged: (urls) =>
-                  widget.onUpdateItem(_item.copyWith(photoUrls: urls)),
+              onChanged: (urls) {
+                final updated = _item.copyWith(photoUrls: urls);
+                setState(() => _item = updated);
+                widget.onUpdateItem(updated);
+              },
             ),
           ],
           const SizedBox(height: 16),
