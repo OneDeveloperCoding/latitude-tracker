@@ -1028,14 +1028,11 @@ class _SectionCard extends StatelessWidget {
             Row(
               children: [
                 if (indicator != null) ...[
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: indicator!.color,
-                    ),
-                    child: Icon(indicator!.icon, size: 17, color: Colors.white),
+                  StatusBubble(
+                    icon: indicator!.icon,
+                    color: indicator!.color,
+                    size: 32,
+                    iconSize: 17,
                   ),
                   const SizedBox(width: 10),
                 ],
