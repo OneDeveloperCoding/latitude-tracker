@@ -4,6 +4,7 @@ import 'package:latitude_tracker/core/id_gen.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
 import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
@@ -12,9 +13,11 @@ import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
 import 'package:latitude_tracker/features/repairs/screens/new_repair_screen.dart';
 import 'package:latitude_tracker/features/repairs/widgets/repair_status_colors.dart';
+import 'package:latitude_tracker/features/repairs/widgets/repair_status_dots.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_detail_screen.dart';
 import 'package:latitude_tracker/features/sales/widgets/photo_grid.dart';
+import 'package:latitude_tracker/features/sales/widgets/sale_status_dots.dart';
 
 class RepairDetailScreen extends StatefulWidget {
 
@@ -172,6 +175,7 @@ class _RepairDetailBody extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: s.repairSectionWork,
+            indicator: repairWorkDot(repair.status, colorScheme),
             children: [
               _RepairStatusPicker(repair: repair),
               if (repair.workDone.isNotEmpty)
@@ -225,6 +229,7 @@ class _RepairDetailBody extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: s.sectionPayment,
+            indicator: paymentDot(repair.payment, colorScheme),
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -247,6 +252,7 @@ class _RepairDetailBody extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: s.repairSectionReturn,
+            indicator: contextualReturnDeliveryDot(repair, colorScheme),
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -604,23 +610,37 @@ class _ReturnDeliveryActionsState extends State<_ReturnDeliveryActions> {
 
 class _SectionCard extends StatelessWidget {
 
-  const _SectionCard({required this.title, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.children,
+    this.indicator,
+  });
   final String title;
   final List<Widget> children;
+  final StatusIndicatorDot? indicator;
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+            Row(
+              children: [
+                if (indicator != null) ...[
+                  Icon(indicator!.icon, size: 16, color: indicator!.color),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: cs.primary,
+                      ),
+                ),
+              ],
             ),
             ...children,
           ],
