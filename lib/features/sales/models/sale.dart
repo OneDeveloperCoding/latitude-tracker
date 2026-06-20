@@ -249,15 +249,18 @@ class SaleShipment {
 
   SaleShipment copyWith({
     ShipmentStatus? status,
-    String? trackingCode,
-    String? addressId,
-    String? postalCode,
+    Object? trackingCode = _sentinel,
+    Object? addressId = _sentinel,
+    Object? postalCode = _sentinel,
   }) => SaleShipment(
     type: type,
     status: status ?? this.status,
-    trackingCode: trackingCode ?? this.trackingCode,
-    addressId: addressId ?? this.addressId,
-    postalCode: postalCode ?? this.postalCode,
+    trackingCode:
+        trackingCode == _sentinel ? this.trackingCode : trackingCode as String?,
+    addressId:
+        addressId == _sentinel ? this.addressId : addressId as String?,
+    postalCode:
+        postalCode == _sentinel ? this.postalCode : postalCode as String?,
   );
 }
 

@@ -7,6 +7,7 @@ import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
+import 'package:latitude_tracker/features/sales/screens/sale_card_sheets.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 
@@ -65,11 +66,10 @@ class _SaleCardState extends State<SaleCard> {
               extentRatio: 0.35,
               children: [
                 SlidableAction(
-                  onPressed: (ctx) async {
-                    final method = await _showMarkPaidSheet(
+                  onPressed: (_) async {
+                    final method = await showMarkPaidSheet(
                       context,
                       sale.payment,
-                      s,
                     );
                     if (!mounted || method == null) return;
                     widget.onMarkPaid(method);
@@ -88,11 +88,10 @@ class _SaleCardState extends State<SaleCard> {
               extentRatio: 0.35,
               children: [
                 SlidableAction(
-                  onPressed: (ctx) async {
-                    final code = await _showMarkShippedSheet(
+                  onPressed: (_) async {
+                    final code = await showMarkShippedSheet(
                       context,
                       sale.shipment,
-                      s,
                     );
                     if (!mounted || code == null) return;
                     widget.onMarkShipped(
@@ -172,208 +171,6 @@ class _SaleCardState extends State<SaleCard> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Bottom sheet helpers ─────────────────────────────────────────────────────
-
-Future<PaymentMethod?> _showMarkPaidSheet(
-  BuildContext context,
-  SalePayment payment,
-  AppStrings s,
-) =>
-    showModalBottomSheet<PaymentMethod>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => _MarkPaidSheet(
-        currentMethod: payment.method,
-        strings: s,
-      ),
-    );
-
-/// Returns the entered tracking code string on confirm (may be empty),
-/// or null if the user cancelled.
-Future<String?> _showMarkShippedSheet(
-  BuildContext context,
-  SaleShipment shipment,
-  AppStrings s,
-) =>
-    showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => _MarkShippedSheet(
-        initialTrackingCode: shipment.trackingCode ?? '',
-        strings: s,
-      ),
-    );
-
-// ── _MarkPaidSheet ───────────────────────────────────────────────────────────
-
-class _MarkPaidSheet extends StatefulWidget {
-  const _MarkPaidSheet({
-    required this.currentMethod,
-    required this.strings,
-  });
-
-  final PaymentMethod currentMethod;
-  final AppStrings strings;
-
-  @override
-  State<_MarkPaidSheet> createState() => _MarkPaidSheetState();
-}
-
-class _MarkPaidSheetState extends State<_MarkPaidSheet> {
-  late PaymentMethod _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.currentMethod;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = widget.strings;
-    final cs = Theme.of(context).colorScheme;
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.payments_outlined, color: cs.primary),
-                const SizedBox(width: 12),
-                Text(s.markAsPaidTitle,
-                    style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 8),
-            RadioGroup<PaymentMethod>(
-              groupValue: _selected,
-              onChanged: (v) => setState(() => _selected = v!),
-              child: Column(
-                children: kPaymentMethodOrder
-                    .map(
-                      (method) => RadioListTile<PaymentMethod>(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(s.paymentMethodLabel(method)),
-                        value: method,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(s.cancel),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(_selected),
-                  child: Text(s.save),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── _MarkShippedSheet ────────────────────────────────────────────────────────
-
-class _MarkShippedSheet extends StatefulWidget {
-  const _MarkShippedSheet({
-    required this.initialTrackingCode,
-    required this.strings,
-  });
-
-  final String initialTrackingCode;
-  final AppStrings strings;
-
-  @override
-  State<_MarkShippedSheet> createState() => _MarkShippedSheetState();
-}
-
-class _MarkShippedSheetState extends State<_MarkShippedSheet> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialTrackingCode);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = widget.strings;
-    final cs = Theme.of(context).colorScheme;
-
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          20,
-          24,
-          16 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.local_shipping_outlined, color: cs.secondary),
-                const SizedBox(width: 12),
-                Text(s.markAsShippedTitle,
-                    style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                labelText: s.cttTrackingLabel,
-                hintText: s.cttTrackingHint,
-                border: const OutlineInputBorder(),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(s.cancel),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(_controller.text.trim()),
-                  child: Text(s.save),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
