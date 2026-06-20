@@ -18,7 +18,11 @@ class TimelineView extends StatelessWidget {
   final String? selectedSaleId;
   final void Function(Sale) onSaleTap;
   final void Function(Sale sale, PaymentMethod method) onMarkPaid;
-  final void Function(Sale sale, {String? trackingCode}) onMarkShipped;
+  final void Function(
+    Sale sale, {
+    required DateTime shippedAt,
+    String? trackingCode,
+  }) onMarkShipped;
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +55,12 @@ class TimelineView extends StatelessWidget {
                     isSelected: sale.id == selectedSaleId,
                     onTap: () => onSaleTap(sale),
                     onMarkPaid: (method) => onMarkPaid(sale, method),
-                    onMarkShipped: ({trackingCode}) =>
-                        onMarkShipped(sale, trackingCode: trackingCode),
+                    onMarkShipped: ({required shippedAt, trackingCode}) =>
+                        onMarkShipped(
+                          sale,
+                          shippedAt: shippedAt,
+                          trackingCode: trackingCode,
+                        ),
                   ),
                 )),
             const Divider(height: 1),
