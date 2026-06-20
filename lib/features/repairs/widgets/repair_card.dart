@@ -37,8 +37,7 @@ class RepairCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: StatusIndicatorStrip(
                   dots: repairStatusDots(repair, colorScheme),
                 ),
