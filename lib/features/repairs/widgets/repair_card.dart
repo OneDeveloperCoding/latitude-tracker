@@ -4,7 +4,6 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/widgets/repair_status_dots.dart';
-import 'package:latitude_tracker/features/sales/models/sale.dart';
 
 const Set<RepairStatus> _kDeliveryStatuses = {
   RepairStatus.done,
@@ -123,22 +122,8 @@ class _ReturnDeliveryIndicator extends StatelessWidget {
   }
 
   (IconData, Color) _iconAndColor(ColorScheme cs) {
-    if (delivery.type == DeliveryType.pickup) {
-      return (Icons.store, Colors.green);
-    }
-    if (delivery.type == DeliveryType.handDelivery) {
-      return delivery.status == ShipmentStatus.delivered
-          ? (Icons.directions_walk, Colors.green)
-          : (Icons.directions_walk, cs.onSurfaceVariant);
-    }
-    return switch (delivery.status) {
-      ShipmentStatus.pending => (
-        Icons.local_shipping_outlined,
-        cs.onSurfaceVariant,
-      ),
-      ShipmentStatus.shipped => (Icons.local_shipping, Colors.blue),
-      ShipmentStatus.delivered => (Icons.local_shipping, Colors.green),
-    };
+    final dot = returnDeliveryDot(delivery, cs);
+    return (dot.icon, dot.color);
   }
 
   String _label(AppStrings s) => s.shipmentStatusLabel(delivery.status);

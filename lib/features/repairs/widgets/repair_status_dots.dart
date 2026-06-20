@@ -33,8 +33,20 @@ StatusIndicatorDot returnDeliveryDot(
   return StatusIndicatorDot(icon: icon, color: color);
 }
 
+/// Shows the return delivery dot muted when the repair hasn't reached a status
+/// where return delivery is relevant (done or returned). Keeps the strip's
+/// three slots always visible without implying an overdue return shipment.
+StatusIndicatorDot contextualReturnDeliveryDot(Repair repair, ColorScheme cs) {
+  const applicable = {RepairStatus.done, RepairStatus.returned};
+  final dot = returnDeliveryDot(repair.returnDelivery, cs);
+  if (!applicable.contains(repair.status)) {
+    return StatusIndicatorDot(icon: dot.icon, color: cs.onSurfaceVariant);
+  }
+  return dot;
+}
+
 List<StatusIndicatorDot> repairStatusDots(Repair repair, ColorScheme cs) => [
       repairWorkDot(repair.status, cs),
       paymentDot(repair.payment, cs),
-      returnDeliveryDot(repair.returnDelivery, cs),
+      contextualReturnDeliveryDot(repair, cs),
     ];

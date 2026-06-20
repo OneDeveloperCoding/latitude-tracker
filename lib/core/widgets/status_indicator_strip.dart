@@ -16,13 +16,16 @@ class StatusIndicatorStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: dots
-          .map(
-            (d) => Icon(d.icon, size: 16, color: d.color),
-          )
-          .toList(),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < dots.length; i++) ...[
+            if (i > 0) const SizedBox(height: 8),
+            Icon(dots[i].icon, size: 16, color: dots[i].color),
+          ],
+        ],
+      ),
     );
   }
 }

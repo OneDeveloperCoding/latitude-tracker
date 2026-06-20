@@ -4,6 +4,7 @@ import 'package:latitude_tracker/core/id_gen.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
 import 'package:latitude_tracker/features/buyers/screens/buyer_detail_screen.dart';
@@ -174,8 +175,7 @@ class _RepairDetailBody extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: s.repairSectionWork,
-            leadingIcon: Icons.handyman_outlined,
-            iconColor: repairWorkDot(repair.status, colorScheme).color,
+            indicator: repairWorkDot(repair.status, colorScheme),
             children: [
               _RepairStatusPicker(repair: repair),
               if (repair.workDone.isNotEmpty)
@@ -229,10 +229,7 @@ class _RepairDetailBody extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: s.sectionPayment,
-            leadingIcon: repair.payment.status == PaymentStatus.paid
-                ? Icons.payments
-                : Icons.payments_outlined,
-            iconColor: paymentDot(repair.payment, colorScheme).color,
+            indicator: paymentDot(repair.payment, colorScheme),
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -255,13 +252,7 @@ class _RepairDetailBody extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: s.repairSectionReturn,
-            leadingIcon: switch (repair.returnDelivery.type) {
-              DeliveryType.shipping => Icons.local_shipping_outlined,
-              DeliveryType.pickup => Icons.store,
-              DeliveryType.handDelivery => Icons.directions_walk,
-            },
-            iconColor:
-                returnDeliveryDot(repair.returnDelivery, colorScheme).color,
+            indicator: contextualReturnDeliveryDot(repair, colorScheme),
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -622,13 +613,11 @@ class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
     required this.children,
-    this.leadingIcon,
-    this.iconColor,
+    this.indicator,
   });
   final String title;
   final List<Widget> children;
-  final IconData? leadingIcon;
-  final Color? iconColor;
+  final StatusIndicatorDot? indicator;
 
   @override
   Widget build(BuildContext context) {
@@ -641,8 +630,8 @@ class _SectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (leadingIcon != null) ...[
-                  Icon(leadingIcon, size: 16, color: iconColor),
+                if (indicator != null) ...[
+                  Icon(indicator!.icon, size: 16, color: indicator!.color),
                   const SizedBox(width: 6),
                 ],
                 Text(

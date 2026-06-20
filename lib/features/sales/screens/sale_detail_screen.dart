@@ -12,6 +12,7 @@ import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/store_state.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
@@ -265,10 +266,7 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionItems,
-          leadingIcon: sale.derivedAssemblyStatus == AssemblyStatus.ready
-              ? Icons.build
-              : Icons.build_outlined,
-          iconColor: assemblyDot(sale.derivedAssemblyStatus, cs).color,
+          indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
           child: Column(
             children: [
               ...sale.items.map((item) => _ItemSummaryTile(
@@ -281,10 +279,7 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionPayment,
-          leadingIcon: sale.payment.status == PaymentStatus.paid
-              ? Icons.payments
-              : Icons.payments_outlined,
-          iconColor: paymentDot(sale.payment, cs).color,
+          indicator: paymentDot(sale.payment, cs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -349,12 +344,7 @@ class _SaleDetailBody extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: s.sectionDelivery,
-          leadingIcon: switch (sale.shipment.type) {
-            DeliveryType.shipping => Icons.local_shipping_outlined,
-            DeliveryType.pickup => Icons.store,
-            DeliveryType.handDelivery => Icons.directions_walk,
-          },
-          iconColor: shipmentDot(sale.shipment, cs).color,
+          indicator: shipmentDot(sale.shipment, cs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1020,13 +1010,11 @@ class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
     required this.child,
-    this.leadingIcon,
-    this.iconColor,
+    this.indicator,
   });
   final String title;
   final Widget child;
-  final IconData? leadingIcon;
-  final Color? iconColor;
+  final StatusIndicatorDot? indicator;
 
   @override
   Widget build(BuildContext context) {
@@ -1039,8 +1027,8 @@ class _SectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (leadingIcon != null) ...[
-                  Icon(leadingIcon, size: 16, color: iconColor),
+                if (indicator != null) ...[
+                  Icon(indicator!.icon, size: 16, color: indicator!.color),
                   const SizedBox(width: 6),
                 ],
                 Text(
