@@ -17,6 +17,9 @@ abstract class SaleRepository {
   Future<void> createSale(Sale sale);
   Future<bool> createSaleIfNotExists(Sale sale);
   Future<void> updateSale(Sale sale);
+  // Writes only the specified dot-notation fields, preventing stale-snapshot
+  // overwrites when only payment or shipment state needs to change.
+  Future<void> patchSale(String id, Map<String, dynamic> fields);
   Future<void> deleteSale(String id);
   Future<List<Sale>> getSalesForYear(int year);
   Future<void> deleteAllSalesForYear(int year, {bool deletePhotos});
@@ -58,6 +61,10 @@ class _FirestoreSaleRepository implements SaleRepository {
   @override
   Future<void> updateSale(Sale sale) =>
       _salesRef.doc(sale.id).update(sale.toFirestore());
+
+  @override
+  Future<void> patchSale(String id, Map<String, dynamic> fields) =>
+      _salesRef.doc(id).update(fields);
 
   @override
   Future<List<Sale>> getSalesForYear(int year) => _salesRef

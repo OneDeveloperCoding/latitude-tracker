@@ -85,14 +85,10 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   Future<void> _markSalePaid(Sale sale, PaymentMethod method) async {
     try {
-      await _repository.updateSale(
-        sale.copyWith(
-          payment: sale.payment.copyWith(
-            status: PaymentStatus.paid,
-            method: method,
-          ),
-        ),
-      );
+      await _repository.patchSale(sale.id, {
+        'payment.status': PaymentStatus.paid.name,
+        'payment.method': method.name,
+      });
     } on Object catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,14 +99,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   Future<void> _markSaleShipped(Sale sale, {String? trackingCode}) async {
     try {
-      await _repository.updateSale(
-        sale.copyWith(
-          shipment: sale.shipment.copyWith(
-            status: ShipmentStatus.shipped,
-            trackingCode: trackingCode,
-          ),
-        ),
-      );
+      await _repository.patchSale(sale.id, {
+        'shipment.status': ShipmentStatus.shipped.name,
+        // null explicitly clears a previously-set tracking code in Firestore.
+        'shipment.trackingCode': trackingCode,
+      });
     } on Object catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

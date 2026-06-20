@@ -80,6 +80,47 @@ class InMemorySaleRepository implements SaleRepository {
   }
 
   @override
+  Future<void> patchSale(String id, Map<String, dynamic> fields) async {
+    final idx = _sales.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final sale = _sales[idx];
+    // Apply dot-notation patches to the serialised form, then reconstruct
+    // only the sub-objects that changed so Timestamps in other fields are
+    // never touched.
+    final data = sale.toFirestore();
+    for (final entry in fields.entries) {
+      final parts = entry.key.split('.');
+      if (parts.length == 1) {
+        data[parts[0]] = entry.value;
+      } else {
+        final nested = Map<String, dynamic>.from(
+          (data[parts[0]] as Map<String, dynamic>?) ?? {},
+        );
+        nested[parts[1]] = entry.value;
+        data[parts[0]] = nested;
+      }
+    }
+    _sales[idx] = Sale(
+      id: sale.id,
+      buyerId: sale.buyerId,
+      buyerName: sale.buyerName,
+      items: sale.items,
+      payment: SalePayment.fromMap(
+        data['payment'] as Map<String, dynamic>,
+      ),
+      shipment: SaleShipment.fromMap(
+        data['shipment'] as Map<String, dynamic>,
+      ),
+      requiresNif: sale.requiresNif,
+      atSubmissionDone: sale.atSubmissionDone,
+      createdAt: sale.createdAt,
+      scheduledDate: sale.scheduledDate,
+      notes: sale.notes,
+    );
+    _emit();
+  }
+
+  @override
   Future<void> deleteSale(String id) async {
     _sales.removeWhere((s) => s.id == id);
     _emit();

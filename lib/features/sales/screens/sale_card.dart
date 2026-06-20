@@ -327,52 +327,54 @@ class _MarkShippedSheetState extends State<_MarkShippedSheet> {
     final s = widget.strings;
     final cs = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        20,
-        24,
-        16 + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.local_shipping_outlined, color: cs.secondary),
-              const SizedBox(width: 12),
-              Text(s.markAsShippedTitle,
-                  style: Theme.of(context).textTheme.titleMedium),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              labelText: s.cttTrackingLabel,
-              hintText: s.cttTrackingHint,
-              border: const OutlineInputBorder(),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          20,
+          24,
+          16 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_shipping_outlined, color: cs.secondary),
+                const SizedBox(width: 12),
+                Text(s.markAsShippedTitle,
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
             ),
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(s.cancel),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                labelText: s.cttTrackingLabel,
+                hintText: s.cttTrackingHint,
+                border: const OutlineInputBorder(),
               ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: () =>
-                    Navigator.of(context).pop(_controller.text.trim()),
-                child: Text(s.save),
-              ),
-            ],
-          ),
-        ],
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(s.cancel),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(_controller.text.trim()),
+                  child: Text(s.save),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
