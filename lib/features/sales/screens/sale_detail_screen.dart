@@ -157,16 +157,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             title: Text(sale.buyerName),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit),
-                tooltip: context.s.editSale,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => NewSaleScreen(sale: sale),
-                  ),
-                ),
-              ),
-              IconButton(
                 icon: const Icon(Icons.copy_outlined),
                 tooltip: context.s.duplicateSaleTooltip,
                 onPressed: () => Navigator.push(
@@ -183,6 +173,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 onPressed: () => _confirmDelete(context, sale),
               ),
             ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: context.s.editSale,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => NewSaleScreen(sale: sale),
+              ),
+            ),
+            child: const Icon(Icons.edit),
           ),
           body: _SaleDetailBody(sale: sale, repository: _repository),
         );
