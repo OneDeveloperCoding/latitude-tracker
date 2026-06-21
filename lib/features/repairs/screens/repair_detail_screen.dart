@@ -120,29 +120,26 @@ class _RepairDetailBody extends StatelessWidget {
 
     return ValueListenableBuilder<bool>(
       valueListenable: DemoMode.active,
-      builder: (context, isDemo, _) => Scaffold(
+      builder: (context, _, _) => Scaffold(
       appBar: AppBar(
         title: Text(repair.itemDescription),
         actions: [
-          if (!isDemo)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: s.deleteRepair,
-              onPressed: () => onDelete(context, repair),
-            ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: s.deleteRepair,
+            onPressed: () => onDelete(context, repair),
+          ),
         ],
       ),
-      floatingActionButton: isDemo
-          ? null
-          : FloatingActionButton(
-              tooltip: s.edit,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => NewRepairScreen(existing: repair),
-                ),
-              ),
-              child: const Icon(Icons.edit),
-            ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: s.edit,
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => NewRepairScreen(existing: repair),
+          ),
+        ),
+        child: const Icon(Icons.edit),
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
@@ -244,8 +241,7 @@ class _RepairDetailBody extends StatelessWidget {
                   title: Text(repair.returnDelivery.trackingCode!),
                   subtitle: Text(s.cttTrackingLabel),
                 ),
-              if (!DemoMode.active.value)
-                _ReturnDeliveryActions(repair: repair),
+              _ReturnDeliveryActions(repair: repair),
             ],
           ),
           if (repair.photoUrls.isNotEmpty) ...[
@@ -323,12 +319,10 @@ class _ContactRow extends StatelessWidget {
       leading: const Icon(Icons.person_outline),
       title: Text(repair.contactName),
       subtitle: Text(s.repairContactFreeText),
-      trailing: DemoMode.active.value
-          ? null
-          : TextButton(
-              onPressed: () => _promoteToBuyer(context),
-              child: Text(s.promoteToBuyer),
-            ),
+      trailing: TextButton(
+        onPressed: () => _promoteToBuyer(context),
+        child: Text(s.promoteToBuyer),
+      ),
     );
   }
 
@@ -490,7 +484,7 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
 
   Widget _statusChipsWrap(AppStrings s, ColorScheme cs) {
     final selectedStatus = _optimisticStatus ?? widget.repair.status;
-    final chipsDisabled = DemoMode.active.value || _isUpdating;
+    final chipsDisabled = _isUpdating;
 
     return Wrap(
       spacing: 8,
