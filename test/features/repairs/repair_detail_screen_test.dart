@@ -50,11 +50,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ChoiceChip), findsNWidgets(RepairStatus.values.length));
-    expect(_findChip(tester, 'Em curso').selected, isTrue);
+    expect(_findChip(tester, 'Em progresso').selected, isTrue);
     expect(_findChip(tester, 'Devolvido').selected, isFalse);
   });
 
-  testWidgets('demo mode renders chips non-interactive', (tester) async {
+  testWidgets('demo mode renders chips interactive', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -66,12 +66,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(_findChip(tester, 'Devolvido').onSelected, isNull);
+    // Demo writes go to the in-memory repo — chips must be enabled.
+    expect(_findChip(tester, 'Devolvido').onSelected, isNotNull);
 
     await tester.tap(find.text('Devolvido'));
     await tester.pumpAndSettle();
 
-    expect(_findChip(tester, 'Em curso').selected, isTrue);
-    expect(_findChip(tester, 'Devolvido').selected, isFalse);
+    expect(_findChip(tester, 'Devolvido').selected, isTrue);
+    expect(_findChip(tester, 'Em progresso').selected, isFalse);
   });
 }

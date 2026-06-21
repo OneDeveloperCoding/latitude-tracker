@@ -1930,7 +1930,7 @@ enum AppStrings {
       ? switch (s) {
           AssemblyStatus.notStarted => 'Não iniciado',
           AssemblyStatus.waitingForMaterials => 'Aguarda materiais',
-          AssemblyStatus.inProgress => 'Em curso',
+          AssemblyStatus.inProgress => 'Em progresso',
           AssemblyStatus.ready => 'Pronto',
         }
       : switch (s) {
@@ -1966,7 +1966,7 @@ enum AppStrings {
       ? switch (s) {
           RepairStatus.received => 'Recebido',
           RepairStatus.waitingForMaterials => 'A aguardar materiais',
-          RepairStatus.inProgress => 'Em curso',
+          RepairStatus.inProgress => 'Em progresso',
           RepairStatus.done => 'Concluído',
           RepairStatus.returned => 'Devolvido',
         }
