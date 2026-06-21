@@ -138,7 +138,12 @@ class _DatesRow extends StatelessWidget {
       children: [
         Icon(Icons.calendar_today, size: 11, color: color, semanticLabel: ''),
         const SizedBox(width: 3),
-        Text(_longFormat.format(repair.createdAt), style: style),
+        Text(
+          _longFormat.format(repair.createdAt),
+          style: style,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+        ),
       ],
     );
   }

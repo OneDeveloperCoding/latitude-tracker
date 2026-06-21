@@ -319,12 +319,10 @@ class _ContactRow extends StatelessWidget {
       leading: const Icon(Icons.person_outline),
       title: Text(repair.contactName),
       subtitle: Text(s.repairContactFreeText),
-      trailing: DemoMode.active.value
-          ? null
-          : TextButton(
-              onPressed: () => _promoteToBuyer(context),
-              child: Text(s.promoteToBuyer),
-            ),
+      trailing: TextButton(
+        onPressed: () => _promoteToBuyer(context),
+        child: Text(s.promoteToBuyer),
+      ),
     );
   }
 
@@ -486,7 +484,7 @@ class _RepairStatusPickerState extends State<_RepairStatusPicker> {
 
   Widget _statusChipsWrap(AppStrings s, ColorScheme cs) {
     final selectedStatus = _optimisticStatus ?? widget.repair.status;
-    final chipsDisabled = DemoMode.active.value || _isUpdating;
+    final chipsDisabled = _isUpdating;
 
     return Wrap(
       spacing: 8,
