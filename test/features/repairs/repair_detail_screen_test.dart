@@ -50,7 +50,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ChoiceChip), findsNWidgets(RepairStatus.values.length));
-    expect(_findChip(tester, 'Em curso').selected, isTrue);
+    expect(_findChip(tester, 'Em progresso').selected, isTrue);
     expect(_findChip(tester, 'Devolvido').selected, isFalse);
   });
 
@@ -73,6 +73,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_findChip(tester, 'Devolvido').selected, isTrue);
-    expect(_findChip(tester, 'Em curso').selected, isFalse);
+    expect(_findChip(tester, 'Em progresso').selected, isFalse);
   });
 }
