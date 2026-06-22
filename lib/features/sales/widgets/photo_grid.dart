@@ -15,6 +15,7 @@ class PhotoGrid extends StatefulWidget {
     required this.photoUrls,
     required this.onChanged,
     super.key,
+    this.isReadOnly = false,
     this.onPhotoAdded,
     this.onPhotoRemoved,
     this.uploadCallback,
@@ -23,6 +24,7 @@ class PhotoGrid extends StatefulWidget {
   final String itemId;
   final List<String> photoUrls;
   final ValueChanged<List<String>> onChanged;
+  final bool isReadOnly;
 
   /// Called with the URL when a new photo finishes uploading.
   final ValueChanged<String>? onPhotoAdded;
@@ -156,14 +158,19 @@ class _PhotoGridState extends State<PhotoGrid> {
                 url: entry.value,
                 isUploading: false,
                 onTap: () => _viewPhoto(context, entry.key),
-                onDelete: () => _removePhoto(entry.key),
+                onDelete: widget.isReadOnly
+                    ? null
+                    : () => _removePhoto(entry.key),
               ),
             ),
-            ...List.generate(
-              _uploadingCount,
-              (_) => const _PhotoTile(isUploading: true),
-            ),
-            if (!DemoMode.active.value) _AddPhotoTile(onTap: _showSourcePicker),
+            if (!widget.isReadOnly) ...[
+              ...List.generate(
+                _uploadingCount,
+                (_) => const _PhotoTile(isUploading: true),
+              ),
+              if (!DemoMode.active.value)
+                _AddPhotoTile(onTap: _showSourcePicker),
+            ],
           ],
         ),
         if (photos.isNotEmpty)
