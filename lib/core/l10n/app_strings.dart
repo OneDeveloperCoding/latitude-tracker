@@ -184,6 +184,7 @@ enum AppStrings {
     sectionComponents: 'Components needed',
     sectionPayment: 'Payment',
     sectionDelivery: 'Delivery',
+    deliveryStatusLabel: 'Delivery status',
     sectionNotes: 'Notes',
     descriptionLabel: 'Description *',
     descriptionHint: 'e.g. Silver necklace with blue beads',
@@ -655,6 +656,7 @@ enum AppStrings {
     sectionComponents: 'Materiais necessários',
     sectionPayment: 'Pagamento',
     sectionDelivery: 'Entrega',
+    deliveryStatusLabel: 'Estado de entrega',
     sectionNotes: 'Notas',
     descriptionLabel: 'Descrição *',
     descriptionHint: 'ex. Colar de prata com contas azuis',
@@ -1098,6 +1100,7 @@ enum AppStrings {
     required this.sectionComponents,
     required this.sectionPayment,
     required this.sectionDelivery,
+    required this.deliveryStatusLabel,
     required this.sectionNotes,
     required this.descriptionLabel,
     required this.descriptionHint,
@@ -1540,6 +1543,7 @@ enum AppStrings {
   final String sectionComponents;
   final String sectionPayment;
   final String sectionDelivery;
+  final String deliveryStatusLabel;
   final String sectionNotes;
   final String descriptionLabel;
   final String descriptionHint;
