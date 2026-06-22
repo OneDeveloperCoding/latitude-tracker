@@ -48,6 +48,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   Sale? _selectedSale;
   final _rightPanelKey = GlobalKey<NavigatorState>();
+  final _editModeSignal = ValueNotifier<int>(0);
 
   bool get _loading => SalesStore.current == null;
 
@@ -123,6 +124,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     SalesStore.state.removeListener(_onStoreChanged);
     BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
+    _editModeSignal.dispose();
     super.dispose();
   }
 
@@ -139,12 +141,16 @@ class _SalesListScreenState extends State<SalesListScreen> {
       return;
     }
     if (_selectedSale?.id == sale.id) return;
+    _editModeSignal.value = 0;
     setState(() => _selectedSale = sale);
     final nav = _rightPanelKey.currentState;
     if (nav != null) {
       nav.popUntil((r) => r.isFirst);
       unawaited(nav.push(MaterialPageRoute<void>(
-        builder: (_) => SaleDetailScreen(saleId: sale.id),
+        builder: (_) => SaleDetailScreen(
+          saleId: sale.id,
+          editModeSignal: _editModeSignal,
+        ),
       )));
     }
   }
@@ -282,11 +288,18 @@ class _SalesListScreenState extends State<SalesListScreen> {
       ],
     );
 
-    final fab = FloatingActionButton(
-      heroTag: null,
-      onPressed: _openNewSale,
-      child: const Icon(Icons.add),
-    );
+    final fab = isTablet && _selectedSale != null
+        ? FloatingActionButton(
+            heroTag: null,
+            tooltip: context.s.editSale,
+            onPressed: () => _editModeSignal.value++,
+            child: const Icon(Icons.edit),
+          )
+        : FloatingActionButton(
+            heroTag: null,
+            onPressed: _openNewSale,
+            child: const Icon(Icons.add),
+          );
 
     final appBar = widget.appBarTitle != null
         ? AppBar(title: Text(widget.appBarTitle!))

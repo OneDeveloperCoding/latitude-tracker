@@ -35,6 +35,15 @@ enum DeliveryType { shipping, pickup, handDelivery }
 
 enum ShipmentStatus { pending, shipped, delivered }
 
+/// Returns the statuses reachable for [type]. Pickup and hand-delivery skip
+/// the `shipped` state; shipping allows all three.
+List<ShipmentStatus> availableShipmentStatuses(DeliveryType type) {
+  if (type == DeliveryType.pickup || type == DeliveryType.handDelivery) {
+    return [ShipmentStatus.pending, ShipmentStatus.delivered];
+  }
+  return ShipmentStatus.values;
+}
+
 enum SaleStage { assembly, payment, shipment, done }
 
 extension PaymentMethodLabel on PaymentMethod {
