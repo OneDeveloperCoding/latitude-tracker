@@ -124,6 +124,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
     SalesStore.state.removeListener(_onStoreChanged);
     BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
+    _editModeSignal.dispose();
     super.dispose();
   }
 

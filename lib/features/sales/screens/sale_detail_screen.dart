@@ -182,17 +182,18 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   Future<void> _cancelEdit() async {
-    try {
-      // Delete photos of items that were added in this edit session.
-      for (final item in _editItems) {
-        if (!_originalItemIds.contains(item.id)) {
-          for (final url in item.photoUrls) {
+    // Delete photos of items that were added in this edit session.
+    // Per-URL try/catch so a single failure doesn't orphan the remaining photos.
+    for (final item in _editItems) {
+      if (!_originalItemIds.contains(item.id)) {
+        for (final url in item.photoUrls) {
+          try {
             await _photoService.deletePhoto(url);
+          } on Object catch (e, st) {
+            logError(e, st);
           }
         }
       }
-    } on Object catch (e, st) {
-      logError(e, st);
     }
     if (!mounted) return;
     setState(() {
@@ -249,7 +250,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       if (!mounted) return;
       setState(() {
         _isEditing = false;
-        _isSaving = false;
         _editItems = [];
         _pendingDeletions = [];
         _buyerAddresses = [];
@@ -663,11 +663,17 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     if (!statuses.contains(_editShipmentStatus)) {
                       _editShipmentStatus = ShipmentStatus.pending;
                     }
+                    // Clear captured shipped date when leaving shipping type so
+                    // it doesn't silently re-attach if the user switches back.
+                    if (newType != DeliveryType.shipping) {
+                      _editShippedAt = null;
+                    }
                   });
                 },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<ShipmentStatus>(
+                key: ValueKey(_editDeliveryType),
                 initialValue: _editShipmentStatus,
                 decoration: InputDecoration(
                   labelText: s.deliveryStatusLabel,
@@ -939,18 +945,20 @@ class _SaleDetailReadBody extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          title: sale.shipment.type == DeliveryType.pickup
-              ? s.readyBy
-              : s.scheduledLabel,
-          child: _ScheduledDateField(
-            date: sale.scheduledDate,
-            isPickup: sale.shipment.type == DeliveryType.pickup,
-            isReadOnly: true,
-            onChanged: (_) {},
+        if (sale.scheduledDate != null) ...[
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: sale.shipment.type == DeliveryType.pickup
+                ? s.readyBy
+                : s.scheduledLabel,
+            child: _ScheduledDateField(
+              date: sale.scheduledDate,
+              isPickup: sale.shipment.type == DeliveryType.pickup,
+              isReadOnly: true,
+              onChanged: (_) {},
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 16),
         _RepairsSection(saleId: sale.id),
         if (sale.notes != null) ...[
