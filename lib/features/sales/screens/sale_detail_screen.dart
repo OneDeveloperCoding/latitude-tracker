@@ -51,13 +51,13 @@ class SaleDetailScreen extends StatefulWidget {
 }
 
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
-  // ── stream ──────────────────────────────────────────────────────────────────
+  // ── stream ─────────────────────────────────────────────────────────────────
   late final SaleRepository _repository;
   late final Stream<Sale?> _stream;
   bool _popping = false;
   Sale? _lastKnownSale;
 
-  // ── edit mode ────────────────────────────────────────────────────────────────
+  // ── edit mode ──────────────────────────────────────────────────────────────
   final _photoService = PhotoService();
   bool _isEditing = false;
   bool _isSaving = false;
@@ -182,8 +182,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   Future<void> _cancelEdit() async {
-    // Delete photos of items that were added in this edit session.
-    // Per-URL try/catch so a single failure doesn't orphan the remaining photos.
+    // Delete photos of items added in this session.
+    // Per-URL try/catch so one failure doesn't orphan the rest.
     for (final item in _editItems) {
       if (!_originalItemIds.contains(item.id)) {
         for (final url in item.photoUrls) {
@@ -784,7 +784,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 }
 
-// ── Read-only detail body ──────────────────────────────────────────────────────
+// ── Read-only detail body ────────────────────────────────────────────────────
 
 class _SaleDetailReadBody extends StatelessWidget {
   const _SaleDetailReadBody({required this.sale});
@@ -974,7 +974,7 @@ class _SaleDetailReadBody extends StatelessWidget {
   }
 }
 
-// ── Item summary tile (read-only) ─────────────────────────────────────────────
+// ── Item summary tile (read-only) ────────────────────────────────────────────
 
 class _ItemSummaryTile extends StatelessWidget {
   const _ItemSummaryTile({required this.item, required this.onTap});
@@ -1029,7 +1029,7 @@ class _ItemSummaryTile extends StatelessWidget {
   }
 }
 
-// ── Edit item row (used in edit body) ─────────────────────────────────────────
+// ── Edit item row (used in edit body) ────────────────────────────────────────
 
 class _EditItemRow extends StatelessWidget {
   const _EditItemRow({
@@ -1076,7 +1076,7 @@ class _EditItemRow extends StatelessWidget {
   }
 }
 
-// ── Item detail sheet (read-only in read mode) ────────────────────────────────
+// ── Item detail sheet (read-only in read mode) ───────────────────────────────
 
 class _ItemDetailSheet extends StatefulWidget {
   const _ItemDetailSheet({
@@ -1430,7 +1430,7 @@ class _InteractiveComponentTile extends StatelessWidget {
   }
 }
 
-// ── Tracking code field ───────────────────────────────────────────────────────
+// ── Tracking code field ──────────────────────────────────────────────────────
 
 class _TrackingCodeField extends StatefulWidget {
   const _TrackingCodeField({
@@ -1572,7 +1572,7 @@ class _TrackingCodeFieldState extends State<_TrackingCodeField> {
   }
 }
 
-// ── Scheduled date field ──────────────────────────────────────────────────────
+// ── Scheduled date field ─────────────────────────────────────────────────────
 
 class _ScheduledDateField extends StatelessWidget {
   const _ScheduledDateField({
@@ -1647,7 +1647,7 @@ class _ScheduledDateField extends StatelessWidget {
   }
 }
 
-// ── Shipped-at field ──────────────────────────────────────────────────────────
+// ── Shipped-at field ─────────────────────────────────────────────────────────
 
 class _ShippedAtField extends StatelessWidget {
   const _ShippedAtField({
@@ -1711,7 +1711,7 @@ class _ShippedAtField extends StatelessWidget {
   }
 }
 
-// ── Address display ───────────────────────────────────────────────────────────
+// ── Address display ──────────────────────────────────────────────────────────
 
 class _AddressDisplay extends StatefulWidget {
   const _AddressDisplay({
@@ -1779,7 +1779,7 @@ class _AddressDisplayState extends State<_AddressDisplay> {
   }
 }
 
-// ── Section card ──────────────────────────────────────────────────────────────
+// ── Section card ─────────────────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
@@ -1829,7 +1829,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-// ── Form card (used in edit body) ─────────────────────────────────────────────
+// ── Form card (used in edit body) ────────────────────────────────────────────
 
 class _FormCard extends StatelessWidget {
   const _FormCard({
@@ -1871,7 +1871,7 @@ class _FormCard extends StatelessWidget {
   }
 }
 
-// ── Info card ─────────────────────────────────────────────────────────────────
+// ── Info card ────────────────────────────────────────────────────────────────
 
 class _InfoCard extends StatelessWidget {
   const _InfoCard({required this.children});
@@ -1889,7 +1889,7 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-// ── NIF compliance row ────────────────────────────────────────────────────────
+// ── NIF compliance row ───────────────────────────────────────────────────────
 
 class _NifComplianceRow extends StatelessWidget {
   const _NifComplianceRow({
@@ -1943,7 +1943,7 @@ class _NifComplianceRow extends StatelessWidget {
   }
 }
 
-// ── Info row ──────────────────────────────────────────────────────────────────
+// ── Info row ─────────────────────────────────────────────────────────────────
 
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
@@ -1985,7 +1985,7 @@ class _InfoRow extends StatelessWidget {
 Future<void> _launchMaps(BuildContext context, BuyerAddress address) =>
     launchMapsUrl(context, address.mapsUri);
 
-// ── Status chip ───────────────────────────────────────────────────────────────
+// ── Status chip ──────────────────────────────────────────────────────────────
 
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.label, required this.color});
@@ -2006,7 +2006,7 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-// ── Repairs section ───────────────────────────────────────────────────────────
+// ── Repairs section ──────────────────────────────────────────────────────────
 
 class _RepairsSection extends StatelessWidget {
   const _RepairsSection({required this.saleId});
