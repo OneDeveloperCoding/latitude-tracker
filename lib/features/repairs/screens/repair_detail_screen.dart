@@ -6,6 +6,7 @@ import 'package:latitude_tracker/core/id_gen.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
+import 'package:latitude_tracker/core/utils/string_utils.dart';
 import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/repositories/buyer_repository.dart';
@@ -228,9 +229,9 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
         returnDelivery: RepairReturnDelivery(
           type: _editReturnType,
           status: _editReturnStatus,
-          trackingCode: _nullIfEmpty(_trackingController.text),
+          trackingCode: nullIfEmpty(_trackingController.text),
           postalCode: _editReturnType == DeliveryType.shipping
-              ? _nullIfEmpty(_postalCodeController.text)
+              ? nullIfEmpty(_postalCodeController.text)
               : null,
         ),
         linkedSaleId: _editLinkedSale?.id,
@@ -327,16 +328,6 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────
-
-  String? _nullIfEmpty(String value) =>
-      value.trim().isEmpty ? null : value.trim();
-
-  List<ShipmentStatus> _availableReturnStatuses(DeliveryType type) {
-    if (type == DeliveryType.pickup || type == DeliveryType.handDelivery) {
-      return [ShipmentStatus.pending, ShipmentStatus.delivered];
-    }
-    return ShipmentStatus.values;
-  }
 
   // ── AppBars ────────────────────────────────────────────────────────────────
 
@@ -642,7 +633,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
                 selected: {_editReturnType},
                 onSelectionChanged: (v) {
                   final newType = v.first;
-                  final statuses = _availableReturnStatuses(newType);
+                  final statuses = availableShipmentStatuses(newType);
                   setState(() {
                     _editReturnType = newType;
                     if (!statuses.contains(_editReturnStatus)) {
@@ -659,7 +650,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
                   labelText: s.repairReturnStatusLabel,
                   border: const OutlineInputBorder(),
                 ),
-                items: _availableReturnStatuses(_editReturnType)
+                items: availableShipmentStatuses(_editReturnType)
                     .map(
                       (st) => DropdownMenuItem(
                         value: st,
