@@ -22,6 +22,7 @@ class RepairsListScreen extends StatefulWidget {
 class _RepairsListScreenState extends State<RepairsListScreen> {
   Repair? _selectedRepair;
   final _rightPanelKey = GlobalKey<NavigatorState>();
+  final _editModeSignal = ValueNotifier<int>(0);
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -37,6 +38,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _editModeSignal.dispose();
     super.dispose();
   }
 
@@ -170,12 +172,16 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                           selected: _selectedRepair?.id == repair.id,
                           onTap: () {
                             if (_isWide) {
+                              if (_selectedRepair?.id == repair.id) return;
+                              _editModeSignal.value = 0;
                               setState(() => _selectedRepair = repair);
                               unawaited(
                                 _rightPanelKey.currentState?.pushReplacement(
                                   MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        RepairDetailScreen(repairId: repair.id),
+                                    builder: (_) => RepairDetailScreen(
+                                      repairId: repair.id,
+                                      editModeSignal: _editModeSignal,
+                                    ),
                                   ),
                                 ) ?? Future<void>.value(),
                               );
@@ -195,14 +201,23 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
           ],
         );
 
-        final fab = FloatingActionButton(
-          heroTag: 'repair-fab',
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const NewRepairScreen()),
-          ),
-          tooltip: s.newRepair,
-          child: const Icon(Icons.add),
-        );
+        final fab = _isWide && _selectedRepair != null
+            ? FloatingActionButton(
+                heroTag: null,
+                tooltip: s.editRepair,
+                onPressed: () => _editModeSignal.value++,
+                child: const Icon(Icons.edit),
+              )
+            : FloatingActionButton(
+                heroTag: null,
+                tooltip: s.newRepair,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const NewRepairScreen(),
+                  ),
+                ),
+                child: const Icon(Icons.add),
+              );
 
         if (!_isWide) {
           return Scaffold(
@@ -230,6 +245,7 @@ class _RepairsListScreenState extends State<RepairsListScreen> {
                         onGenerateRoute: (_) => MaterialPageRoute<void>(
                           builder: (_) => RepairDetailScreen(
                             repairId: _selectedRepair!.id,
+                            editModeSignal: _editModeSignal,
                           ),
                         ),
                       ),

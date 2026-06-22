@@ -12,6 +12,8 @@ import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/store_state.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/core/utils/date_time_utils.dart';
+import 'package:latitude_tracker/core/utils/string_utils.dart';
 import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
@@ -147,7 +149,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           addresses.where((a) => a.id == currentAddressId).firstOrNull;
       setState(() {
         _buyerAddresses = addresses;
-        _editSelectedAddress = current ?? addresses.firstOrNull;
+        // When no specific address was set, default to the first one.
+        // When an address was set but has since been deleted, leave null so
+        // the user is forced to pick a replacement before saving.
+        _editSelectedAddress =
+            currentAddressId == null ? addresses.firstOrNull : current;
         if (_editSelectedAddress != null &&
             _editPostalCodeController.text.isEmpty) {
           _editPostalCodeController.text = _editSelectedAddress!.postalCode;
@@ -225,11 +231,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         type: _editDeliveryType,
         status: _editShipmentStatus,
         trackingCode: _editDeliveryType == DeliveryType.shipping
-            ? _nullIfEmpty(_editTrackingCodeController.text)
+            ? nullIfEmpty(_editTrackingCodeController.text)
             : null,
         addressId: needsAddress ? _editSelectedAddress?.id : null,
         postalCode:
-            needsAddress ? _nullIfEmpty(_editPostalCodeController.text) : null,
+            needsAddress ? nullIfEmpty(_editPostalCodeController.text) : null,
         shippedAt: _editDeliveryType == DeliveryType.shipping
             ? _editShippedAt
             : null,
@@ -244,7 +250,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         requiresNif: _editRequiresNif,
         atSubmissionDone: _editAtSubmissionDone,
         scheduledDate: _editScheduledDate,
-        notes: _nullIfEmpty(_editNotesController.text),
+        notes: nullIfEmpty(_editNotesController.text),
       );
       await _repository.updateSale(updated);
       if (!mounted) return;
@@ -297,7 +303,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         await _photoService.deletePhoto(url);
       }
     }
-    if (mounted) setState(() => _editItems.removeAt(index));
+    if (mounted) setState(() => _editItems.remove(item));
   }
 
   // ── address helpers (edit mode) ───────────────────────────────────────────
@@ -390,16 +396,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
-
-  String? _nullIfEmpty(String value) =>
-      value.trim().isEmpty ? null : value.trim();
-
-  List<ShipmentStatus> _availableShipmentStatuses(DeliveryType type) {
-    if (type == DeliveryType.pickup || type == DeliveryType.handDelivery) {
-      return [ShipmentStatus.pending, ShipmentStatus.delivered];
-    }
-    return ShipmentStatus.values;
-  }
 
   void _onShipmentStatusChanged(ShipmentStatus? newStatus) {
     if (newStatus == null) return;
@@ -657,7 +653,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 selected: {_editDeliveryType},
                 onSelectionChanged: (v) {
                   final newType = v.first;
-                  final statuses = _availableShipmentStatuses(newType);
+                  final statuses = availableShipmentStatuses(newType);
                   setState(() {
                     _editDeliveryType = newType;
                     if (!statuses.contains(_editShipmentStatus)) {
@@ -679,7 +675,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   labelText: s.deliveryStatusLabel,
                   border: const OutlineInputBorder(),
                 ),
-                items: _availableShipmentStatuses(_editDeliveryType)
+                items: availableShipmentStatuses(_editDeliveryType)
                     .map((st) => DropdownMenuItem(
                           value: st,
                           child: Text(s.shipmentStatusLabel(st)),
@@ -866,7 +862,6 @@ class _SaleDetailReadBody extends StatelessWidget {
                   valueListenable: BuyersStore.state,
                   builder: (context, _, _) => _NifComplianceRow(
                     sale: sale,
-                    isReadOnly: true,
                     buyer: BuyersStore.current
                         ?.where((b) => b.id == sale.buyerId)
                         .firstOrNull,
@@ -1663,21 +1658,8 @@ class _ShippedAtField extends StatelessWidget {
   final ValueChanged<DateTime?> onChanged;
 
   Future<void> _pick(BuildContext context) async {
-    final initial = shippedAt ?? DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: kShippedAtFirstDate,
-      lastDate: DateTime.now().add(kShippedAtMaxFutureOffset),
-    );
-    if (date == null || !context.mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initial),
-    );
-    if (time == null || !context.mounted) return;
-    onChanged(DateTime(
-        date.year, date.month, date.day, time.hour, time.minute));
+    final picked = await pickShippedAt(context, initial: shippedAt);
+    if (picked != null) onChanged(picked);
   }
 
   @override
@@ -1894,12 +1876,10 @@ class _InfoCard extends StatelessWidget {
 class _NifComplianceRow extends StatelessWidget {
   const _NifComplianceRow({
     required this.sale,
-    required this.isReadOnly,
     required this.buyer,
   });
 
   final Sale sale;
-  final bool isReadOnly;
   final Buyer? buyer;
 
   @override
@@ -1914,22 +1894,26 @@ class _NifComplianceRow extends StatelessWidget {
 
     if (!hasNif) {
       label = s.noNifOnFile;
+      // Guide the user to the buyer profile where the NIF can be added.
+      trailing = TextButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => BuyerDetailScreen(buyerId: sale.buyerId),
+          ),
+        ),
+        child: Text(s.editBuyer),
+      );
     } else if (!isPaid) {
       label = s.nifReceiptRequiredInfo;
     } else {
       label = sale.atSubmissionDone ? s.atReceiptFiled : s.atReceiptPending;
-      if (!isReadOnly) {
-        trailing = IconButton(
-          icon: Icon(
-            sale.atSubmissionDone
-                ? Icons.check_circle
-                : Icons.check_circle_outline,
-            color: sale.atSubmissionDone ? cs.success : cs.warning,
-          ),
-          tooltip: sale.atSubmissionDone ? s.markAsPending : s.markAsFiled,
-          onPressed: () {}, // handled via edit mode buffer
-        );
-      }
+      trailing = Icon(
+        sale.atSubmissionDone
+            ? Icons.check_circle
+            : Icons.check_circle_outline,
+        color: sale.atSubmissionDone ? cs.success : cs.warning,
+      );
     }
 
     return ListTile(
