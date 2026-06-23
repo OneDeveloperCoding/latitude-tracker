@@ -6,8 +6,8 @@ Private Android app for tracking sales, buyers, shipments, and payments for a ha
 
 - Flutter (Android only, SDK needed)
 - Firebase **Blaze** plan required (Storage used for photos)
-  - Firestore (eur3 — Europe multi-region)
-  - Storage (europe-west1)
+  - Firestore
+  - Storage
   - Auth (email/password, single account)
 - Key packages: `flutter_map` + `latlong2` (heat map), `image_picker` (photos), `share_plus` + `file_picker` (archive export/import), `shared_preferences` (language preference + postal code cache), `flutter_localizations` (PT/EN Material widget translations), `intl` (date formatting locale), `firebase_crashlytics` (crash reporting), `http` (postal code lookup)
 
@@ -32,13 +32,13 @@ dart pub global activate flutterfire_cli
 flutterfire configure
 ```
 
-Select the existing Firebase project (`latitude-tracker-f5d03`) and choose Android only. This overwrites both files with fresh values.
+Select your Firebase project and choose Android only. This overwrites both files with fresh values.
 
 CI restores them automatically from the `FIREBASE_OPTIONS_DART` and `GOOGLE_SERVICES_JSON` GitHub Actions secrets.
 
 ## Releases
 
-APK builds are automated via GitHub Actions (`.github/workflows/release.yml`), triggered by any `v*.*.*` tag.
+APK builds are automated via GitHub Actions (`.github/workflows/bump-and-tag.yml`), triggered manually from the Actions tab.
 
 To cut a release:
 
@@ -49,13 +49,9 @@ To cut a release:
    - `feat:` → minor bump · `BREAKING CHANGE` / `feat!:` → major · everything else → patch
 5. CI tags `main`, builds the APK, and attaches it to a GitHub Release automatically.
 
-Download and sideload from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with the debug key (sufficient for personal/closed sideloading; not Play Store compatible).
+Download and sideload from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with a private release key (sufficient for personal/closed sideloading; not Play Store compatible).
 
 ## Git
-
-Remote: `git@github-latitude:OneDeveloperCoding/latitude-tracker.git`
-SSH key: `~/.ssh/id_ed25519_latitude` (mapped via `~/.ssh/config`)
-Identity: OneDeveloperCoding / onedevelopercoding@gmail.com (local repo config)
 
 ### Branching
 
