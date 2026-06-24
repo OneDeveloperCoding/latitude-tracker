@@ -34,6 +34,10 @@ class GoogleAuthUnknown extends GoogleAuthResult {
 }
 
 class GoogleAuthService {
+  // Singleton avoids losing cached sign-in state between calls and gives
+  // us a stable handle to call signOut() when we need to evict the session.
+  static final _googleSignIn = GoogleSignIn();
+
   Future<GoogleAuthResult> signInWithGoogle() async {
     try {
       final credential = await _buildCredential();
@@ -41,12 +45,27 @@ class GoogleAuthService {
 
       final result =
           await FirebaseAuth.instance.signInWithCredential(credential);
-      final uid = result.user!.uid;
+      final uid = result.user?.uid;
+      if (uid == null) {
+        await _signOutBoth();
+        return GoogleAuthUnknown(
+          StateError('signInWithCredential returned null user'),
+          StackTrace.current,
+        );
+      }
 
-      final hasData = await _userHasData(uid);
-      if (!hasData) {
-        await FirebaseAuth.instance.signOut();
-        return const GoogleAuthNoExistingData();
+      try {
+        final hasData = await _userHasData(uid);
+        if (!hasData) {
+          await _signOutBoth();
+          return const GoogleAuthNoExistingData();
+        }
+      } on Object catch (e, st) {
+        // Always evict the session on data-check failure so the orphan
+        // account never persists as the active Firebase session.
+        await _signOutBoth();
+        logError(e, st);
+        return GoogleAuthUnknown(e, st);
       }
 
       return const GoogleAuthSuccess();
@@ -63,7 +82,16 @@ class GoogleAuthService {
       final credential = await _buildCredential();
       if (credential == null) return const GoogleAuthCancelled();
 
-      await FirebaseAuth.instance.currentUser!.linkWithCredential(credential);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        await _googleSignIn.signOut();
+        return GoogleAuthUnknown(
+          StateError('linkGoogleAccount called with no signed-in user'),
+          StackTrace.current,
+        );
+      }
+
+      await user.linkWithCredential(credential);
       return const GoogleAuthSuccess();
     } on FirebaseAuthException catch (e) {
       return _mapFirebaseError(e);
@@ -74,7 +102,7 @@ class GoogleAuthService {
   }
 
   Future<OAuthCredential?> _buildCredential() async {
-    final googleUser = await GoogleSignIn().signIn();
+    final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) return null;
 
     final googleAuth = await googleUser.authentication;
@@ -85,20 +113,28 @@ class GoogleAuthService {
   }
 
   Future<bool> _userHasData(String uid) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('sales')
-        .limit(1)
-        .get();
-    return snapshot.docs.isNotEmpty;
+    final ref = FirebaseFirestore.instance.collection('users').doc(uid);
+    final results = await Future.wait([
+      ref.collection('sales').limit(1).get(),
+      ref.collection('buyers').limit(1).get(),
+    ]);
+    return results.any((s) => s.docs.isNotEmpty);
+  }
+
+  Future<void> _signOutBoth() async {
+    await Future.wait([
+      FirebaseAuth.instance.signOut(),
+      _googleSignIn.signOut(),
+    ]);
   }
 
   GoogleAuthResult _mapFirebaseError(FirebaseAuthException e) {
     return switch (e.code) {
-      'credential-already-in-use' => const GoogleAuthCredentialAlreadyInUse(),
+      'credential-already-in-use' ||
+      'account-exists-with-different-credential' =>
+        const GoogleAuthCredentialAlreadyInUse(),
       'network-request-failed' => const GoogleAuthNetworkError(),
-      _ => GoogleAuthUnknown(e, StackTrace.current),
+      _ => GoogleAuthUnknown(e, e.stackTrace ?? StackTrace.current),
     };
   }
 }

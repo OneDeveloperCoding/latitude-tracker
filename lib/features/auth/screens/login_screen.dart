@@ -21,6 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   bool _isPasswordVisible = false;
+
+  bool get _isAnyLoading => _isLoading || _isGoogleLoading;
   String? _errorMessage;
 
   @override
@@ -173,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: _isLoading ? null : _signIn,
+                        onPressed: _isAnyLoading ? null : _signIn,
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
@@ -189,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
-                        onPressed: _isGoogleLoading ? null : _signInWithGoogle,
+                        onPressed: _isAnyLoading ? null : _signInWithGoogle,
                         child: _isGoogleLoading
                             ? const SizedBox(
                                 height: 20,

@@ -603,7 +603,9 @@ class _GoogleAccountTileState extends State<_GoogleAccountTile> {
         GoogleAuthCancelled() => null,
         GoogleAuthCredentialAlreadyInUse() =>
           context.s.errGoogleCredentialInUse,
-        GoogleAuthNoExistingData() => context.s.errGoogleNoData,
+        // Unreachable from linkGoogleAccount() but required for exhaustive
+        // matching on the sealed class.
+        GoogleAuthNoExistingData() => context.s.errGeneric,
         GoogleAuthNetworkError() => context.s.errNoInternet,
         GoogleAuthUnknown() => context.s.errGeneric,
       };
@@ -611,10 +613,10 @@ class _GoogleAccountTileState extends State<_GoogleAccountTile> {
       if (message != null && mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));
-      } else if (mounted) {
-        setState(() {});
       }
     } finally {
+      // The finally rebuild also re-reads _isGoogleLinked, so no
+      // intermediate setState() is needed on the success path.
       if (mounted) setState(() => _isLinking = false);
     }
   }
