@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -31,8 +32,11 @@ final class UpdateDownloading extends UpdateState {
 }
 
 final class UpdateError extends UpdateState {
-  const UpdateError(this.message);
+  const UpdateError(this.message, {this.retryDownload});
   final String message;
+  // Non-null when the error came from a download — carries the version and
+  // URL so retry() can re-attempt the download without a fresh API check.
+  final ({String version, String downloadUrl})? retryDownload;
 }
 
 enum UpdateInstallResult { success, permissionDenied }
@@ -46,16 +50,13 @@ class UpdateService {
 
   final state = ValueNotifier<UpdateState>(const UpdateIdle());
 
-  String? _pendingVersion;
-  String? _pendingDownloadUrl;
-
   Future<void> checkForUpdate() async {
-    if (state.value is UpdateChecking || state.value is UpdateDownloading) {
+    if (state.value is UpdateChecking ||
+        state.value is UpdateDownloading ||
+        state.value is UpdateAvailable) {
       return;
     }
     state.value = const UpdateChecking();
-    _pendingVersion = null;
-    _pendingDownloadUrl = null;
 
     try {
       final info = await PackageInfo.fromPlatform();
@@ -90,32 +91,38 @@ class UpdateService {
         return;
       }
 
-      _pendingVersion = latestVersion;
-      _pendingDownloadUrl = apkAsset['browser_download_url'] as String;
+      final downloadUrl = apkAsset['browser_download_url'] as String?;
+      if (downloadUrl == null) {
+        state.value = const UpdateError(
+          'No APK download URL in latest release',
+        );
+        return;
+      }
+
       state.value = UpdateAvailable(
         version: latestVersion,
-        downloadUrl: _pendingDownloadUrl!,
+        downloadUrl: downloadUrl,
       );
-    } on Object catch (e) {
+    } on Object catch (e, st) {
+      logError(e, st);
       state.value = UpdateError(e.toString());
     }
   }
 
   Future<UpdateInstallResult> downloadAndInstall() async {
-    final version = _pendingVersion;
-    final downloadUrl = _pendingDownloadUrl;
-    if (version == null || downloadUrl == null) {
-      return UpdateInstallResult.success;
-    }
-    return _doDownloadAndInstall(version, downloadUrl);
+    final s = state.value;
+    if (s is! UpdateAvailable) return UpdateInstallResult.success;
+    return _doDownloadAndInstall(s.version, s.downloadUrl);
   }
 
-  Future<void> retry() async {
-    if (_pendingVersion != null && _pendingDownloadUrl != null) {
-      await _doDownloadAndInstall(_pendingVersion!, _pendingDownloadUrl!);
-    } else {
-      await checkForUpdate();
+  Future<UpdateInstallResult> retry() async {
+    final s = state.value;
+    if (s is UpdateError && s.retryDownload != null) {
+      final r = s.retryDownload!;
+      return _doDownloadAndInstall(r.version, r.downloadUrl);
     }
+    await checkForUpdate();
+    return UpdateInstallResult.success;
   }
 
   Future<UpdateInstallResult> _doDownloadAndInstall(
@@ -137,14 +144,17 @@ class UpdateService {
         var received = 0;
 
         final sink = File(filePath).openWrite();
-        await for (final chunk in response.stream) {
-          sink.add(chunk);
-          received += chunk.length;
-          if (total > 0) {
-            state.value = UpdateDownloading(progress: received / total);
+        try {
+          await for (final chunk in response.stream) {
+            sink.add(chunk);
+            received += chunk.length;
+            if (total > 0) {
+              state.value = UpdateDownloading(progress: received / total);
+            }
           }
+        } finally {
+          await sink.close();
         }
-        await sink.close();
       } finally {
         client.close();
       }
@@ -156,19 +166,22 @@ class UpdateService {
         return UpdateInstallResult.permissionDenied;
       }
       if (result.type != ResultType.done) {
-        _pendingVersion = version;
-        _pendingDownloadUrl = downloadUrl;
-        state.value = UpdateError(result.message);
+        state.value = UpdateError(
+          result.message,
+          retryDownload: (version: version, downloadUrl: downloadUrl),
+        );
         return UpdateInstallResult.success;
       }
       // Stay on updateAvailable — intent fired but user hasn't installed yet
       state.value =
           UpdateAvailable(version: version, downloadUrl: downloadUrl);
       return UpdateInstallResult.success;
-    } on Object catch (e) {
-      _pendingVersion = version;
-      _pendingDownloadUrl = downloadUrl;
-      state.value = UpdateError(e.toString());
+    } on Object catch (e, st) {
+      logError(e, st);
+      state.value = UpdateError(
+        e.toString(),
+        retryDownload: (version: version, downloadUrl: downloadUrl),
+      );
       return UpdateInstallResult.success;
     }
   }

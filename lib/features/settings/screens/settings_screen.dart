@@ -543,10 +543,14 @@ class _UpdateTile extends StatelessWidget {
           ),
           enabled: false,
         ),
-        UpdateError() => ListTile(
+        UpdateError(:final retryDownload) => ListTile(
           leading: const Icon(Icons.error_outline, color: Colors.red),
-          title: Text(s.updateCheckFailed),
-          onTap: UpdateService.instance.retry,
+          title: Text(
+            retryDownload != null
+                ? s.updateDownloadFailed
+                : s.updateCheckFailed,
+          ),
+          onTap: () => _handleRetry(context),
         ),
       },
     );
@@ -554,6 +558,15 @@ class _UpdateTile extends StatelessWidget {
 
   Future<void> _startDownload(BuildContext context) async {
     final result = await UpdateService.instance.downloadAndInstall();
+    if (result == UpdateInstallResult.permissionDenied && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.updateInstallBlocked)),
+      );
+    }
+  }
+
+  Future<void> _handleRetry(BuildContext context) async {
+    final result = await UpdateService.instance.retry();
     if (result == UpdateInstallResult.permissionDenied && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.s.updateInstallBlocked)),
