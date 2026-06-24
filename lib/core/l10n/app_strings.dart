@@ -32,10 +32,16 @@ enum AppStrings {
     password: 'Password',
     passwordRequired: 'Password is required',
     signIn: 'Sign in',
+    signInWithGoogle: 'Sign in with Google',
     tryDemo: 'Try demo',
     errInvalidCredentials: 'Invalid email or password.',
     errNoInternet: 'No internet connection.',
     errGeneric: 'Something went wrong. Please try again.',
+    errGoogleCredentialInUse:
+        'This Google account is already linked to a different account.'
+        ' Sign in with email/password instead.',
+    errGoogleNoData: 'This Google account has no app data.'
+        ' Sign in with email first, then connect Google in Settings.',
     signOut: 'Sign out',
     signOutConfirm: 'Sign out?',
     demoBanner: 'Demo mode — changes are not saved',
@@ -358,6 +364,8 @@ enum AppStrings {
     archive: 'Archive',
     app: 'App',
     signedInAs: 'Signed in as',
+    connectGoogle: 'Connect Google account',
+    googleConnected: 'Google account connected',
     exportYear: 'Export year',
     exportYearSubtitle: 'Save a backup of all sales data',
     importArchive: 'Import archive',
@@ -511,10 +519,17 @@ enum AppStrings {
     password: 'Palavra-passe',
     passwordRequired: 'Palavra-passe é obrigatória',
     signIn: 'Entrar',
+    signInWithGoogle: 'Entrar com Google',
     tryDemo: 'Experimentar',
     errInvalidCredentials: 'Email ou palavra-passe incorretos.',
     errNoInternet: 'Sem ligação à internet.',
     errGeneric: 'Algo correu mal. Tente novamente.',
+    errGoogleCredentialInUse:
+        'Esta conta Google já está ligada a outra conta.'
+        ' Inicia sessão com email e palavra-passe.',
+    errGoogleNoData: 'Esta conta Google não tem dados da aplicação.'
+        ' Inicia sessão com email primeiro e depois liga o Google'
+        ' nas Definições.',
     signOut: 'Terminar sessão',
     signOutConfirm: 'Terminar sessão?',
     demoBanner: 'Modo de demonstração — as alterações não são guardadas',
@@ -839,6 +854,8 @@ enum AppStrings {
     archive: 'Arquivo',
     app: 'Aplicação',
     signedInAs: 'Sessão iniciada como',
+    connectGoogle: 'Ligar conta Google',
+    googleConnected: 'Conta Google ligada',
     exportYear: 'Exportar ano',
     exportYearSubtitle: 'Guardar cópia de segurança dos dados de vendas',
     importArchive: 'Importar arquivo',
@@ -995,10 +1012,13 @@ enum AppStrings {
     required this.password,
     required this.passwordRequired,
     required this.signIn,
+    required this.signInWithGoogle,
     required this.tryDemo,
     required this.errInvalidCredentials,
     required this.errNoInternet,
     required this.errGeneric,
+    required this.errGoogleCredentialInUse,
+    required this.errGoogleNoData,
     required this.signOut,
     required this.signOutConfirm,
     required this.demoBanner,
@@ -1278,6 +1298,8 @@ enum AppStrings {
     required this.archive,
     required this.app,
     required this.signedInAs,
+    required this.connectGoogle,
+    required this.googleConnected,
     required this.exportYear,
     required this.exportYearSubtitle,
     required this.importArchive,
@@ -1431,10 +1453,13 @@ enum AppStrings {
   final String password;
   final String passwordRequired;
   final String signIn;
+  final String signInWithGoogle;
   final String tryDemo;
   final String errInvalidCredentials;
   final String errNoInternet;
   final String errGeneric;
+  final String errGoogleCredentialInUse;
+  final String errGoogleNoData;
   final String signOut;
   final String signOutConfirm;
 
@@ -1750,6 +1775,8 @@ enum AppStrings {
   final String archive;
   final String app;
   final String signedInAs;
+  final String connectGoogle;
+  final String googleConnected;
   final String exportYear;
   final String exportYearSubtitle;
   final String importArchive;

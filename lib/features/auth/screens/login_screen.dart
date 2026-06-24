@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _isPasswordVisible = false;
   String? _errorMessage;
 
@@ -48,6 +50,32 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _errorMessage = _messageFor(e.code));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await GoogleAuthService().signInWithGoogle();
+      if (!mounted) return;
+
+      final message = switch (result) {
+        GoogleAuthSuccess() => null,
+        GoogleAuthCancelled() => null,
+        GoogleAuthCredentialAlreadyInUse() =>
+          context.s.errGoogleCredentialInUse,
+        GoogleAuthNoExistingData() => context.s.errGoogleNoData,
+        GoogleAuthNetworkError() => context.s.errNoInternet,
+        GoogleAuthUnknown() => context.s.errGeneric,
+      };
+
+      if (message != null) setState(() => _errorMessage = message);
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -157,7 +185,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             : Text(s.signIn),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _isGoogleLoading ? null : _signInWithGoogle,
+                        child: _isGoogleLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(s.signInWithGoogle),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     TextButton(
                       onPressed: DemoMode.enter,
                       child: Text(s.tryDemo),
