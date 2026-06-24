@@ -49,7 +49,7 @@ To cut a release:
    - `feat:` → minor bump · `BREAKING CHANGE` / `feat!:` → major · everything else → patch
 5. CI tags `main`, builds the APK, and attaches it to a GitHub Release automatically.
 
-Download and sideload from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with a private release key (sufficient for personal/closed sideloading; not Play Store compatible).
+The app checks for updates automatically on launch and shows an install prompt in **Settings → App** when a newer release is available. You can also download and sideload manually from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with a private release key (sufficient for personal/closed sideloading; not Play Store compatible).
 
 ## Git
 

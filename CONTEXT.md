@@ -100,6 +100,14 @@ _Avoid_: Invoice, filing, tax return
 A read-only export of Sales, Buyers, and BuyerAddresses for a given year, shared via the OS share sheet (Google Drive, email, etc.). Can be re-imported into the app for historical lookup only. The JSON includes `photoUrls` for each Sale — since photos are kept in Firebase Storage after a year purge, they remain viewable in the import screen via those URLs.
 _Avoid_: Backup, dump
 
+**DriveBackup**:
+An off-platform safety copy of all app data stored in the seller's Google Drive under `Latitude Tracker Backup/`. Contains two sub-folders: `data/` (one versioned JSON file per year, using the same schema as Archive exports) and `photos/` (all SaleItem, ComponentItem, and Repair photos mirrored from Firebase Storage, organised as `{saleId}/{itemId}/{uuid}.jpg`). Updated automatically once per day via a background job that runs only on WiFi. Photos are uploaded incrementally — already-present files are skipped; new photos since the last run are uploaded. The JSON data is fully re-exported on every run (it is tiny). The seller can also trigger a backup manually from Settings. Both devices participate in the daily backup; the incremental design makes concurrent runs from two devices safe and idempotent.
+_Avoid_: Archive (Archive is a year-specific read-only historical export; DriveBackup is the live off-platform safety copy)
+
+**BackupRestore**:
+The process of recovering all app data from a DriveBackup after data loss. Two phases: (1) JSON restore — each year's JSON file is downloaded from Drive and imported into Firestore using the same logic as Archive import (existing documents are skipped; new ones are created); (2) photo restore — each photo file is downloaded from Drive and re-uploaded to Firebase Storage at its original path (`users/{uid}/sales/{saleId}/items/{itemId}/photos/{uuid}.jpg`), restoring photo URLs to a working state. Triggered from Settings → Backup → Restore from Drive. Because photo paths are identical to the originals, all Firestore document `photoUrls` resolve correctly after restore without any document edits.
+_Avoid_: Import (Import refers to Archive re-import, not a full data restore)
+
 **Archive JSON schema (version 1.5)**:
 ```json
 {
@@ -160,6 +168,8 @@ Date fields (`createdAt`, `scheduledDate`) are exported as ISO-8601 strings and 
 - A **Buyer** may have multiple **BuyerAddresses**; one is marked as default
 - A **Buyer** may optionally have a saved **NIF**
 - An **Archive** is read-only — Sales cannot be edited after archiving
+- A **DriveBackup** covers all years of Sales, Buyers, Repairs, and all photos — distinct from an Archive which covers one year only
+- A **BackupRestore** is the inverse of a DriveBackup — it recovers both Firestore documents and Firebase Storage photos
 - A **Repair** has one **RepairStatus** and one **ReturnDelivery**
 - A **Repair** has one **Payment** (same structure as Sale payment — amount, paid/unpaid, method)
 - A **Repair** contact is either a linked **Buyer** (stores `buyerId` + `buyerName`) or a free-text name — one is required
@@ -231,7 +241,7 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 ## Screens
 
-1. **Login** — email + password, stays logged in permanently; "Try Demo" button enters Demo mode without credentials
+1. **Login** — email + password or Google Sign-In (the seller's existing Google account on the device); stays logged in permanently; "Try Demo" button enters Demo mode without credentials. Both sign-in methods coexist on the same Firebase account (linked via `linkWithCredential`); Google Sign-In is the recommended path going forward as it also grants Drive access for DriveBackup.
 
 1a. **Demo mode** — sandbox with 255 pre-seeded sales across 18 months (7 hand-crafted active + 248 generated historical, fixed `Random(42)` seed) and ~5–8 hand-crafted Repairs (mix of RepairStatuses, some linked to demo Sales, some with free-text contacts). A tutorial bottom sheet auto-displays on first entry; re-accessible via **?** in the demo banner. All write operations (add/edit/delete) work against in-memory repositories — changes are not persisted and are lost when demo mode is exited. Demo data strings are in English regardless of app language setting.
 
@@ -271,7 +281,9 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 
 11. **Geographic Sales View** — standalone screen pushed from the Sales list AppBar (map icon). Independent year scope: all-time by default with a year chip bar in the AppBar, decoupled from the Sales list filters. Default view is a ranked list: Portugal section (CP4 localities sorted by active metric) + International section (one row per country). AppBar metric toggle (revenue / count) and hand-delivery toggle (`directions_walk`). An AppBar icon button switches to map sub-mode (heat map over flutter_map, markers sized by sale count, tap → locality name + count). Geocoding via Nominatim with a layered cache (in-memory L1 + 180-day SharedPreferences L2); warm-up runs on every SalesStore data load.
 
-12. **Settings** — organised into sections: **Account** (sign out), **Catalogue** (categories), **Appearance** (theme preset + brightness), **Archive** (export/import/delete year), **App** (tour, language, version), **Danger zone** (reset app). Language toggle is PT / EN, persisted per device via SharedPreferences. App version display only.
+12. **Settings** — organised into sections: **Account** (sign out), **Catalogue** (categories), **Appearance** (theme preset + brightness), **Backup** (DriveBackup status and controls), **Archive** (export/import/delete year), **App** (tour, language, version, update check), **Danger zone** (reset app). Language toggle is PT / EN, persisted per device via SharedPreferences. App version display only. The **App** section also includes a **Check for updates** tile: on every cold start the app checks the GitHub Releases API and shows an "update available" tile when a newer version is published; tapping it downloads the APK and triggers the Android installer. Errors persist on the tile with a tap-to-retry affordance.
+
+**Backup section** — shows the timestamp of the last successful DriveBackup ("Last backup: 14 Jun 2026, 02:34" or "Never" if no backup has run). Two actions: **Back up now** (triggers an immediate DriveBackup on any network, bypassing the WiFi-only constraint of the scheduled job) and **Restore from Drive** (initiates a BackupRestore). A failure notification is sent if the scheduled backup job fails; success is silent.
 
 **Appearance section** — two `ListTile`s: (1) a **ThemePreset** picker rendered as a 3×2 circle grid, each circle filled with the preset's primary colour and labelled below; the selected preset shows a checkmark; (2) a brightness `SegmentedButton` with two options: light / dark (no system/auto option). Both choices are persisted per-device via SharedPreferences via `ThemeSettings`.
 
@@ -298,6 +310,7 @@ Photos are stored in Firebase Storage under `users/{uid}/sales/{saleId}/items/{i
 - "returned" status for Repairs clarified: RepairStatus `returned` alone does not mark a Repair as inactive — it is only removed from the default active list view when *both* RepairStatus is `returned` AND ReturnDelivery status is `delivered`. This preserves visibility during the return-shipping window.
 - Repair analytics placement clarified: Repair analytics live in the existing AnalyticsScreen (new Repairs tab), not a separate screen. This keeps analytics access unified under the Dashboard entry point.
 - ComponentItem interaction model clarified: the `isAvailable` toggle and `−/+` quantity stepper are both inline on the checklist row. A separate photo icon button opens a component detail sheet (edit mode from `SaleItemScreen`/Sale detail; read-only from `ShoppingList`). Toggle is all-or-nothing regardless of quantity — "I have all N" / "I still need all N"; partial acquisition is not tracked.
+- "Backup" vs "Archive" clarified: **Archive** is a year-scoped, seller-initiated historical export shared via the OS share sheet — it is read-only and used for year-purge workflows. **DriveBackup** is the continuous off-platform safety copy of all live data, updated daily. The Archive JSON format is reused by DriveBackup for the `data/` files, but the two features serve different purposes and must not be conflated in UI labels.
 - `AssemblyStatus` is fully manual — toggling ComponentItem availability has no effect on AssemblyStatus. The ComponentChecklist is the materials signal; AssemblyStatus is the assembly signal.
 - ShoppingList aggregation model clarified: same-named ComponentItems (case-insensitive exact match) are merged across all open SaleItems and their quantities summed. Name matching is intentionally strict — `"blue bead (45mm)"` and `"blue bead"` are treated as distinct. Aggregated rows are sorted by worst-case urgency of any contributing Sale. Notes and photo badges appear only in the expanded per-SaleItem breakdown rows, not at the aggregated level. The aggregated view replaces the former Sale-grouped view entirely; the expanded breakdown provides navigation to Sale detail for context.
 - Component photo deletion timing clarified: photos are deleted when the component is **removed**, not when toggled. Session uploads and pre-existing URLs are folded into the SaleItem's existing `_uploadedInSession` / `_pendingDeletions` lists — no separate tracking needed.
