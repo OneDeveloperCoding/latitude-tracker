@@ -12,12 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute preview label
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - name: Compute preview label and version
         id: label
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           SAFE_BRANCH="${GITHUB_REF_NAME//\//-}"
+          LAST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || echo "v0.0.0")
+          BUILD_NAME="${LAST_TAG#v}-preview-${SHORT_SHA}"
+          BUILD_NUMBER=$(date +%s)
           echo "apk_name=latitude-tracker-preview-${SAFE_BRANCH}-${SHORT_SHA}.apk" >> "$GITHUB_OUTPUT"
+          echo "build_name=$BUILD_NAME" >> "$GITHUB_OUTPUT"
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
         with:
@@ -63,7 +71,10 @@ jobs:
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release \
+            --build-name="${{ steps.label.outputs.build_name }}" \
+            --build-number="${{ steps.label.outputs.build_number }}"
 
       - name: Upload preview APK
         uses: actions/upload-artifact@v4
