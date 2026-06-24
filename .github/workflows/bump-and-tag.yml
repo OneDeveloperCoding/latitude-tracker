@@ -35,6 +35,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
       - name: Configure git identity
         run: |
           git config user.name "github-actions[bot]"
@@ -118,7 +121,12 @@ jobs:
 
       - name: Show commits included in this release
         run: |
-          git log "${{ steps.latest_tag.outputs.tag }}..HEAD" --oneline
+          LAST_TAG="${{ steps.latest_tag.outputs.tag }}"
+          if [ "$LAST_TAG" = "v0.0.0" ]; then
+            git log --oneline
+          else
+            git log "${LAST_TAG}..HEAD" --oneline
+          fi
 
       - uses: actions/setup-java@v5
         with:
