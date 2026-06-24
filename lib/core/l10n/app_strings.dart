@@ -32,10 +32,16 @@ enum AppStrings {
     password: 'Password',
     passwordRequired: 'Password is required',
     signIn: 'Sign in',
+    signInWithGoogle: 'Sign in with Google',
     tryDemo: 'Try demo',
     errInvalidCredentials: 'Invalid email or password.',
     errNoInternet: 'No internet connection.',
     errGeneric: 'Something went wrong. Please try again.',
+    errGoogleCredentialInUse:
+        'This Google account is already linked to a different account.'
+        ' Sign in with email/password instead.',
+    errGoogleNoData: 'This Google account has no app data.'
+        ' Sign in with email first, then connect Google in Settings.',
     signOut: 'Sign out',
     signOutConfirm: 'Sign out?',
     demoBanner: 'Demo mode — changes are not saved',
@@ -184,6 +190,7 @@ enum AppStrings {
     sectionComponents: 'Components needed',
     sectionPayment: 'Payment',
     sectionDelivery: 'Delivery',
+    deliveryStatusLabel: 'Delivery status',
     sectionNotes: 'Notes',
     descriptionLabel: 'Description *',
     descriptionHint: 'e.g. Silver necklace with blue beads',
@@ -239,6 +246,8 @@ enum AppStrings {
     atFiled: 'Filed',
     atPending: 'Pending',
     setScheduledDate: 'Set scheduled date',
+    shippedAtLabel: 'Shipped at',
+    setShippedAt: 'Set shipped date & time',
     addNotes: 'Add notes',
     notesHintDetail: 'e.g. Gift wrap requested, specific colour...',
     errorDeletingSale: 'Error deleting sale',
@@ -355,6 +364,8 @@ enum AppStrings {
     archive: 'Archive',
     app: 'App',
     signedInAs: 'Signed in as',
+    connectGoogle: 'Connect Google account',
+    googleConnected: 'Google account connected',
     exportYear: 'Export year',
     exportYearSubtitle: 'Save a backup of all sales data',
     importArchive: 'Import archive',
@@ -363,6 +374,13 @@ enum AppStrings {
     deleteArchivedYearSubtitle:
         "Removes a year's sales — photos are kept for archive viewing",
     version: 'Version',
+    checkForUpdates: 'Check for updates',
+    updateChecking: 'Checking for updates…',
+    updateDownloading: 'Downloading update…',
+    updateCheckFailed: 'Check failed — tap to retry',
+    updateDownloadFailed: 'Download failed — tap to retry',
+    updateInstallBlocked:
+        'Install permission denied. Enable "Install unknown apps" in Settings.',
     language: 'Language',
     exportWhichYear: 'Export which year?',
     deleteWhichYear: 'Delete which year?',
@@ -501,10 +519,17 @@ enum AppStrings {
     password: 'Palavra-passe',
     passwordRequired: 'Palavra-passe é obrigatória',
     signIn: 'Entrar',
+    signInWithGoogle: 'Entrar com Google',
     tryDemo: 'Experimentar',
     errInvalidCredentials: 'Email ou palavra-passe incorretos.',
     errNoInternet: 'Sem ligação à internet.',
     errGeneric: 'Algo correu mal. Tente novamente.',
+    errGoogleCredentialInUse:
+        'Esta conta Google já está ligada a outra conta.'
+        ' Inicia sessão com email e palavra-passe.',
+    errGoogleNoData: 'Esta conta Google não tem dados da aplicação.'
+        ' Inicia sessão com email primeiro e depois liga o Google'
+        ' nas Definições.',
     signOut: 'Terminar sessão',
     signOutConfirm: 'Terminar sessão?',
     demoBanner: 'Modo de demonstração — as alterações não são guardadas',
@@ -653,6 +678,7 @@ enum AppStrings {
     sectionComponents: 'Materiais necessários',
     sectionPayment: 'Pagamento',
     sectionDelivery: 'Entrega',
+    deliveryStatusLabel: 'Estado de entrega',
     sectionNotes: 'Notas',
     descriptionLabel: 'Descrição *',
     descriptionHint: 'ex. Colar de prata com contas azuis',
@@ -708,6 +734,8 @@ enum AppStrings {
     atFiled: 'Submetido',
     atPending: 'Pendente',
     setScheduledDate: 'Definir data agendada',
+    shippedAtLabel: 'Enviado a',
+    setShippedAt: 'Definir data e hora de envio',
     addNotes: 'Adicionar notas',
     notesHintDetail: 'ex. Embrulho para oferta, cor específica...',
     errorDeletingSale: 'Erro ao eliminar venda',
@@ -826,6 +854,8 @@ enum AppStrings {
     archive: 'Arquivo',
     app: 'Aplicação',
     signedInAs: 'Sessão iniciada como',
+    connectGoogle: 'Ligar conta Google',
+    googleConnected: 'Conta Google ligada',
     exportYear: 'Exportar ano',
     exportYearSubtitle: 'Guardar cópia de segurança dos dados de vendas',
     importArchive: 'Importar arquivo',
@@ -834,6 +864,14 @@ enum AppStrings {
     deleteArchivedYearSubtitle:
         'Remove as vendas de um ano — as fotos são mantidas para visualização',
     version: 'Versão',
+    checkForUpdates: 'Verificar atualizações',
+    updateChecking: 'A verificar atualizações…',
+    updateDownloading: 'A descarregar atualização…',
+    updateCheckFailed: 'Falha ao verificar — toque para tentar novamente',
+    updateDownloadFailed: 'Falha no download — toque para tentar novamente',
+    updateInstallBlocked:
+        'Permissão de instalação negada. Ativa "Instalar apps desconhecidas"'
+        ' nas Definições.',
     language: 'Idioma',
     exportWhichYear: 'Exportar qual ano?',
     deleteWhichYear: 'Eliminar qual ano?',
@@ -974,10 +1012,13 @@ enum AppStrings {
     required this.password,
     required this.passwordRequired,
     required this.signIn,
+    required this.signInWithGoogle,
     required this.tryDemo,
     required this.errInvalidCredentials,
     required this.errNoInternet,
     required this.errGeneric,
+    required this.errGoogleCredentialInUse,
+    required this.errGoogleNoData,
     required this.signOut,
     required this.signOutConfirm,
     required this.demoBanner,
@@ -1094,6 +1135,7 @@ enum AppStrings {
     required this.sectionComponents,
     required this.sectionPayment,
     required this.sectionDelivery,
+    required this.deliveryStatusLabel,
     required this.sectionNotes,
     required this.descriptionLabel,
     required this.descriptionHint,
@@ -1149,6 +1191,8 @@ enum AppStrings {
     required this.atFiled,
     required this.atPending,
     required this.setScheduledDate,
+    required this.shippedAtLabel,
+    required this.setShippedAt,
     required this.addNotes,
     required this.notesHintDetail,
     required this.errorDeletingSale,
@@ -1254,6 +1298,8 @@ enum AppStrings {
     required this.archive,
     required this.app,
     required this.signedInAs,
+    required this.connectGoogle,
+    required this.googleConnected,
     required this.exportYear,
     required this.exportYearSubtitle,
     required this.importArchive,
@@ -1261,6 +1307,12 @@ enum AppStrings {
     required this.deleteArchivedYear,
     required this.deleteArchivedYearSubtitle,
     required this.version,
+    required this.checkForUpdates,
+    required this.updateChecking,
+    required this.updateDownloading,
+    required this.updateCheckFailed,
+    required this.updateDownloadFailed,
+    required this.updateInstallBlocked,
     required this.language,
     required this.exportWhichYear,
     required this.deleteWhichYear,
@@ -1401,10 +1453,13 @@ enum AppStrings {
   final String password;
   final String passwordRequired;
   final String signIn;
+  final String signInWithGoogle;
   final String tryDemo;
   final String errInvalidCredentials;
   final String errNoInternet;
   final String errGeneric;
+  final String errGoogleCredentialInUse;
+  final String errGoogleNoData;
   final String signOut;
   final String signOutConfirm;
 
@@ -1534,6 +1589,7 @@ enum AppStrings {
   final String sectionComponents;
   final String sectionPayment;
   final String sectionDelivery;
+  final String deliveryStatusLabel;
   final String sectionNotes;
   final String descriptionLabel;
   final String descriptionHint;
@@ -1592,6 +1648,8 @@ enum AppStrings {
   final String atFiled;
   final String atPending;
   final String setScheduledDate;
+  final String shippedAtLabel;
+  final String setShippedAt;
   final String addNotes;
   final String notesHintDetail;
   final String errorDeletingSale;
@@ -1717,6 +1775,8 @@ enum AppStrings {
   final String archive;
   final String app;
   final String signedInAs;
+  final String connectGoogle;
+  final String googleConnected;
   final String exportYear;
   final String exportYearSubtitle;
   final String importArchive;
@@ -1724,6 +1784,12 @@ enum AppStrings {
   final String deleteArchivedYear;
   final String deleteArchivedYearSubtitle;
   final String version;
+  final String checkForUpdates;
+  final String updateChecking;
+  final String updateDownloading;
+  final String updateCheckFailed;
+  final String updateDownloadFailed;
+  final String updateInstallBlocked;
   final String language;
   final String exportWhichYear;
   final String deleteWhichYear;
@@ -1864,6 +1930,7 @@ enum AppStrings {
 
   String nUrgent(int n) => _pt ? '$n urgente${n == 1 ? '' : 's'}' : '$n urgent';
   String andXMore(int n) => _pt ? 'e mais $n' : 'and $n more';
+  String nMoreItems(int n) => _pt ? '+ $n' : '+ $n';
 
   String nUnpaid(int n) => _pt ? '$n por pagar' : '$n unpaid';
 
@@ -1921,7 +1988,7 @@ enum AppStrings {
       ? switch (s) {
           AssemblyStatus.notStarted => 'Não iniciado',
           AssemblyStatus.waitingForMaterials => 'Aguarda materiais',
-          AssemblyStatus.inProgress => 'Em curso',
+          AssemblyStatus.inProgress => 'Em progresso',
           AssemblyStatus.ready => 'Pronto',
         }
       : switch (s) {
@@ -1957,7 +2024,7 @@ enum AppStrings {
       ? switch (s) {
           RepairStatus.received => 'Recebido',
           RepairStatus.waitingForMaterials => 'A aguardar materiais',
-          RepairStatus.inProgress => 'Em curso',
+          RepairStatus.inProgress => 'Em progresso',
           RepairStatus.done => 'Concluído',
           RepairStatus.returned => 'Devolvido',
         }
@@ -2057,6 +2124,10 @@ enum AppStrings {
       : (_pt
           ? 'Nenhum comprador corresponde a "$query".'
           : 'No buyers match "$query".');
+
+  String updateAvailableTile(String version) => _pt
+      ? 'Nova versão disponível (v$version)'
+      : 'New version available (v$version)';
 
   String exportSubject(int year) => 'Latitude Tracker — $year archive';
 

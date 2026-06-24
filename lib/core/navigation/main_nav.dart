@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/store/buyers_store.dart';
@@ -10,6 +12,7 @@ import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
 import 'package:latitude_tracker/features/heat_map/services/geocoding_warm_up.dart';
 import 'package:latitude_tracker/features/repairs/screens/sales_repairs_tab_screen.dart';
 import 'package:latitude_tracker/features/settings/screens/settings_screen.dart';
+import 'package:latitude_tracker/features/settings/services/update_service.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -35,6 +38,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.init();
     BuyersStore.init();
     RepairsStore.init();
+    unawaited(UpdateService.instance.checkForUpdate());
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     // After a DemoMode transition the old MainNav's dispose() runs after this
     // initState — tearing down the subscription init() just created. The

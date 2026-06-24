@@ -40,7 +40,8 @@ void main() {
     DemoMode.repairRepo.clear();
   });
 
-  testWidgets('selected chip matches repair.status', (tester) async {
+  testWidgets('selected chip matches repair.status in read mode',
+      (tester) async {
     await DemoMode.repairRepo.createRepair(_makeRepair());
     DemoMode.active.value = true;
 
@@ -50,14 +51,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ChoiceChip), findsNWidgets(RepairStatus.values.length));
-    expect(_findChip(tester, 'Em curso').selected, isTrue);
+    expect(_findChip(tester, 'Em progresso').selected, isTrue);
     expect(_findChip(tester, 'Devolvido').selected, isFalse);
   });
 
-  testWidgets('demo mode renders chips non-interactive', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(800, 1200));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
+  testWidgets('status chips are non-interactive in read mode', (tester) async {
     await DemoMode.repairRepo.createRepair(_makeRepair());
     DemoMode.active.value = true;
 
@@ -66,12 +64,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Read-only-by-default: chips are display only until edit mode is entered.
     expect(_findChip(tester, 'Devolvido').onSelected, isNull);
+    expect(_findChip(tester, 'Em progresso').onSelected, isNull);
+  });
 
-    await tester.tap(find.text('Devolvido'));
+  testWidgets('edit FAB is visible in read mode', (tester) async {
+    await DemoMode.repairRepo.createRepair(_makeRepair());
+    DemoMode.active.value = true;
+
+    await tester.pumpWidget(
+      const MaterialApp(home: RepairDetailScreen(repairId: 'r1')),
+    );
     await tester.pumpAndSettle();
 
-    expect(_findChip(tester, 'Em curso').selected, isTrue);
-    expect(_findChip(tester, 'Devolvido').selected, isFalse);
+    expect(find.byIcon(Icons.edit), findsOneWidget);
+    expect(find.text('Save'), findsNothing);
   });
 }

@@ -35,6 +35,15 @@ enum DeliveryType { shipping, pickup, handDelivery }
 
 enum ShipmentStatus { pending, shipped, delivered }
 
+/// Returns the statuses reachable for [type]. Pickup and hand-delivery skip
+/// the `shipped` state; shipping allows all three.
+List<ShipmentStatus> availableShipmentStatuses(DeliveryType type) {
+  if (type == DeliveryType.pickup || type == DeliveryType.handDelivery) {
+    return [ShipmentStatus.pending, ShipmentStatus.delivered];
+  }
+  return ShipmentStatus.values;
+}
+
 enum SaleStage { assembly, payment, shipment, done }
 
 extension PaymentMethodLabel on PaymentMethod {
@@ -218,6 +227,7 @@ class SaleShipment {
     this.trackingCode,
     this.addressId,
     this.postalCode,
+    this.shippedAt,
   });
 
   factory SaleShipment.fromMap(Map<String, dynamic> map) => SaleShipment(
@@ -232,12 +242,18 @@ class SaleShipment {
     trackingCode: map['trackingCode'] as String?,
     addressId: map['addressId'] as String?,
     postalCode: map['postalCode'] as String?,
+    shippedAt: switch (map['shippedAt']) {
+      final Timestamp t => t.toDate(),
+      final String s => DateTime.tryParse(s),
+      _ => null,
+    },
   );
   final DeliveryType type;
   final ShipmentStatus status;
   final String? trackingCode;
   final String? addressId;
   final String? postalCode;
+  final DateTime? shippedAt;
 
   Map<String, dynamic> toMap() => {
     'type': type.name,
@@ -245,6 +261,7 @@ class SaleShipment {
     'trackingCode': trackingCode,
     'addressId': addressId,
     'postalCode': postalCode,
+    'shippedAt': shippedAt != null ? Timestamp.fromDate(shippedAt!) : null,
   };
 
   SaleShipment copyWith({
@@ -252,6 +269,7 @@ class SaleShipment {
     Object? trackingCode = _sentinel,
     Object? addressId = _sentinel,
     Object? postalCode = _sentinel,
+    Object? shippedAt = _sentinel,
   }) => SaleShipment(
     type: type,
     status: status ?? this.status,
@@ -261,6 +279,8 @@ class SaleShipment {
         addressId == _sentinel ? this.addressId : addressId as String?,
     postalCode:
         postalCode == _sentinel ? this.postalCode : postalCode as String?,
+    shippedAt:
+        shippedAt == _sentinel ? this.shippedAt : shippedAt as DateTime?,
   );
 }
 

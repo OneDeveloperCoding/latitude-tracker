@@ -46,7 +46,7 @@ StatusIndicatorDot contextualReturnDeliveryDot(Repair repair, ColorScheme cs) {
 }
 
 List<StatusIndicatorDot> repairStatusDots(Repair repair, ColorScheme cs) => [
-      repairWorkDot(repair.status, cs),
       paymentDot(repair.payment, cs),
+      repairWorkDot(repair.status, cs),
       contextualReturnDeliveryDot(repair, cs),
     ];

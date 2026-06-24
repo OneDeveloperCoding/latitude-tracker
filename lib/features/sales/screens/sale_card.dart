@@ -31,7 +31,10 @@ class SaleCard extends StatefulWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final void Function(PaymentMethod method) onMarkPaid;
-  final void Function({String? trackingCode}) onMarkShipped;
+  final void Function({
+    required DateTime shippedAt,
+    String? trackingCode,
+  }) onMarkShipped;
 
   @override
   State<SaleCard> createState() => _SaleCardState();
@@ -39,7 +42,6 @@ class SaleCard extends StatefulWidget {
 
 class _SaleCardState extends State<SaleCard> {
   bool _expanded = false;
-  static final _dateFormat = DateFormat('dd MMM yyyy');
 
   @override
   Widget build(BuildContext context) {
@@ -85,13 +87,16 @@ class _SaleCardState extends State<SaleCard> {
               children: [
                 SlidableAction(
                   onPressed: (_) async {
-                    final code = await showMarkShippedSheet(
+                    final result = await showMarkShippedSheet(
                       context,
                       sale.shipment,
                     );
-                    if (!mounted || code == null) return;
+                    if (!mounted || result == null) return;
                     widget.onMarkShipped(
-                      trackingCode: code.isEmpty ? null : code,
+                      shippedAt: result.shippedAt,
+                      trackingCode: result.trackingCode.isEmpty
+                          ? null
+                          : result.trackingCode,
                     );
                   },
                   backgroundColor: cs.secondaryContainer,
@@ -154,20 +159,7 @@ class _SaleCardState extends State<SaleCard> {
                               setState(() => _expanded = !_expanded),
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text(
-                              _dateFormat.format(sale.createdAt),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(color: cs.onSurfaceVariant),
-                            ),
-                            const Spacer(),
-                            if (sale.scheduledDate != null)
-                              Flexible(child: _ScheduledDateLabel(sale: sale)),
-                          ],
-                        ),
+                        _DatesRow(sale: sale),
                       ],
                     ),
                   ),
@@ -231,7 +223,21 @@ class _ItemsRow extends StatelessWidget {
                           ? items
                               .map((i) => _itemLine(context, i.description))
                               .toList()
-                          : [_itemLine(context, items.first.description)],
+                          : [
+                              _itemLine(context, items.first.description),
+                              if (hasMultiple)
+                                Text(
+                                  context.s.nMoreItems(items.length - 1),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                ),
+                            ],
                     ),
                   ),
                 ],
@@ -372,20 +378,32 @@ class AttentionBadges extends StatelessWidget {
   }
 }
 
-class _ScheduledDateLabel extends StatelessWidget {
-  const _ScheduledDateLabel({required this.sale});
-  static final _dateFormat = DateFormat('dd MMM');
+/// Three-slot date row: bought (left) · shipped (centre) · scheduled (right).
+/// Present slots are spread with [Spacer] widgets; absent slots are omitted so
+/// siblings shift inward to fill the space.
+class _DatesRow extends StatelessWidget {
+  const _DatesRow({required this.sale});
+  static final _shortFormat = DateFormat('dd MMM');
+  static final _longFormat = DateFormat('dd MMM yyyy');
   final Sale sale;
 
-  Color _color(BuildContext context, int days, bool isDelivered) {
+  Color _scheduledColor(
+    BuildContext context, {
+    required int days,
+    required bool isDelivered,
+  }) {
     final cs = Theme.of(context).colorScheme;
     if (isDelivered || days > 3) return cs.onSurfaceVariant;
     if (days <= 2) return cs.error;
     return cs.warning;
   }
 
-  String _label(AppStrings s, int days, bool isDelivered) {
-    final formatted = _dateFormat.format(sale.scheduledDate!);
+  String _scheduledLabel(
+    AppStrings s, {
+    required int days,
+    required bool isDelivered,
+  }) {
+    final formatted = _shortFormat.format(sale.scheduledDate!);
     if (isDelivered) return formatted;
     if (days < 0) return '$formatted (${s.daysOverdue(days.abs())})';
     if (days == 0) return s.today;
@@ -393,30 +411,75 @@ class _ScheduledDateLabel extends StatelessWidget {
     return formatted;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    final days = sale.daysUntilScheduled()!;
-    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
-    final color = _color(context, days, isDelivered);
-    final textStyle = Theme.of(context)
+  Widget _slot(BuildContext context, {
+    required IconData icon,
+    required String text,
+    required Color color,
+    required FontWeight fontWeight,
+  }) {
+    final style = Theme.of(context)
         .textTheme
         .labelSmall
-        ?.copyWith(color: color, fontWeight: FontWeight.w500);
-
+        ?.copyWith(color: color, fontWeight: fontWeight);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.event, size: 12, color: color, semanticLabel: ''),
+        Icon(icon, size: 11, color: color, semanticLabel: ''),
         const SizedBox(width: 3),
-        Flexible(
-          child: Text(
-            _label(s, days, isDelivered),
-            style: textStyle,
-            overflow: TextOverflow.ellipsis,
-            softWrap: false,
-          ),
+        Text(
+          text,
+          style: style,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
         ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final s = context.s;
+    final muted = cs.onSurfaceVariant;
+
+    final hasShipped = sale.shipment.type == DeliveryType.shipping &&
+        sale.shipment.shippedAt != null;
+    final hasScheduled = sale.scheduledDate != null;
+    // Compute once — shared by _scheduledColor and _scheduledLabel.
+    final scheduledDays = hasScheduled ? sale.daysUntilScheduled()! : 0;
+    final isDelivered = sale.shipment.status == ShipmentStatus.delivered;
+
+    return Row(
+      children: [
+        _slot(
+          context,
+          icon: Icons.shopping_bag_outlined,
+          text: _longFormat.format(sale.createdAt),
+          color: muted,
+          fontWeight: FontWeight.normal,
+        ),
+        if (hasShipped) ...[
+          const Spacer(),
+          _slot(
+            context,
+            icon: Icons.local_shipping_outlined,
+            text: _shortFormat.format(sale.shipment.shippedAt!),
+            color: muted,
+            fontWeight: FontWeight.normal,
+          ),
+        ],
+        if (hasScheduled) ...[
+          const Spacer(),
+          _slot(
+            context,
+            icon: Icons.event,
+            text: _scheduledLabel(s,
+                days: scheduledDays, isDelivered: isDelivered),
+            color: _scheduledColor(context,
+                days: scheduledDays, isDelivered: isDelivered),
+            fontWeight: FontWeight.w500,
+          ),
+        ],
       ],
     );
   }

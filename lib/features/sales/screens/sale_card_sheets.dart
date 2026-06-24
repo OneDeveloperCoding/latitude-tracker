@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/utils/date_time_utils.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
 
@@ -13,17 +15,19 @@ Future<PaymentMethod?> showMarkPaidSheet(
       builder: (_) => MarkPaidSheet(currentMethod: payment.method),
     );
 
-/// Returns the entered tracking code string on confirm (may be empty),
-/// or null if the user cancelled.
-Future<String?> showMarkShippedSheet(
+/// Returns the tracking code and shipped timestamp on confirm, or null if
+/// cancelled. The caller must supply an initial date; the sheet requires the
+/// user to explicitly confirm or change it before saving.
+Future<({String trackingCode, DateTime shippedAt})?> showMarkShippedSheet(
   BuildContext context,
   SaleShipment shipment,
 ) =>
-    showModalBottomSheet<String>(
+    showModalBottomSheet<({String trackingCode, DateTime shippedAt})>(
       context: context,
       isScrollControlled: true,
       builder: (_) => MarkShippedSheet(
         initialTrackingCode: shipment.trackingCode ?? '',
+        initialShippedAt: shipment.shippedAt,
       ),
     );
 
@@ -107,20 +111,30 @@ class _MarkPaidSheetState extends State<MarkPaidSheet> {
 // ── MarkShippedSheet ─────────────────────────────────────────────────────────
 
 class MarkShippedSheet extends StatefulWidget {
-  const MarkShippedSheet({required this.initialTrackingCode, super.key});
+  const MarkShippedSheet({
+    required this.initialTrackingCode,
+    required this.initialShippedAt,
+    super.key,
+  });
   final String initialTrackingCode;
+  // Nullable so that the user must explicitly confirm the date rather than
+  // silently accepting DateTime.now() when no prior shippedAt exists.
+  final DateTime? initialShippedAt;
 
   @override
   State<MarkShippedSheet> createState() => _MarkShippedSheetState();
 }
 
 class _MarkShippedSheetState extends State<MarkShippedSheet> {
+  static final _dateTimeFormat = DateFormat('dd MMM yyyy, HH:mm');
   late final TextEditingController _controller;
+  DateTime? _shippedAt;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialTrackingCode);
+    _shippedAt = widget.initialShippedAt;
   }
 
   @override
@@ -129,10 +143,16 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
     super.dispose();
   }
 
+  Future<void> _pickDateTime() async {
+    final picked = await pickShippedAt(context, initial: _shippedAt);
+    if (picked != null && mounted) setState(() => _shippedAt = picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final cs = Theme.of(context).colorScheme;
+    final hasDate = _shippedAt != null;
 
     return SafeArea(
       child: Padding(
@@ -155,6 +175,26 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
               ],
             ),
             const SizedBox(height: 16),
+            InkWell(
+              onTap: _pickDateTime,
+              borderRadius: BorderRadius.circular(4),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: s.shippedAtLabel,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: const Icon(Icons.edit_calendar_outlined),
+                ),
+                child: Text(
+                  hasDate
+                      ? _dateTimeFormat.format(_shippedAt!)
+                      : s.setShippedAt,
+                  style: hasDate
+                      ? null
+                      : TextStyle(color: cs.onSurface.withValues(alpha: 0.5)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _controller,
               decoration: InputDecoration(
@@ -174,8 +214,12 @@ class _MarkShippedSheetState extends State<MarkShippedSheet> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(_controller.text.trim()),
+                  onPressed: hasDate
+                      ? () => Navigator.of(context).pop((
+                            trackingCode: _controller.text.trim(),
+                            shippedAt: _shippedAt!,
+                          ))
+                      : null,
                   child: Text(s.save),
                 ),
               ],

@@ -10,6 +10,7 @@ import 'package:latitude_tracker/core/l10n/locale_settings.dart'
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/theme/app_theme.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
+import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
 import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
@@ -18,6 +19,7 @@ import 'package:latitude_tracker/features/settings/screens/archive_import_screen
 import 'package:latitude_tracker/features/settings/screens/category_maintenance_screen.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 import 'package:latitude_tracker/features/settings/services/reset_app_service.dart';
+import 'package:latitude_tracker/features/settings/services/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -44,6 +46,7 @@ class SettingsScreen extends StatelessWidget {
               title: Text(s.signedInAs),
               subtitle: Text(isDemo ? s.demoUser : (user?.email ?? '')),
             ),
+            if (!isDemo) const _GoogleAccountTile(),
             ListTile(
               leading: const Icon(Icons.logout),
               title: Text(s.signOut),
@@ -109,6 +112,7 @@ class SettingsScreen extends StatelessWidget {
                 );
               },
             ),
+            const _UpdateTile(),
             if (!isDemo) ...[
               const Divider(),
               _SectionHeader(s.dangerZone),
@@ -501,6 +505,143 @@ class _ThemeBrightnessTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _UpdateTile extends StatelessWidget {
+  const _UpdateTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return ValueListenableBuilder<UpdateState>(
+      valueListenable: UpdateService.instance.state,
+      builder: (context, state, _) => switch (state) {
+        UpdateIdle() => ListTile(
+          leading: const Icon(Icons.system_update_outlined),
+          title: Text(s.checkForUpdates),
+          onTap: UpdateService.instance.checkForUpdate,
+        ),
+        UpdateChecking() => ListTile(
+          leading: const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          title: Text(s.updateChecking),
+        ),
+        UpdateAvailable(:final version) => ListTile(
+          leading: const Icon(Icons.system_update_outlined),
+          title: Text(s.updateAvailableTile(version)),
+          trailing: const Icon(Icons.download_outlined),
+          onTap: () => _startDownload(context),
+        ),
+        UpdateDownloading(:final progress) => ListTile(
+          leading: const Icon(Icons.downloading_outlined),
+          title: Text(s.updateDownloading),
+          subtitle: LinearProgressIndicator(
+            value: progress > 0 ? progress : null,
+          ),
+          enabled: false,
+        ),
+        UpdateError(:final retryDownload) => ListTile(
+          leading: const Icon(Icons.error_outline, color: Colors.red),
+          title: Text(
+            retryDownload != null
+                ? s.updateDownloadFailed
+                : s.updateCheckFailed,
+          ),
+          onTap: () => _handleRetry(context),
+        ),
+      },
+    );
+  }
+
+  Future<void> _startDownload(BuildContext context) async {
+    final result = await UpdateService.instance.downloadAndInstall();
+    if (result == UpdateInstallResult.permissionDenied && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.updateInstallBlocked)),
+      );
+    }
+  }
+
+  Future<void> _handleRetry(BuildContext context) async {
+    final result = await UpdateService.instance.retry();
+    if (result == UpdateInstallResult.permissionDenied && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.updateInstallBlocked)),
+      );
+    }
+  }
+}
+
+class _GoogleAccountTile extends StatefulWidget {
+  const _GoogleAccountTile();
+
+  @override
+  State<_GoogleAccountTile> createState() => _GoogleAccountTileState();
+}
+
+class _GoogleAccountTileState extends State<_GoogleAccountTile> {
+  bool _isLinking = false;
+
+  bool get _isGoogleLinked =>
+      FirebaseAuth.instance.currentUser?.providerData
+          .any((p) => p.providerId == 'google.com') ??
+      false;
+
+  Future<void> _linkGoogle() async {
+    setState(() => _isLinking = true);
+    try {
+      final result = await GoogleAuthService().linkGoogleAccount();
+      if (!mounted) return;
+
+      final message = switch (result) {
+        GoogleAuthSuccess() => null,
+        GoogleAuthCancelled() => null,
+        GoogleAuthCredentialAlreadyInUse() =>
+          context.s.errGoogleCredentialInUse,
+        // Unreachable from linkGoogleAccount() but required for exhaustive
+        // matching on the sealed class.
+        GoogleAuthNoExistingData() => context.s.errGeneric,
+        GoogleAuthNetworkError() => context.s.errNoInternet,
+        GoogleAuthUnknown() => context.s.errGeneric,
+      };
+
+      if (message != null && mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      }
+    } finally {
+      // The finally rebuild also re-reads _isGoogleLinked, so no
+      // intermediate setState() is needed on the success path.
+      if (mounted) setState(() => _isLinking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+
+    if (_isGoogleLinked) {
+      return ListTile(
+        leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+        title: Text(s.googleConnected),
+      );
+    }
+
+    return ListTile(
+      leading: _isLinking
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.add_link),
+      title: Text(s.connectGoogle),
+      onTap: _isLinking ? null : _linkGoogle,
     );
   }
 }
