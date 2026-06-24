@@ -366,6 +366,13 @@ enum AppStrings {
     deleteArchivedYearSubtitle:
         "Removes a year's sales — photos are kept for archive viewing",
     version: 'Version',
+    checkForUpdates: 'Check for updates',
+    updateChecking: 'Checking for updates…',
+    updateDownloading: 'Downloading update…',
+    updateCheckFailed: 'Check failed — tap to retry',
+    updateDownloadFailed: 'Download failed — tap to retry',
+    updateInstallBlocked:
+        'Install permission denied. Enable "Install unknown apps" in Settings.',
     language: 'Language',
     exportWhichYear: 'Export which year?',
     deleteWhichYear: 'Delete which year?',
@@ -840,6 +847,14 @@ enum AppStrings {
     deleteArchivedYearSubtitle:
         'Remove as vendas de um ano — as fotos são mantidas para visualização',
     version: 'Versão',
+    checkForUpdates: 'Verificar atualizações',
+    updateChecking: 'A verificar atualizações…',
+    updateDownloading: 'A descarregar atualização…',
+    updateCheckFailed: 'Falha ao verificar — toque para tentar novamente',
+    updateDownloadFailed: 'Falha no download — toque para tentar novamente',
+    updateInstallBlocked:
+        'Permissão de instalação negada. Ativa "Instalar apps desconhecidas"'
+        ' nas Definições.',
     language: 'Idioma',
     exportWhichYear: 'Exportar qual ano?',
     deleteWhichYear: 'Eliminar qual ano?',
@@ -1270,6 +1285,12 @@ enum AppStrings {
     required this.deleteArchivedYear,
     required this.deleteArchivedYearSubtitle,
     required this.version,
+    required this.checkForUpdates,
+    required this.updateChecking,
+    required this.updateDownloading,
+    required this.updateCheckFailed,
+    required this.updateDownloadFailed,
+    required this.updateInstallBlocked,
     required this.language,
     required this.exportWhichYear,
     required this.deleteWhichYear,
@@ -1736,6 +1757,12 @@ enum AppStrings {
   final String deleteArchivedYear;
   final String deleteArchivedYearSubtitle;
   final String version;
+  final String checkForUpdates;
+  final String updateChecking;
+  final String updateDownloading;
+  final String updateCheckFailed;
+  final String updateDownloadFailed;
+  final String updateInstallBlocked;
   final String language;
   final String exportWhichYear;
   final String deleteWhichYear;
@@ -2070,6 +2097,10 @@ enum AppStrings {
       : (_pt
           ? 'Nenhum comprador corresponde a "$query".'
           : 'No buyers match "$query".');
+
+  String updateAvailableTile(String version) => _pt
+      ? 'Nova versão disponível (v$version)'
+      : 'New version available (v$version)';
 
   String exportSubject(int year) => 'Latitude Tracker — $year archive';
 
