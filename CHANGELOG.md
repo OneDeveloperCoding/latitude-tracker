@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Features
+- Google Sign-In added alongside email/password; a "Connect Google account" tile in Settings → Account links the seller's Google credentials to her existing Firebase account via `linkWithCredential`, preserving the UID and all data; both methods coexist permanently with email/password kept as fallback
+- In-app update checker: app checks GitHub Releases on every cold start and shows an "update available" tile in Settings → App when a newer version is published; tapping downloads and installs the APK directly
+- Sale and Repair detail screens default to read-only; a FAB switches to edit mode — reduces accidental edits and declutters the AppBar
+- RepairCard redesigned with the same tri-indicator strip as SaleCard (payment · work status · return delivery); demo mode guards added to block Firestore writes in demo mode
+- Shipped date shown on SaleCard when a `shipping`-type Shipment has been marked as shipped; Repair detail section order aligned with Sale detail conventions
+
+### Fixes
+- Portuguese label for `in_progress` corrected from "Em curso" to "Em progresso" for both `AssemblyStatus` and `RepairStatus`
+- Sale and Repair item count label simplified to "+ N" (was "+ N more" / "+ N mais")
+
+### Infrastructure
+- CI restore step now base64-decodes both `FIREBASE_OPTIONS_DART` and `GOOGLE_SERVICES_JSON` before running tests or builds
+- `firebase.json` added to `.gitignore`; restored from CI secret in the release workflow
+- Personal info and internal config details removed from README
+
 ### Chores
 - Completed migration from `flutter_lints` to `very_good_analysis` — all ~50 additional lint rules are now active; `analysis_options.yaml` only disables `public_member_api_docs` (not applicable for a private app). Fixes applied: `on Object catch` on all broad catch clauses, `unawaited()` on 53 fire-and-forget futures, `doc.data()!` on four model deserialisers, named bool params on three methods, 80-char line wrapping throughout.
 
