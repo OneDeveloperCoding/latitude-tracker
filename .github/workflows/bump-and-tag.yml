@@ -39,6 +39,7 @@ jobs:
         run: git fetch --tags --force
 
       - name: Configure git identity
+        if: inputs.release_type == 'full'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -68,8 +69,11 @@ jobs:
       - name: Get latest tag
         id: latest_tag
         run: |
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          # git describe can't find tags across merge commits from other branches;
+          # sorting all fetched tags by semver is reliable regardless of graph shape.
+          TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || echo "v0.0.0")
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Latest tag: $TAG"
 
       - name: Detect bump from commits since last tag
         id: detect_bump
@@ -168,34 +172,30 @@ jobs:
       - name: Test
         run: flutter test --no-pub
 
-      # Bump pubspec.yaml before building so the version is baked into the APK.
-      - name: Bump version in pubspec.yaml
-        run: |
-          NEW_TAG="${{ steps.next_version.outputs.new_tag }}"
-          VERSION_NAME="${NEW_TAG#v}"
-          VERSION_CODE="${{ steps.next_version.outputs.version_code }}"
-          sed -i "s/^version: .*/version: ${VERSION_NAME}+${VERSION_CODE}/" pubspec.yaml
-          echo "Updated pubspec.yaml to version: ${VERSION_NAME}+${VERSION_CODE}"
-
       - name: Build APK
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/android/release.keystore
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: flutter build apk --release
+        run: |
+          VERSION_NAME="${{ steps.next_version.outputs.new_tag }}"
+          VERSION_NAME="${VERSION_NAME#v}"
+          VERSION_CODE="${{ steps.next_version.outputs.version_code }}"
+          flutter build apk --release \
+            --build-name="$VERSION_NAME" \
+            --build-number="$VERSION_CODE"
 
       - name: Rename APK
         run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/latitude-tracker-${{ steps.next_version.outputs.new_tag }}.apk
 
-      # Tag and push only after a successful build — prevents orphan tags from failed runs.
-      - name: Commit version bump, tag, and push
+      # Tag only after a successful build — prevents orphan tags from failed runs.
+      # Version is baked into the APK via --build-name/--build-number; no branch commit needed.
+      - name: Tag and push
         run: |
           NEW_TAG="${{ steps.next_version.outputs.new_tag }}"
-          git add pubspec.yaml
-          git commit -m "chore: bump version to ${NEW_TAG}"
           git tag "${NEW_TAG}"
-          git push origin main "${NEW_TAG}"
+          git push origin "${NEW_TAG}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
