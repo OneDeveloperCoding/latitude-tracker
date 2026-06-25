@@ -302,6 +302,10 @@ enum AppStrings {
     noContactDetails: 'No contact details saved.',
     couldNotOpenInstagram: 'Could not open Instagram',
     couldNotOpenMaps: 'Could not open Maps',
+    call: 'Call',
+    sendMessage: 'Send message',
+    couldNotCall: 'Could not open phone app',
+    couldNotSendMessage: 'Could not open messaging app',
     openInMaps: 'Open in Maps',
     defaultChip: 'Default',
     all: 'All',
@@ -791,6 +795,10 @@ enum AppStrings {
     noContactDetails: 'Sem dados de contacto guardados.',
     couldNotOpenInstagram: 'Não foi possível abrir o Instagram',
     couldNotOpenMaps: 'Não foi possível abrir o Maps',
+    call: 'Ligar',
+    sendMessage: 'Enviar mensagem',
+    couldNotCall: 'Não foi possível abrir o telefone',
+    couldNotSendMessage: 'Não foi possível abrir o app de mensagens',
     openInMaps: 'Abrir no Maps',
     defaultChip: 'Padrão',
     all: 'Todos',
@@ -1249,6 +1257,10 @@ enum AppStrings {
     required this.noContactDetails,
     required this.couldNotOpenInstagram,
     required this.couldNotOpenMaps,
+    required this.call,
+    required this.sendMessage,
+    required this.couldNotCall,
+    required this.couldNotSendMessage,
     required this.openInMaps,
     required this.defaultChip,
     required this.all,
@@ -1713,6 +1725,10 @@ enum AppStrings {
   final String noContactDetails;
   final String couldNotOpenInstagram;
   final String couldNotOpenMaps;
+  final String call;
+  final String sendMessage;
+  final String couldNotCall;
+  final String couldNotSendMessage;
   final String openInMaps;
   final String defaultChip;
   final String all;
