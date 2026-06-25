@@ -30,6 +30,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # --json is not available on gh pr create in all runner versions;
+          # parse the PR number from the URL that gh always prints to stdout.
           EXISTING=$(gh pr list \
             --repo "${{ github.repository }}" \
             --base main --head develop --state open \
@@ -39,14 +41,14 @@ jobs:
             echo "number=$EXISTING" >> "$GITHUB_OUTPUT"
             echo "Using existing PR #$EXISTING"
           else
-            NUMBER=$(gh pr create \
+            PR_URL=$(gh pr create \
               --repo "${{ github.repository }}" \
               --base main --head develop \
               --title "release: merge develop into main" \
-              --body "Automated release — triggered via Ship workflow by @${{ github.actor }}." \
-              --json number --jq '.number')
+              --body "Automated release — triggered via Ship workflow by @${{ github.actor }}.")
+            NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
             echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
-            echo "Created PR #$NUMBER"
+            echo "Created PR #$NUMBER ($PR_URL)"
           fi
 
       - name: Wait for CI checks
