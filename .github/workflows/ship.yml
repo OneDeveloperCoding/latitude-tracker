@@ -30,6 +30,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          AHEAD=$(gh api \
+            "repos/${{ github.repository }}/compare/main...develop" \
+            --jq '.ahead_by')
+
+          if [ "$AHEAD" = "0" ]; then
+            echo "develop is already in sync with main — nothing to release."
+            exit 0
+          fi
+
           # --json is not available on gh pr create in all runner versions;
           # parse the PR number from the URL that gh always prints to stdout.
           EXISTING=$(gh pr list \
@@ -55,9 +64,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr checks "${{ steps.pr.outputs.number }}" \
-            --repo "${{ github.repository }}" \
-            --watch --interval 30
+          PR="${{ steps.pr.outputs.number }}"
+          REPO="${{ github.repository }}"
+          # Poll until GitHub registers at least one check (CI can take ~10s to appear).
+          until gh pr checks "$PR" --repo "$REPO" > /dev/null 2>&1; do
+            echo "Waiting for checks to register..."
+            sleep 10
+          done
+          gh pr checks "$PR" --repo "$REPO" --watch --interval 30
 
       - name: Merge PR
         env:
