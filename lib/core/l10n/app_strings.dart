@@ -112,6 +112,7 @@ enum AppStrings {
     unpaid: 'Unpaid',
     pendingShipment: 'Pending shipment',
     assemblyNotReady: 'Needs materials',
+    readyToAssemble: 'Ready to assemble',
     nifRequired: 'NIF required',
     overdue: 'Overdue',
     dashboardTrends: 'Analytics',
@@ -600,6 +601,7 @@ enum AppStrings {
     unpaid: 'Por pagar',
     pendingShipment: 'Envio pendente',
     assemblyNotReady: 'Faltam materiais',
+    readyToAssemble: 'Pronto a montar',
     nifRequired: 'NIF em falta',
     overdue: 'Em atraso',
     dashboardTrends: 'Análises',
@@ -1060,6 +1062,7 @@ enum AppStrings {
     required this.unpaid,
     required this.pendingShipment,
     required this.assemblyNotReady,
+    required this.readyToAssemble,
     required this.nifRequired,
     required this.overdue,
     required this.dashboardTrends,
@@ -1507,6 +1510,7 @@ enum AppStrings {
   final String unpaid;
   final String pendingShipment;
   final String assemblyNotReady;
+  final String readyToAssemble;
   final String nifRequired;
   final String overdue;
   final String dashboardTrends;
@@ -1967,6 +1971,7 @@ enum AppStrings {
           SaleFilter.pickup => 'Levantamento',
           SaleFilter.handDelivery => 'Entrega em mão',
           SaleFilter.assemblyNotReady => 'Faltam materiais',
+          SaleFilter.readyToAssemble => 'Pronto a montar',
           SaleFilter.overdue => 'Em atraso',
           SaleFilter.upcomingScheduled => 'Próximas',
         }
@@ -1980,6 +1985,7 @@ enum AppStrings {
           SaleFilter.pickup => 'Pickup',
           SaleFilter.handDelivery => 'Hand delivery',
           SaleFilter.assemblyNotReady => 'Needs materials',
+          SaleFilter.readyToAssemble => 'Ready to assemble',
           SaleFilter.overdue => 'Overdue',
           SaleFilter.upcomingScheduled => 'Upcoming',
         };

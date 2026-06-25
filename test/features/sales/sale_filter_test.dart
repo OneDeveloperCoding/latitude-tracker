@@ -186,6 +186,88 @@ void main() {
       });
     });
 
+    group('readyToAssemble', () {
+      const availableComponent = ComponentItem(
+        id: 'c1',
+        name: 'Silver chain',
+        isAvailable: true,
+      );
+      const missingComponent = ComponentItem(
+        id: 'c2',
+        name: 'Silver chain',
+        isAvailable: false,
+      );
+
+      test('passes when notStarted with no components', () {
+        expect(
+          SaleFilter.readyToAssemble.test(
+            makeSale(assembly: AssemblyStatus.notStarted),
+          ),
+          isTrue,
+        );
+      });
+
+      test('passes when notStarted with all components available', () {
+        expect(
+          SaleFilter.readyToAssemble.test(
+            makeSale(
+              items: [
+                makeSaleItem(
+                  assembly: AssemblyStatus.notStarted,
+                  components: [availableComponent],
+                ),
+              ],
+            ),
+          ),
+          isTrue,
+        );
+      });
+
+      test('fails when inProgress — already being assembled', () {
+        expect(
+          SaleFilter.readyToAssemble.test(
+            makeSale(assembly: AssemblyStatus.inProgress),
+          ),
+          isFalse,
+        );
+      });
+
+      test('fails when assembly is ready', () {
+        expect(
+          SaleFilter.readyToAssemble.test(makeSale()),
+          isFalse,
+        );
+      });
+
+      test('fails when delivered', () {
+        expect(
+          SaleFilter.readyToAssemble.test(
+            makeSale(
+              assembly: AssemblyStatus.notStarted,
+              shipmentStatus: ShipmentStatus.delivered,
+            ),
+          ),
+          isFalse,
+        );
+      });
+
+      test('fails when a component is missing', () {
+        expect(
+          SaleFilter.readyToAssemble.test(
+            makeSale(
+              items: [
+                makeSaleItem(
+                  assembly: AssemblyStatus.notStarted,
+                  components: [missingComponent],
+                ),
+              ],
+            ),
+          ),
+          isFalse,
+        );
+      });
+    });
+
     group('overdue', () {
       test('passes when scheduled yesterday and not delivered', () {
         expect(

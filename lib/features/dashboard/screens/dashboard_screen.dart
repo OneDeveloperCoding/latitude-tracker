@@ -28,7 +28,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     unpaidActionRevenue: 0,
     pendingShipmentCount: 0,
     shippedCount: 0,
-    assemblyNotReadyCount: 0,
+    needsMaterialsCount: 0,
+    readyToAssembleCount: 0,
     nifRequiredCount: 0,
     overdueCount: 0,
     upcomingCount: 0,
@@ -313,9 +314,18 @@ class _ActionGrid extends StatelessWidget {
         _ActionRow(
           icon: Icons.shopping_cart,
           label: s.assemblyNotReady,
-          count: actionCounts.assemblyNotReadyCount,
+          count: actionCounts.needsMaterialsCount,
           color: Colors.purple,
           destination: const ShoppingListScreen(),
+        ),
+        _ActionRow(
+          icon: Icons.handyman,
+          label: s.readyToAssemble,
+          count: actionCounts.readyToAssembleCount,
+          color: Colors.deepOrange,
+          destination: const SalesListScreen(
+            initialFilters: {SaleFilter.readyToAssemble},
+          ),
         ),
         _ActionRow(
           icon: Icons.local_shipping,

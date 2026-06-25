@@ -51,5 +51,164 @@ void main() {
 
       expect(counts.upcomingCount, 1);
     });
+
+    group('needsMaterialsCount and readyToAssembleCount', () {
+      const missingComponent = ComponentItem(
+        id: 'c1',
+        name: 'Silver chain',
+        isAvailable: false,
+      );
+      const availableComponent = ComponentItem(
+        id: 'c2',
+        name: 'Silver chain',
+        isAvailable: true,
+      );
+
+      test('counts a sale that has at least one unacquired component', () {
+        final sales = [
+          makeSale(
+            items: [makeSaleItem(components: [missingComponent])],
+          ),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 1);
+      });
+
+      test('does not count notStarted assembly with no components', () {
+        final sales = [
+          makeSale(assembly: AssemblyStatus.notStarted),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 0);
+      });
+
+      test('counts waitingForMaterials status even with no ComponentItems', () {
+        final sales = [
+          makeSale(assembly: AssemblyStatus.waitingForMaterials),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 1);
+      });
+
+      test('does not count a sale where all components are available', () {
+        final sales = [
+          makeSale(
+            items: [makeSaleItem(components: [availableComponent])],
+          ),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 0);
+      });
+
+      test('does not count delivered sales', () {
+        final sales = [
+          makeSale(
+            shipmentStatus: ShipmentStatus.delivered,
+            items: [makeSaleItem(components: [missingComponent])],
+          ),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 0);
+      });
+
+      test('counts only sales with at least one missing component', () {
+        final sales = [
+          makeSale(items: [makeSaleItem(components: [missingComponent])]),
+          makeSale(items: [makeSaleItem(components: [availableComponent])]),
+          makeSale(assembly: AssemblyStatus.notStarted),
+          makeSale(items: [makeSaleItem(components: [missingComponent])]),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 2);
+      });
+
+      test('readyToAssemble counts a new sale with no components', () {
+        final sales = [makeSale(assembly: AssemblyStatus.notStarted)];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 1);
+      });
+
+      test('readyToAssemble counts when all components are acquired', () {
+        final sales = [
+          makeSale(
+            items: [
+              makeSaleItem(
+                assembly: AssemblyStatus.notStarted,
+                components: [availableComponent],
+              ),
+            ],
+          ),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 1);
+      });
+
+      test('readyToAssemble does not count a sale with missing components', () {
+        final sales = [
+          makeSale(items: [makeSaleItem(components: [missingComponent])]),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 0);
+      });
+
+      test('readyToAssemble does not count delivered sales', () {
+        final sales = [
+          makeSale(
+            assembly: AssemblyStatus.notStarted,
+            shipmentStatus: ShipmentStatus.delivered,
+          ),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 0);
+      });
+
+      test('readyToAssemble does not count assembly-complete sales', () {
+        final sales = [makeSale()];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 0);
+      });
+
+      test('readyToAssemble does not count inProgress sales', () {
+        final sales = [makeSale(assembly: AssemblyStatus.inProgress)];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 0);
+      });
+
+      test('needsMaterials and readyToAssemble are mutually exclusive', () {
+        final sales = [
+          makeSale(items: [makeSaleItem(components: [missingComponent])]),
+          makeSale(assembly: AssemblyStatus.notStarted),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 1);
+        expect(counts.readyToAssembleCount, 1);
+      });
+    });
   });
 }
