@@ -1,0 +1,85 @@
+name: Build
+
+run-name: "build — ${{ github.event.release.tag_name }}"
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Derive version from release tag
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          VERSION_CODE=$(( MAJOR * 1000000 + MINOR * 1000 + PATCH ))
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION ($VERSION_CODE)"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+          channel: stable
+          cache: true
+
+      - name: Restore Firebase config
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          printf '%s' "$FIREBASE_OPTIONS_DART" | base64 -d > lib/firebase_options.dart
+          printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json
+
+      - name: Restore release keystore
+        env:
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+        run: |
+          printf '%s' "$RELEASE_KEYSTORE" | tr -dc 'A-Za-z0-9+/=' | base64 -d > android/release.keystore
+          if [ ! -s android/release.keystore ]; then
+            echo "ERROR: RELEASE_KEYSTORE secret is empty or base64-invalid"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/android/release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          flutter build apk --release \
+            --build-name="${{ steps.version.outputs.version }}" \
+            --build-number="${{ steps.version.outputs.version_code }}"
+
+      - name: Upload APK and publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          APK="latitude-tracker-${TAG}.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk "$APK"
+          gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
+          gh release edit "$TAG" --draft=false --repo "${{ github.repository }}"

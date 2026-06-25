@@ -960,7 +960,7 @@ class _SaleDetailReadBody extends StatelessWidget {
           const SizedBox(height: 16),
           _SectionCard(
             title: s.sectionNotes,
-            child: Text(sale.notes!),
+            child: SelectableText(sale.notes!),
           ),
         ],
         const SizedBox(height: 32),
