@@ -18,11 +18,11 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
 
-      - name: Parse version from pubspec.yaml
+      - name: Derive version from release tag
         id: version
         run: |
-          FULL=$(grep '^version:' pubspec.yaml | sed 's/version: *//')
-          VERSION=${FULL%%+*}
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
           MAJOR=$(echo "$VERSION" | cut -d. -f1)
           MINOR=$(echo "$VERSION" | cut -d. -f2)
           PATCH=$(echo "$VERSION" | cut -d. -f3)
@@ -46,11 +46,9 @@ jobs:
         env:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-          FIREBASE_JSON: ${{ secrets.FIREBASE_JSON }}
         run: |
           printf '%s' "$FIREBASE_OPTIONS_DART" | base64 -d > lib/firebase_options.dart
           printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json
-          printf '%s' "$FIREBASE_JSON" | base64 -d > firebase.json
 
       - name: Restore release keystore
         env:
@@ -76,11 +74,12 @@ jobs:
             --build-name="${{ steps.version.outputs.version }}" \
             --build-number="${{ steps.version.outputs.version_code }}"
 
-      - name: Upload APK to release
+      - name: Upload APK and publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.event.release.tag_name }}"
           APK="latitude-tracker-${TAG}.apk"
           mv build/app/outputs/flutter-apk/app-release.apk "$APK"
-          gh release upload "$TAG" "$APK" --repo "${{ github.repository }}"
+          gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
+          gh release edit "$TAG" --draft=false --repo "${{ github.repository }}"
