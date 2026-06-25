@@ -753,7 +753,7 @@ void _showNotePreview(BuildContext context, String notes) {
             ],
           ),
           const SizedBox(height: 12),
-          Text(notes, style: Theme.of(context).textTheme.bodyMedium),
+          SelectableText(notes, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     ),
@@ -941,7 +941,7 @@ class _InfoSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: SelectableText(
                         buyer.notes!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

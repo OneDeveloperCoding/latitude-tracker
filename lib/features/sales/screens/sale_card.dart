@@ -505,7 +505,7 @@ void _showNotePreview(BuildContext context, String notes) {
             ],
           ),
           const SizedBox(height: 12),
-          Text(notes, style: Theme.of(ctx).textTheme.bodyMedium),
+          SelectableText(notes, style: Theme.of(ctx).textTheme.bodyMedium),
         ],
       ),
     ),
