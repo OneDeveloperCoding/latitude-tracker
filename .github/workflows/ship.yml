@@ -77,6 +77,7 @@ jobs:
           gh pr checks "$PR" --repo "$REPO" --watch --interval 30
 
       - name: Merge PR
+        if: steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
