@@ -65,7 +65,7 @@ extension SaleFilterTest on SaleFilter {
         sale.derivedAssemblyStatus != AssemblyStatus.ready,
       SaleFilter.readyToAssemble =>
         sale.shipment.status != ShipmentStatus.delivered &&
-            sale.derivedAssemblyStatus != AssemblyStatus.ready &&
+            sale.derivedAssemblyStatus == AssemblyStatus.notStarted &&
             !sale.hasMissingComponents,
       SaleFilter.overdue =>
         sale.scheduledDate != null &&

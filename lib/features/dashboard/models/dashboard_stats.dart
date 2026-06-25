@@ -63,7 +63,9 @@ class DashboardActionCounts {
       }
       if (SaleFilter.pendingShipment.test(s)) pendingShipmentCount++;
       if (SaleFilter.shipped.test(s)) shippedCount++;
-      if (s.hasMissingComponents && active(s)) needsMaterialsCount++;
+      final hasMissing = s.hasMissingComponents ||
+          s.derivedAssemblyStatus == AssemblyStatus.waitingForMaterials;
+      if (hasMissing && active(s)) needsMaterialsCount++;
       if (SaleFilter.readyToAssemble.test(s)) readyToAssembleCount++;
       if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) {
         nifRequiredCount++;

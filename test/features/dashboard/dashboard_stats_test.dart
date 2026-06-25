@@ -78,7 +78,7 @@ void main() {
         expect(counts.needsMaterialsCount, 1);
       });
 
-      test('does not count a sale with no components even if assembly is notStarted', () {
+      test('does not count a sale with notStarted assembly and no components', () {
         final sales = [
           makeSale(assembly: AssemblyStatus.notStarted),
         ];
@@ -86,6 +86,16 @@ void main() {
         final counts = DashboardActionCounts.compute(sales);
 
         expect(counts.needsMaterialsCount, 0);
+      });
+
+      test('counts a sale whose item status is waitingForMaterials even with no ComponentItems', () {
+        final sales = [
+          makeSale(assembly: AssemblyStatus.waitingForMaterials),
+        ];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.needsMaterialsCount, 1);
       });
 
       test('does not count a sale where all components are available', () {
@@ -176,6 +186,14 @@ void main() {
 
       test('readyToAssemble does not count assembly-complete sales', () {
         final sales = [makeSale(assembly: AssemblyStatus.ready)];
+
+        final counts = DashboardActionCounts.compute(sales);
+
+        expect(counts.readyToAssembleCount, 0);
+      });
+
+      test('readyToAssemble does not count inProgress sales', () {
+        final sales = [makeSale(assembly: AssemblyStatus.inProgress)];
 
         final counts = DashboardActionCounts.compute(sales);
 
