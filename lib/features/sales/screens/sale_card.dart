@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
+import 'package:latitude_tracker/core/widgets/note_preview_sheet.dart';
 import 'package:latitude_tracker/core/widgets/status_indicator_strip.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_card_sheets.dart';
@@ -305,7 +306,7 @@ class AttentionBadges extends StatelessWidget {
         if (hasNote) ...[
           const SizedBox(width: 4),
           InkWell(
-            onTap: () => _showNotePreview(context, sale.notes!),
+            onTap: () => showNotePreviewSheet(context, sale.notes!),
             borderRadius: _kBadgeRadius,
             child: Padding(
               padding: const EdgeInsets.all(11),
@@ -485,32 +486,6 @@ class _DatesRow extends StatelessWidget {
   }
 }
 
-void _showNotePreview(BuildContext context, String notes) {
-  final s = context.s;
-  unawaited(showModalBottomSheet<void>(
-    context: context,
-    builder: (ctx) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.sticky_note_2_outlined,
-                  color: Theme.of(ctx).colorScheme.primary),
-              const SizedBox(width: 12),
-              Text(s.sectionNotes,
-                  style: Theme.of(ctx).textTheme.titleMedium),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SelectableText(notes, style: Theme.of(ctx).textTheme.bodyMedium),
-        ],
-      ),
-    ),
-  ));
-}
 
 void _showNifDetail(
     BuildContext context, bool buyerHasNif, bool atSubmissionDone) {
