@@ -74,8 +74,9 @@ class _SalesFilterSheetState extends State<SalesFilterSheet> {
       (
         label: s.dashboardGroupLogistics,
         filters: [
-          SaleFilter.pendingShipment,
           SaleFilter.assemblyNotReady,
+          SaleFilter.readyToAssemble,
+          SaleFilter.pendingShipment,
           SaleFilter.shipped,
           SaleFilter.scheduled,
           SaleFilter.pickup,

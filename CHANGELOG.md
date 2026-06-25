@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+---
+
+## [1.9.0] — 2026-06-25
+
+### Features
+- Dashboard "Ready to assemble" card: counts and links to sales where all components are acquired and assembly hasn't started yet
+- Dashboard "Needs materials" counter fixed to cover only sales with missing components or `waitingForMaterials` status (previously counted all non-ready assembly states)
+
+### Fixes
+- Ship workflow: `gh pr list` returned the string `"null"` on an empty result set, causing PR creation to be skipped on every first run; fixed with an explicit length guard
+
+### Infrastructure
+- Ship workflow added: single `workflow_dispatch` trigger that merges `develop → main`, waits for CI, and calls the Release workflow — one-click releases from GitHub Actions
+- Release workflow now supports `workflow_call` so Ship can invoke it as a reusable step
+
+### Chores
+- `Sale.needsMaterials` getter extracted as single source of truth for the missing-components predicate used by the dashboard counter
+
+---
+
+## [1.8.0] — 2026-06-25
+
 ### Features
 - Google Sign-In added alongside email/password; a "Connect Google account" tile in Settings → Account links the seller's Google credentials to her existing Firebase account via `linkWithCredential`, preserving the UID and all data; both methods coexist permanently with email/password kept as fallback
 - In-app update checker: app checks GitHub Releases on every cold start and shows an "update available" tile in Settings → App when a newer version is published; tapping downloads and installs the APK directly
@@ -17,6 +39,7 @@
 - CI restore step now base64-decodes both `FIREBASE_OPTIONS_DART` and `GOOGLE_SERVICES_JSON` before running tests or builds
 - `firebase.json` added to `.gitignore`; restored from CI secret in the release workflow
 - Personal info and internal config details removed from README
+- Release workflow now bakes version into APK via `--build-name`/`--build-number` flags instead of committing a pubspec change — no direct push to `main` required; tag push only
 
 ### Chores
 - Completed migration from `flutter_lints` to `very_good_analysis` — all ~50 additional lint rules are now active; `analysis_options.yaml` only disables `public_member_api_docs` (not applicable for a private app). Fixes applied: `on Object catch` on all broad catch clauses, `unawaited()` on 53 fire-and-forget futures, `doc.data()!` on four model deserialisers, named bool params on three methods, 80-char line wrapping throughout.

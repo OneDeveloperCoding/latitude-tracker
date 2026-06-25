@@ -32,7 +32,8 @@ class DashboardActionCounts {
     required this.unpaidActionRevenue,
     required this.pendingShipmentCount,
     required this.shippedCount,
-    required this.assemblyNotReadyCount,
+    required this.needsMaterialsCount,
+    required this.readyToAssembleCount,
     required this.nifRequiredCount,
     required this.overdueCount,
     required this.upcomingCount,
@@ -49,7 +50,8 @@ class DashboardActionCounts {
     double unpaidActionRevenue = 0;
     var pendingShipmentCount = 0;
     var shippedCount = 0;
-    var assemblyNotReadyCount = 0;
+    var needsMaterialsCount = 0;
+    var readyToAssembleCount = 0;
     var nifRequiredCount = 0;
     var overdueCount = 0;
     var upcomingCount = 0;
@@ -61,9 +63,8 @@ class DashboardActionCounts {
       }
       if (SaleFilter.pendingShipment.test(s)) pendingShipmentCount++;
       if (SaleFilter.shipped.test(s)) shippedCount++;
-      if (SaleFilter.assemblyNotReady.test(s) && active(s)) {
-        assemblyNotReadyCount++;
-      }
+      if (s.needsMaterials && active(s)) needsMaterialsCount++;
+      if (SaleFilter.readyToAssemble.test(s)) readyToAssembleCount++;
       if (SaleFilter.nifRequired.test(s) && active(s) && !s.atSubmissionDone) {
         nifRequiredCount++;
       }
@@ -78,7 +79,8 @@ class DashboardActionCounts {
       unpaidActionRevenue: unpaidActionRevenue,
       pendingShipmentCount: pendingShipmentCount,
       shippedCount: shippedCount,
-      assemblyNotReadyCount: assemblyNotReadyCount,
+      needsMaterialsCount: needsMaterialsCount,
+      readyToAssembleCount: readyToAssembleCount,
       nifRequiredCount: nifRequiredCount,
       overdueCount: overdueCount,
       upcomingCount: upcomingCount,
@@ -89,7 +91,8 @@ class DashboardActionCounts {
   final double unpaidActionRevenue;
   final int pendingShipmentCount;
   final int shippedCount;
-  final int assemblyNotReadyCount;
+  final int needsMaterialsCount;
+  final int readyToAssembleCount;
   final int nifRequiredCount;
   final int overdueCount;
   final int upcomingCount;
