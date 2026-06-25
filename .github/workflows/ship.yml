@@ -30,6 +30,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          AHEAD=$(gh api \
+            "repos/${{ github.repository }}/compare/main...develop" \
+            --jq '.ahead_by')
+
+          if [ "$AHEAD" = "0" ]; then
+            echo "develop is already in sync with main — nothing to release."
+            exit 0
+          fi
+
           # --json is not available on gh pr create in all runner versions;
           # parse the PR number from the URL that gh always prints to stdout.
           EXISTING=$(gh pr list \
