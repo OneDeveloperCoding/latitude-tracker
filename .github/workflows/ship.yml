@@ -61,13 +61,16 @@ jobs:
           fi
 
       - name: Wait for CI checks
+        if: steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR="${{ steps.pr.outputs.number }}"
           REPO="${{ github.repository }}"
-          # Poll until GitHub registers at least one check (CI can take ~10s to appear).
-          until gh pr checks "$PR" --repo "$REPO" > /dev/null 2>&1; do
+          # Poll until at least one check is registered. Uses --json to distinguish
+          # "no checks yet" (empty array) from "checks exist but failed" (exit 1),
+          # which plain `gh pr checks` cannot tell apart by exit code alone.
+          until [ "$(gh pr checks "$PR" --repo "$REPO" --json name --jq 'length' 2>/dev/null)" -gt 0 ] 2>/dev/null; do
             echo "Waiting for checks to register..."
             sleep 10
           done
