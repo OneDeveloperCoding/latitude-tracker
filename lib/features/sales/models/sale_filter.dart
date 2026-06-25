@@ -36,6 +36,7 @@ enum SaleFilter {
   pickup,
   handDelivery,
   assemblyNotReady,
+  readyToAssemble,
   overdue,
   upcomingScheduled,
 }
@@ -62,6 +63,10 @@ extension SaleFilterTest on SaleFilter {
         sale.shipment.type == DeliveryType.handDelivery,
       SaleFilter.assemblyNotReady =>
         sale.derivedAssemblyStatus != AssemblyStatus.ready,
+      SaleFilter.readyToAssemble =>
+        sale.shipment.status != ShipmentStatus.delivered &&
+            sale.derivedAssemblyStatus != AssemblyStatus.ready &&
+            !sale.hasMissingComponents,
       SaleFilter.overdue =>
         sale.scheduledDate != null &&
             sale.scheduledDate!.isBefore(startOfToday) &&

@@ -359,6 +359,9 @@ class Sale {
 
   double get totalPrice => items.fold(0, (acc, item) => acc + item.price);
 
+  bool get hasMissingComponents =>
+      items.any((item) => item.components.any((c) => !c.isAvailable));
+
   // Worst-case across all items: waitingForMaterials > inProgress > notStarted
   // > ready.
   // A Sale is only ready when every SaleItem is ready.
