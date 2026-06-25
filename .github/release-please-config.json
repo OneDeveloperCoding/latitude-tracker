@@ -3,7 +3,6 @@
   "release-type": "dart",
   "include-v-in-tag": true,
   "include-component-in-tag": false,
-  "draft": true,
   "packages": {
     ".": {}
   }
