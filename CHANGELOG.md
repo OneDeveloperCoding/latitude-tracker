@@ -4,6 +4,31 @@
 
 ---
 
+## [1.9.3] — 2026-06-25
+
+### Fixes
+- Navigation: going back from a Sale or Buyer detail screen always returned to the Dashboard tab regardless of which tab was active; root cause was `FirebaseAuth.instance.authStateChanges()` called inline inside a builder callback, creating a new stream reference on every animation frame during route transitions — extracted into `_AuthGate` `StatefulWidget` so the stream reference is stable
+
+### Infrastructure
+- Ship workflow: `gh pr merge` now guarded with `if: steps.pr.outputs.number != ''` to prevent running with an empty PR number when develop is already in sync with main
+
+---
+
+## [1.9.2] — 2026-06-25
+
+### Fixes
+- Ship workflow: polling loop now uses `--json name --jq 'length'` to distinguish "no checks registered yet" (empty array) from "checks failed" (non-zero exit), preventing premature `gh pr checks --watch` calls before CI registers
+- Ship workflow: exits cleanly when develop is already in sync with main instead of proceeding with an empty PR number
+
+---
+
+## [1.9.1] — 2026-06-25
+
+### Fixes
+- Ship workflow: PR number now parsed from the URL that `gh pr create` prints to stdout; the `--json` flag is not available on `gh pr create` on all runner versions
+
+---
+
 ## [1.9.0] — 2026-06-25
 
 ### Features
