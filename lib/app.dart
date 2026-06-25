@@ -9,6 +9,35 @@ import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/features/auth/screens/login_screen.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 
+// Keeps the auth stream as a stable field so StreamBuilder never receives a
+// new stream reference on parent rebuilds (which happen every animation frame
+// during route transitions), preventing _MainNavState from being recreated.
+class _AuthGate extends StatefulWidget {
+  const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  final Stream<User?> _stream = FirebaseAuth.instance.authStateChanges();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: _stream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return snapshot.hasData ? const MainNav() : const LoginScreen();
+      },
+    );
+  }
+}
+
 class LatitudeTrackerApp extends StatelessWidget {
   const LatitudeTrackerApp({super.key});
 
@@ -38,19 +67,7 @@ class LatitudeTrackerApp extends StatelessWidget {
                 valueListenable: DemoMode.active,
                 builder: (context, demoActive, _) {
                   if (demoActive) return const MainNav();
-                  return StreamBuilder<User?>(
-                    stream: FirebaseAuth.instance.authStateChanges(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Scaffold(
-                          body: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      return snapshot.hasData
-                          ? const MainNav()
-                          : const LoginScreen();
-                    },
-                  );
+                  return const _AuthGate();
                 },
               ),
             ),
