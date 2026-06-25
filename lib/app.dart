@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:latitude_tracker/core/l10n/locale_settings.dart';
 import 'package:latitude_tracker/core/navigation/main_nav.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/theme/app_theme.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/features/auth/screens/login_screen.dart';
@@ -31,6 +32,10 @@ class _AuthGateState extends State<_AuthGate> {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
+        }
+        if (snapshot.hasError) {
+          logError(snapshot.error!, snapshot.stackTrace ?? StackTrace.current);
+          return const LoginScreen();
         }
         return snapshot.hasData ? const MainNav() : const LoginScreen();
       },
