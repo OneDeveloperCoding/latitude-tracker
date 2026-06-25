@@ -730,6 +730,44 @@ class _SaleTile extends StatelessWidget {
   }
 }
 
+void _showPhoneActions(BuildContext context, String phone) {
+  final s = context.s;
+  unawaited(showModalBottomSheet<void>(
+    context: context,
+    builder: (sheetContext) {
+      ListTile tile(
+        IconData icon,
+        String label,
+        String scheme,
+        String errorMsg,
+      ) =>
+          ListTile(
+            leading: Icon(icon),
+            title: Text(label),
+            onTap: () {
+              Navigator.pop(sheetContext);
+              unawaited(launchExternalUrl(
+                context,
+                Uri(scheme: scheme, path: phone),
+                errorMessage: errorMsg,
+              ));
+            },
+          );
+
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            tile(Icons.call, s.call, 'tel', s.couldNotCall),
+            tile(Icons.message, s.sendMessage, 'sms', s.couldNotSendMessage),
+          ],
+        ),
+      );
+    },
+  ));
+}
+
+
 // ── Addresses list
 // ────────────────────────────────────────────────────────────
 
@@ -875,7 +913,10 @@ class _InfoSection extends StatelessWidget {
                 ),
               ),
             if (buyer.phone != null)
-              _InfoRow(icon: Icons.phone, text: buyer.phone!),
+              InkWell(
+                onTap: () => _showPhoneActions(context, buyer.phone!),
+                child: _InfoRow(icon: Icons.phone, text: buyer.phone!),
+              ),
             if (buyer.nif != null)
               _InfoRow(icon: kNifIcon, text: 'NIF: ${buyer.nif}'),
             if (buyer.instagramHandle == null &&
