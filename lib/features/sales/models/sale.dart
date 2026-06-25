@@ -362,6 +362,10 @@ class Sale {
   bool get hasMissingComponents =>
       items.any((item) => item.components.any((c) => !c.isAvailable));
 
+  bool get needsMaterials =>
+      hasMissingComponents ||
+      derivedAssemblyStatus == AssemblyStatus.waitingForMaterials;
+
   // Worst-case across all items: waitingForMaterials > inProgress > notStarted
   // > ready.
   // A Sale is only ready when every SaleItem is ready.
