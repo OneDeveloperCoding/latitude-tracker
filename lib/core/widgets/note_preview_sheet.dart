@@ -5,7 +5,7 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
 /// Shows a scrollable bottom sheet displaying [notes] as selectable text.
 ///
-/// Uses [isScrollControlled] so long notes can scroll instead of overflowing
+/// Uses isScrollControlled so long notes can scroll instead of overflowing
 /// the sheet's default max height.
 void showNotePreviewSheet(BuildContext context, String notes) {
   final s = context.s;
