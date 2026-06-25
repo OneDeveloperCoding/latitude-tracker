@@ -9,6 +9,7 @@ import 'package:latitude_tracker/core/services/url_launch_service.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
 import 'package:latitude_tracker/core/store/store_state.dart';
+import 'package:latitude_tracker/core/widgets/note_preview_sheet.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
 import 'package:latitude_tracker/features/buyers/models/buyer_stats.dart';
@@ -689,7 +690,7 @@ class _SaleTile extends StatelessWidget {
           children: [
             if (sale.notes?.isNotEmpty == true) ...[
               InkWell(
-                onTap: () => _showNotePreview(context, sale.notes!),
+                onTap: () => showNotePreviewSheet(context, sale.notes!),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
@@ -727,37 +728,6 @@ class _SaleTile extends StatelessWidget {
       ),
     );
   }
-}
-
-void _showNotePreview(BuildContext context, String notes) {
-  final s = context.s;
-  unawaited(showModalBottomSheet<void>(
-    context: context,
-    builder: (_) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.sticky_note_2_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                s.sectionNotes,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(notes, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    ),
-  ));
 }
 
 // ── Addresses list
@@ -941,7 +911,7 @@ class _InfoSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: SelectableText(
                         buyer.notes!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
