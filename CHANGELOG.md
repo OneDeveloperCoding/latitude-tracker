@@ -4,6 +4,24 @@
 
 ---
 
+## [1.9.0] — 2026-06-25
+
+### Features
+- Dashboard "Ready to assemble" card: counts and links to sales where all components are acquired and assembly hasn't started yet
+- Dashboard "Needs materials" counter fixed to cover only sales with missing components or `waitingForMaterials` status (previously counted all non-ready assembly states)
+
+### Fixes
+- Ship workflow: `gh pr list` returned the string `"null"` on an empty result set, causing PR creation to be skipped on every first run; fixed with an explicit length guard
+
+### Infrastructure
+- Ship workflow added: single `workflow_dispatch` trigger that merges `develop → main`, waits for CI, and calls the Release workflow — one-click releases from GitHub Actions
+- Release workflow now supports `workflow_call` so Ship can invoke it as a reusable step
+
+### Chores
+- `Sale.needsMaterials` getter extracted as single source of truth for the missing-components predicate used by the dashboard counter
+
+---
+
 ## [1.8.0] — 2026-06-25
 
 ### Features
