@@ -187,16 +187,14 @@ void main() {
     });
 
     group('readyToAssemble', () {
-      final availableComponent = ComponentItem(
+      const availableComponent = ComponentItem(
         id: 'c1',
         name: 'Silver chain',
-        quantity: 1,
         isAvailable: true,
       );
-      final missingComponent = ComponentItem(
+      const missingComponent = ComponentItem(
         id: 'c2',
         name: 'Silver chain',
-        quantity: 1,
         isAvailable: false,
       );
 

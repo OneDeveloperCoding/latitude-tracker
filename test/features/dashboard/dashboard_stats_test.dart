@@ -53,16 +53,14 @@ void main() {
     });
 
     group('needsMaterialsCount and readyToAssembleCount', () {
-      final missingComponent = ComponentItem(
+      const missingComponent = ComponentItem(
         id: 'c1',
         name: 'Silver chain',
-        quantity: 1,
         isAvailable: false,
       );
-      final availableComponent = ComponentItem(
+      const availableComponent = ComponentItem(
         id: 'c2',
         name: 'Silver chain',
-        quantity: 1,
         isAvailable: true,
       );
 
@@ -78,7 +76,7 @@ void main() {
         expect(counts.needsMaterialsCount, 1);
       });
 
-      test('does not count a sale with notStarted assembly and no components', () {
+      test('does not count notStarted assembly with no components', () {
         final sales = [
           makeSale(assembly: AssemblyStatus.notStarted),
         ];
@@ -88,7 +86,7 @@ void main() {
         expect(counts.needsMaterialsCount, 0);
       });
 
-      test('counts a sale whose item status is waitingForMaterials even with no ComponentItems', () {
+      test('counts waitingForMaterials status even with no ComponentItems', () {
         final sales = [
           makeSale(assembly: AssemblyStatus.waitingForMaterials),
         ];
@@ -123,7 +121,7 @@ void main() {
         expect(counts.needsMaterialsCount, 0);
       });
 
-      test('counts only sales with at least one missing component across multiple', () {
+      test('counts only sales with at least one missing component', () {
         final sales = [
           makeSale(items: [makeSaleItem(components: [missingComponent])]),
           makeSale(items: [makeSaleItem(components: [availableComponent])]),
@@ -144,7 +142,7 @@ void main() {
         expect(counts.readyToAssembleCount, 1);
       });
 
-      test('readyToAssemble counts a sale where all components are acquired', () {
+      test('readyToAssemble counts when all components are acquired', () {
         final sales = [
           makeSale(
             items: [
@@ -185,7 +183,7 @@ void main() {
       });
 
       test('readyToAssemble does not count assembly-complete sales', () {
-        final sales = [makeSale(assembly: AssemblyStatus.ready)];
+        final sales = [makeSale()];
 
         final counts = DashboardActionCounts.compute(sales);
 
