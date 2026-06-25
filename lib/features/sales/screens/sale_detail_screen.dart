@@ -10,6 +10,7 @@ import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/services/url_launch_service.dart';
 import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
 import 'package:latitude_tracker/core/store/store_state.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
 import 'package:latitude_tracker/core/utils/date_time_utils.dart';
@@ -380,19 +381,39 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    try {
-      await _repository.deleteSale(sale.id);
-      if (context.mounted) {
-        _popping = true;
-        Navigator.of(context).pop();
-      }
-    } on Object catch (e, st) {
-      logError(e, st);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
-      }
-    }
+
+    final saleId = sale.id;
+    final repo = _repository;
+    // Capture before pop — ScaffoldMessenger is app-scoped and survives pop.
+    final messenger = ScaffoldMessenger.of(context);
+
+    SalesStore.pendingDeleteId.value = saleId;
+    _popping = true;
+    Navigator.of(context).pop();
+
+    unawaited(
+      messenger
+          .showSnackBar(
+            SnackBar(
+              content: Text(s.saleDeletedUndo),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(label: s.undo, onPressed: () {}),
+            ),
+          )
+          .closed
+          .then((reason) async {
+        SalesStore.pendingDeleteId.value = null;
+        if (reason == SnackBarClosedReason.action) return;
+        try {
+          await repo.deleteSale(saleId);
+        } on Object catch (e, st) {
+          logError(e, st);
+          messenger.showSnackBar(
+            SnackBar(content: Text(s.errorDeletingSaleMsg(e))),
+          );
+        }
+      }),
+    );
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

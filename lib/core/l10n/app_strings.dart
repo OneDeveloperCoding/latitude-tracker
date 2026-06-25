@@ -252,6 +252,8 @@ enum AppStrings {
     addNotes: 'Add notes',
     notesHintDetail: 'e.g. Gift wrap requested, specific colour...',
     errorDeletingSale: 'Error deleting sale',
+    saleDeletedUndo: 'Sale deleted',
+    undo: 'Undo',
     errorLoadingDetail: 'Error',
     delivered: 'delivered',
     shippedStatus: 'shipped',
@@ -745,6 +747,8 @@ enum AppStrings {
     addNotes: 'Adicionar notas',
     notesHintDetail: 'ex. Embrulho para oferta, cor específica...',
     errorDeletingSale: 'Erro ao eliminar venda',
+    saleDeletedUndo: 'Venda eliminada',
+    undo: 'Desfazer',
     errorLoadingDetail: 'Erro',
     delivered: 'entregue',
     shippedStatus: 'enviado',
@@ -1207,6 +1211,8 @@ enum AppStrings {
     required this.addNotes,
     required this.notesHintDetail,
     required this.errorDeletingSale,
+    required this.saleDeletedUndo,
+    required this.undo,
     required this.errorLoadingDetail,
     required this.delivered,
     required this.shippedStatus,
@@ -1669,6 +1675,8 @@ enum AppStrings {
   final String addNotes;
   final String notesHintDetail;
   final String errorDeletingSale;
+  final String saleDeletedUndo;
+  final String undo;
   final String errorLoadingDetail;
   final String delivered;
   final String shippedStatus;
