@@ -25,6 +25,11 @@ void callbackDispatcher() {
     final result = await DriveBackupService().backupNow(silent: true);
     if (result case BackupError(:final error, :final stackTrace)) {
       logError(error, stackTrace);
+    } else if (result case BackupPartialSuccess(:final failedPhotos)) {
+      logError(
+        StateError('Scheduled backup: $failedPhotos photo(s) failed to upload'),
+        StackTrace.current,
+      );
     }
     return true;
   });

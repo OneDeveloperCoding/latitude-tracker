@@ -9,8 +9,10 @@ import 'package:latitude_tracker/features/auth/services/google_auth_service.dart
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _kBackupFloorYear = 2024;
+const _kBackupFloorYear = 2026;
 const _kLastBackupKey = 'drive_backup_last_success';
+const _kRootFolderIdKey = 'drive_backup_root_folder_id';
+const _kDataFileIdPrefix = 'drive_backup_file_';
 const _kBackupFolderName = 'Latitude Tracker Backup';
 const _kDataFolderName = 'data';
 const _kPhotosFolderName = 'photos';
@@ -152,28 +154,43 @@ class DriveBackupService {
   ) async {
     onProgress?.call(BackupPhase.data, 0, 0);
 
-    final backupFolderId = await _findOrCreateFolder(api, _kBackupFolderName);
+    final prefs = await SharedPreferences.getInstance();
+    final backupFolderId = await _getOrCreateCachedFolder(
+      api,
+      prefs,
+      _kRootFolderIdKey,
+      _kBackupFolderName,
+    );
     final dataFolderId = await _findOrCreateFolder(
       api,
       _kDataFolderName,
       parentId: backupFolderId,
     );
 
+    final cachedBuyers = await _archiveService.fetchBuyersData();
     final allPhotos = <PhotoEntry>[];
+    var seenNonEmpty = false;
     final currentYear = DateTime.now().year;
     for (var year = currentYear; year >= _kBackupFloorYear; year--) {
-      final file = await _archiveService.exportYear(year);
+      final file = await _archiveService.exportYear(
+        year,
+        cachedBuyers: cachedBuyers,
+      );
       final content = await file.readAsString();
-      // Assumes data is contiguous: stop on the first empty year rather than
-      // scanning all the way to _kBackupFloorYear. A genuine gap year would
-      // silently skip earlier data — accepted trade-off over extra Firestore
-      // reads per run.
-      if (_isEmptyArchive(content)) break;
-      await _uploadOrUpdateFile(
+      if (_isEmptyArchive(content)) {
+        // Skip empty leading years (e.g. January before the first sale).
+        // Stop only once we've passed the end of contiguous data.
+        if (seenNonEmpty) break;
+        continue;
+      }
+      seenNonEmpty = true;
+      await _uploadOrUpdateCachedFile(
         api,
+        prefs,
         dataFolderId,
         'latitude_tracker_$year.json',
         content,
+        '$_kDataFileIdPrefix$year',
       );
       allPhotos.addAll(extractPhotos(content));
     }
@@ -184,6 +201,83 @@ class DriveBackupService {
       parentId: backupFolderId,
     );
     return _runPhotoBackup(api, photosFolderId, allPhotos, onProgress);
+  }
+
+  // Uses a cached Drive folder ID to skip the search round-trip on subsequent
+  // runs. Falls back to search-and-create on cache miss or if the folder was
+  // deleted from Drive.
+  Future<String> _getOrCreateCachedFolder(
+    drive.DriveApi api,
+    SharedPreferences prefs,
+    String cacheKey,
+    String name, {
+    String? parentId,
+  }) async {
+    final cached = prefs.getString(cacheKey);
+    if (cached != null) {
+      try {
+        await api.files.get(cached, $fields: 'id');
+        return cached;
+      } on Object {
+        // Folder no longer exists in Drive — recreate below.
+        await prefs.remove(cacheKey);
+      }
+    }
+    final id = await _findOrCreateFolder(api, name, parentId: parentId);
+    await prefs.setString(cacheKey, id);
+    return id;
+  }
+
+  // Updates a Drive file by cached ID when available, avoiding the
+  // search-then-create race between concurrent runs. Caches the file ID after
+  // first creation so future runs update by ID directly.
+  Future<void> _uploadOrUpdateCachedFile(
+    drive.DriveApi api,
+    SharedPreferences prefs,
+    String parentId,
+    String fileName,
+    String content,
+    String cacheKey,
+  ) async {
+    final bytes = utf8.encode(content);
+    final media = drive.Media(
+      Stream.value(bytes),
+      bytes.length,
+      contentType: 'application/json',
+    );
+
+    final cachedId = prefs.getString(cacheKey);
+    if (cachedId != null) {
+      try {
+        await api.files.update(drive.File(), cachedId, uploadMedia: media);
+        return;
+      } on Object {
+        // File no longer exists in Drive — fall through to recreate.
+        await prefs.remove(cacheKey);
+      }
+    }
+
+    final result = await api.files.list(
+      q: "name='$fileName' and '$parentId' in parents and trashed=false",
+      $fields: 'files(id)',
+      spaces: 'drive',
+    );
+
+    final String fileId;
+    if (result.files != null && result.files!.isNotEmpty) {
+      fileId = result.files!.first.id!;
+      await api.files.update(drive.File(), fileId, uploadMedia: media);
+    } else {
+      final created = await api.files.create(
+        drive.File()
+          ..name = fileName
+          ..parents = [parentId],
+        uploadMedia: media,
+        $fields: 'id',
+      );
+      fileId = created.id!;
+    }
+    await prefs.setString(cacheKey, fileId);
   }
 
   Future<int> _runPhotoBackup(
@@ -290,7 +384,10 @@ class DriveBackupService {
     String url,
   ) async {
     final bytes = await FirebaseStorage.instance.refFromURL(url).getData();
-    if (bytes == null) return;
+    // Null means the object exists in Storage metadata but has no content.
+    // Treat as a failure so it surfaces in BackupPartialSuccess rather than
+    // being silently skipped and retried on every future run.
+    if (bytes == null) throw StateError('getData() returned null for: $url');
 
     await api.files.create(
       drive.File()
@@ -333,41 +430,6 @@ class DriveBackupService {
       $fields: 'id',
     );
     return folder.id!;
-  }
-
-  Future<void> _uploadOrUpdateFile(
-    drive.DriveApi api,
-    String parentId,
-    String fileName,
-    String content,
-  ) async {
-    final result = await api.files.list(
-      q: "name='$fileName' and '$parentId' in parents and trashed=false",
-      $fields: 'files(id)',
-      spaces: 'drive',
-    );
-
-    final bytes = utf8.encode(content);
-    final media = drive.Media(
-      Stream.value(bytes),
-      bytes.length,
-      contentType: 'application/json',
-    );
-
-    if (result.files != null && result.files!.isNotEmpty) {
-      await api.files.update(
-        drive.File(),
-        result.files!.first.id!,
-        uploadMedia: media,
-      );
-    } else {
-      await api.files.create(
-        drive.File()
-          ..name = fileName
-          ..parents = [parentId],
-        uploadMedia: media,
-      );
-    }
   }
 
   // Stops the year sweep when a year has neither sales nor repairs.
