@@ -30,6 +30,7 @@ environment:
 dependencies:
   cloud_firestore: ^6.4.1
   cupertino_icons: ^1.0.8
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
   file_picker: ^11.0.2
   firebase_auth: ^6.5.1
   firebase_core: ^4.9.0
@@ -42,6 +43,7 @@ dependencies:
   flutter_map: ^8.3.0
   flutter_slidable: ^4.0.3
   google_sign_in: ^6.2.2
+  googleapis: ^13.2.0
   http: ^1.6.0
   image_picker: ^1.2.2
   intl: ^0.20.1

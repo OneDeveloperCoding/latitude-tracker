@@ -18,6 +18,7 @@ import 'package:latitude_tracker/features/sales/repositories/sale_repository.dar
 import 'package:latitude_tracker/features/settings/screens/archive_import_screen.dart';
 import 'package:latitude_tracker/features/settings/screens/category_maintenance_screen.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
+import 'package:latitude_tracker/features/settings/services/drive_backup_service.dart';
 import 'package:latitude_tracker/features/settings/services/reset_app_service.dart';
 import 'package:latitude_tracker/features/settings/services/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -69,6 +70,9 @@ class SettingsScreen extends StatelessWidget {
             _SectionHeader(s.appearance),
             const _ThemePresetTile(),
             const _ThemeBrightnessTile(),
+            const Divider(),
+            _SectionHeader(s.backup),
+            const _BackupSection(),
             const Divider(),
             _SectionHeader(s.archive),
             ListTile(
@@ -642,6 +646,121 @@ class _GoogleAccountTileState extends State<_GoogleAccountTile> {
           : const Icon(Icons.add_link),
       title: Text(s.connectGoogle),
       onTap: _isLinking ? null : _linkGoogle,
+    );
+  }
+}
+
+class _BackupSection extends StatefulWidget {
+  const _BackupSection();
+
+  @override
+  State<_BackupSection> createState() => _BackupSectionState();
+}
+
+class _BackupSectionState extends State<_BackupSection> {
+  final _service = DriveBackupService();
+  DateTime? _lastBackupAt;
+  bool _isBackingUp = false;
+  bool _isLinking = false;
+
+  bool get _isGoogleLinked =>
+      FirebaseAuth.instance.currentUser?.providerData
+          .any((p) => p.providerId == 'google.com') ??
+      false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadLastBackup());
+  }
+
+  Future<void> _loadLastBackup() async {
+    final at = await _service.lastBackupAt();
+    if (mounted) setState(() => _lastBackupAt = at);
+  }
+
+  Future<void> _backupNow() async {
+    setState(() => _isBackingUp = true);
+    try {
+      final result = await _service.backupNow();
+      if (!mounted) return;
+      switch (result) {
+        case BackupSuccess():
+          setState(() => _lastBackupAt = DateTime.now());
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.backupSuccess)),
+          );
+        case BackupScopeDenied():
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.backupScopeDenied)),
+          );
+        case BackupError(:final error, :final stackTrace):
+          logError(error, stackTrace);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.backupFailed(error))),
+          );
+      }
+    } finally {
+      if (mounted) setState(() => _isBackingUp = false);
+    }
+  }
+
+  Future<void> _linkGoogle() async {
+    setState(() => _isLinking = true);
+    try {
+      final result = await GoogleAuthService().linkGoogleAccount();
+      if (!mounted) return;
+      final message = switch (result) {
+        GoogleAuthSuccess() || GoogleAuthCancelled() => null,
+        GoogleAuthCredentialAlreadyInUse() =>
+          context.s.errGoogleCredentialInUse,
+        GoogleAuthNetworkError() => context.s.errNoInternet,
+        GoogleAuthNoExistingData() || GoogleAuthUnknown() =>
+          context.s.errGeneric,
+      };
+      if (message != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      }
+    } finally {
+      if (mounted) setState(() => _isLinking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+
+    if (!_isGoogleLinked) {
+      return ListTile(
+        leading: _isLinking
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.add_link),
+        title: Text(s.backupDriveTitle),
+        subtitle: Text(s.backupDriveConnectSubtitle),
+        onTap: _isLinking ? null : _linkGoogle,
+      );
+    }
+
+    final subtitle = _lastBackupAt != null
+        ? s.backupLastAt(_lastBackupAt!)
+        : s.backupNever;
+
+    return ListTile(
+      leading: _isBackingUp
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.cloud_upload_outlined),
+      title: Text(s.backupNow),
+      subtitle: Text(subtitle),
+      onTap: _isBackingUp ? null : _backupNow,
     );
   }
 }

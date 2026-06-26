@@ -378,6 +378,14 @@ enum AppStrings {
     deleteArchivedYear: 'Delete archived year',
     deleteArchivedYearSubtitle:
         "Removes a year's sales — photos are kept for archive viewing",
+    backup: 'Backup',
+    backupDriveTitle: 'Back up to Google Drive',
+    backupDriveConnectSubtitle: 'Connect a Google account to enable',
+    backupNow: 'Back up now',
+    backupNever: 'Never backed up',
+    backupSuccess: 'Backup complete',
+    backupScopeDenied:
+        'Drive access denied — grant it to enable backups',
     version: 'Version',
     checkForUpdates: 'Check for updates',
     updateChecking: 'Checking for updates…',
@@ -873,6 +881,14 @@ enum AppStrings {
     deleteArchivedYear: 'Eliminar dados do ano',
     deleteArchivedYearSubtitle:
         'Remove as vendas de um ano — as fotos são mantidas para visualização',
+    backup: 'Cópia de segurança',
+    backupDriveTitle: 'Cópia no Google Drive',
+    backupDriveConnectSubtitle: 'Liga uma conta Google para ativar',
+    backupNow: 'Fazer cópia agora',
+    backupNever: 'Sem cópias anteriores',
+    backupSuccess: 'Cópia concluída',
+    backupScopeDenied:
+        'Acesso ao Drive negado — concede-o para ativar cópias',
     version: 'Versão',
     checkForUpdates: 'Verificar atualizações',
     updateChecking: 'A verificar atualizações…',
@@ -1321,6 +1337,13 @@ enum AppStrings {
     required this.importArchiveSubtitle,
     required this.deleteArchivedYear,
     required this.deleteArchivedYearSubtitle,
+    required this.backup,
+    required this.backupDriveTitle,
+    required this.backupDriveConnectSubtitle,
+    required this.backupNow,
+    required this.backupNever,
+    required this.backupSuccess,
+    required this.backupScopeDenied,
     required this.version,
     required this.checkForUpdates,
     required this.updateChecking,
@@ -1803,6 +1826,13 @@ enum AppStrings {
   final String importArchiveSubtitle;
   final String deleteArchivedYear;
   final String deleteArchivedYearSubtitle;
+  final String backup;
+  final String backupDriveTitle;
+  final String backupDriveConnectSubtitle;
+  final String backupNow;
+  final String backupNever;
+  final String backupSuccess;
+  final String backupScopeDenied;
   final String version;
   final String checkForUpdates;
   final String updateChecking;
@@ -2332,6 +2362,25 @@ enum AppStrings {
             ? ['Ano anterior', 'Há 3 anos', 'Há 5 anos']
             : ['Previous year', '3 years ago', '5 years ago'],
       };
+
+  String backupLastAt(DateTime dt) {
+    final months = _pt
+        ? [
+            'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+            'jul', 'ago', 'set', 'out', 'nov', 'dez',
+          ]
+        : [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+          ];
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    final date = '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m';
+    return _pt ? 'Última cópia: $date' : 'Last backup: $date';
+  }
+
+  String backupFailed(Object error) =>
+      _pt ? 'Falha na cópia: $error' : 'Backup failed: $error';
 }
 
 extension AppStringsContext on BuildContext {

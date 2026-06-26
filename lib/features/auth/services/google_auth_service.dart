@@ -38,6 +38,10 @@ class GoogleAuthService {
   // us a stable handle to call signOut() when we need to evict the session.
   static final _googleSignIn = GoogleSignIn();
 
+  // Exposed so DriveBackupService can share this instance — a second
+  // GoogleSignIn() would have conflicting sign-in state.
+  static GoogleSignIn get googleSignIn => _googleSignIn;
+
   Future<GoogleAuthResult> signInWithGoogle() async {
     try {
       final credential = await _buildCredential();
