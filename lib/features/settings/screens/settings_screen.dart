@@ -665,6 +665,7 @@ class _BackupSectionState extends State<_BackupSection> {
   DateTime? _lastBackupAt;
   bool _isBackingUp = false;
   bool _isLinking = false;
+  String? _progressLabel;
   late final StreamSubscription<User?> _authSubscription;
 
   bool get _isGoogleLinked =>
@@ -679,8 +680,7 @@ class _BackupSectionState extends State<_BackupSection> {
     // userChanges() fires on linkWithCredential and unlinkProvider, which
     // authStateChanges() does not — needed to reflect linking via the
     // Account section tile without requiring a navigation round-trip.
-    _authSubscription =
-        FirebaseAuth.instance.userChanges().listen((_) {
+    _authSubscription = FirebaseAuth.instance.userChanges().listen((_) {
       if (mounted) setState(() {});
     });
   }
@@ -697,15 +697,36 @@ class _BackupSectionState extends State<_BackupSection> {
   }
 
   Future<void> _backupNow() async {
-    setState(() => _isBackingUp = true);
+    setState(() {
+      _isBackingUp = true;
+      _progressLabel = context.s.backupUploadingData;
+    });
     try {
-      final result = await _service.backupNow();
+      final result = await _service.backupNow(
+        onProgress: (phase, done, total) {
+          if (!mounted) return;
+          setState(() {
+            _progressLabel = switch (phase) {
+              BackupPhase.data => context.s.backupUploadingData,
+              BackupPhase.photos =>
+                context.s.backupUploadingPhotos(done, total),
+            };
+          });
+        },
+      );
       if (!mounted) return;
       switch (result) {
         case BackupSuccess():
           setState(() => _lastBackupAt = DateTime.now());
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.s.backupSuccess)),
+          );
+        case BackupPartialSuccess(:final failedPhotos):
+          setState(() => _lastBackupAt = DateTime.now());
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.s.backupPartialSuccess(failedPhotos)),
+            ),
           );
         case BackupScopeDenied():
           ScaffoldMessenger.of(context).showSnackBar(
@@ -718,7 +739,12 @@ class _BackupSectionState extends State<_BackupSection> {
           );
       }
     } finally {
-      if (mounted) setState(() => _isBackingUp = false);
+      if (mounted) {
+        setState(() {
+          _isBackingUp = false;
+          _progressLabel = null;
+        });
+      }
     }
   }
 
@@ -756,7 +782,9 @@ class _BackupSectionState extends State<_BackupSection> {
       );
     }
 
-    final subtitle = _lastBackupAt != null
+    final subtitle = _isBackingUp && _progressLabel != null
+        ? _progressLabel!
+        : _lastBackupAt != null
         ? s.backupLastAt(_lastBackupAt!)
         : s.backupNever;
 

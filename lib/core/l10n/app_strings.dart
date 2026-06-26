@@ -384,6 +384,7 @@ enum AppStrings {
     backupNow: 'Back up now',
     backupNever: 'Never backed up',
     backupSuccess: 'Backup complete',
+    backupUploadingData: 'Uploading data…',
     backupScopeDenied:
         'Drive access denied — grant it to enable backups',
     version: 'Version',
@@ -887,6 +888,7 @@ enum AppStrings {
     backupNow: 'Fazer cópia agora',
     backupNever: 'Sem cópias anteriores',
     backupSuccess: 'Cópia concluída',
+    backupUploadingData: 'A carregar dados…',
     backupScopeDenied:
         'Acesso ao Drive negado — concede-o para ativar cópias',
     version: 'Versão',
@@ -1343,6 +1345,7 @@ enum AppStrings {
     required this.backupNow,
     required this.backupNever,
     required this.backupSuccess,
+    required this.backupUploadingData,
     required this.backupScopeDenied,
     required this.version,
     required this.checkForUpdates,
@@ -1832,6 +1835,7 @@ enum AppStrings {
   final String backupNow;
   final String backupNever;
   final String backupSuccess;
+  final String backupUploadingData;
   final String backupScopeDenied;
   final String version;
   final String checkForUpdates;
@@ -2381,6 +2385,20 @@ enum AppStrings {
 
   String backupFailed(Object error) =>
       _pt ? 'Falha na cópia: $error' : 'Backup failed: $error';
+
+  String backupUploadingPhotos(int done, int total) => _pt
+      ? 'A carregar fotos… $done / $total'
+      : 'Uploading photos… $done / $total';
+
+  String backupPartialSuccess(int failed) {
+    final count = failed;
+    if (_pt) {
+      final word = count == 1 ? 'foto falhou' : 'fotos falharam';
+      return 'Cópia concluída — $count $word, será repetido na próxima cópia';
+    }
+    final word = count == 1 ? 'photo' : 'photos';
+    return 'Backup complete — $count $word failed, will retry next run';
+  }
 }
 
 extension AppStringsContext on BuildContext {
