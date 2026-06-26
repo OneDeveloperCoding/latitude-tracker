@@ -68,7 +68,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
       postalCodePrefix: widget.postalCodePrefix,
     );
     SalesStore.state.addListener(_onStoreChanged);
-    SalesStore.pendingDeleteId.addListener(_onStoreChanged);
     BuyersStore.state.addListener(_onStoreChanged);
     _rebuildCache();
   }
@@ -123,7 +122,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
   @override
   void dispose() {
     SalesStore.state.removeListener(_onStoreChanged);
-    SalesStore.pendingDeleteId.removeListener(_onStoreChanged);
     BuyersStore.state.removeListener(_onStoreChanged);
     _searchController.dispose();
     _editModeSignal.dispose();

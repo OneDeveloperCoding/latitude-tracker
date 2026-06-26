@@ -386,7 +386,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     // Capture before pop — ScaffoldMessenger is app-scoped and survives pop.
     final messenger = ScaffoldMessenger.of(context);
 
-    SalesStore.pendingDeleteId.value = saleId;
+    SalesStore.markPendingDelete(saleId);
     _popping = true;
     Navigator.of(context).pop();
 
@@ -401,8 +401,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           )
           .closed
           .then((reason) async {
-        SalesStore.pendingDeleteId.value = null;
-        if (reason == SnackBarClosedReason.action) return;
+        if (reason == SnackBarClosedReason.action) {
+          SalesStore.clearPendingDelete(saleId);
+          return;
+        }
         try {
           await repo.deleteSale(saleId);
         } on Object catch (e, st) {
@@ -410,6 +412,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           messenger.showSnackBar(
             SnackBar(content: Text(s.errorDeletingSaleMsg(e))),
           );
+        } finally {
+          SalesStore.clearPendingDelete(saleId);
         }
       }),
     );
