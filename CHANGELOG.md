@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.11.0...v1.12.0) (2026-06-26)
+
+
+### Features
+
+* undo snackbar after sale deletion ([9de7904](https://github.com/OneDeveloperCoding/latitude-tracker/commit/9de790411cc70a5241c7db228315de48ca94a567))
+
 ## [1.11.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.10.0...v1.11.0) (2026-06-25)
 
 
