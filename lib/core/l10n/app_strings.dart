@@ -179,7 +179,6 @@ enum AppStrings {
     buyerNotesHint: 'Notes about this buyer...',
     newSale: 'New Sale',
     editSale: 'Edit Sale',
-    duplicateSale: 'Duplicate Sale',
     sectionBuyer: 'Buyer',
     sectionItem: 'Item',
     sectionItems: 'Items',
@@ -234,7 +233,6 @@ enum AppStrings {
     takePhoto: 'Take photo',
     chooseFromGallery: 'Choose from gallery',
     saleFallbackTitle: 'Sale',
-    duplicateSaleTooltip: 'Duplicate sale',
     deleteSaleTooltip: 'Delete sale',
     deleteShippedSaleTitle: 'Delete shipped sale?',
     deletePaidSaleTitle: 'Delete paid sale?',
@@ -674,7 +672,6 @@ enum AppStrings {
     buyerNotesHint: 'Notas sobre este comprador...',
     newSale: 'Nova Venda',
     editSale: 'Editar Venda',
-    duplicateSale: 'Duplicar Venda',
     sectionBuyer: 'Comprador',
     sectionItem: 'Artigo',
     sectionItems: 'Artigos',
@@ -729,7 +726,6 @@ enum AppStrings {
     takePhoto: 'Tirar foto',
     chooseFromGallery: 'Escolher da galeria',
     saleFallbackTitle: 'Venda',
-    duplicateSaleTooltip: 'Duplicar venda',
     deleteSaleTooltip: 'Eliminar venda',
     deleteShippedSaleTitle: 'Eliminar venda enviada?',
     deletePaidSaleTitle: 'Eliminar venda paga?',
@@ -1138,7 +1134,6 @@ enum AppStrings {
     required this.buyerNotesHint,
     required this.newSale,
     required this.editSale,
-    required this.duplicateSale,
     required this.sectionBuyer,
     required this.sectionItem,
     required this.sectionItems,
@@ -1193,7 +1188,6 @@ enum AppStrings {
     required this.takePhoto,
     required this.chooseFromGallery,
     required this.saleFallbackTitle,
-    required this.duplicateSaleTooltip,
     required this.deleteSaleTooltip,
     required this.deleteShippedSaleTitle,
     required this.deletePaidSaleTitle,
@@ -1599,7 +1593,6 @@ enum AppStrings {
   // ── Sale form ────────────────────────────────────────────────────────────
   final String newSale;
   final String editSale;
-  final String duplicateSale;
   final String sectionBuyer;
   final String sectionItem;
   final String sectionItems;
@@ -1657,7 +1650,6 @@ enum AppStrings {
 
   // ── Sale detail ──────────────────────────────────────────────────────────
   final String saleFallbackTitle;
-  final String duplicateSaleTooltip;
   final String deleteSaleTooltip;
   final String deleteShippedSaleTitle;
   final String deletePaidSaleTitle;

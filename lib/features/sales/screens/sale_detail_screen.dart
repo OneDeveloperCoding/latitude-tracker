@@ -25,7 +25,6 @@ import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
-import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_item_screen.dart';
 import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
@@ -436,16 +435,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return AppBar(
       title: Text(sale.buyerName),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.copy_outlined),
-          tooltip: context.s.duplicateSaleTooltip,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute<void>(
-              builder: (_) => NewSaleScreen(sale: sale, isDuplicate: true),
-            ),
-          ),
-        ),
         IconButton(
           icon: const Icon(Icons.delete_outline),
           tooltip: context.s.deleteSaleTooltip,
