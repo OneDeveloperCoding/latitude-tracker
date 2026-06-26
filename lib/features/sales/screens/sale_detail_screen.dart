@@ -10,6 +10,7 @@ import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/services/url_launch_service.dart';
 import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
+import 'package:latitude_tracker/core/store/sales_store.dart';
 import 'package:latitude_tracker/core/store/store_state.dart';
 import 'package:latitude_tracker/core/theme/color_scheme_ext.dart';
 import 'package:latitude_tracker/core/utils/date_time_utils.dart';
@@ -24,7 +25,6 @@ import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/screens/repair_detail_screen.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
-import 'package:latitude_tracker/features/sales/screens/new_sale_screen.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_item_screen.dart';
 import 'package:latitude_tracker/features/sales/services/photo_service.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
@@ -380,19 +380,43 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    try {
-      await _repository.deleteSale(sale.id);
-      if (context.mounted) {
-        _popping = true;
-        Navigator.of(context).pop();
-      }
-    } on Object catch (e, st) {
-      logError(e, st);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.s.errorDeletingSaleMsg(e))));
-      }
-    }
+
+    final saleId = sale.id;
+    final repo = _repository;
+    // Capture before pop — ScaffoldMessenger is app-scoped and survives pop.
+    final messenger = ScaffoldMessenger.of(context);
+
+    SalesStore.markPendingDelete(saleId);
+    _popping = true;
+    Navigator.of(context).pop();
+
+    unawaited(
+      messenger
+          .showSnackBar(
+            SnackBar(
+              content: Text(s.saleDeletedUndo),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(label: s.undo, onPressed: () {}),
+            ),
+          )
+          .closed
+          .then((reason) async {
+        if (reason == SnackBarClosedReason.action) {
+          SalesStore.clearPendingDelete(saleId);
+          return;
+        }
+        try {
+          await repo.deleteSale(saleId);
+        } on Object catch (e, st) {
+          logError(e, st);
+          messenger.showSnackBar(
+            SnackBar(content: Text(s.errorDeletingSaleMsg(e))),
+          );
+        } finally {
+          SalesStore.clearPendingDelete(saleId);
+        }
+      }),
+    );
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
@@ -415,16 +439,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return AppBar(
       title: Text(sale.buyerName),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.copy_outlined),
-          tooltip: context.s.duplicateSaleTooltip,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute<void>(
-              builder: (_) => NewSaleScreen(sale: sale, isDuplicate: true),
-            ),
-          ),
-        ),
         IconButton(
           icon: const Icon(Icons.delete_outline),
           tooltip: context.s.deleteSaleTooltip,
