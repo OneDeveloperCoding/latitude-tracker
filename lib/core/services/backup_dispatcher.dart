@@ -1,0 +1,31 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/widgets.dart';
+import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/features/demo/demo_mode.dart';
+import 'package:latitude_tracker/features/settings/services/drive_backup_service.dart';
+import 'package:latitude_tracker/firebase_options.dart';
+import 'package:workmanager/workmanager.dart';
+
+const kBackupTaskName = 'driveBackup';
+
+// Top-level entry point called by WorkManager in a fresh Dart isolate.
+// Must be a top-level function — WorkManager cannot call instance methods.
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((taskName, _) async {
+    if (taskName != kBackupTaskName) return true;
+
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    if (DemoMode.active.value) return true;
+
+    final result = await DriveBackupService().backupNow(silent: true);
+    if (result case BackupError(:final error, :final stackTrace)) {
+      logError(error, stackTrace);
+    }
+    return true;
+  });
+}

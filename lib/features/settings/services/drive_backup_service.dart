@@ -101,7 +101,12 @@ class DriveBackupService {
     return value != null ? DateTime.tryParse(value) : null;
   }
 
-  Future<BackupResult> backupNow({BackupProgressCallback? onProgress}) async {
+  // Set silent: true when calling from a background task — skips the scope
+  // consent dialog, which cannot be shown without an active Activity.
+  Future<BackupResult> backupNow({
+    BackupProgressCallback? onProgress,
+    bool silent = false,
+  }) async {
     try {
       final googleSignIn = GoogleAuthService.googleSignIn;
 
@@ -112,10 +117,12 @@ class DriveBackupService {
       // native sign-in cache survive.
       await googleSignIn.signInSilently();
 
-      final granted = await googleSignIn.requestScopes(
-        [drive.DriveApi.driveFileScope],
-      );
-      if (!granted) return const BackupScopeDenied();
+      if (!silent) {
+        final granted = await googleSignIn.requestScopes(
+          [drive.DriveApi.driveFileScope],
+        );
+        if (!granted) return const BackupScopeDenied();
+      }
 
       final client = await googleSignIn.authenticatedClient();
       if (client == null) return const BackupScopeDenied();
