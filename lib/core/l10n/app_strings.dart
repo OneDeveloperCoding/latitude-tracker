@@ -179,7 +179,6 @@ enum AppStrings {
     buyerNotesHint: 'Notes about this buyer...',
     newSale: 'New Sale',
     editSale: 'Edit Sale',
-    duplicateSale: 'Duplicate Sale',
     sectionBuyer: 'Buyer',
     sectionItem: 'Item',
     sectionItems: 'Items',
@@ -234,7 +233,6 @@ enum AppStrings {
     takePhoto: 'Take photo',
     chooseFromGallery: 'Choose from gallery',
     saleFallbackTitle: 'Sale',
-    duplicateSaleTooltip: 'Duplicate sale',
     deleteSaleTooltip: 'Delete sale',
     deleteShippedSaleTitle: 'Delete shipped sale?',
     deletePaidSaleTitle: 'Delete paid sale?',
@@ -252,6 +250,8 @@ enum AppStrings {
     addNotes: 'Add notes',
     notesHintDetail: 'e.g. Gift wrap requested, specific colour...',
     errorDeletingSale: 'Error deleting sale',
+    saleDeletedUndo: 'Sale deleted',
+    undo: 'Undo',
     errorLoadingDetail: 'Error',
     delivered: 'delivered',
     shippedStatus: 'shipped',
@@ -672,7 +672,6 @@ enum AppStrings {
     buyerNotesHint: 'Notas sobre este comprador...',
     newSale: 'Nova Venda',
     editSale: 'Editar Venda',
-    duplicateSale: 'Duplicar Venda',
     sectionBuyer: 'Comprador',
     sectionItem: 'Artigo',
     sectionItems: 'Artigos',
@@ -727,7 +726,6 @@ enum AppStrings {
     takePhoto: 'Tirar foto',
     chooseFromGallery: 'Escolher da galeria',
     saleFallbackTitle: 'Venda',
-    duplicateSaleTooltip: 'Duplicar venda',
     deleteSaleTooltip: 'Eliminar venda',
     deleteShippedSaleTitle: 'Eliminar venda enviada?',
     deletePaidSaleTitle: 'Eliminar venda paga?',
@@ -745,6 +743,8 @@ enum AppStrings {
     addNotes: 'Adicionar notas',
     notesHintDetail: 'ex. Embrulho para oferta, cor específica...',
     errorDeletingSale: 'Erro ao eliminar venda',
+    saleDeletedUndo: 'Venda eliminada',
+    undo: 'Desfazer',
     errorLoadingDetail: 'Erro',
     delivered: 'entregue',
     shippedStatus: 'enviado',
@@ -1134,7 +1134,6 @@ enum AppStrings {
     required this.buyerNotesHint,
     required this.newSale,
     required this.editSale,
-    required this.duplicateSale,
     required this.sectionBuyer,
     required this.sectionItem,
     required this.sectionItems,
@@ -1189,7 +1188,6 @@ enum AppStrings {
     required this.takePhoto,
     required this.chooseFromGallery,
     required this.saleFallbackTitle,
-    required this.duplicateSaleTooltip,
     required this.deleteSaleTooltip,
     required this.deleteShippedSaleTitle,
     required this.deletePaidSaleTitle,
@@ -1207,6 +1205,8 @@ enum AppStrings {
     required this.addNotes,
     required this.notesHintDetail,
     required this.errorDeletingSale,
+    required this.saleDeletedUndo,
+    required this.undo,
     required this.errorLoadingDetail,
     required this.delivered,
     required this.shippedStatus,
@@ -1593,7 +1593,6 @@ enum AppStrings {
   // ── Sale form ────────────────────────────────────────────────────────────
   final String newSale;
   final String editSale;
-  final String duplicateSale;
   final String sectionBuyer;
   final String sectionItem;
   final String sectionItems;
@@ -1651,7 +1650,6 @@ enum AppStrings {
 
   // ── Sale detail ──────────────────────────────────────────────────────────
   final String saleFallbackTitle;
-  final String duplicateSaleTooltip;
   final String deleteSaleTooltip;
   final String deleteShippedSaleTitle;
   final String deletePaidSaleTitle;
@@ -1669,6 +1667,8 @@ enum AppStrings {
   final String addNotes;
   final String notesHintDetail;
   final String errorDeletingSale;
+  final String saleDeletedUndo;
+  final String undo;
   final String errorLoadingDetail;
   final String delivered;
   final String shippedStatus;

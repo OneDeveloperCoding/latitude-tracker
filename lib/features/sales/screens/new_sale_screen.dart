@@ -17,9 +17,8 @@ import 'package:latitude_tracker/features/sales/widgets/buyer_picker_screen.dart
 import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
 
 class NewSaleScreen extends StatefulWidget {
-  const NewSaleScreen({super.key, this.sale, this.isDuplicate = false});
+  const NewSaleScreen({super.key, this.sale});
   final Sale? sale;
-  final bool isDuplicate;
 
   @override
   State<NewSaleScreen> createState() => _NewSaleScreenState();
@@ -55,55 +54,29 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   DateTime? _scheduledDate;
   bool _isLoading = false;
 
-  bool get _isEditing => widget.sale != null && !widget.isDuplicate;
+  bool get _isEditing => widget.sale != null;
 
   @override
   void initState() {
     super.initState();
     final sale = widget.sale;
-    final dup = widget.isDuplicate;
 
-    _notesController = TextEditingController(
-      text: dup ? '' : (sale?.notes ?? ''),
-    );
+    _notesController = TextEditingController(text: sale?.notes ?? '');
     _trackingCodeController = TextEditingController(
-      text: dup ? '' : (sale?.shipment.trackingCode ?? ''),
+      text: sale?.shipment.trackingCode ?? '',
     );
     _postalCodeController = TextEditingController(
       text: sale?.shipment.postalCode ?? '',
     );
 
     _paymentMethod = sale?.payment.method ?? PaymentMethod.mbWay;
-    _paymentStatus = dup
-        ? PaymentStatus.unpaid
-        : (sale?.payment.status ?? PaymentStatus.unpaid);
+    _paymentStatus = sale?.payment.status ?? PaymentStatus.unpaid;
     _deliveryType = sale?.shipment.type ?? DeliveryType.shipping;
     _requiresNif = sale?.requiresNif ?? false;
-    _scheduledDate = dup ? null : sale?.scheduledDate;
+    _scheduledDate = sale?.scheduledDate;
     _saleId = _isEditing ? sale!.id : newId();
-
-    if (dup) {
-      // Duplicate: reset assembly/payment but keep descriptions and categories.
-      // Assign new IDs to all items so photos don't conflict.
-      _items = (sale?.items ?? [])
-          .map(
-            (item) => SaleItem(
-              id: newId(),
-              description: item.description,
-              category: item.category,
-              price: item.price,
-              assemblyStatus: AssemblyStatus.notStarted,
-              components: item.components
-                  .map((c) => c.copyWith(isAvailable: false))
-                  .toList(),
-            ),
-          )
-          .toList();
-      _originalItemIds = {};
-    } else {
-      _items = List.from(sale?.items ?? []);
-      _originalItemIds = {for (final item in _items) item.id};
-    }
+    _items = List.from(sale?.items ?? []);
+    _originalItemIds = {for (final item in _items) item.id};
 
     if (widget.sale != null) unawaited(_loadBuyerForEdit());
   }
@@ -335,13 +308,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            _isEditing
-                ? s.editSale
-                : widget.isDuplicate
-                ? s.duplicateSale
-                : s.newSale,
-          ),
+          title: Text(_isEditing ? s.editSale : s.newSale),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _cancel,
