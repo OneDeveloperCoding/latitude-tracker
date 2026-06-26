@@ -71,9 +71,11 @@ class SettingsScreen extends StatelessWidget {
             const _ThemePresetTile(),
             const _ThemeBrightnessTile(),
             const Divider(),
-            _SectionHeader(s.backup),
-            const _BackupSection(),
-            const Divider(),
+            if (!isDemo) ...[
+              _SectionHeader(s.backup),
+              const _BackupSection(),
+              const Divider(),
+            ],
             _SectionHeader(s.archive),
             ListTile(
               leading: const Icon(Icons.upload),
@@ -601,19 +603,7 @@ class _GoogleAccountTileState extends State<_GoogleAccountTile> {
     try {
       final result = await GoogleAuthService().linkGoogleAccount();
       if (!mounted) return;
-
-      final message = switch (result) {
-        GoogleAuthSuccess() => null,
-        GoogleAuthCancelled() => null,
-        GoogleAuthCredentialAlreadyInUse() =>
-          context.s.errGoogleCredentialInUse,
-        // Unreachable from linkGoogleAccount() but required for exhaustive
-        // matching on the sealed class.
-        GoogleAuthNoExistingData() => context.s.errGeneric,
-        GoogleAuthNetworkError() => context.s.errNoInternet,
-        GoogleAuthUnknown() => context.s.errGeneric,
-      };
-
+      final message = _googleAuthErrorMessage(result, context.s);
       if (message != null && mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));
@@ -650,6 +640,19 @@ class _GoogleAccountTileState extends State<_GoogleAccountTile> {
   }
 }
 
+// Maps a GoogleAuthResult from linkGoogleAccount() to a user-visible error
+// string, or null on success/cancellation. Shared by _GoogleAccountTile and
+// _BackupSection so a new result subclass is never handled in just one place.
+String? _googleAuthErrorMessage(GoogleAuthResult result, AppStrings s) =>
+    switch (result) {
+      GoogleAuthSuccess() || GoogleAuthCancelled() => null,
+      GoogleAuthCredentialAlreadyInUse() => s.errGoogleCredentialInUse,
+      GoogleAuthNetworkError() => s.errNoInternet,
+      // GoogleAuthNoExistingData is unreachable from linkGoogleAccount() but
+      // required for exhaustive matching on the sealed class.
+      GoogleAuthNoExistingData() || GoogleAuthUnknown() => s.errGeneric,
+    };
+
 class _BackupSection extends StatefulWidget {
   const _BackupSection();
 
@@ -662,6 +665,7 @@ class _BackupSectionState extends State<_BackupSection> {
   DateTime? _lastBackupAt;
   bool _isBackingUp = false;
   bool _isLinking = false;
+  late final StreamSubscription<User?> _authSubscription;
 
   bool get _isGoogleLinked =>
       FirebaseAuth.instance.currentUser?.providerData
@@ -672,6 +676,19 @@ class _BackupSectionState extends State<_BackupSection> {
   void initState() {
     super.initState();
     unawaited(_loadLastBackup());
+    // userChanges() fires on linkWithCredential and unlinkProvider, which
+    // authStateChanges() does not — needed to reflect linking via the
+    // Account section tile without requiring a navigation round-trip.
+    _authSubscription =
+        FirebaseAuth.instance.userChanges().listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_authSubscription.cancel());
+    super.dispose();
   }
 
   Future<void> _loadLastBackup() async {
@@ -710,14 +727,7 @@ class _BackupSectionState extends State<_BackupSection> {
     try {
       final result = await GoogleAuthService().linkGoogleAccount();
       if (!mounted) return;
-      final message = switch (result) {
-        GoogleAuthSuccess() || GoogleAuthCancelled() => null,
-        GoogleAuthCredentialAlreadyInUse() =>
-          context.s.errGoogleCredentialInUse,
-        GoogleAuthNetworkError() => context.s.errNoInternet,
-        GoogleAuthNoExistingData() || GoogleAuthUnknown() =>
-          context.s.errGeneric,
-      };
+      final message = _googleAuthErrorMessage(result, context.s);
       if (message != null) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));

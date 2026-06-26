@@ -46,6 +46,13 @@ class DriveBackupService {
     try {
       final googleSignIn = GoogleAuthService.googleSignIn;
 
+      // Restore the Dart-layer currentUser from the Android native cache.
+      // Without this, authenticatedClient() returns null after every app
+      // restart because GoogleSignIn._currentUser is not persisted across
+      // cold starts, even though the Firebase Auth session and the Android
+      // native sign-in cache survive.
+      await googleSignIn.signInSilently();
+
       final granted =
           await googleSignIn.requestScopes([drive.DriveApi.driveFileScope]);
       if (!granted) return const BackupScopeDenied();
@@ -80,6 +87,10 @@ class DriveBackupService {
     for (var year = currentYear; year >= _kBackupFloorYear; year--) {
       final file = await _archiveService.exportYear(year);
       final content = await file.readAsString();
+      // Assumes data is contiguous: stop on the first empty year rather than
+      // scanning all the way to _kBackupFloorYear. A genuine gap year would
+      // silently skip earlier data — accepted trade-off over extra Firestore
+      // reads per run.
       if (_isEmptyArchive(content)) break;
       await _uploadOrUpdateFile(
         api,
