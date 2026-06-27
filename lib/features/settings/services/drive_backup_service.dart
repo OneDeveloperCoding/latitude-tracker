@@ -9,8 +9,10 @@ import 'package:latitude_tracker/features/auth/services/google_auth_service.dart
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _kBackupFloorYear = 2024;
+const _kBackupFloorYear = 2026;
 const _kLastBackupKey = 'drive_backup_last_success';
+const _kRootFolderIdKey = 'drive_backup_root_folder_id';
+const _kDataFileIdPrefix = 'drive_backup_file_';
 const _kBackupFolderName = 'Latitude Tracker Backup';
 const _kDataFolderName = 'data';
 const _kPhotosFolderName = 'photos';
@@ -101,7 +103,12 @@ class DriveBackupService {
     return value != null ? DateTime.tryParse(value) : null;
   }
 
-  Future<BackupResult> backupNow({BackupProgressCallback? onProgress}) async {
+  // Set silent: true when calling from a background task — skips the scope
+  // consent dialog, which cannot be shown without an active Activity.
+  Future<BackupResult> backupNow({
+    BackupProgressCallback? onProgress,
+    bool silent = false,
+  }) async {
     try {
       final googleSignIn = GoogleAuthService.googleSignIn;
 
@@ -112,10 +119,12 @@ class DriveBackupService {
       // native sign-in cache survive.
       await googleSignIn.signInSilently();
 
-      final granted = await googleSignIn.requestScopes(
-        [drive.DriveApi.driveFileScope],
-      );
-      if (!granted) return const BackupScopeDenied();
+      if (!silent) {
+        final granted = await googleSignIn.requestScopes(
+          [drive.DriveApi.driveFileScope],
+        );
+        if (!granted) return const BackupScopeDenied();
+      }
 
       final client = await googleSignIn.authenticatedClient();
       if (client == null) return const BackupScopeDenied();
@@ -145,28 +154,38 @@ class DriveBackupService {
   ) async {
     onProgress?.call(BackupPhase.data, 0, 0);
 
-    final backupFolderId = await _findOrCreateFolder(api, _kBackupFolderName);
+    final prefs = await SharedPreferences.getInstance();
+    final backupFolderId = await _getOrCreateCachedFolder(
+      api,
+      prefs,
+      _kRootFolderIdKey,
+      _kBackupFolderName,
+    );
     final dataFolderId = await _findOrCreateFolder(
       api,
       _kDataFolderName,
       parentId: backupFolderId,
     );
 
+    final cachedBuyers = await _archiveService.fetchBuyersData();
     final allPhotos = <PhotoEntry>[];
     final currentYear = DateTime.now().year;
     for (var year = currentYear; year >= _kBackupFloorYear; year--) {
-      final file = await _archiveService.exportYear(year);
+      final file = await _archiveService.exportYear(
+        year,
+        cachedBuyers: cachedBuyers,
+      );
       final content = await file.readAsString();
-      // Assumes data is contiguous: stop on the first empty year rather than
-      // scanning all the way to _kBackupFloorYear. A genuine gap year would
-      // silently skip earlier data — accepted trade-off over extra Firestore
-      // reads per run.
-      if (_isEmptyArchive(content)) break;
-      await _uploadOrUpdateFile(
+      // Always scan to the floor year — a gap year (no sales/repairs) must
+      // not stop the sweep, as data from earlier years would be silently lost.
+      if (_isEmptyArchive(content)) continue;
+      await _uploadOrUpdateCachedFile(
         api,
+        prefs,
         dataFolderId,
         'latitude_tracker_$year.json',
         content,
+        '$_kDataFileIdPrefix$year',
       );
       allPhotos.addAll(extractPhotos(content));
     }
@@ -177,6 +196,93 @@ class DriveBackupService {
       parentId: backupFolderId,
     );
     return _runPhotoBackup(api, photosFolderId, allPhotos, onProgress);
+  }
+
+  // Uses a cached Drive folder ID to skip the search round-trip on subsequent
+  // runs. Falls back to search-and-create on cache miss or if the folder was
+  // deleted from Drive.
+  Future<String> _getOrCreateCachedFolder(
+    drive.DriveApi api,
+    SharedPreferences prefs,
+    String cacheKey,
+    String name, {
+    String? parentId,
+  }) async {
+    final cached = prefs.getString(cacheKey);
+    if (cached != null) {
+      try {
+        await api.files.get(cached, $fields: 'id');
+        return cached;
+      } on Object catch (e) {
+        // Only evict the cache on a confirmed 404 — transient network errors
+        // should propagate so the run fails as BackupError, not silently
+        // clear a valid ID and risk creating a duplicate folder.
+        if (!_isDriveNotFound(e)) rethrow;
+        await prefs.remove(cacheKey);
+      }
+    }
+    final id = await _findOrCreateFolder(api, name, parentId: parentId);
+    await prefs.setString(cacheKey, id);
+    return id;
+  }
+
+  // Updates a Drive file by cached ID when available, avoiding the
+  // search-then-create race between concurrent runs. Caches the file ID after
+  // first creation so future runs update by ID directly.
+  Future<void> _uploadOrUpdateCachedFile(
+    drive.DriveApi api,
+    SharedPreferences prefs,
+    String parentId,
+    String fileName,
+    String content,
+    String cacheKey,
+  ) async {
+    final bytes = utf8.encode(content);
+    // Stream.value is single-subscription and is exhausted after the first
+    // read — create a fresh Media for each Drive API call so a failed cached
+    // update doesn't corrupt the fallback search-and-create path.
+    drive.Media buildMedia() => drive.Media(
+      Stream.value(bytes),
+      bytes.length,
+      contentType: 'application/json',
+    );
+
+    final cachedId = prefs.getString(cacheKey);
+    if (cachedId != null) {
+      try {
+        await api.files.update(
+          drive.File(),
+          cachedId,
+          uploadMedia: buildMedia(),
+        );
+        return;
+      } on Object catch (e) {
+        if (!_isDriveNotFound(e)) rethrow;
+        await prefs.remove(cacheKey);
+      }
+    }
+
+    final result = await api.files.list(
+      q: "name='$fileName' and '$parentId' in parents and trashed=false",
+      $fields: 'files(id)',
+      spaces: 'drive',
+    );
+
+    final String fileId;
+    if (result.files != null && result.files!.isNotEmpty) {
+      fileId = result.files!.first.id!;
+      await api.files.update(drive.File(), fileId, uploadMedia: buildMedia());
+    } else {
+      final created = await api.files.create(
+        drive.File()
+          ..name = fileName
+          ..parents = [parentId],
+        uploadMedia: buildMedia(),
+        $fields: 'id',
+      );
+      fileId = created.id!;
+    }
+    await prefs.setString(cacheKey, fileId);
   }
 
   Future<int> _runPhotoBackup(
@@ -283,7 +389,10 @@ class DriveBackupService {
     String url,
   ) async {
     final bytes = await FirebaseStorage.instance.refFromURL(url).getData();
-    if (bytes == null) return;
+    // Null means the object exists in Storage metadata but has no content.
+    // Treat as a failure so it surfaces in BackupPartialSuccess rather than
+    // being silently skipped and retried on every future run.
+    if (bytes == null) throw StateError('getData() returned null for: $url');
 
     await api.files.create(
       drive.File()
@@ -328,39 +437,13 @@ class DriveBackupService {
     return folder.id!;
   }
 
-  Future<void> _uploadOrUpdateFile(
-    drive.DriveApi api,
-    String parentId,
-    String fileName,
-    String content,
-  ) async {
-    final result = await api.files.list(
-      q: "name='$fileName' and '$parentId' in parents and trashed=false",
-      $fields: 'files(id)',
-      spaces: 'drive',
-    );
-
-    final bytes = utf8.encode(content);
-    final media = drive.Media(
-      Stream.value(bytes),
-      bytes.length,
-      contentType: 'application/json',
-    );
-
-    if (result.files != null && result.files!.isNotEmpty) {
-      await api.files.update(
-        drive.File(),
-        result.files!.first.id!,
-        uploadMedia: media,
-      );
-    } else {
-      await api.files.create(
-        drive.File()
-          ..name = fileName
-          ..parents = [parentId],
-        uploadMedia: media,
-      );
-    }
+  // Drive API errors include the HTTP status in their string representation.
+  // Only clear cached IDs on 404 — transient errors should propagate so the
+  // outer BackupError handler surfaces them rather than silently recreating
+  // Drive resources and risking duplicates.
+  static bool _isDriveNotFound(Object e) {
+    final msg = e.toString();
+    return msg.contains('404') || msg.contains('notFound');
   }
 
   // Stops the year sweep when a year has neither sales nor repairs.

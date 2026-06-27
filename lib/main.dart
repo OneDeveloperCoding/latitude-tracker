@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'package:latitude_tracker/app.dart';
 import 'package:latitude_tracker/core/l10n/locale_settings.dart';
+import 'package:latitude_tracker/core/services/backup_task.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/firebase_options.dart';
 
@@ -34,6 +35,7 @@ Future<void> main() async {
 
       await LocaleSettings.init();
       await ThemeSettings.init();
+      await BackupTask.register();
 
       runApp(const LatitudeTrackerApp());
     },
