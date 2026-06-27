@@ -42,6 +42,9 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     unawaited(UpdateService.instance.checkForUpdate());
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     NotificationService.pendingDestination.addListener(_onNotificationTap);
+    // Drain any destination set before this listener was registered (e.g. a
+    // cold-start tap that fired during main() before runApp was called).
+    _onNotificationTap();
     // After a DemoMode transition the old MainNav's dispose() runs after this
     // initState — tearing down the subscription init() just created. The
     // post-frame callback re-subscribes once the frame has fully settled.

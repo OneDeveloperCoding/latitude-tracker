@@ -5,9 +5,8 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 enum NotificationDestination { settings }
 
 const _kBackupChannelId = 'backup';
-const _kRemindersChannelId = 'reminders';
-const _kShoppingChannelId = 'shopping';
 const _kBackupNotificationId = 1;
+const _kSettingsPayload = 'settings';
 
 class NotificationService {
   const NotificationService._();
@@ -16,10 +15,15 @@ class NotificationService {
       ValueNotifier<NotificationDestination?>(null);
   static final _plugin = FlutterLocalNotificationsPlugin();
 
-  // Call once from main() in the UI isolate, and once from callbackDispatcher
-  // in the WorkManager isolate before posting a notification. Channel creation
-  // is idempotent — subsequent calls with the same ID are no-ops on Android.
-  static Future<void> initialize(AppStrings strings) async {
+  // Call once from main() in the UI isolate with checkLaunchDetails: true
+  // (default), and from callbackDispatcher with checkLaunchDetails: false —
+  // the launch-details API interrogates the Android Activity's launch intent,
+  // which does not exist in a headless WorkManager isolate.
+  // Channel creation is idempotent — same-ID calls are no-ops on Android.
+  static Future<void> initialize(
+    AppStrings strings, {
+    bool checkLaunchDetails = true,
+  }) async {
     await _plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -27,11 +31,14 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onTap,
     );
 
-    // Check if the app was cold-started via a notification tap.
-    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
-    if (launchDetails?.didNotificationLaunchApp == true) {
-      final response = launchDetails!.notificationResponse;
-      if (response != null) _onTap(response);
+    if (checkLaunchDetails) {
+      // flutter_local_notifications does not replay onDidReceiveNotification-
+      // Response on cold start — launch details must be inspected manually.
+      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+      if (launchDetails?.didNotificationLaunchApp == true) {
+        final response = launchDetails!.notificationResponse;
+        if (response != null) _onTap(response);
+      }
     }
 
     await _createChannels(strings);
@@ -57,13 +64,13 @@ class NotificationService {
           strings.backup,
         ),
       ),
-      payload: 'settings',
+      payload: _kSettingsPayload,
     );
   }
 
   static void _onTap(NotificationResponse response) {
     final destination = switch (response.payload) {
-      'settings' => NotificationDestination.settings,
+      _kSettingsPayload => NotificationDestination.settings,
       _ => null,
     };
     if (destination != null) pendingDestination.value = destination;
@@ -80,20 +87,8 @@ class NotificationService {
         strings.backup,
       ),
     );
-    await androidPlugin.createNotificationChannel(
-      AndroidNotificationChannel(
-        _kRemindersChannelId,
-        strings.notificationChannelReminders,
-      ),
-    );
-    // Low importance: the Shopping List notification is persistent and should
-    // not make sound or pop up intrusively.
-    await androidPlugin.createNotificationChannel(
-      AndroidNotificationChannel(
-        _kShoppingChannelId,
-        strings.shoppingList,
-        importance: Importance.low,
-      ),
-    );
+    // Additional channels (reminders, shopping) are registered when
+    // issues #146 and #185 land, to avoid surfacing unexplained categories
+    // in Android App Info → Notifications before those features ship.
   }
 }

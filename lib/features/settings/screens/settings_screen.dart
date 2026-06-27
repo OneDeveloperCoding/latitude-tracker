@@ -678,7 +678,7 @@ class _BackupSectionState extends State<_BackupSection> {
   void initState() {
     super.initState();
     unawaited(_loadLastBackup());
-    unawaited(NotificationService.requestPermission());
+    if (_isGoogleLinked) unawaited(NotificationService.requestPermission());
     // userChanges() fires on linkWithCredential and unlinkProvider, which
     // authStateChanges() does not — needed to reflect linking via the
     // Account section tile without requiring a navigation round-trip.

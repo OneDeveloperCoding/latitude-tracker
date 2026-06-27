@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/l10n/locale_settings.dart';
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/services/notification_service.dart';
 import 'package:latitude_tracker/features/settings/services/drive_backup_service.dart';
@@ -25,9 +26,9 @@ void callbackDispatcher() {
 
     final prefs = await SharedPreferences.getInstance();
     final strings = AppStrings.forLanguageCode(
-      prefs.getString('locale') ?? 'pt',
+      LocaleSettings.languageCodeFrom(prefs),
     );
-    await NotificationService.initialize(strings);
+    await NotificationService.initialize(strings, checkLaunchDetails: false);
 
     // firebase_auth 4.x restores the persisted session asynchronously after
     // initializeApp() — currentUser may be null immediately even when valid.
@@ -38,7 +39,11 @@ void callbackDispatcher() {
     final result = await DriveBackupService().backupNow(silent: true);
     if (result case BackupError(:final error, :final stackTrace)) {
       logError(error, stackTrace);
-      await NotificationService.showBackupFailure(strings);
+      try {
+        await NotificationService.showBackupFailure(strings);
+      } on Object catch (e, st) {
+        logError(e, st);
+      }
     } else if (result case BackupPartialSuccess(:final failedPhotos)) {
       logError(
         StateError('Scheduled backup: $failedPhotos photo(s) failed to upload'),
