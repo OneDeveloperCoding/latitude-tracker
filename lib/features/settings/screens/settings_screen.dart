@@ -8,6 +8,7 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/l10n/locale_settings.dart'
     show AppLocaleScope, LocaleSettings;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
+import 'package:latitude_tracker/core/services/notification_service.dart';
 import 'package:latitude_tracker/core/theme/app_theme.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
@@ -677,6 +678,7 @@ class _BackupSectionState extends State<_BackupSection> {
   void initState() {
     super.initState();
     unawaited(_loadLastBackup());
+    unawaited(NotificationService.requestPermission());
     // userChanges() fires on linkWithCredential and unlinkProvider, which
     // authStateChanges() does not — needed to reflect linking via the
     // Account section tile without requiring a navigation round-trip.
