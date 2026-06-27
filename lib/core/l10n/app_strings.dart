@@ -387,6 +387,8 @@ enum AppStrings {
     backupUploadingData: 'Uploading data…',
     backupScopeDenied:
         'Drive access denied — grant it to enable backups',
+    backupFailureTitle: 'Backup failed',
+    backupFailureBody: 'Tap to open Settings and retry.',
     version: 'Version',
     checkForUpdates: 'Check for updates',
     updateChecking: 'Checking for updates…',
@@ -891,6 +893,9 @@ enum AppStrings {
     backupUploadingData: 'A carregar dados…',
     backupScopeDenied:
         'Acesso ao Drive negado — concede-o para ativar cópias',
+    backupFailureTitle: 'Cópia de segurança falhou',
+    backupFailureBody:
+        'Toca para abrir as Definições e tentar novamente.',
     version: 'Versão',
     checkForUpdates: 'Verificar atualizações',
     updateChecking: 'A verificar atualizações…',
@@ -1347,6 +1352,8 @@ enum AppStrings {
     required this.backupSuccess,
     required this.backupUploadingData,
     required this.backupScopeDenied,
+    required this.backupFailureTitle,
+    required this.backupFailureBody,
     required this.version,
     required this.checkForUpdates,
     required this.updateChecking,
@@ -1837,6 +1844,8 @@ enum AppStrings {
   final String backupSuccess;
   final String backupUploadingData;
   final String backupScopeDenied;
+  final String backupFailureTitle;
+  final String backupFailureBody;
   final String version;
   final String checkForUpdates;
   final String updateChecking;
@@ -1961,10 +1970,12 @@ enum AppStrings {
   final String _itemSingular;
   final String _itemPlural;
 
-  static AppStrings of(BuildContext context) {
-    final code = AppLocaleScope.of(context).languageCode;
-    return code == 'pt' ? pt : en;
-  }
+  static AppStrings of(BuildContext context) =>
+      _fromCode(AppLocaleScope.of(context).languageCode);
+
+  static AppStrings forLanguageCode(String code) => _fromCode(code);
+
+  static AppStrings _fromCode(String code) => code == 'pt' ? pt : en;
 
   // ── Plural helpers ────────────────────────────────────────────────────────
 

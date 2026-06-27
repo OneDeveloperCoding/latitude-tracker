@@ -17,6 +17,12 @@ class LocaleSettings {
     Intl.defaultLocale = _intlLocale(code);
   }
 
+  // Reads the persisted language code without requiring a BuildContext — safe
+  // to call from background isolates (e.g. WorkManager) that already hold a
+  // SharedPreferences instance.
+  static String languageCodeFrom(SharedPreferences prefs) =>
+      prefs.getString(_key) ?? defaultLocale.languageCode;
+
   static Future<void> setLocale(Locale l) async {
     locale.value = l;
     Intl.defaultLocale = _intlLocale(l.languageCode);
