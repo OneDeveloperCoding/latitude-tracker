@@ -1,7 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:latitude_tracker/core/services/error_reporter.dart';
-import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/settings/services/drive_backup_service.dart';
 import 'package:latitude_tracker/firebase_options.dart';
 import 'package:workmanager/workmanager.dart';
@@ -20,7 +20,11 @@ void callbackDispatcher() {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    if (DemoMode.active.value) return true;
+    // firebase_auth 4.x restores the persisted session asynchronously after
+    // initializeApp() — currentUser may be null immediately even when valid.
+    // Wait for the first auth state event before any Firestore access.
+    final user = await FirebaseAuth.instance.authStateChanges().first;
+    if (user == null) return true;
 
     final result = await DriveBackupService().backupNow(silent: true);
     if (result case BackupError(:final error, :final stackTrace)) {

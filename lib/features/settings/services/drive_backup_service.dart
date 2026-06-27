@@ -169,7 +169,6 @@ class DriveBackupService {
 
     final cachedBuyers = await _archiveService.fetchBuyersData();
     final allPhotos = <PhotoEntry>[];
-    var seenNonEmpty = false;
     final currentYear = DateTime.now().year;
     for (var year = currentYear; year >= _kBackupFloorYear; year--) {
       final file = await _archiveService.exportYear(
@@ -177,13 +176,9 @@ class DriveBackupService {
         cachedBuyers: cachedBuyers,
       );
       final content = await file.readAsString();
-      if (_isEmptyArchive(content)) {
-        // Skip empty leading years (e.g. January before the first sale).
-        // Stop only once we've passed the end of contiguous data.
-        if (seenNonEmpty) break;
-        continue;
-      }
-      seenNonEmpty = true;
+      // Always scan to the floor year — a gap year (no sales/repairs) must
+      // not stop the sweep, as data from earlier years would be silently lost.
+      if (_isEmptyArchive(content)) continue;
       await _uploadOrUpdateCachedFile(
         api,
         prefs,
@@ -218,8 +213,11 @@ class DriveBackupService {
       try {
         await api.files.get(cached, $fields: 'id');
         return cached;
-      } on Object {
-        // Folder no longer exists in Drive — recreate below.
+      } on Object catch (e) {
+        // Only evict the cache on a confirmed 404 — transient network errors
+        // should propagate so the run fails as BackupError, not silently
+        // clear a valid ID and risk creating a duplicate folder.
+        if (!_isDriveNotFound(e)) rethrow;
         await prefs.remove(cacheKey);
       }
     }
@@ -240,7 +238,10 @@ class DriveBackupService {
     String cacheKey,
   ) async {
     final bytes = utf8.encode(content);
-    final media = drive.Media(
+    // Stream.value is single-subscription and is exhausted after the first
+    // read — create a fresh Media for each Drive API call so a failed cached
+    // update doesn't corrupt the fallback search-and-create path.
+    drive.Media buildMedia() => drive.Media(
       Stream.value(bytes),
       bytes.length,
       contentType: 'application/json',
@@ -249,10 +250,14 @@ class DriveBackupService {
     final cachedId = prefs.getString(cacheKey);
     if (cachedId != null) {
       try {
-        await api.files.update(drive.File(), cachedId, uploadMedia: media);
+        await api.files.update(
+          drive.File(),
+          cachedId,
+          uploadMedia: buildMedia(),
+        );
         return;
-      } on Object {
-        // File no longer exists in Drive — fall through to recreate.
+      } on Object catch (e) {
+        if (!_isDriveNotFound(e)) rethrow;
         await prefs.remove(cacheKey);
       }
     }
@@ -266,13 +271,13 @@ class DriveBackupService {
     final String fileId;
     if (result.files != null && result.files!.isNotEmpty) {
       fileId = result.files!.first.id!;
-      await api.files.update(drive.File(), fileId, uploadMedia: media);
+      await api.files.update(drive.File(), fileId, uploadMedia: buildMedia());
     } else {
       final created = await api.files.create(
         drive.File()
           ..name = fileName
           ..parents = [parentId],
-        uploadMedia: media,
+        uploadMedia: buildMedia(),
         $fields: 'id',
       );
       fileId = created.id!;
@@ -430,6 +435,15 @@ class DriveBackupService {
       $fields: 'id',
     );
     return folder.id!;
+  }
+
+  // Drive API errors include the HTTP status in their string representation.
+  // Only clear cached IDs on 404 — transient errors should propagate so the
+  // outer BackupError handler surfaces them rather than silently recreating
+  // Drive resources and risking duplicates.
+  static bool _isDriveNotFound(Object e) {
+    final msg = e.toString();
+    return msg.contains('404') || msg.contains('notFound');
   }
 
   // Stops the year sweep when a year has neither sales nor repairs.
