@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.13.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.12.0...v1.13.0) (2026-06-28)
+
+
+### Features
+
+* backup failure notification ([#272](https://github.com/OneDeveloperCoding/latitude-tracker/issues/272)) ([6f1d8ce](https://github.com/OneDeveloperCoding/latitude-tracker/commit/6f1d8ce545a97ae993bbb1ed03cddd67ba0bd30d))
+* BackupRestore — JSON + photo restore from Google Drive ([#274](https://github.com/OneDeveloperCoding/latitude-tracker/issues/274)) ([b461e9e](https://github.com/OneDeveloperCoding/latitude-tracker/commit/b461e9e854393bc396fa2178e590f483cf1ce99c))
+* Drive service foundation + JSON backup + Settings Backup section ([#269](https://github.com/OneDeveloperCoding/latitude-tracker/issues/269)) ([a45650b](https://github.com/OneDeveloperCoding/latitude-tracker/commit/a45650b6e0adefab13dc6598cae6f3463556d5ed))
+* incremental photo upload to Google Drive ([#270](https://github.com/OneDeveloperCoding/latitude-tracker/issues/270)) ([5aaa967](https://github.com/OneDeveloperCoding/latitude-tracker/commit/5aaa9676881e67e6d192962dbaeceecee2ccfc7e)), closes [#209](https://github.com/OneDeveloperCoding/latitude-tracker/issues/209)
+* WorkManager daily scheduled backup (WiFi-only) ([#271](https://github.com/OneDeveloperCoding/latitude-tracker/issues/271)) ([d8c4bf4](https://github.com/OneDeveloperCoding/latitude-tracker/commit/d8c4bf4d770cc1d7ecf741e6d25ba89c451581a7))
+
 ## [1.12.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.11.0...v1.12.0) (2026-06-26)
 
 
