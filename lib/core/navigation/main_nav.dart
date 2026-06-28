@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
+import 'package:latitude_tracker/core/services/notification_service.dart';
 import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
@@ -40,6 +41,10 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     RepairsStore.init();
     unawaited(UpdateService.instance.checkForUpdate());
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
+    NotificationService.pendingDestination.addListener(_onNotificationTap);
+    // Drain any destination set before this listener was registered (e.g. a
+    // cold-start tap that fired during main() before runApp was called).
+    _onNotificationTap();
     // After a DemoMode transition the old MainNav's dispose() runs after this
     // initState — tearing down the subscription init() just created. The
     // post-frame callback re-subscribes once the frame has fully settled.
@@ -58,6 +63,7 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
+    NotificationService.pendingDestination.removeListener(_onNotificationTap);
     GeocodingWarmUp.detach();
     SalesStore.dispose();
     BuyersStore.dispose();
@@ -71,6 +77,19 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     SalesStore.ensureSubscribed();
     BuyersStore.ensureSubscribed();
     RepairsStore.ensureSubscribed();
+  }
+
+  void _onNotificationTap() {
+    final destination = NotificationService.pendingDestination.value;
+    if (destination == null) return;
+    NotificationService.pendingDestination.value = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      switch (destination) {
+        case NotificationDestination.settings:
+          setState(() => _currentIndex = 3);
+      }
+    });
   }
 
   void _onPendingTutorial() {

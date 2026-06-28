@@ -55,18 +55,34 @@ class ArchiveService {
   late final RepairRepository _repairsRepo =
       _repairsRepoOverride ?? RepairRepository();
 
-  Future<File> exportYear(int year) async {
-    final sales = await _salesRepo.getSalesForYear(year);
-    final repairs = await _repairsRepo.getRepairsForYear(year);
+  // Fetches all buyers and their addresses as serialisable maps.
+  // Call once before a multi-year export loop to avoid redundant Firestore
+  // reads — buyers are not year-scoped, so re-fetching per year is wasteful.
+  Future<List<Map<String, dynamic>>> fetchBuyersData() async {
     final buyers = await _buyersRepo.getAllBuyers();
-
-    final buyerAddresses = <String, List<Map<String, dynamic>>>{};
+    final result = <Map<String, dynamic>>[];
     for (final buyer in buyers) {
       final addresses = await _buyersRepo.getAllAddressesForBuyer(buyer.id);
-      buyerAddresses[buyer.id] = addresses
-          .map((a) => {'id': a.id, ...a.toFirestore()})
-          .toList();
+      result.add({
+        'id': buyer.id,
+        ...buyer.toFirestore(),
+        'addresses': addresses
+            .map((a) => {'id': a.id, ...a.toFirestore()})
+            .toList(),
+      });
     }
+    return result;
+  }
+
+  // Pass [cachedBuyers] (from [fetchBuyersData]) when exporting multiple years
+  // in a loop — avoids re-fetching the buyer list for every year.
+  Future<File> exportYear(
+    int year, {
+    List<Map<String, dynamic>>? cachedBuyers,
+  }) async {
+    final sales = await _salesRepo.getSalesForYear(year);
+    final repairs = await _repairsRepo.getRepairsForYear(year);
+    final buyersData = cachedBuyers ?? await fetchBuyersData();
 
     final archive = _toJsonSafe({
       'version': _kCurrentArchiveVersion,
@@ -74,15 +90,7 @@ class ArchiveService {
       'year': year,
       'sales': sales.map((s) => {'id': s.id, ...s.toFirestore()}).toList(),
       'repairs': repairs.map((r) => {'id': r.id, ...r.toFirestore()}).toList(),
-      'buyers': buyers
-          .map(
-            (b) => {
-              'id': b.id,
-              ...b.toFirestore(),
-              'addresses': buyerAddresses[b.id] ?? [],
-            },
-          )
-          .toList(),
+      'buyers': buyersData,
     });
 
     final dir = await getTemporaryDirectory();
