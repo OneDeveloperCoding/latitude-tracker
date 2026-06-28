@@ -1,26 +1,19 @@
 import 'dart:convert';
 
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
-import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
+import 'package:latitude_tracker/features/settings/services/drive_service_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+export 'package:latitude_tracker/features/settings/services/drive_service_helper.dart'
+    show ComponentPhoto, PhotoEntry, RepairPhoto, SaleItemPhoto;
 
 const _kBackupFloorYear = 2026;
 const _kLastBackupKey = 'drive_backup_last_success';
 const _kRootFolderIdKey = 'drive_backup_root_folder_id';
 const _kDataFileIdPrefix = 'drive_backup_file_';
-const _kBackupFolderName = 'Latitude Tracker Backup';
-const _kDataFolderName = 'data';
-const _kPhotosFolderName = 'photos';
-const _kSalesFolderName = 'sales';
-const _kComponentsFolderName = 'components';
-const _kRepairsFolderName = 'repairs';
-const _kIsUploadedKey = 'isUploaded';
-const _kIsUploadedValue = 'true';
 
 sealed class BackupResult {
   const BackupResult();
@@ -51,46 +44,6 @@ enum BackupPhase { data, photos }
 typedef BackupProgressCallback =
     void Function(BackupPhase phase, int done, int total);
 
-// ---------------------------------------------------------------------------
-// Photo entry types — carry enough context to build the Drive folder path.
-// Public so that @visibleForTesting helpers can reference them from tests.
-// ---------------------------------------------------------------------------
-
-sealed class PhotoEntry {
-  const PhotoEntry(this.url);
-  final String url;
-}
-
-class SaleItemPhoto extends PhotoEntry {
-  const SaleItemPhoto({
-    required this.saleId,
-    required this.itemId,
-    required String url,
-  }) : super(url);
-  final String saleId;
-  final String itemId;
-}
-
-class ComponentPhoto extends PhotoEntry {
-  const ComponentPhoto({
-    required this.saleId,
-    required this.itemId,
-    required this.componentId,
-    required String url,
-  }) : super(url);
-  final String saleId;
-  final String itemId;
-  final String componentId;
-}
-
-class RepairPhoto extends PhotoEntry {
-  const RepairPhoto({required this.repairId, required String url})
-    : super(url);
-  final String repairId;
-}
-
-// ---------------------------------------------------------------------------
-
 class DriveBackupService {
   DriveBackupService({ArchiveService? archiveService})
     : _archiveService = archiveService ?? ArchiveService();
@@ -110,38 +63,21 @@ class DriveBackupService {
     bool silent = false,
   }) async {
     try {
-      final googleSignIn = GoogleAuthService.googleSignIn;
-
-      // Restore the Dart-layer currentUser from the Android native cache.
-      // Without this, authenticatedClient() returns null after every app
-      // restart because GoogleSignIn._currentUser is not persisted across
-      // cold starts, even though the Firebase Auth session and the Android
-      // native sign-in cache survive.
-      await googleSignIn.signInSilently();
-
-      if (!silent) {
-        final granted = await googleSignIn.requestScopes(
-          [drive.DriveApi.driveFileScope],
-        );
-        if (!granted) return const BackupScopeDenied();
-      }
-
-      final client = await googleSignIn.authenticatedClient();
-      if (client == null) return const BackupScopeDenied();
-
-      var failedPhotos = 0;
-      try {
-        failedPhotos = await _runBackup(drive.DriveApi(client), onProgress);
-      } finally {
-        client.close();
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kLastBackupKey, DateTime.now().toIso8601String());
-
-      return failedPhotos > 0
-          ? BackupPartialSuccess(failedPhotos)
-          : const BackupSuccess();
+      final result = await DriveServiceHelper.withDriveApi<BackupResult>(
+        (api) async {
+          final failedPhotos = await _runBackup(api, onProgress);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            _kLastBackupKey,
+            DateTime.now().toIso8601String(),
+          );
+          return failedPhotos > 0
+              ? BackupPartialSuccess(failedPhotos)
+              : const BackupSuccess();
+        },
+        silent: silent,
+      );
+      return result ?? const BackupScopeDenied();
     } on Object catch (e, st) {
       return BackupError(e, st);
     }
@@ -159,11 +95,11 @@ class DriveBackupService {
       api,
       prefs,
       _kRootFolderIdKey,
-      _kBackupFolderName,
+      kBackupFolderName,
     );
-    final dataFolderId = await _findOrCreateFolder(
+    final dataFolderId = await DriveServiceHelper.findOrCreateFolder(
       api,
-      _kDataFolderName,
+      kDataFolderName,
       parentId: backupFolderId,
     );
 
@@ -187,12 +123,12 @@ class DriveBackupService {
         content,
         '$_kDataFileIdPrefix$year',
       );
-      allPhotos.addAll(extractPhotos(content));
+      allPhotos.addAll(DriveServiceHelper.extractPhotos(content));
     }
 
-    final photosFolderId = await _findOrCreateFolder(
+    final photosFolderId = await DriveServiceHelper.findOrCreateFolder(
       api,
-      _kPhotosFolderName,
+      kPhotosFolderName,
       parentId: backupFolderId,
     );
     return _runPhotoBackup(api, photosFolderId, allPhotos, onProgress);
@@ -217,11 +153,15 @@ class DriveBackupService {
         // Only evict the cache on a confirmed 404 — transient network errors
         // should propagate so the run fails as BackupError, not silently
         // clear a valid ID and risk creating a duplicate folder.
-        if (!_isDriveNotFound(e)) rethrow;
+        if (!DriveServiceHelper.isDriveNotFound(e)) rethrow;
         await prefs.remove(cacheKey);
       }
     }
-    final id = await _findOrCreateFolder(api, name, parentId: parentId);
+    final id = await DriveServiceHelper.findOrCreateFolder(
+      api,
+      name,
+      parentId: parentId,
+    );
     await prefs.setString(cacheKey, id);
     return id;
   }
@@ -251,13 +191,13 @@ class DriveBackupService {
     if (cachedId != null) {
       try {
         await api.files.update(
-          drive.File(),
+          drive.File()..mimeType = 'application/json',
           cachedId,
           uploadMedia: buildMedia(),
         );
         return;
       } on Object catch (e) {
-        if (!_isDriveNotFound(e)) rethrow;
+        if (!DriveServiceHelper.isDriveNotFound(e)) rethrow;
         await prefs.remove(cacheKey);
       }
     }
@@ -271,11 +211,16 @@ class DriveBackupService {
     final String fileId;
     if (result.files != null && result.files!.isNotEmpty) {
       fileId = result.files!.first.id!;
-      await api.files.update(drive.File(), fileId, uploadMedia: buildMedia());
+      await api.files.update(
+        drive.File()..mimeType = 'application/json',
+        fileId,
+        uploadMedia: buildMedia(),
+      );
     } else {
       final created = await api.files.create(
         drive.File()
           ..name = fileName
+          ..mimeType = 'application/json'
           ..parents = [parentId],
         uploadMedia: buildMedia(),
         $fields: 'id',
@@ -301,7 +246,7 @@ class DriveBackupService {
     for (var i = 0; i < photos.length; i++) {
       onProgress?.call(BackupPhase.photos, i, photos.length);
       final entry = photos[i];
-      final filename = filenameFromUrl(entry.url);
+      final filename = DriveServiceHelper.filenameFromUrl(entry.url);
       if (uploaded.contains(filename)) continue;
 
       try {
@@ -329,8 +274,8 @@ class DriveBackupService {
     String? pageToken;
     do {
       final result = await api.files.list(
-        q: "appProperties has {key='$_kIsUploadedKey' "
-            "and value='$_kIsUploadedValue'} and trashed=false",
+        q: "appProperties has {key='$kIsUploadedKey' "
+            "and value='$kIsUploadedValue'} and trashed=false",
         $fields: 'nextPageToken,files(name)',
         spaces: 'drive',
         pageToken: pageToken,
@@ -353,17 +298,17 @@ class DriveBackupService {
   ) async {
     final parts = switch (entry) {
       SaleItemPhoto(:final saleId, :final itemId) => [
-        _kSalesFolderName,
+        kSalesFolderName,
         saleId,
         itemId,
       ],
       ComponentPhoto(:final saleId, :final itemId, :final componentId) => [
-        _kComponentsFolderName,
+        kComponentsFolderName,
         saleId,
         itemId,
         componentId,
       ],
-      RepairPhoto(:final repairId) => [_kRepairsFolderName, repairId],
+      RepairPhoto(:final repairId) => [kRepairsFolderName, repairId],
     };
 
     var parentId = photosFolderId;
@@ -375,7 +320,11 @@ class DriveBackupService {
       if (cached != null) {
         parentId = cached;
       } else {
-        parentId = await _findOrCreateFolder(api, part, parentId: parentId);
+        parentId = await DriveServiceHelper.findOrCreateFolder(
+          api,
+          part,
+          parentId: parentId,
+        );
         folderCache[cacheKey] = parentId;
       }
     }
@@ -398,7 +347,7 @@ class DriveBackupService {
       drive.File()
         ..name = filename
         ..parents = [folderId]
-        ..appProperties = {_kIsUploadedKey: _kIsUploadedValue},
+        ..appProperties = {kIsUploadedKey: kIsUploadedValue},
       uploadMedia: drive.Media(
         Stream.value(bytes),
         bytes.length,
@@ -406,44 +355,6 @@ class DriveBackupService {
       ),
       $fields: 'id',
     );
-  }
-
-  Future<String> _findOrCreateFolder(
-    drive.DriveApi api,
-    String name, {
-    String? parentId,
-  }) async {
-    final parentClause = parentId != null
-        ? "and '$parentId' in parents"
-        : "and 'root' in parents";
-    final result = await api.files.list(
-      q: "name='$name' and mimeType='application/vnd.google-apps.folder' "
-          '$parentClause and trashed=false',
-      $fields: 'files(id)',
-      spaces: 'drive',
-    );
-
-    if (result.files != null && result.files!.isNotEmpty) {
-      return result.files!.first.id!;
-    }
-
-    final folder = await api.files.create(
-      drive.File()
-        ..name = name
-        ..mimeType = 'application/vnd.google-apps.folder'
-        ..parents = parentId != null ? [parentId] : null,
-      $fields: 'id',
-    );
-    return folder.id!;
-  }
-
-  // Drive API errors include the HTTP status in their string representation.
-  // Only clear cached IDs on 404 — transient errors should propagate so the
-  // outer BackupError handler surfaces them rather than silently recreating
-  // Drive resources and risking duplicates.
-  static bool _isDriveNotFound(Object e) {
-    final msg = e.toString();
-    return msg.contains('404') || msg.contains('notFound');
   }
 
   // Stops the year sweep when a year has neither sales nor repairs.
@@ -456,82 +367,6 @@ class DriveBackupService {
       return sales == 0 && repairs == 0;
     } on Object catch (_) {
       return false;
-    }
-  }
-
-  // Walks the archive JSON (already in memory from the data phase) to collect
-  // every photo URL along with enough context to build its Drive folder path.
-  // Malformed entries are silently skipped — a missing photo is preferable to
-  // aborting the entire backup run.
-  @visibleForTesting
-  static List<PhotoEntry> extractPhotos(String jsonContent) {
-    final entries = <PhotoEntry>[];
-    try {
-      final map = jsonDecode(jsonContent) as Map<String, dynamic>;
-
-      for (final rawSale in map['sales'] as List? ?? const <dynamic>[]) {
-        final sale = rawSale as Map<String, dynamic>;
-        final saleId = sale['id'] as String? ?? '';
-        for (final rawItem
-            in sale['items'] as List? ?? const <dynamic>[]) {
-          final item = rawItem as Map<String, dynamic>;
-          final itemId = item['id'] as String? ?? '';
-          for (final url
-              in item['photoUrls'] as List? ?? const <dynamic>[]) {
-            entries.add(
-              SaleItemPhoto(
-                saleId: saleId,
-                itemId: itemId,
-                url: url as String,
-              ),
-            );
-          }
-          for (final rawComp
-              in item['components'] as List? ?? const <dynamic>[]) {
-            final comp = rawComp as Map<String, dynamic>;
-            final compId = comp['id'] as String? ?? '';
-            for (final url
-                in comp['photoUrls'] as List? ?? const <dynamic>[]) {
-              entries.add(
-                ComponentPhoto(
-                  saleId: saleId,
-                  itemId: itemId,
-                  componentId: compId,
-                  url: url as String,
-                ),
-              );
-            }
-          }
-        }
-      }
-
-      for (final rawRepair
-          in map['repairs'] as List? ?? const <dynamic>[]) {
-        final repair = rawRepair as Map<String, dynamic>;
-        final repairId = repair['id'] as String? ?? '';
-        for (final url
-            in repair['photoUrls'] as List? ?? const <dynamic>[]) {
-          entries.add(
-            RepairPhoto(repairId: repairId, url: url as String),
-          );
-        }
-      }
-    } on Object catch (_) {
-      // Return whatever was collected before the parse error.
-    }
-    return entries;
-  }
-
-  // Firebase Storage download URLs encode the full path as a single URL
-  // segment after /o/ — decode it and take the last component (the filename).
-  @visibleForTesting
-  static String filenameFromUrl(String url) {
-    try {
-      final encoded = Uri.parse(url).pathSegments.last;
-      return Uri.decodeComponent(encoded).split('/').last;
-    } on Object catch (_) {
-      // Fallback for unexpected URL formats.
-      return url.split('/').last.split('?').first;
     }
   }
 }

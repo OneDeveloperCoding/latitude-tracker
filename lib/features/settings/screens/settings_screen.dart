@@ -20,6 +20,7 @@ import 'package:latitude_tracker/features/settings/screens/archive_import_screen
 import 'package:latitude_tracker/features/settings/screens/category_maintenance_screen.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 import 'package:latitude_tracker/features/settings/services/drive_backup_service.dart';
+import 'package:latitude_tracker/features/settings/services/drive_restore_service.dart';
 import 'package:latitude_tracker/features/settings/services/reset_app_service.dart';
 import 'package:latitude_tracker/features/settings/services/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -662,12 +663,17 @@ class _BackupSection extends StatefulWidget {
 }
 
 class _BackupSectionState extends State<_BackupSection> {
-  final _service = DriveBackupService();
+  final _backupService = DriveBackupService();
+  final _restoreService = DriveRestoreService();
   DateTime? _lastBackupAt;
   bool _isBackingUp = false;
+  bool _isRestoring = false;
   bool _isLinking = false;
-  String? _progressLabel;
+  String? _backupProgressLabel;
+  String? _restoreProgressLabel;
   late final StreamSubscription<User?> _authSubscription;
+
+  bool get _isBusy => _isBackingUp || _isRestoring;
 
   bool get _isGoogleLinked =>
       FirebaseAuth.instance.currentUser?.providerData
@@ -694,21 +700,21 @@ class _BackupSectionState extends State<_BackupSection> {
   }
 
   Future<void> _loadLastBackup() async {
-    final at = await _service.lastBackupAt();
+    final at = await _backupService.lastBackupAt();
     if (mounted) setState(() => _lastBackupAt = at);
   }
 
   Future<void> _backupNow() async {
     setState(() {
       _isBackingUp = true;
-      _progressLabel = context.s.backupUploadingData;
+      _backupProgressLabel = context.s.backupUploadingData;
     });
     try {
-      final result = await _service.backupNow(
+      final result = await _backupService.backupNow(
         onProgress: (phase, done, total) {
           if (!mounted) return;
           setState(() {
-            _progressLabel = switch (phase) {
+            _backupProgressLabel = switch (phase) {
               BackupPhase.data => context.s.backupUploadingData,
               BackupPhase.photos =>
                 context.s.backupUploadingPhotos(done, total),
@@ -744,10 +750,118 @@ class _BackupSectionState extends State<_BackupSection> {
       if (mounted) {
         setState(() {
           _isBackingUp = false;
-          _progressLabel = null;
+          _backupProgressLabel = null;
         });
       }
     }
+  }
+
+  Future<void> _restoreFromDrive() async {
+    final s = context.s;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.restoreConfirmTitle),
+        content: Text(s.restoreConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(s.restoreFromDrive),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isRestoring = true;
+      _restoreProgressLabel = context.s.restoreDownloadingData;
+    });
+    try {
+      final result = await _restoreService.restoreFromDrive(
+        onProgress: (phase, done, total) {
+          if (!mounted) return;
+          setState(() {
+            _restoreProgressLabel = switch (phase) {
+              RestorePhase.data => context.s.restoreDownloadingData,
+              RestorePhase.photos =>
+                context.s.restoreRestoringPhotos(done, total),
+            };
+          });
+        },
+      );
+      if (!mounted) return;
+      switch (result) {
+        case RestoreSuccess(:final imported):
+          _showRestoreResultDialog(imported: imported);
+        case RestorePartialSuccess(
+          :final imported,
+          :final failedPhotos,
+          :final failedYears,
+        ):
+          _showRestoreResultDialog(
+            imported: imported,
+            failedPhotos: failedPhotos,
+            failedYears: failedYears,
+            partial: true,
+          );
+        case RestoreNoBackupsFound():
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.restoreNoBackupsFound)),
+          );
+        case RestoreScopeDenied():
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.restoreScopeDenied)),
+          );
+        case RestoreError(:final error, :final stackTrace):
+          logError(error, stackTrace);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.s.restoreFailed(error))),
+          );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRestoring = false;
+          _restoreProgressLabel = null;
+        });
+      }
+    }
+  }
+
+  void _showRestoreResultDialog({
+    required ImportResult imported,
+    int failedPhotos = 0,
+    int failedYears = 0,
+    bool partial = false,
+  }) {
+    final s = context.s;
+    unawaited(showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(partial ? s.restorePartialTitle : s.restoreCompleteTitle),
+        content: Text(
+          s.restoreResultBody(
+            salesImported: imported.salesImported,
+            buyersImported: imported.buyersImported,
+            repairsImported: imported.repairsImported,
+            skipped: imported.skipped,
+            failedPhotos: failedPhotos,
+            failedYears: failedYears,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(s.ok),
+          ),
+        ],
+      ),
+    ));
   }
 
   Future<void> _linkGoogle() async {
@@ -784,23 +898,44 @@ class _BackupSectionState extends State<_BackupSection> {
       );
     }
 
-    final subtitle = _isBackingUp && _progressLabel != null
-        ? _progressLabel!
+    final backupSubtitle = _isBackingUp && _backupProgressLabel != null
+        ? _backupProgressLabel!
         : _lastBackupAt != null
         ? s.backupLastAt(_lastBackupAt!)
         : s.backupNever;
 
-    return ListTile(
-      leading: _isBackingUp
-          ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.cloud_upload_outlined),
-      title: Text(s.backupNow),
-      subtitle: Text(subtitle),
-      onTap: _isBackingUp ? null : _backupNow,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: _isBackingUp
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.cloud_upload_outlined),
+          title: Text(s.backupNow),
+          subtitle: Text(backupSubtitle),
+          onTap: _isBusy ? null : _backupNow,
+        ),
+        ListTile(
+          leading: _isRestoring
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.cloud_download_outlined),
+          title: Text(s.restoreFromDrive),
+          subtitle: Text(
+            _isRestoring && _restoreProgressLabel != null
+                ? _restoreProgressLabel!
+                : s.restoreFromDriveSubtitle,
+          ),
+          onTap: _isBusy ? null : _restoreFromDrive,
+        ),
+      ],
     );
   }
 }

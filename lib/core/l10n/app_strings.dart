@@ -389,6 +389,18 @@ enum AppStrings {
         'Drive access denied — grant it to enable backups',
     backupFailureTitle: 'Backup failed',
     backupFailureBody: 'Tap to open Settings and retry.',
+    restoreFromDrive: 'Restore from Drive',
+    restoreFromDriveSubtitle: 'Recover all data from your Drive backup',
+    restoreDownloadingData: 'Downloading backups…',
+    restoreNoBackupsFound: 'No backups found in Drive',
+    restoreScopeDenied:
+        'Drive access denied — grant it to enable restore',
+    restoreConfirmTitle: 'Restore from Drive?',
+    restoreConfirmBody:
+        'This will download all backups from your Drive and import any '
+        'missing data. Existing data will not be overwritten.',
+    restoreCompleteTitle: 'Restore complete',
+    restorePartialTitle: 'Restore partially complete',
     version: 'Version',
     checkForUpdates: 'Check for updates',
     updateChecking: 'Checking for updates…',
@@ -896,6 +908,18 @@ enum AppStrings {
     backupFailureTitle: 'Cópia de segurança falhou',
     backupFailureBody:
         'Toca para abrir as Definições e tentar novamente.',
+    restoreFromDrive: 'Restaurar do Drive',
+    restoreFromDriveSubtitle: 'Recuperar todos os dados da cópia no Drive',
+    restoreDownloadingData: 'A descarregar cópias de segurança…',
+    restoreNoBackupsFound: 'Nenhuma cópia encontrada no Drive',
+    restoreScopeDenied:
+        'Acesso ao Drive negado — concede-o para ativar a restauração',
+    restoreConfirmTitle: 'Restaurar do Drive?',
+    restoreConfirmBody:
+        'Serão descarregadas todas as cópias do Drive e importados os dados '
+        'em falta. Os dados existentes não serão substituídos.',
+    restoreCompleteTitle: 'Restauro concluído',
+    restorePartialTitle: 'Restauro parcialmente concluído',
     version: 'Versão',
     checkForUpdates: 'Verificar atualizações',
     updateChecking: 'A verificar atualizações…',
@@ -1354,6 +1378,15 @@ enum AppStrings {
     required this.backupScopeDenied,
     required this.backupFailureTitle,
     required this.backupFailureBody,
+    required this.restoreFromDrive,
+    required this.restoreFromDriveSubtitle,
+    required this.restoreDownloadingData,
+    required this.restoreNoBackupsFound,
+    required this.restoreScopeDenied,
+    required this.restoreConfirmTitle,
+    required this.restoreConfirmBody,
+    required this.restoreCompleteTitle,
+    required this.restorePartialTitle,
     required this.version,
     required this.checkForUpdates,
     required this.updateChecking,
@@ -1846,6 +1879,15 @@ enum AppStrings {
   final String backupScopeDenied;
   final String backupFailureTitle;
   final String backupFailureBody;
+  final String restoreFromDrive;
+  final String restoreFromDriveSubtitle;
+  final String restoreDownloadingData;
+  final String restoreNoBackupsFound;
+  final String restoreScopeDenied;
+  final String restoreConfirmTitle;
+  final String restoreConfirmBody;
+  final String restoreCompleteTitle;
+  final String restorePartialTitle;
   final String version;
   final String checkForUpdates;
   final String updateChecking;
@@ -2409,6 +2451,88 @@ enum AppStrings {
     }
     final word = count == 1 ? 'photo' : 'photos';
     return 'Backup complete — $count $word failed, will retry next run';
+  }
+
+  String restoreFailed(Object error) =>
+      _pt ? 'Falha no restauro: $error' : 'Restore failed: $error';
+
+  String restoreRestoringPhotos(int done, int total) => _pt
+      ? 'A restaurar fotos… $done / $total'
+      : 'Restoring photos… $done / $total';
+
+  String restoreResultBody({
+    required int salesImported,
+    required int buyersImported,
+    required int repairsImported,
+    required int skipped,
+    int failedPhotos = 0,
+    int failedYears = 0,
+  }) {
+    final parts = <String>[];
+
+    if (_pt) {
+      final items = [
+        if (salesImported > 0)
+          '$salesImported ${salesImported == 1 ? 'venda' : 'vendas'}',
+        if (buyersImported > 0)
+          '$buyersImported ${buyersImported == 1 ? 'comprador' : 'compradores'
+              }',
+        if (repairsImported > 0)
+          '$repairsImported ${repairsImported == 1 ? 'reparação' : 'reparações'
+              }',
+      ];
+      if (items.isNotEmpty) parts.add('${items.join(' · ')} importados');
+      if (skipped > 0) {
+        parts.add(
+          '$skipped ${skipped == 1 ? 'ignorado' : 'ignorados'} (já existia)',
+        );
+      }
+      if (failedPhotos > 0) {
+        parts.add(
+          '$failedPhotos '
+              '${failedPhotos == 1 ? 'foto falhou' : 'fotos falharam'}'
+              ' — toca em "Restaurar do Drive" para tentar novamente',
+        );
+      }
+      if (failedYears > 0) {
+        parts.add(
+          '$failedYears ${failedYears == 1 ? 'ano falhou' : 'anos falharam'}'
+          ' — toca em "Restaurar do Drive" para tentar novamente',
+        );
+      }
+    } else {
+      final items = [
+        if (salesImported > 0)
+          '$salesImported ${salesImported == 1 ? 'sale' : 'sales'}',
+        if (buyersImported > 0)
+          '$buyersImported ${buyersImported == 1 ? 'buyer' : 'buyers'}',
+        if (repairsImported > 0)
+          '$repairsImported ${repairsImported == 1 ? 'repair' : 'repairs'}',
+      ];
+      if (items.isNotEmpty) parts.add('${items.join(' · ')} imported');
+      if (skipped > 0) {
+        parts.add('$skipped skipped (already existed)');
+      }
+      if (failedPhotos > 0) {
+        parts.add(
+          '$failedPhotos ${failedPhotos == 1 ? 'photo' : 'photos'} failed'
+          ' — tap "Restore from Drive" to retry',
+        );
+      }
+      if (failedYears > 0) {
+        parts.add(
+          '$failedYears ${failedYears == 1 ? 'year' : 'years'} failed to import'
+          ' — tap "Restore from Drive" to retry',
+        );
+      }
+    }
+
+    if (parts.isEmpty) {
+      return _pt
+          ? 'Nenhum dado novo encontrado — tudo já estava sincronizado.'
+          : 'No new data found — everything was already up to date.';
+    }
+    return parts.join('\n');
   }
 }
 

@@ -1,17 +1,17 @@
 import 'dart:convert';
 
-import 'package:latitude_tracker/features/settings/services/drive_backup_service.dart';
+import 'package:latitude_tracker/features/settings/services/drive_service_helper.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('DriveBackupService.filenameFromUrl', () {
+  group('DriveServiceHelper.filenameFromUrl', () {
     test('extracts UUID from a standard Firebase Storage download URL', () {
       const url =
           'https://firebasestorage.googleapis.com/v0/b/latitude-tracker-f5d03.appspot.com'
           '/o/users%2FUID%2Fsales%2FsaleId%2Fitems%2FitemId%2Fphotos%2F'
           '9eda0e51-ca3b-4ee0-ad2f-607b5fd1026d.jpg?alt=media&token=abc';
       expect(
-        DriveBackupService.filenameFromUrl(url),
+        DriveServiceHelper.filenameFromUrl(url),
         '9eda0e51-ca3b-4ee0-ad2f-607b5fd1026d.jpg',
       );
     });
@@ -22,24 +22,58 @@ void main() {
           '/o/users%2FUID%2Frepairs%2FrepairId%2Fphotos%2F'
           'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.jpg?alt=media&token=xyz';
       expect(
-        DriveBackupService.filenameFromUrl(url),
+        DriveServiceHelper.filenameFromUrl(url),
         'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.jpg',
       );
     });
 
     test('falls back gracefully for unexpected URL formats', () {
       const url = 'https://example.com/some/path/photo.jpg?token=abc';
-      expect(DriveBackupService.filenameFromUrl(url), 'photo.jpg');
+      expect(DriveServiceHelper.filenameFromUrl(url), 'photo.jpg');
     });
   });
 
-  group('DriveBackupService.extractPhotos', () {
+  group('DriveServiceHelper.storagePathFromUrl', () {
+    test('decodes a SaleItem photo URL to its Storage path', () {
+      const url =
+          'https://firebasestorage.googleapis.com/v0/b/latitude-tracker-f5d03.appspot.com'
+          '/o/users%2FUID%2Fsales%2FsaleId%2Fitems%2FitemId%2Fphotos%2F'
+          '9eda0e51-ca3b-4ee0-ad2f-607b5fd1026d.jpg?alt=media&token=abc';
+      expect(
+        DriveServiceHelper.storagePathFromUrl(url),
+        'users/UID/sales/saleId/items/itemId/photos/'
+        '9eda0e51-ca3b-4ee0-ad2f-607b5fd1026d.jpg',
+      );
+    });
+
+    test('decodes a Repair photo URL to its Storage path', () {
+      const url =
+          'https://firebasestorage.googleapis.com/v0/b/latitude-tracker-f5d03.appspot.com'
+          '/o/users%2FUID%2Frepairs%2FrepairId%2Fphotos%2F'
+          'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.jpg?alt=media&token=xyz';
+      expect(
+        DriveServiceHelper.storagePathFromUrl(url),
+        'users/UID/repairs/repairId/photos/'
+        'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.jpg',
+      );
+    });
+
+    test('throws FormatException for a URL with no /o/ segment', () {
+      const url = 'https://example.com/some/path/photo.jpg';
+      expect(
+        () => DriveServiceHelper.storagePathFromUrl(url),
+        throwsA(isA<FormatException>()),
+      );
+    });
+  });
+
+  group('DriveServiceHelper.extractPhotos', () {
     test('returns empty list for empty archive', () {
       final json = jsonEncode(<String, dynamic>{
         'sales': <dynamic>[],
         'repairs': <dynamic>[],
       });
-      expect(DriveBackupService.extractPhotos(json), isEmpty);
+      expect(DriveServiceHelper.extractPhotos(json), isEmpty);
     });
 
     test('extracts SaleItem photos', () {
@@ -62,7 +96,7 @@ void main() {
         'repairs': <dynamic>[],
       });
 
-      final entries = DriveBackupService.extractPhotos(json);
+      final entries = DriveServiceHelper.extractPhotos(json);
       expect(entries, hasLength(2));
       expect(
         entries.map((e) => e.url),
@@ -95,7 +129,7 @@ void main() {
         'repairs': <dynamic>[],
       });
 
-      final entries = DriveBackupService.extractPhotos(json);
+      final entries = DriveServiceHelper.extractPhotos(json);
       expect(entries, hasLength(1));
       expect(entries.first, isA<ComponentPhoto>());
     });
@@ -111,7 +145,7 @@ void main() {
         ],
       });
 
-      final entries = DriveBackupService.extractPhotos(json);
+      final entries = DriveServiceHelper.extractPhotos(json);
       expect(entries, hasLength(1));
       expect(entries.first, isA<RepairPhoto>());
     });
@@ -143,7 +177,7 @@ void main() {
         ],
       });
 
-      final entries = DriveBackupService.extractPhotos(json);
+      final entries = DriveServiceHelper.extractPhotos(json);
       expect(entries, hasLength(3));
       expect(entries.whereType<SaleItemPhoto>(), hasLength(1));
       expect(entries.whereType<ComponentPhoto>(), hasLength(1));
@@ -167,15 +201,15 @@ void main() {
         'repairs': <dynamic>[],
       });
 
-      expect(DriveBackupService.extractPhotos(json), isEmpty);
+      expect(DriveServiceHelper.extractPhotos(json), isEmpty);
     });
 
     test('returns empty list for malformed JSON', () {
-      expect(DriveBackupService.extractPhotos('not json at all'), isEmpty);
+      expect(DriveServiceHelper.extractPhotos('not json at all'), isEmpty);
     });
 
     test('returns empty list for empty string', () {
-      expect(DriveBackupService.extractPhotos(''), isEmpty);
+      expect(DriveServiceHelper.extractPhotos(''), isEmpty);
     });
   });
 }
