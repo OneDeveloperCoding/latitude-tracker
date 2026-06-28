@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
-import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 import 'package:latitude_tracker/features/settings/services/drive_service_helper.dart';
 
@@ -61,24 +59,10 @@ class DriveRestoreService {
     RestoreProgressCallback? onProgress,
   }) async {
     try {
-      final googleSignIn = GoogleAuthService.googleSignIn;
-
-      // Restore the Dart-layer currentUser from the Android native cache.
-      await googleSignIn.signInSilently();
-
-      final granted = await googleSignIn.requestScopes(
-        [drive.DriveApi.driveFileScope],
+      final result = await DriveServiceHelper.withDriveApi<RestoreResult>(
+        (api) => _runRestore(api, onProgress),
       );
-      if (!granted) return const RestoreScopeDenied();
-
-      final client = await googleSignIn.authenticatedClient();
-      if (client == null) return const RestoreScopeDenied();
-
-      try {
-        return await _runRestore(drive.DriveApi(client), onProgress);
-      } finally {
-        client.close();
-      }
+      return result ?? const RestoreScopeDenied();
     } on Object catch (e, st) {
       return RestoreError(e, st);
     }
@@ -123,9 +107,19 @@ class DriveRestoreService {
       final (fileId, fileName) = jsonFiles[i];
       try {
         final content = await _downloadText(api, fileId);
-        // Collect photos from this year's JSON before attempting import —
-        // even a partial import failure should not lose the photo list.
-        allPhotos.addAll(DriveServiceHelper.extractPhotos(content));
+        // Decode JSON once so photos can be extracted and data imported
+        // without a second jsonDecode call on the same string.
+        final Map<String, dynamic> decoded;
+        try {
+          decoded = jsonDecode(content) as Map<String, dynamic>;
+        } on Object catch (e, st) {
+          logError(e, st);
+          failedYears++;
+          continue;
+        }
+        // Extract photos before attempting import so a failed import does not
+        // lose the photo list for this year.
+        allPhotos.addAll(DriveServiceHelper.extractPhotosFromMap(decoded));
         final archive = ArchiveService.parseArchive(content);
         if (archive == null) {
           throw FormatException('Could not parse backup file: $fileName');
@@ -143,16 +137,23 @@ class DriveRestoreService {
     onProgress?.call(RestorePhase.data, jsonFiles.length, jsonFiles.length);
 
     // Phase 2: restore photos.
-    // Missing photos/ folder is not an error — a first backup might have had
-    // no photos at the time.
+    // A missing photos/ folder is not an error when there are no photos to
+    // restore. If photos are expected but the folder is absent (e.g. the user
+    // deleted it from Drive), count them all as failed so the caller surfaces
+    // RestorePartialSuccess instead of RestoreSuccess.
     final photosFolderId = await DriveServiceHelper.findFolder(
       api,
       kPhotosFolderName,
       parentId: rootFolderId,
     );
-    final failedPhotos = (photosFolderId != null && allPhotos.isNotEmpty)
-        ? await _runPhotoRestore(api, allPhotos, onProgress)
-        : 0;
+    final int failedPhotos;
+    if (allPhotos.isEmpty) {
+      failedPhotos = 0;
+    } else if (photosFolderId == null) {
+      failedPhotos = allPhotos.length;
+    } else {
+      failedPhotos = await _runPhotoRestore(api, allPhotos, onProgress);
+    }
 
     final imported = ImportResult(
       salesImported: salesImported,
@@ -177,8 +178,17 @@ class DriveRestoreService {
   ) async {
     // Build a {filename → fileId} map from Drive in one paginated sweep so
     // individual photo lookups are O(1) in-memory rather than O(1) Drive calls.
+    // The global appProperties query is intentional: photos are nested several
+    // levels deep under photos/ (sales/{id}/{id}/{uuid}.jpg etc.), making a
+    // parent-folder constraint impractical without recursive traversal.
     final uuidToFileId = await _buildUuidToFileIdMap(api);
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    // Firebase Auth session can expire between Phase 1 (data import) and
+    // Phase 2 (photo restore). Guard here so a null currentUser returns
+    // RestorePartialSuccess with the Phase 1 data intact rather than crashing.
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return photos.length;
+
     final storage = FirebaseStorage.instance;
     var failed = 0;
 
@@ -210,10 +220,10 @@ class DriveRestoreService {
           fileId,
           downloadOptions: drive.DownloadOptions.fullMedia,
         ) as drive.Media;
-        final bytes = Uint8List.fromList(
-          await media.stream.expand((chunk) => chunk).toList(),
+        await ref.putData(
+          await _collectBytes(media.stream),
+          SettableMetadata(contentType: 'image/jpeg'),
         );
-        await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
       } on Object catch (e, st) {
         logError(e, st);
         failed++;
@@ -264,13 +274,32 @@ class DriveRestoreService {
   }
 
   // Downloads a Drive file and returns its content as a UTF-8 string.
+  // allowMalformed: true substitutes U+FFFD for bad byte sequences rather than
+  // throwing, giving the JSON decoder a chance to recover when the file
+  // structure is intact despite minor encoding issues.
   Future<String> _downloadText(drive.DriveApi api, String fileId) async {
     final media = await api.files.get(
       fileId,
       downloadOptions: drive.DownloadOptions.fullMedia,
     ) as drive.Media;
-    final bytes = await media.stream.expand((chunk) => chunk).toList();
-    return utf8.decode(bytes);
+    return utf8.decode(
+      await _collectBytes(media.stream),
+      allowMalformed: true,
+    );
+  }
+
+  // Collects a Stream<List<int>> into a single Uint8List without boxing bytes
+  // as Dart ints (which would cost ~8× the data size on a 64-bit VM).
+  static Future<Uint8List> _collectBytes(Stream<List<int>> stream) async {
+    final chunks = await stream.toList();
+    final totalLength = chunks.fold<int>(0, (acc, c) => acc + c.length);
+    final bytes = Uint8List(totalLength);
+    var offset = 0;
+    for (final chunk in chunks) {
+      bytes.setRange(offset, offset + chunk.length, chunk);
+      offset += chunk.length;
+    }
+    return bytes;
   }
 
   // Replaces the UID segment in a Storage path of the form

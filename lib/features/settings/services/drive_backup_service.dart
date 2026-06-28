@@ -1,10 +1,8 @@
 import 'dart:convert';
 
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
-import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
 import 'package:latitude_tracker/features/settings/services/archive_service.dart';
 import 'package:latitude_tracker/features/settings/services/drive_service_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,38 +63,21 @@ class DriveBackupService {
     bool silent = false,
   }) async {
     try {
-      final googleSignIn = GoogleAuthService.googleSignIn;
-
-      // Restore the Dart-layer currentUser from the Android native cache.
-      // Without this, authenticatedClient() returns null after every app
-      // restart because GoogleSignIn._currentUser is not persisted across
-      // cold starts, even though the Firebase Auth session and the Android
-      // native sign-in cache survive.
-      await googleSignIn.signInSilently();
-
-      if (!silent) {
-        final granted = await googleSignIn.requestScopes(
-          [drive.DriveApi.driveFileScope],
-        );
-        if (!granted) return const BackupScopeDenied();
-      }
-
-      final client = await googleSignIn.authenticatedClient();
-      if (client == null) return const BackupScopeDenied();
-
-      var failedPhotos = 0;
-      try {
-        failedPhotos = await _runBackup(drive.DriveApi(client), onProgress);
-      } finally {
-        client.close();
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kLastBackupKey, DateTime.now().toIso8601String());
-
-      return failedPhotos > 0
-          ? BackupPartialSuccess(failedPhotos)
-          : const BackupSuccess();
+      final result = await DriveServiceHelper.withDriveApi<BackupResult>(
+        (api) async {
+          final failedPhotos = await _runBackup(api, onProgress);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            _kLastBackupKey,
+            DateTime.now().toIso8601String(),
+          );
+          return failedPhotos > 0
+              ? BackupPartialSuccess(failedPhotos)
+              : const BackupSuccess();
+        },
+        silent: silent,
+      );
+      return result ?? const BackupScopeDenied();
     } on Object catch (e, st) {
       return BackupError(e, st);
     }
@@ -210,7 +191,7 @@ class DriveBackupService {
     if (cachedId != null) {
       try {
         await api.files.update(
-          drive.File(),
+          drive.File()..mimeType = 'application/json',
           cachedId,
           uploadMedia: buildMedia(),
         );
@@ -230,11 +211,16 @@ class DriveBackupService {
     final String fileId;
     if (result.files != null && result.files!.isNotEmpty) {
       fileId = result.files!.first.id!;
-      await api.files.update(drive.File(), fileId, uploadMedia: buildMedia());
+      await api.files.update(
+        drive.File()..mimeType = 'application/json',
+        fileId,
+        uploadMedia: buildMedia(),
+      );
     } else {
       final created = await api.files.create(
         drive.File()
           ..name = fileName
+          ..mimeType = 'application/json'
           ..parents = [parentId],
         uploadMedia: buildMedia(),
         $fields: 'id',

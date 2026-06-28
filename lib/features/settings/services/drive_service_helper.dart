@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
 
 const kBackupFolderName = 'Latitude Tracker Backup';
 const kDataFolderName = 'data';
@@ -87,14 +89,24 @@ class DriveServiceHelper {
     throw FormatException('Cannot extract Storage path from URL: $url');
   }
 
-  // Walks the archive JSON to collect every photo URL along with enough
+  // Convenience wrapper: decodes jsonContent then delegates to
+  // extractPhotosFromMap. Returns [] on any parse error.
+  static List<PhotoEntry> extractPhotos(String jsonContent) {
+    try {
+      return extractPhotosFromMap(
+        jsonDecode(jsonContent) as Map<String, dynamic>,
+      );
+    } on Object catch (_) {
+      return [];
+    }
+  }
+
+  // Walks the archive JSON map to collect every photo URL along with enough
   // context to build its Drive folder path during backup. Malformed entries
   // are silently skipped — a missing photo is preferable to aborting the run.
-  static List<PhotoEntry> extractPhotos(String jsonContent) {
+  static List<PhotoEntry> extractPhotosFromMap(Map<String, dynamic> map) {
     final entries = <PhotoEntry>[];
     try {
-      final map = jsonDecode(jsonContent) as Map<String, dynamic>;
-
       for (final rawSale in map['sales'] as List? ?? const <dynamic>[]) {
         final sale = rawSale as Map<String, dynamic>;
         final saleId = sale['id'] as String? ?? '';
@@ -178,5 +190,35 @@ class DriveServiceHelper {
     );
     final files = result.files;
     return (files != null && files.isNotEmpty) ? files.first.id! : null;
+  }
+
+  // Obtains an authenticated DriveApi, calls fn, then closes the HTTP client.
+  // Returns null when the user did not grant the Drive scope (scope denied or
+  // client unavailable). Set silent:true when calling from a background task
+  // to skip the scope consent dialog, which requires an active Activity.
+  static Future<T?> withDriveApi<T>(
+    Future<T> Function(drive.DriveApi api) fn, {
+    bool silent = false,
+  }) async {
+    final googleSignIn = GoogleAuthService.googleSignIn;
+    // Restore the Dart-layer currentUser from the Android native cache.
+    // Without this, authenticatedClient() returns null after every app
+    // restart because GoogleSignIn._currentUser is not persisted across
+    // cold starts, even though the Firebase Auth session and the Android
+    // native sign-in cache survive.
+    await googleSignIn.signInSilently();
+    if (!silent) {
+      final granted = await googleSignIn.requestScopes(
+        [drive.DriveApi.driveFileScope],
+      );
+      if (!granted) return null;
+    }
+    final client = await googleSignIn.authenticatedClient();
+    if (client == null) return null;
+    try {
+      return await fn(drive.DriveApi(client));
+    } finally {
+      client.close();
+    }
   }
 }
