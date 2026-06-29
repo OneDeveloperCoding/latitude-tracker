@@ -937,6 +937,19 @@ class _SaleDetailReadBody extends StatelessWidget {
                   _InfoRow(
                     icon: Icons.location_on,
                     text: sale.shipment.postalCode!,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.copy, size: 16),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: sale.shipment.postalCode!),
+                        );
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(context.s.addressCopied)),
+                        );
+                      },
+                    ),
                   ),
                 if (sale.shipment.type == DeliveryType.shipping) ...[
                   _TrackingCodeField(
@@ -1768,21 +1781,19 @@ class _AddressDisplayState extends State<_AddressDisplay> {
             children: [
               IconButton(
                 icon: const Icon(Icons.copy, size: 16),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
                 visualDensity: VisualDensity.compact,
-                onPressed: () => _copyAddress(context, address),
+                onPressed: () => copyAddressToClipboard(
+                  context,
+                  address,
+                  widget.buyerName,
+                ),
               ),
-              if (address.hasMapsAddress) ...[
-                const SizedBox(width: 4),
+              if (address.hasMapsAddress)
                 IconButton(
                   icon: const Icon(Icons.location_on, size: 16),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                   onPressed: () => _launchMaps(context, address),
                 ),
-              ],
             ],
           ),
         );
@@ -1790,14 +1801,6 @@ class _AddressDisplayState extends State<_AddressDisplay> {
     );
   }
 
-  Future<void> _copyAddress(BuildContext context, BuyerAddress address) async {
-    final text = address.formattedAddress(widget.buyerName);
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.s.addressCopied)),
-    );
-  }
 }
 
 // ── Section card ─────────────────────────────────────────────────────────────

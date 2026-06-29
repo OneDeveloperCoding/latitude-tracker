@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:latitude_tracker/core/constants.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
@@ -806,16 +805,6 @@ class _AddressesListState extends State<_AddressesList> {
     }
   }
 
-  Future<void> _copyAddress(BuildContext context, BuyerAddress address) async {
-    final text = address.formattedAddress(widget.buyerName);
-    await Clipboard.setData(ClipboardData(text: text));
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.s.addressCopied)),
-      );
-    }
-  }
-
   Future<void> _openMaps(BuildContext context, BuyerAddress address) =>
       launchMapsUrl(context, address.mapsUri);
 
@@ -850,7 +839,11 @@ class _AddressesListState extends State<_AddressesList> {
                   address: a,
                   onEdit: () => widget.onEdit(a),
                   onDelete: () => widget.onDelete(a),
-                  onCopy: () => _copyAddress(context, a),
+                  onCopy: () => copyAddressToClipboard(
+                    context,
+                    a,
+                    widget.buyerName,
+                  ),
                   onOpenMaps: a.hasMapsAddress
                       ? () => _openMaps(context, a)
                       : null,
