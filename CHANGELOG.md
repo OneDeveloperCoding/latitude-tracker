@@ -322,7 +322,14 @@
 * fix O(buyers×sales) quadratic rebuild in BuyersListScreen ([#83](https://github.com/OneDeveloperCoding/latitude-tracker/issues/83)) ([d5261c4](https://github.com/OneDeveloperCoding/latitude-tracker/commit/d5261c48f0411af4c973351074aee7f29a8030a6))
 * SalesListScreen micro-optimizations — buyer scan, DateFormat, year/month recompute ([#120](https://github.com/OneDeveloperCoding/latitude-tracker/issues/120)) ([2817e2a](https://github.com/OneDeveloperCoding/latitude-tracker/commit/2817e2a97aadc4a063c5f4a8b1f8c5ce5a253347))
 
-## [Unreleased]
+## [1.14.0] — 2026-06-29
+
+### Features
+- Local notifications for overdue and upcoming sales — daily WorkManager reminder with toggle and time picker in Settings ([#287](https://github.com/OneDeveloperCoding/latitude-tracker/issues/287))
+- Copy shipment address from sale detail; make house number optional ([#286](https://github.com/OneDeveloperCoding/latitude-tracker/pull/286))
+
+### Fixes
+- Address copy: guard against null address, extract shared helper, improve touch targets
 
 ---
 
