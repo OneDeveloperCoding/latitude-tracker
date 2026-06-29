@@ -930,12 +930,26 @@ class _SaleDetailReadBody extends StatelessWidget {
                   _AddressDisplay(
                     buyerId: sale.buyerId,
                     addressId: sale.shipment.addressId!,
+                    buyerName: sale.buyerName,
                     postalCode: sale.shipment.postalCode,
                   )
                 else if (sale.shipment.postalCode != null)
                   _InfoRow(
                     icon: Icons.location_on,
                     text: sale.shipment.postalCode!,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.copy, size: 16),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: sale.shipment.postalCode!),
+                        );
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(context.s.addressCopied)),
+                        );
+                      },
+                    ),
                   ),
                 if (sale.shipment.type == DeliveryType.shipping) ...[
                   _TrackingCodeField(
@@ -1713,11 +1727,13 @@ class _AddressDisplay extends StatefulWidget {
   const _AddressDisplay({
     required this.buyerId,
     required this.addressId,
+    required this.buyerName,
     this.postalCode,
   });
 
   final String buyerId;
   final String addressId;
+  final String buyerName;
   final String? postalCode;
 
   @override
@@ -1760,19 +1776,31 @@ class _AddressDisplayState extends State<_AddressDisplay> {
             '${address.postalCode} ${address.city}',
             address.country,
           ].join(', '),
-          trailing: address.hasMapsAddress
-              ? IconButton(
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.copy, size: 16),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => copyAddressToClipboard(
+                  context,
+                  address,
+                  widget.buyerName,
+                ),
+              ),
+              if (address.hasMapsAddress)
+                IconButton(
                   icon: const Icon(Icons.location_on, size: 16),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                   onPressed: () => _launchMaps(context, address),
-                )
-              : null,
+                ),
+            ],
+          ),
         );
       },
     );
   }
+
 }
 
 // ── Section card ─────────────────────────────────────────────────────────────

@@ -88,6 +88,8 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
       switch (destination) {
         case NotificationDestination.settings:
           setState(() => _currentIndex = 3);
+        case NotificationDestination.salesList:
+          setState(() => _currentIndex = 1);
       }
     });
   }
