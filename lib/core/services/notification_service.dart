@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 
-enum NotificationDestination { settings }
+enum NotificationDestination { settings, salesList }
 
 const _kBackupChannelId = 'backup';
 const _kBackupNotificationId = 1;
+const _kReminderChannelId = 'reminders';
+const _kReminderNotificationId = 2;
 const _kSettingsPayload = 'settings';
+const _kSalesListPayload = 'sales_list';
 
 class NotificationService {
   const NotificationService._();
@@ -53,6 +56,25 @@ class NotificationService {
     return await androidPlugin?.requestNotificationsPermission() ?? true;
   }
 
+  static Future<void> showSaleReminder(
+    AppStrings strings, {
+    required int overdue,
+    required int upcoming,
+  }) async {
+    await _plugin.show(
+      id: _kReminderNotificationId,
+      title: strings.reminderTitle,
+      body: strings.reminderBody(overdue, upcoming),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _kReminderChannelId,
+          strings.notifications,
+        ),
+      ),
+      payload: _kSalesListPayload,
+    );
+  }
+
   static Future<void> showBackupFailure(AppStrings strings) async {
     await _plugin.show(
       id: _kBackupNotificationId,
@@ -71,6 +93,7 @@ class NotificationService {
   static void _onTap(NotificationResponse response) {
     final destination = switch (response.payload) {
       _kSettingsPayload => NotificationDestination.settings,
+      _kSalesListPayload => NotificationDestination.salesList,
       _ => null,
     };
     if (destination != null) pendingDestination.value = destination;
@@ -87,8 +110,11 @@ class NotificationService {
         strings.backup,
       ),
     );
-    // Additional channels (reminders, shopping) are registered when
-    // issues #146 and #185 land, to avoid surfacing unexplained categories
-    // in Android App Info → Notifications before those features ship.
+    await androidPlugin.createNotificationChannel(
+      AndroidNotificationChannel(
+        _kReminderChannelId,
+        strings.notifications,
+      ),
+    );
   }
 }

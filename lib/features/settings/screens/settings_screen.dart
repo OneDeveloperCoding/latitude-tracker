@@ -9,6 +9,7 @@ import 'package:latitude_tracker/core/l10n/locale_settings.dart'
     show AppLocaleScope, LocaleSettings;
 import 'package:latitude_tracker/core/services/error_reporter.dart';
 import 'package:latitude_tracker/core/services/notification_service.dart';
+import 'package:latitude_tracker/core/services/notification_settings.dart';
 import 'package:latitude_tracker/core/theme/app_theme.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/features/auth/services/google_auth_service.dart';
@@ -74,6 +75,9 @@ class SettingsScreen extends StatelessWidget {
             const _ThemeBrightnessTile(),
             const Divider(),
             if (!isDemo) ...[
+              _SectionHeader(s.notifications),
+              const _NotificationsSection(),
+              const Divider(),
               _SectionHeader(s.backup),
               const _BackupSection(),
               const Divider(),
@@ -936,6 +940,80 @@ class _BackupSectionState extends State<_BackupSection> {
           onTap: _isBusy ? null : _restoreFromDrive,
         ),
       ],
+    );
+  }
+}
+
+class _NotificationsSection extends StatefulWidget {
+  const _NotificationsSection();
+
+  @override
+  State<_NotificationsSection> createState() => _NotificationsSectionState();
+}
+
+class _NotificationsSectionState extends State<_NotificationsSection> {
+  bool _isToggling = false;
+
+  Future<void> _toggle(bool value) async {
+    if (_isToggling) return;
+    setState(() => _isToggling = true);
+    try {
+      if (value) {
+        final granted = await NotificationService.requestPermission();
+        if (!granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.s.notificationsPermissionDenied),
+              ),
+            );
+          }
+          return;
+        }
+      }
+      await NotificationSettings.setEnabled(value: value);
+    } on Object catch (e, st) {
+      // setEnabled already rolled back enabled.value; log the underlying cause.
+      logError(e, st);
+    } finally {
+      if (mounted) setState(() => _isToggling = false);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: NotificationSettings.timeOfDay.value,
+    );
+    if (picked != null) await NotificationSettings.setTime(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return ValueListenableBuilder<bool>(
+      valueListenable: NotificationSettings.enabled,
+      builder: (context, isEnabled, _) => Column(
+        children: [
+          SwitchListTile(
+            secondary: const Icon(Icons.notifications_outlined),
+            title: Text(s.notificationsEnabled),
+            subtitle: Text(s.notificationsEnabledSubtitle),
+            value: isEnabled,
+            onChanged: _isToggling ? null : _toggle,
+          ),
+          if (isEnabled)
+            ValueListenableBuilder<TimeOfDay>(
+              valueListenable: NotificationSettings.timeOfDay,
+              builder: (context, time, _) => ListTile(
+                leading: const Icon(Icons.access_time),
+                title: Text(s.notificationTime),
+                trailing: Text(time.format(context)),
+                onTap: _pickTime,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

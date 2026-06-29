@@ -10,6 +10,7 @@ import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/l10n/locale_settings.dart';
 import 'package:latitude_tracker/core/services/backup_task.dart';
 import 'package:latitude_tracker/core/services/notification_service.dart';
+import 'package:latitude_tracker/core/services/notification_settings.dart';
 import 'package:latitude_tracker/core/theme/theme_settings.dart';
 import 'package:latitude_tracker/firebase_options.dart';
 
@@ -37,11 +38,13 @@ Future<void> main() async {
 
       await LocaleSettings.init();
       await ThemeSettings.init();
+      await NotificationSettings.init();
       final strings = AppStrings.forLanguageCode(
         LocaleSettings.locale.value.languageCode,
       );
       await NotificationService.initialize(strings);
       await BackupTask.register();
+      await NotificationSettings.registerIfEnabled();
 
       runApp(const LatitudeTrackerApp());
     },

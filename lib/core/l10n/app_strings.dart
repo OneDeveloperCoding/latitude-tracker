@@ -515,6 +515,13 @@ enum AppStrings {
     swipeActionMarkShipped: 'Mark Shipped',
     markAsPaidTitle: 'Mark as Paid',
     markAsShippedTitle: 'Confirm Shipment',
+    notifications: 'Notifications',
+    notificationsEnabled: 'Daily reminder',
+    notificationsEnabledSubtitle:
+        'Get notified about overdue and upcoming sales',
+    notificationTime: 'Reminder time',
+    notificationsPermissionDenied: 'Notification permission denied',
+    reminderTitle: 'Sales reminder',
     saleSingular: 'sale',
     salePlural: 'sales',
     photoSingular: 'photo',
@@ -1036,6 +1043,13 @@ enum AppStrings {
     swipeActionMarkShipped: 'Marcar Enviado',
     markAsPaidTitle: 'Marcar como Pago',
     markAsShippedTitle: 'Confirmar Envio',
+    notifications: 'Notificações',
+    notificationsEnabled: 'Lembrete diário',
+    notificationsEnabledSubtitle:
+        'Receber aviso de vendas em atraso e próximas',
+    notificationTime: 'Hora do lembrete',
+    notificationsPermissionDenied: 'Permissão de notificações negada',
+    reminderTitle: 'Aviso de vendas',
     saleSingular: 'venda',
     salePlural: 'vendas',
     photoSingular: 'foto',
@@ -1492,6 +1506,12 @@ enum AppStrings {
     required this.swipeActionMarkShipped,
     required this.markAsPaidTitle,
     required this.markAsShippedTitle,
+    required this.notifications,
+    required this.notificationsEnabled,
+    required this.notificationsEnabledSubtitle,
+    required this.notificationTime,
+    required this.notificationsPermissionDenied,
+    required this.reminderTitle,
     required String saleSingular,
     required String salePlural,
     required String photoSingular,
@@ -2004,6 +2024,14 @@ enum AppStrings {
   final String markAsPaidTitle;
   final String markAsShippedTitle;
 
+  // ── Notifications ─────────────────────────────────────────────────────────
+  final String notifications;
+  final String notificationsEnabled;
+  final String notificationsEnabledSubtitle;
+  final String notificationTime;
+  final String notificationsPermissionDenied;
+  final String reminderTitle;
+
   // ── Plural word stems (used in methods below) ─────────────────────────────
   final String _saleSingular;
   final String _salePlural;
@@ -2022,6 +2050,26 @@ enum AppStrings {
   // ── Plural helpers ────────────────────────────────────────────────────────
 
   String nSales(int n) => '$n ${n == 1 ? _saleSingular : _salePlural}';
+
+  String reminderBody(int overdue, int upcoming) {
+    if (overdue > 0 && upcoming > 0) {
+      return _pt
+          ? '$overdue em atraso, $upcoming para esta semana'
+          : '$overdue overdue, $upcoming due this week';
+    }
+    if (overdue > 0) {
+      return _pt
+          ? (overdue == 1 ? '1 venda em atraso' : '$overdue vendas em atraso')
+          : (overdue == 1 ? '1 sale overdue' : '$overdue sales overdue');
+    }
+    return _pt
+        ? (upcoming == 1
+            ? '1 venda para esta semana'
+            : '$upcoming vendas para esta semana')
+        : (upcoming == 1
+            ? '1 sale due this week'
+            : '$upcoming sales due this week');
+  }
   String nPhotos(int n) => '$n ${n == 1 ? _photoSingular : _photoPlural}';
   String nItems(int n) => '$n ${n == 1 ? _itemSingular : _itemPlural}';
   String itemsAcrossSales(int items, int sales) => _pt
