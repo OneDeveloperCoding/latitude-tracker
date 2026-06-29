@@ -52,8 +52,7 @@ class AddressFormFieldsState extends State<AddressFormFields> {
   bool get isFilled =>
       _postalCodeController.text.trim().isNotEmpty &&
       _cityController.text.trim().isNotEmpty &&
-      _streetController.text.trim().isNotEmpty &&
-      _houseNumberController.text.trim().isNotEmpty;
+      _streetController.text.trim().isNotEmpty;
 
   bool get hasChanges {
     final a = widget.initial;
@@ -296,9 +295,6 @@ class AddressFormFieldsState extends State<AddressFormFields> {
             hintText: s.addressHouseNumberHint,
             border: const OutlineInputBorder(),
           ),
-          validator: (v) => (v == null || v.trim().isEmpty)
-              ? s.addressHouseNumberRequired
-              : null,
         ),
         const SizedBox(height: 16),
         TextFormField(

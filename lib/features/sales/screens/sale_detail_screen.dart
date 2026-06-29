@@ -930,6 +930,7 @@ class _SaleDetailReadBody extends StatelessWidget {
                   _AddressDisplay(
                     buyerId: sale.buyerId,
                     addressId: sale.shipment.addressId!,
+                    buyerName: sale.buyerName,
                     postalCode: sale.shipment.postalCode,
                   )
                 else if (sale.shipment.postalCode != null)
@@ -1713,11 +1714,13 @@ class _AddressDisplay extends StatefulWidget {
   const _AddressDisplay({
     required this.buyerId,
     required this.addressId,
+    required this.buyerName,
     this.postalCode,
   });
 
   final String buyerId;
   final String addressId;
+  final String buyerName;
   final String? postalCode;
 
   @override
@@ -1760,17 +1763,39 @@ class _AddressDisplayState extends State<_AddressDisplay> {
             '${address.postalCode} ${address.city}',
             address.country,
           ].join(', '),
-          trailing: address.hasMapsAddress
-              ? IconButton(
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.copy, size: 16),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _copyAddress(context, address),
+              ),
+              if (address.hasMapsAddress) ...[
+                const SizedBox(width: 4),
+                IconButton(
                   icon: const Icon(Icons.location_on, size: 16),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                   onPressed: () => _launchMaps(context, address),
-                )
-              : null,
+                ),
+              ],
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Future<void> _copyAddress(BuildContext context, BuyerAddress address) async {
+    final text = address.formattedAddress(widget.buyerName);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.s.addressCopied)),
     );
   }
 }

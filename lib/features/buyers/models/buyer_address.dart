@@ -96,7 +96,7 @@ class BuyerAddress {
   String formattedAddress(String buyerName) {
     final streetLine = [
       street,
-      houseNumber,
+      if (houseNumber.isNotEmpty) houseNumber,
       if (fraction?.isNotEmpty == true) fraction!,
     ].join(', ');
     final postalLine = '$postalCode $city';
