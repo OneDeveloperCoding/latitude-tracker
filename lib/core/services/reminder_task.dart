@@ -7,13 +7,16 @@ const _kTaskUniqueName = 'daily-sale-reminder';
 class ReminderTask {
   const ReminderTask._();
 
-  static Future<void> schedule(TimeOfDay time) async {
+  static Future<void> schedule(
+    TimeOfDay time, {
+    ExistingPeriodicWorkPolicy policy = ExistingPeriodicWorkPolicy.replace,
+  }) async {
     await Workmanager().registerPeriodicTask(
       _kTaskUniqueName,
       kReminderTaskName,
       frequency: const Duration(hours: 24),
       initialDelay: _delayUntil(time),
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
+      existingWorkPolicy: policy,
     );
   }
 

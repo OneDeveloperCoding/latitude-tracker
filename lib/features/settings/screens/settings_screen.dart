@@ -972,6 +972,9 @@ class _NotificationsSectionState extends State<_NotificationsSection> {
         }
       }
       await NotificationSettings.setEnabled(value: value);
+    } on Object catch (e, st) {
+      // setEnabled already rolled back enabled.value; log the underlying cause.
+      logError(e, st);
     } finally {
       if (mounted) setState(() => _isToggling = false);
     }
