@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.1](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.13.0...v1.13.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* enable core library desugaring for flutter_local_notifications ([4652863](https://github.com/OneDeveloperCoding/latitude-tracker/commit/4652863c60cc0384cd542441c843470f58f12d8b))
+* enable core library desugaring for flutter_local_notifications ([b80d703](https://github.com/OneDeveloperCoding/latitude-tracker/commit/b80d70349a46f8d08a16debb40327b3fb56bd16d))
+
 ## [1.13.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.12.0...v1.13.0) (2026-06-28)
 
 
