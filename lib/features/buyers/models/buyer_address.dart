@@ -95,14 +95,14 @@ class BuyerAddress {
 
   String formattedAddress(String buyerName) {
     final streetLine = [
-      street,
-      houseNumber,
+      if (street.isNotEmpty) street,
+      if (houseNumber.isNotEmpty) houseNumber,
       if (fraction?.isNotEmpty == true) fraction!,
     ].join(', ');
     final postalLine = '$postalCode $city';
     return [
-      buyerName,
-      streetLine,
+      if (buyerName.isNotEmpty) buyerName,
+      if (streetLine.isNotEmpty) streetLine,
       postalLine,
       if (country.toLowerCase() != 'portugal') country,
     ].join('\n');
