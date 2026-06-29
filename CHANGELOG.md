@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.14.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.13.1...v1.14.0) (2026-06-29)
+
+
+### Features
+
+* copy shipment address from sale detail and make house number optional ([79adaec](https://github.com/OneDeveloperCoding/latitude-tracker/commit/79adaecc7a7434e1563e7c4b163930b7eba42612))
+* copy shipment address from sale detail and make house number optional ([79adaec](https://github.com/OneDeveloperCoding/latitude-tracker/commit/79adaecc7a7434e1563e7c4b163930b7eba42612))
+* copy shipment address from sale detail and make house number optional ([086eea7](https://github.com/OneDeveloperCoding/latitude-tracker/commit/086eea78b00aab17ebb1fa6ef2a35e9e59d7582d))
+* local notifications for overdue and upcoming sales ([#287](https://github.com/OneDeveloperCoding/latitude-tracker/issues/287)) ([314e807](https://github.com/OneDeveloperCoding/latitude-tracker/commit/314e8070dbe1da07228ebb573115192f67f2bdb6))
+
+
+### Bug Fixes
+
+* address copy-review findings — guards, shared helper, touch targets ([41efe11](https://github.com/OneDeveloperCoding/latitude-tracker/commit/41efe11bbe7d847addb8e58c48a5665c61dcac17))
+
 ## [1.13.1](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.13.0...v1.13.1) (2026-06-28)
 
 
