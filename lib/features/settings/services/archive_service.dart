@@ -9,6 +9,7 @@ import 'package:latitude_tracker/features/repairs/models/repair.dart';
 import 'package:latitude_tracker/features/repairs/repositories/repair_repository.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
+import 'package:latitude_tracker/features/settings/services/drive_service_helper.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Version 1.1 adds a `repairs` array. Version 1.2 adds `handDelivery` type.
@@ -94,7 +95,9 @@ class ArchiveService {
     });
 
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/latitude_tracker_$year.json');
+    final file = File(
+      '${dir.path}/${DriveServiceHelper.backupFileName(year)}',
+    );
     await file.writeAsString(
       const JsonEncoder.withIndent('  ').convert(archive),
     );

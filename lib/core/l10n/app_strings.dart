@@ -392,13 +392,14 @@ enum AppStrings {
     restoreFromDrive: 'Restore from Drive',
     restoreFromDriveSubtitle: 'Recover all data from your Drive backup',
     restoreDownloadingData: 'Downloading backups…',
+    restoreCheckingForBackups: 'Checking Drive for backups…',
     restoreNoBackupsFound: 'No backups found in Drive',
     restoreScopeDenied:
         'Drive access denied — grant it to enable restore',
-    restoreConfirmTitle: 'Restore from Drive?',
-    restoreConfirmBody:
-        'This will download all backups from your Drive and import any '
-        'missing data. Existing data will not be overwritten.',
+    restoreSelectYearsTitle: 'Select years to restore',
+    restoreSelectYearsBody:
+        'Choose which years to restore from your Drive backup. Existing '
+        'data will not be overwritten.',
     restoreCompleteTitle: 'Restore complete',
     restorePartialTitle: 'Restore partially complete',
     version: 'Version',
@@ -918,13 +919,14 @@ enum AppStrings {
     restoreFromDrive: 'Restaurar do Drive',
     restoreFromDriveSubtitle: 'Recuperar todos os dados da cópia no Drive',
     restoreDownloadingData: 'A descarregar cópias de segurança…',
+    restoreCheckingForBackups: 'A verificar cópias no Drive…',
     restoreNoBackupsFound: 'Nenhuma cópia encontrada no Drive',
     restoreScopeDenied:
         'Acesso ao Drive negado — concede-o para ativar a restauração',
-    restoreConfirmTitle: 'Restaurar do Drive?',
-    restoreConfirmBody:
-        'Serão descarregadas todas as cópias do Drive e importados os dados '
-        'em falta. Os dados existentes não serão substituídos.',
+    restoreSelectYearsTitle: 'Selecionar anos a restaurar',
+    restoreSelectYearsBody:
+        'Escolhe que anos restaurar da cópia no Drive. Os dados existentes '
+        'não serão substituídos.',
     restoreCompleteTitle: 'Restauro concluído',
     restorePartialTitle: 'Restauro parcialmente concluído',
     version: 'Versão',
@@ -1395,10 +1397,11 @@ enum AppStrings {
     required this.restoreFromDrive,
     required this.restoreFromDriveSubtitle,
     required this.restoreDownloadingData,
+    required this.restoreCheckingForBackups,
     required this.restoreNoBackupsFound,
     required this.restoreScopeDenied,
-    required this.restoreConfirmTitle,
-    required this.restoreConfirmBody,
+    required this.restoreSelectYearsTitle,
+    required this.restoreSelectYearsBody,
     required this.restoreCompleteTitle,
     required this.restorePartialTitle,
     required this.version,
@@ -1902,10 +1905,11 @@ enum AppStrings {
   final String restoreFromDrive;
   final String restoreFromDriveSubtitle;
   final String restoreDownloadingData;
+  final String restoreCheckingForBackups;
   final String restoreNoBackupsFound;
   final String restoreScopeDenied;
-  final String restoreConfirmTitle;
-  final String restoreConfirmBody;
+  final String restoreSelectYearsTitle;
+  final String restoreSelectYearsBody;
   final String restoreCompleteTitle;
   final String restorePartialTitle;
   final String version;
