@@ -27,6 +27,7 @@ import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latitude_tracker/features/sales/repositories/sale_repository.dart';
 import 'package:latitude_tracker/features/sales/screens/sale_item_screen.dart';
 import 'package:latitude_tracker/features/sales/services/photo_service.dart';
+import 'package:latitude_tracker/features/sales/services/sale_detail_collapse.dart';
 import 'package:latitude_tracker/features/sales/services/sale_urgency_ui.dart';
 import 'package:latitude_tracker/features/sales/widgets/component_detail_sheet.dart';
 import 'package:latitude_tracker/features/sales/widgets/payment_method_display.dart';
@@ -796,19 +797,40 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
 // ── Read-only detail body ────────────────────────────────────────────────────
 
-class _SaleDetailReadBody extends StatelessWidget {
+class _SaleDetailReadBody extends StatefulWidget {
   const _SaleDetailReadBody({required this.sale});
 
+  final Sale sale;
+
+  @override
+  State<_SaleDetailReadBody> createState() => _SaleDetailReadBodyState();
+}
+
+class _SaleDetailReadBodyState extends State<_SaleDetailReadBody> {
   static final _dateFormat = DateFormat('dd MMM yyyy');
 
-  final Sale sale;
+  // Derived once from the Sale seen on first build and then frozen: a section
+  // must not snap shut under the seller mid-interaction as later stream
+  // updates flip its status to "done". Manual taps after that own the state.
+  late bool _paymentCollapsed;
+  late bool _itemsCollapsed;
+  late bool _deliveryCollapsed;
+
+  @override
+  void initState() {
+    super.initState();
+    final collapse = widget.sale.deriveInitialSectionCollapse();
+    _paymentCollapsed = collapse.payment;
+    _itemsCollapsed = collapse.items;
+    _deliveryCollapsed = collapse.delivery;
+  }
 
   void _openItemDetail(BuildContext context, SaleItem item) {
     unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _ItemDetailSheet(
-        saleId: sale.id,
+        saleId: widget.sale.id,
         item: item,
         isReadOnly: true,
         onUpdateItem: (_) {},
@@ -818,8 +840,16 @@ class _SaleDetailReadBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sale = widget.sale;
     final s = context.s;
     final cs = Theme.of(context).colorScheme;
+    final paymentStatusLabel =
+        sale.payment.status == PaymentStatus.paid ? s.paid : s.unpaid;
+    final deliveryTypeLabel = switch (sale.shipment.type) {
+      DeliveryType.shipping => s.shipping,
+      DeliveryType.pickup => s.inPersonPickup,
+      DeliveryType.handDelivery => s.handDelivery,
+    };
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -853,6 +883,11 @@ class _SaleDetailReadBody extends StatelessWidget {
         _SectionCard(
           title: s.sectionPayment,
           indicator: paymentDot(sale.payment, cs),
+          isCollapsed: _paymentCollapsed,
+          collapsedSubtitle: '${s.paymentMethodLabel(sale.payment.method)}'
+              ' · $paymentStatusLabel',
+          onToggleCollapsed: () =>
+              setState(() => _paymentCollapsed = !_paymentCollapsed),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -861,9 +896,7 @@ class _SaleDetailReadBody extends StatelessWidget {
                 children: [
                   Text(s.paymentMethodLabel(sale.payment.method)),
                   _StatusChip(
-                    label: sale.payment.status == PaymentStatus.paid
-                        ? s.paid
-                        : s.unpaid,
+                    label: paymentStatusLabel,
                     color: sale.payment.status == PaymentStatus.paid
                         ? cs.success
                         : cs.warning,
@@ -889,6 +922,11 @@ class _SaleDetailReadBody extends StatelessWidget {
         _SectionCard(
           title: s.sectionItems,
           indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
+          isCollapsed: _itemsCollapsed,
+          collapsedSubtitle: '${s.nItems(sale.items.length)} · '
+              '${s.assemblyLabel(sale.derivedAssemblyStatus)}',
+          onToggleCollapsed: () =>
+              setState(() => _itemsCollapsed = !_itemsCollapsed),
           child: Column(
             children: sale.items
                 .map((item) => _ItemSummaryTile(
@@ -902,17 +940,18 @@ class _SaleDetailReadBody extends StatelessWidget {
         _SectionCard(
           title: s.sectionDelivery,
           indicator: shipmentDot(sale.shipment, cs),
+          isCollapsed: _deliveryCollapsed,
+          collapsedSubtitle: '$deliveryTypeLabel · '
+              '${s.shipmentStatusLabel(sale.shipment.status)}',
+          onToggleCollapsed: () =>
+              setState(() => _deliveryCollapsed = !_deliveryCollapsed),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(switch (sale.shipment.type) {
-                    DeliveryType.shipping => s.shipping,
-                    DeliveryType.pickup => s.inPersonPickup,
-                    DeliveryType.handDelivery => s.handDelivery,
-                  }),
+                  Text(deliveryTypeLabel),
                   _StatusChip(
                     label: s.shipmentStatusLabel(sale.shipment.status),
                     color: sale.shipment.status == ShipmentStatus.delivered
@@ -1810,42 +1849,86 @@ class _SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.indicator,
+    this.isCollapsed = false,
+    this.collapsedSubtitle,
+    this.onToggleCollapsed,
   });
 
   final String title;
   final Widget child;
   final StatusIndicatorDot? indicator;
 
+  /// Whether the section body is hidden, showing [collapsedSubtitle] instead.
+  /// Only meaningful when [onToggleCollapsed] is set.
+  final bool isCollapsed;
+  final String? collapsedSubtitle;
+  final VoidCallback? onToggleCollapsed;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final onToggleCollapsed = this.onToggleCollapsed;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                if (indicator != null) ...[
-                  StatusBubble(
-                    icon: indicator!.icon,
-                    color: indicator!.color,
-                    size: 32,
-                    iconSize: 17,
+            InkWell(
+              onTap: onToggleCollapsed,
+              child: Row(
+                children: [
+                  if (indicator != null) ...[
+                    StatusBubble(
+                      icon: indicator!.icon,
+                      color: indicator!.color,
+                      size: 32,
+                      iconSize: 17,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: cs.primary,
+                                  ),
+                        ),
+                        if (isCollapsed && collapsedSubtitle != null)
+                          Text(
+                            collapsedSubtitle!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: cs.onSurfaceVariant),
+                          ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 10),
+                  if (onToggleCollapsed != null)
+                    Icon(
+                      isCollapsed ? Icons.expand_more : Icons.expand_less,
+                      color: cs.onSurfaceVariant,
+                    ),
                 ],
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: cs.primary,
-                      ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 12),
-            child,
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              child: isCollapsed
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        child,
+                      ],
+                    ),
+            ),
           ],
         ),
       ),
