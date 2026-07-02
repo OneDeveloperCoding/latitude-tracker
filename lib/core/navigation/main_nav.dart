@@ -10,7 +10,6 @@ import 'package:latitude_tracker/features/buyers/screens/buyers_list_screen.dart
 import 'package:latitude_tracker/features/dashboard/screens/dashboard_screen.dart';
 import 'package:latitude_tracker/features/demo/demo_mode.dart';
 import 'package:latitude_tracker/features/demo/demo_tutorial_sheet.dart';
-import 'package:latitude_tracker/features/heat_map/services/geocoding_warm_up.dart';
 import 'package:latitude_tracker/features/repairs/screens/sales_repairs_tab_screen.dart';
 import 'package:latitude_tracker/features/settings/screens/settings_screen.dart';
 import 'package:latitude_tracker/features/settings/services/update_service.dart';
@@ -48,14 +47,11 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     // After a DemoMode transition the old MainNav's dispose() runs after this
     // initState — tearing down the subscription init() just created. The
     // post-frame callback re-subscribes once the frame has fully settled.
-    // GeocodingWarmUp.attach() is also deferred here: the old dispose() calls
-    // detach() after this initState(), so attaching early would be undone.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       SalesStore.ensureSubscribed();
       BuyersStore.ensureSubscribed();
       RepairsStore.ensureSubscribed();
-      GeocodingWarmUp.attach();
     });
   }
 
@@ -64,7 +60,6 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     DemoMode.pendingTutorial.removeListener(_onPendingTutorial);
     NotificationService.pendingDestination.removeListener(_onNotificationTap);
-    GeocodingWarmUp.detach();
     SalesStore.dispose();
     BuyersStore.dispose();
     RepairsStore.dispose();

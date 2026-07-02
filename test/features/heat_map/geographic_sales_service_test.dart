@@ -42,10 +42,6 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  // buildRanking geocodes each CP4 via Nominatim; those calls are skipped in
-  // tests because the network is unavailable — locality falls back to the CP4
-  // prefix string when geocoding returns null.
-
   group('GeographicSalesService.buildRanking — Portugal section', () {
     test('groups sales by CP4 prefix', () async {
       final ranking = await GeographicSalesService.buildRanking(
@@ -92,7 +88,7 @@ void main() {
     });
 
     test(
-      'locality name falls back to CP4 when geocoding unavailable',
+      'locality name falls back to CP4 when prefix is not in the table',
       () async {
         final ranking = await GeographicSalesService.buildRanking(
           [_shippingSale('9999-001')],

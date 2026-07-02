@@ -95,8 +95,8 @@ Examples: `feat: add heat map view`, `fix: nif badge crash on empty buyer`, `doc
 | `features/dashboard/models/dashboard_stats.dart` | `DashboardStats.compute(sales, start, end)` — dashboard-scoped stats only (revenue, counts, action totals); pure function, no Flutter dependency |
 | `features/sales/services/sales_analytics_service.dart` | `SalesAnalyticsService` — period stats, category breakdown, payment method breakdown; pure static functions shared by `AnalyticsScreen` and `ArchiveAnalyticsScreen` |
 | `features/buyers/models/buyer_stats.dart` | `BuyerStats.compute(sales)` — per-buyer metrics (paid total, unpaid balance, avg order, last purchase); used by buyers list, buyer detail, and new sale repeat-buyer hint |
-| `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping; delegates geocoding to `GeocodingService` |
-| `features/heat_map/services/geocoding_service.dart` | `GeocodingService.geocode(prefix)` — Nominatim lookup with two-layer cache (in-memory L1 + 180-day SharedPreferences L2, v2 cache key); `warmUp()` pre-fetches known prefixes in the background |
+| `features/heat_map/services/heat_map_service.dart` | `HeatMapService.buildPoints(sales)` — locality-prefix grouping; delegates coordinate lookup to `Cp4CoordinatesService` |
+| `features/heat_map/services/cp4_coordinates_service.dart` | `Cp4CoordinatesService.lookup(prefix)` — static bundled-table lookup, no network; see "Sales heat map coordinates" below |
 | `features/sales/services/photo_service.dart` | All Firebase Storage operations; swap storage backend here only |
 | `features/sales/services/sale_urgency.dart` | `extension SaleUrgency on Sale` — `urgencyLevel()` / `urgencyReasons()` / `daysUntilScheduled()` — single authoritative urgency source used by sales list, shopping list, and sale filter |
 | `features/sales/services/sale_grouper.dart` | `SaleGrouper.byWeek(sales)` — timeline grouping logic extracted from the sales list; pure function, testable in isolation |
@@ -128,6 +128,10 @@ State is typed via the `StoreState<T>` sealed class — `StoreLoading`, `StoreLo
 For Portuguese addresses, entering a full `XXXX-XXX` postal code triggers a lookup via [GeoAPI.pt](https://geoapi.pt) which returns the street name and locality. Results are cached locally in `shared_preferences` for 180 days so repeated entries for the same postal code are instant and offline. City always overwrites from the API result; street only fills if the user hasn't typed one yet. For non-Portuguese addresses all fields are free text.
 
 The `AddressFormFields` widget is shared between the quick-add during buyer creation and the standalone address edit screen — no duplication.
+
+### Sales heat map coordinates
+
+`assets/data/cp4_coordinates.json` is a static `CP4 → {lat, lng, locality}` lookup table (~760 Portuguese postal code prefixes) bundled with the app, so the Geographic Sales View never makes a network request. It's compiled offline by `tool/generate_cp4_table.py` and the `tool/resolve_cp4_*.py` follow-up passes, joining two openly-licensed sources: [CTT postal code data](https://github.com/centraldedados/codigos_postais) (PDDL) for the CP4 → locality name mapping, and [OpenStreetMap](https://www.openstreetmap.org/copyright) place data via the Overpass API (ODbL) for coordinates. See `docs/adr/0010-static-cp4-lookup-table.md` for why this replaced live Nominatim geocoding. Re-run the scripts only if CTT restructures postal codes (rare) — they're developer tools, not part of the app.
 
 ### App icon
 
