@@ -38,16 +38,14 @@ CI restores them automatically from the `FIREBASE_OPTIONS_DART` and `GOOGLE_SERV
 
 ## Releases
 
-APK builds are automated via GitHub Actions (`.github/workflows/bump-and-tag.yml`), triggered manually from the Actions tab.
+Releases are automated via [release-please](https://github.com/googleapis/release-please) (`.github/workflows/release-please.yml`) — `CHANGELOG.md` and the `pubspec.yaml` version are generated, not hand-edited.
 
 To cut a release:
 
-1. Update `CHANGELOG.md` — add a new `## [x.x.x]` section summarising the changes.
-2. Bump `version` in `pubspec.yaml` (e.g. `1.3.0+4`).
-3. Commit: `git commit -m "docs: update CHANGELOG for vX.Y.Z"` then push to `main`.
-4. Run the **Manual bump and tag** workflow from the GitHub Actions tab. Leave the override blank — it auto-detects the version bump from commit messages since the last tag:
+1. Merge a `develop → main` PR. The push to `main` triggers release-please, which opens/updates a PR titled `chore(main): release x.y.z` with the generated `CHANGELOG.md` entry and version bump, auto-detected from commit types since the last tag:
    - `feat:` → minor bump · `BREAKING CHANGE` / `feat!:` → major · everything else → patch
-5. CI tags `main`, builds the APK, and attaches it to a GitHub Release automatically.
+2. Review and merge that PR. This creates the `vX.Y.Z` tag and triggers the build job, which builds the APK and attaches it to a GitHub Release automatically.
+3. Merge `main` back into `develop` (release-please's commit lands only on `main`) before starting the next feature branch.
 
 The app checks for updates automatically on launch and shows an install prompt in **Settings → App** when a newer release is available. You can also download and sideload manually from `github.com/OneDeveloperCoding/latitude-tracker/releases`. Signed with a private release key (sufficient for personal/closed sideloading; not Play Store compatible).
 
