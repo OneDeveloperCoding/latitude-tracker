@@ -60,6 +60,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   bool _popping = false;
   Sale? _lastKnownSale;
 
+  // Derived once from the first Sale snapshot seen and then frozen — a
+  // section must not snap shut under the seller mid-interaction as later
+  // stream updates flip its status to "done". Lives on the screen state
+  // (rather than the read body) so a manual expand/collapse survives an
+  // edit-mode round trip, since _isEditing only swaps the body widget.
+  bool _collapseDerived = false;
+  late bool _paymentCollapsed;
+  late bool _itemsCollapsed;
+  late bool _deliveryCollapsed;
+
   // ── edit mode ──────────────────────────────────────────────────────────────
   final _photoService = PhotoService();
   bool _isEditing = false;
@@ -506,6 +516,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         // used when entering edit mode reflects the last-seen state.
         if (!_isEditing) _lastKnownSale = sale;
 
+        if (!_collapseDerived) {
+          final collapse = sale.deriveInitialSectionCollapse();
+          _paymentCollapsed = collapse.payment;
+          _itemsCollapsed = collapse.items;
+          _deliveryCollapsed = collapse.delivery;
+          _collapseDerived = true;
+        }
+
         return PopScope(
           canPop: !_isEditing,
           onPopInvokedWithResult: (didPop, _) {
@@ -524,7 +542,19 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   ),
             body: _isEditing
                 ? _buildEditBody(context)
-                : _SaleDetailReadBody(sale: sale),
+                : _SaleDetailReadBody(
+                    sale: sale,
+                    paymentCollapsed: _paymentCollapsed,
+                    itemsCollapsed: _itemsCollapsed,
+                    deliveryCollapsed: _deliveryCollapsed,
+                    onTogglePayment: () =>
+                        setState(() => _paymentCollapsed = !_paymentCollapsed),
+                    onToggleItems: () =>
+                        setState(() => _itemsCollapsed = !_itemsCollapsed),
+                    onToggleDelivery: () => setState(
+                      () => _deliveryCollapsed = !_deliveryCollapsed,
+                    ),
+                  ),
           ),
         );
       },
@@ -797,40 +827,37 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
 // ── Read-only detail body ────────────────────────────────────────────────────
 
-class _SaleDetailReadBody extends StatefulWidget {
-  const _SaleDetailReadBody({required this.sale});
+class _SaleDetailReadBody extends StatelessWidget {
+  const _SaleDetailReadBody({
+    required this.sale,
+    required this.paymentCollapsed,
+    required this.itemsCollapsed,
+    required this.deliveryCollapsed,
+    required this.onTogglePayment,
+    required this.onToggleItems,
+    required this.onToggleDelivery,
+  });
+
+  static final _dateFormat = DateFormat('dd MMM yyyy');
 
   final Sale sale;
 
-  @override
-  State<_SaleDetailReadBody> createState() => _SaleDetailReadBodyState();
-}
-
-class _SaleDetailReadBodyState extends State<_SaleDetailReadBody> {
-  static final _dateFormat = DateFormat('dd MMM yyyy');
-
-  // Derived once from the Sale seen on first build and then frozen: a section
-  // must not snap shut under the seller mid-interaction as later stream
-  // updates flip its status to "done". Manual taps after that own the state.
-  late bool _paymentCollapsed;
-  late bool _itemsCollapsed;
-  late bool _deliveryCollapsed;
-
-  @override
-  void initState() {
-    super.initState();
-    final collapse = widget.sale.deriveInitialSectionCollapse();
-    _paymentCollapsed = collapse.payment;
-    _itemsCollapsed = collapse.items;
-    _deliveryCollapsed = collapse.delivery;
-  }
+  // Owned by _SaleDetailScreenState so a manual expand/collapse survives an
+  // edit-mode round trip, since entering/exiting edit mode swaps this whole
+  // widget out of the tree rather than just rebuilding it.
+  final bool paymentCollapsed;
+  final bool itemsCollapsed;
+  final bool deliveryCollapsed;
+  final VoidCallback onTogglePayment;
+  final VoidCallback onToggleItems;
+  final VoidCallback onToggleDelivery;
 
   void _openItemDetail(BuildContext context, SaleItem item) {
     unawaited(showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _ItemDetailSheet(
-        saleId: widget.sale.id,
+        saleId: sale.id,
         item: item,
         isReadOnly: true,
         onUpdateItem: (_) {},
@@ -840,7 +867,6 @@ class _SaleDetailReadBodyState extends State<_SaleDetailReadBody> {
 
   @override
   Widget build(BuildContext context) {
-    final sale = widget.sale;
     final s = context.s;
     final cs = Theme.of(context).colorScheme;
     final paymentStatusLabel =
@@ -883,11 +909,10 @@ class _SaleDetailReadBodyState extends State<_SaleDetailReadBody> {
         _SectionCard(
           title: s.sectionPayment,
           indicator: paymentDot(sale.payment, cs),
-          isCollapsed: _paymentCollapsed,
+          isCollapsed: paymentCollapsed,
           collapsedSubtitle: '${s.paymentMethodLabel(sale.payment.method)}'
               ' · $paymentStatusLabel',
-          onToggleCollapsed: () =>
-              setState(() => _paymentCollapsed = !_paymentCollapsed),
+          onToggleCollapsed: onTogglePayment,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -922,11 +947,10 @@ class _SaleDetailReadBodyState extends State<_SaleDetailReadBody> {
         _SectionCard(
           title: s.sectionItems,
           indicator: assemblyDot(sale.derivedAssemblyStatus, cs),
-          isCollapsed: _itemsCollapsed,
+          isCollapsed: itemsCollapsed,
           collapsedSubtitle: '${s.nItems(sale.items.length)} · '
               '${s.assemblyLabel(sale.derivedAssemblyStatus)}',
-          onToggleCollapsed: () =>
-              setState(() => _itemsCollapsed = !_itemsCollapsed),
+          onToggleCollapsed: onToggleItems,
           child: Column(
             children: sale.items
                 .map((item) => _ItemSummaryTile(
@@ -940,11 +964,10 @@ class _SaleDetailReadBodyState extends State<_SaleDetailReadBody> {
         _SectionCard(
           title: s.sectionDelivery,
           indicator: shipmentDot(sale.shipment, cs),
-          isCollapsed: _deliveryCollapsed,
+          isCollapsed: deliveryCollapsed,
           collapsedSubtitle: '$deliveryTypeLabel · '
               '${s.shipmentStatusLabel(sale.shipment.status)}',
-          onToggleCollapsed: () =>
-              setState(() => _deliveryCollapsed = !_deliveryCollapsed),
+          onToggleCollapsed: onToggleDelivery,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
