@@ -119,7 +119,7 @@ class DriveBackupService {
         api,
         prefs,
         dataFolderId,
-        'latitude_tracker_$year.json',
+        DriveServiceHelper.backupFileName(year),
         content,
         '$_kDataFileIdPrefix$year',
       );
