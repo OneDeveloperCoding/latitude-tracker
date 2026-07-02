@@ -148,15 +148,15 @@ class SettingsScreen extends StatelessWidget {
     final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(s.signOutConfirm),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(s.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(s.signOut),
           ),
         ],
@@ -181,17 +181,17 @@ class SettingsScreen extends StatelessWidget {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(s.resetAppConfirmTitle),
         content: Text(s.resetAppConfirmBody),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(s.cancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(s.continueAction),
           ),
         ],
@@ -348,12 +348,12 @@ class SettingsScreen extends StatelessWidget {
 
     return showDialog<int>(
       context: context,
-      builder: (_) => SimpleDialog(
+      builder: (dialogContext) => SimpleDialog(
         title: Text(title),
         children: years
             .map(
               (y) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, y),
+                onPressed: () => Navigator.pop(dialogContext, y),
                 child: Text('$y'),
               ),
             )
@@ -764,16 +764,16 @@ class _BackupSectionState extends State<_BackupSection> {
     final s = context.s;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(s.restoreConfirmTitle),
         content: Text(s.restoreConfirmBody),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(s.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(s.restoreFromDrive),
           ),
         ],
