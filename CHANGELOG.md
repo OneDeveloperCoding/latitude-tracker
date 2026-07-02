@@ -330,17 +330,6 @@
 * fix O(buyers×sales) quadratic rebuild in BuyersListScreen ([#83](https://github.com/OneDeveloperCoding/latitude-tracker/issues/83)) ([d5261c4](https://github.com/OneDeveloperCoding/latitude-tracker/commit/d5261c48f0411af4c973351074aee7f29a8030a6))
 * SalesListScreen micro-optimizations — buyer scan, DateFormat, year/month recompute ([#120](https://github.com/OneDeveloperCoding/latitude-tracker/issues/120)) ([2817e2a](https://github.com/OneDeveloperCoding/latitude-tracker/commit/2817e2a97aadc4a063c5f4a8b1f8c5ce5a253347))
 
-## [1.15.0] — 2026-07-02
-
-### Features
-- Accordion collapse for completed sections in Sale detail, with manual collapse state preserved across edit-mode round trips ([#295](https://github.com/OneDeveloperCoding/latitude-tracker/pull/295))
-- BackupRestore — partial restore by year ([#294](https://github.com/OneDeveloperCoding/latitude-tracker/pull/294))
-
-### Fixes
-- SettingsScreen: use dialog builder context instead of outer context in confirmations, preventing stale-context errors ([#293](https://github.com/OneDeveloperCoding/latitude-tracker/pull/293))
-
----
-
 ## [1.14.0] — 2026-06-29
 
 ### Features
