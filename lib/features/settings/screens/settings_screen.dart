@@ -762,24 +762,50 @@ class _BackupSectionState extends State<_BackupSection> {
 
   Future<void> _restoreFromDrive() async {
     final s = context.s;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(s.restoreConfirmTitle),
-        content: Text(s.restoreConfirmBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(s.restoreFromDrive),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isRestoring = true;
+      _restoreProgressLabel = s.restoreCheckingForBackups;
+    });
+    final ListYearsResult listResult;
+    try {
+      listResult = await _restoreService.listAvailableYears();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRestoring = false;
+          _restoreProgressLabel = null;
+        });
+      }
+    }
+    if (!mounted) return;
+
+    final Set<int> selectedYears;
+    switch (listResult) {
+      case ListYearsSuccess(:final years):
+        final picked = await showDialog<Set<int>>(
+          context: context,
+          builder: (_) => _RestoreYearPickerDialog(years: years),
+        );
+        if (picked == null || !mounted) return;
+        selectedYears = picked;
+      case ListYearsNoBackupsFound():
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.restoreNoBackupsFound)),
+        );
+        return;
+      case ListYearsScopeDenied():
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.restoreScopeDenied)),
+        );
+        return;
+      case ListYearsError(:final error, :final stackTrace):
+        logError(error, stackTrace);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.s.restoreFailed(error))),
+        );
+        return;
+    }
 
     setState(() {
       _isRestoring = true;
@@ -787,6 +813,7 @@ class _BackupSectionState extends State<_BackupSection> {
     });
     try {
       final result = await _restoreService.restoreFromDrive(
+        selectedYears: selectedYears,
         onProgress: (phase, done, total) {
           if (!mounted) return;
           setState(() {
@@ -1033,6 +1060,63 @@ class _SectionHeader extends StatelessWidget {
           letterSpacing: 1.2,
         ),
       ),
+    );
+  }
+}
+
+class _RestoreYearPickerDialog extends StatefulWidget {
+  const _RestoreYearPickerDialog({required this.years});
+  final List<int> years;
+
+  @override
+  State<_RestoreYearPickerDialog> createState() =>
+      _RestoreYearPickerDialogState();
+}
+
+class _RestoreYearPickerDialogState extends State<_RestoreYearPickerDialog> {
+  late final Set<int> _selected = widget.years.toSet();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return AlertDialog(
+      title: Text(s.restoreSelectYearsTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(s.restoreSelectYearsBody),
+            const SizedBox(height: 8),
+            for (final year in widget.years)
+              CheckboxListTile(
+                title: Text('$year'),
+                value: _selected.contains(year),
+                contentPadding: EdgeInsets.zero,
+                onChanged: (checked) => setState(() {
+                  if (checked ?? false) {
+                    _selected.add(year);
+                  } else {
+                    _selected.remove(year);
+                  }
+                }),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(s.cancel),
+        ),
+        TextButton(
+          onPressed: _selected.isEmpty
+              ? null
+              : () => Navigator.pop(context, _selected),
+          child: Text(s.restoreFromDrive),
+        ),
+      ],
     );
   }
 }

@@ -33,6 +33,33 @@ void main() {
     });
   });
 
+  group('DriveServiceHelper.yearFromFileName', () {
+    test('extracts the year from a standard backup filename', () {
+      expect(
+        DriveServiceHelper.yearFromFileName('latitude_tracker_2024.json'),
+        2024,
+      );
+    });
+
+    test('returns null for a filename with no year', () {
+      expect(
+        DriveServiceHelper.yearFromFileName('latitude_tracker.json'),
+        isNull,
+      );
+    });
+
+    test('returns null for an unrelated filename', () {
+      expect(DriveServiceHelper.yearFromFileName('notes.json'), isNull);
+    });
+
+    test('returns null for a non-JSON extension', () {
+      expect(
+        DriveServiceHelper.yearFromFileName('latitude_tracker_2024.txt'),
+        isNull,
+      );
+    });
+  });
+
   group('DriveServiceHelper.storagePathFromUrl', () {
     test('decodes a SaleItem photo URL to its Storage path', () {
       const url =
