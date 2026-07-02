@@ -33,6 +33,13 @@ void main() {
     });
   });
 
+  group('DriveServiceHelper.backupFileName', () {
+    test('round-trips through yearFromFileName', () {
+      final name = DriveServiceHelper.backupFileName(2024);
+      expect(DriveServiceHelper.yearFromFileName(name), 2024);
+    });
+  });
+
   group('DriveServiceHelper.yearFromFileName', () {
     test('extracts the year from a standard backup filename', () {
       expect(

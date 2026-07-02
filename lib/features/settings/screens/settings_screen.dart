@@ -781,14 +781,22 @@ class _BackupSectionState extends State<_BackupSection> {
     if (!mounted) return;
 
     final Set<int> selectedYears;
+    final String rootFolderId;
+    final List<(String, String)> availableFiles;
     switch (listResult) {
-      case ListYearsSuccess(:final years):
+      case ListYearsSuccess(
+        :final years,
+        rootFolderId: final root,
+        :final files,
+      ):
         final picked = await showDialog<Set<int>>(
           context: context,
           builder: (_) => _RestoreYearPickerDialog(years: years),
         );
         if (picked == null || !mounted) return;
         selectedYears = picked;
+        rootFolderId = root;
+        availableFiles = files;
       case ListYearsNoBackupsFound():
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.s.restoreNoBackupsFound)),
@@ -814,6 +822,8 @@ class _BackupSectionState extends State<_BackupSection> {
     try {
       final result = await _restoreService.restoreFromDrive(
         selectedYears: selectedYears,
+        rootFolderId: rootFolderId,
+        availableFiles: availableFiles,
         onProgress: (phase, done, total) {
           if (!mounted) return;
           setState(() {

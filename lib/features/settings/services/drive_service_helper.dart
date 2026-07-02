@@ -56,6 +56,11 @@ class RepairPhoto extends PhotoEntry {
 class DriveServiceHelper {
   static final _yearFileNamePattern = RegExp(r'^latitude_tracker_(\d{4})\.json$');
 
+  // Single source of truth for the backup JSON filename format, shared by
+  // ArchiveService (local export) and DriveBackupService (Drive upload) so
+  // the writers and yearFromFileName below never drift apart.
+  static String backupFileName(int year) => 'latitude_tracker_$year.json';
+
   // Extracts the year from a backup JSON filename, e.g.
   // "latitude_tracker_2024.json" → 2024. Returns null for unrecognised names.
   static int? yearFromFileName(String fileName) {

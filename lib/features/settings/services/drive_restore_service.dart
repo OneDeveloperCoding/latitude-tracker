@@ -54,8 +54,18 @@ sealed class ListYearsResult {
 }
 
 class ListYearsSuccess extends ListYearsResult {
-  const ListYearsSuccess(this.years);
+  const ListYearsSuccess({
+    required this.years,
+    required this.rootFolderId,
+    required this.files,
+  });
   final List<int> years;
+  // Internal: the Drive folder and file listing that produced `years`,
+  // threaded through to restoreFromDrive so it can restore the seller's
+  // selection without re-resolving the same Drive folder structure and
+  // re-listing the same files a second time.
+  final String rootFolderId;
+  final List<(String, String)> files;
 }
 
 // No JSON files found in Latitude Tracker Backup/data/.
@@ -116,17 +126,34 @@ class DriveRestoreService {
       final year = DriveServiceHelper.yearFromFileName(fileName);
       if (year != null) years.add(year);
     }
+    if (years.isEmpty) return const ListYearsNoBackupsFound();
+
     final sortedYears = years.toList()..sort((a, b) => b.compareTo(a));
-    return ListYearsSuccess(sortedYears);
+    return ListYearsSuccess(
+      years: sortedYears,
+      rootFolderId: rootFolderId,
+      files: jsonFiles,
+    );
   }
 
+  // rootFolderId and availableFiles come from a prior listAvailableYears()
+  // call — reusing them avoids re-resolving the same Drive folder structure
+  // and re-listing the same files a second time in the same restore flow.
   Future<RestoreResult> restoreFromDrive({
     required Set<int> selectedYears,
+    required String rootFolderId,
+    required List<(String, String)> availableFiles,
     RestoreProgressCallback? onProgress,
   }) async {
     try {
       final result = await DriveServiceHelper.withDriveApi<RestoreResult>(
-        (api) => _runRestore(api, selectedYears, onProgress),
+        (api) => _runRestore(
+          api,
+          selectedYears,
+          rootFolderId,
+          availableFiles,
+          onProgress,
+        ),
       );
       return result ?? const RestoreScopeDenied();
     } on Object catch (e, st) {
@@ -137,30 +164,17 @@ class DriveRestoreService {
   Future<RestoreResult> _runRestore(
     drive.DriveApi api,
     Set<int> selectedYears,
+    String rootFolderId,
+    List<(String, String)> availableFiles,
     RestoreProgressCallback? onProgress,
   ) async {
     onProgress?.call(RestorePhase.data, 0, 0);
 
-    // Locate the backup folder structure — never create folders during restore.
-    final rootFolderId = await DriveServiceHelper.findFolder(
-      api,
-      kBackupFolderName,
-    );
-    if (rootFolderId == null) return const RestoreNoBackupsFound();
-
-    final dataFolderId = await DriveServiceHelper.findFolder(
-      api,
-      kDataFolderName,
-      parentId: rootFolderId,
-    );
-    if (dataFolderId == null) return const RestoreNoBackupsFound();
-
-    final allJsonFiles = await _listJsonFiles(api, dataFolderId);
     // Restrict to the years the seller selected. Photo restore is scoped for
     // free by this filter too, since allPhotos below is only ever populated
     // from the files actually processed in this loop.
     final jsonFiles = [
-      for (final file in allJsonFiles)
+      for (final file in availableFiles)
         if (selectedYears.contains(
           DriveServiceHelper.yearFromFileName(file.$2),
         ))
