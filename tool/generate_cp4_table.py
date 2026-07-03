@@ -15,78 +15,39 @@ live, per docs/adr/0010-static-cp4-lookup-table.md:
      matches are resolved by preferring larger place types
      (city > town > village > hamlet) and are logged for manual review.
 
+Run the resolve_cp4_*.py follow-up passes afterwards to fill in the misses
+this exact-name pass can't match (abbreviations, missing prepositions,
+accent drift, CTT disambiguation suffixes).
+
 Usage: python3 tool/generate_cp4_table.py
 """
 
 from __future__ import annotations
 
-import csv
-import io
-import json
 import re
 import sys
 import time
-import urllib.parse
-import urllib.request
-from collections import Counter, defaultdict
-from pathlib import Path
 
-CTT_CSV_URL = (
-    "https://raw.githubusercontent.com/centraldedados/codigos_postais/"
-    "master/data/codigos_postais.csv"
+from cp4_common import (
+    PLACE_TYPE_RANK,
+    load_cp4_localities,
+    overpass_retrying,
+    save_table,
 )
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-USER_AGENT = "LatitudeTracker-CP4TableGenerator/1.0 (one-time offline tool)"
-OUTPUT_PATH = Path(__file__).resolve().parent.parent / "assets" / "data" / "cp4_coordinates.json"
-
-# Larger settlements first — used to pick the best match when a locality name
-# is ambiguous (multiple OSM place nodes share the name).
-PLACE_TYPE_RANK = ["city", "town", "village", "hamlet"]
 
 BATCH_SIZE = 15
 REQUEST_DELAY_SECONDS = 1.5
 MAX_RETRIES = 3
 
 
-def fetch(url: str, headers: dict[str, str] | None = None) -> bytes:
-    req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read()
-
-
-def load_cp4_localities() -> dict[str, str]:
-    """Returns {cp4: dominant locality name} from the CTT dataset."""
-    print("Downloading CTT postal code data...", file=sys.stderr)
-    raw = fetch(CTT_CSV_URL).decode("utf-8")
-    reader = csv.DictReader(io.StringIO(raw))
-
-    counts: dict[str, Counter[str]] = defaultdict(Counter)
-    for row in reader:
-        cp4 = row["num_cod_postal"].strip()
-        locality = row["desig_postal"].strip()
-        if cp4 and locality:
-            counts[cp4][locality] += 1
-
-    result = {cp4: counter.most_common(1)[0][0] for cp4, counter in counts.items()}
-    print(f"Found {len(result)} distinct CP4 prefixes.", file=sys.stderr)
-    return result
-
-
-def overpass_query(names: list[str]) -> list[dict]:
+def build_batch_query(names: list[str]) -> str:
     escaped = "|".join(re.escape(n) for n in names)
-    query = (
+    return (
         '[out:json][timeout:60];'
         'area["ISO3166-1"="PT"]->.pt;'
         f'node["place"]["name"~"^({escaped})$",i](area.pt);'
         "out center;"
     )
-    body = urllib.parse.urlencode({"data": query}).encode("utf-8")
-    req = urllib.request.Request(
-        OVERPASS_URL, data=body, headers={"User-Agent": USER_AGENT}
-    )
-    with urllib.request.urlopen(req, timeout=90) as resp:
-        payload = json.loads(resp.read())
-    return payload["elements"]
 
 
 def best_match(elements: list[dict], name: str) -> dict | None:
@@ -123,15 +84,9 @@ def geocode_localities(names: set[str]) -> dict[str, tuple[float, float, str]]:
         batch = sorted_names[i : i + BATCH_SIZE]
         print(f"Geocoding batch {i // BATCH_SIZE + 1} ({len(batch)} localities)...", file=sys.stderr)
 
-        elements = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                elements = overpass_query(batch)
-                break
-            except Exception as exc:  # noqa: BLE001 - one-time script, log and retry
-                wait = REQUEST_DELAY_SECONDS * attempt * 3
-                print(f"  attempt {attempt} failed ({exc}), retrying in {wait}s...", file=sys.stderr)
-                time.sleep(wait)
+        elements = overpass_retrying(
+            build_batch_query(batch), attempts=MAX_RETRIES, base_wait=REQUEST_DELAY_SECONDS * 3
+        )
         if elements is None:
             print(f"  giving up on batch after {MAX_RETRIES} attempts: {batch}", file=sys.stderr)
             misses.extend(batch)
@@ -155,7 +110,10 @@ def geocode_localities(names: set[str]) -> dict[str, tuple[float, float, str]]:
 
 
 def main() -> None:
+    print("Downloading CTT postal code data...", file=sys.stderr)
     cp4_to_locality = load_cp4_localities()
+    print(f"Found {len(cp4_to_locality)} distinct CP4 prefixes.", file=sys.stderr)
+
     unique_localities = set(cp4_to_locality.values())
     print(f"{len(unique_localities)} unique locality names to geocode.", file=sys.stderr)
 
@@ -167,13 +125,9 @@ def main() -> None:
             lat, lon, display_name = coords[locality]
             table[cp4] = {"lat": lat, "lng": lon, "locality": display_name}
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(table, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    save_table(table)
 
-    print(
-        f"\nWrote {len(table)}/{len(cp4_to_locality)} CP4 entries to {OUTPUT_PATH}",
-        file=sys.stderr,
-    )
+    print(f"\nWrote {len(table)}/{len(cp4_to_locality)} CP4 entries.", file=sys.stderr)
 
 
 if __name__ == "__main__":

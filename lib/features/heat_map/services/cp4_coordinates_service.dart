@@ -26,10 +26,18 @@ class Cp4CoordinatesService {
     return table[postalCode];
   }
 
-  static Future<Map<String, Cp4Coordinates>> _loadTable() {
+  static Future<Map<String, Cp4Coordinates>> _loadTable() async {
     final table = _table;
-    if (table != null) return Future.value(table);
-    return _loading ??= _parseAsset().then((parsed) => _table = parsed);
+    if (table != null) return table;
+    _loading ??= _parseAsset().then((parsed) => _table = parsed);
+    try {
+      return await _loading!;
+    } catch (_) {
+      // Don't cache a failed load — a transient read/parse error shouldn't
+      // permanently break every future lookup for the app session.
+      _loading = null;
+      rethrow;
+    }
   }
 
   static Future<Map<String, Cp4Coordinates>> _parseAsset() async {
@@ -38,8 +46,11 @@ class Cp4CoordinatesService {
     return decoded.map((cp4, value) {
       final entry = value as Map<String, dynamic>;
       return MapEntry(cp4, (
-        latLng: LatLng(entry['lat'] as double, entry['lng'] as double),
-        locality: entry['locality'] as String,
+        latLng: LatLng(
+          (entry['lat'] as num).toDouble(),
+          (entry['lng'] as num).toDouble(),
+        ),
+        locality: entry['locality'] as String? ?? cp4,
       ));
     });
   }

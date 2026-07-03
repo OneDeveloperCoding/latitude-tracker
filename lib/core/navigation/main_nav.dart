@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latitude_tracker/core/l10n/app_strings.dart';
 import 'package:latitude_tracker/core/services/notification_service.dart';
+import 'package:latitude_tracker/core/services/shared_prefs_cache.dart';
 import 'package:latitude_tracker/core/store/buyers_store.dart';
 import 'package:latitude_tracker/core/store/repairs_store.dart';
 import 'package:latitude_tracker/core/store/sales_store.dart';
@@ -39,6 +40,12 @@ class _MainNavState extends State<MainNav> with WidgetsBindingObserver {
     BuyersStore.init();
     RepairsStore.init();
     unawaited(UpdateService.instance.checkForUpdate());
+    // One-time cleanup: the geocoding cache namespace was retired when the
+    // heat map switched from live Nominatim lookups to a bundled static
+    // table (see docs/adr/0010-static-cp4-lookup-table.md) — this can be
+    // removed once enough time has passed that upgraded devices no longer
+    // carry the old keys.
+    unawaited(SharedPrefsCache.purgeNamespace('geocode_cache_v2_'));
     DemoMode.pendingTutorial.addListener(_onPendingTutorial);
     NotificationService.pendingDestination.addListener(_onNotificationTap);
     // Drain any destination set before this listener was registered (e.g. a

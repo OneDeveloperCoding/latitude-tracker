@@ -44,9 +44,8 @@ class GeographicSalesService {
   /// Portugal rows get their locality name from the bundled CP4 table.
   static Future<GeoSalesRanking> buildRanking(
     List<Sale> sales,
-    Map<String, String> addressCountries, {
-    void Function(String status, int done, int total)? onProgress,
-  }) async {
+    Map<String, String> addressCountries,
+  ) async {
     final ptCounts = <String, int>{};
     final ptRevenue = <String, double>{};
     final intlCounts = <String, int>{};
@@ -71,12 +70,9 @@ class GeographicSalesService {
       }
     }
 
-    final total = ptCounts.length;
-    var done = 0;
     final localities = <LocalityRow>[];
 
     for (final entry in ptCounts.entries) {
-      onProgress?.call('Locating ${entry.key}', done, total);
       final result = await Cp4CoordinatesService.lookup(entry.key);
       localities.add(
         LocalityRow(
@@ -86,7 +82,6 @@ class GeographicSalesService {
           revenue: ptRevenue[entry.key] ?? 0.0,
         ),
       );
-      done++;
     }
 
     final countries = [
