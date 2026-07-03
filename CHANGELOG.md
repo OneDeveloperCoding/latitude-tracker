@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.15.1](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.15.0...v1.15.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* address code review findings on the static CP4 lookup table PR ([1984c3e](https://github.com/OneDeveloperCoding/latitude-tracker/commit/1984c3eff348dbf8ecf7023ee309c57d01c698e4))
+
+
+### Performance Improvements
+
+* replace Nominatim geocoding with bundled static CP4 lookup table ([4ebacd6](https://github.com/OneDeveloperCoding/latitude-tracker/commit/4ebacd6b4e35d4f010d102a79a7d314d0f9a3f1e))
+* replace Nominatim geocoding with bundled static CP4 lookup table ([c3b1fde](https://github.com/OneDeveloperCoding/latitude-tracker/commit/c3b1fdeedb550f2365194ab605af61561bb6bf13))
+
 ## [1.15.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.14.0...v1.15.0) (2026-07-02)
 
 
