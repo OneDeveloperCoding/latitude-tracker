@@ -99,14 +99,7 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
 
     try {
       if (_mapMode) {
-        final points = await HeatMapService.buildPoints(
-          filtered,
-          onProgress: (status, done, total) {
-            applyIfCurrent(
-              () => setState(() => _status = '$status ($done/$total)...'),
-            );
-          },
-        );
+        final points = await HeatMapService.buildPoints(filtered);
         applyIfCurrent(
           () => setState(() {
             _mapPoints = points;
@@ -119,11 +112,6 @@ class _GeographicSalesScreenState extends State<GeographicSalesScreen> {
         final ranking = await GeographicSalesService.buildRanking(
           filtered,
           addressCountries,
-          onProgress: (status, done, total) {
-            applyIfCurrent(
-              () => setState(() => _status = '$status ($done/$total)...'),
-            );
-          },
         );
         applyIfCurrent(
           () => setState(() {

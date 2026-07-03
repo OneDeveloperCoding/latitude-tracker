@@ -1,5 +1,5 @@
 import 'package:latitude_tracker/features/buyers/models/buyer_address.dart';
-import 'package:latitude_tracker/features/heat_map/services/geocoding_service.dart';
+import 'package:latitude_tracker/features/heat_map/services/cp4_coordinates_service.dart';
 import 'package:latitude_tracker/features/heat_map/services/heat_map_service.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 
@@ -41,12 +41,11 @@ class GeographicSalesService {
   /// Builds the ranked data for the list view.
   ///
   /// [addressCountries] maps shipment addressId → country for non-PT sales.
-  /// Portugal rows are geocoded (with cache) for locality names.
+  /// Portugal rows get their locality name from the bundled CP4 table.
   static Future<GeoSalesRanking> buildRanking(
     List<Sale> sales,
-    Map<String, String> addressCountries, {
-    void Function(String status, int done, int total)? onProgress,
-  }) async {
+    Map<String, String> addressCountries,
+  ) async {
     final ptCounts = <String, int>{};
     final ptRevenue = <String, double>{};
     final intlCounts = <String, int>{};
@@ -71,13 +70,10 @@ class GeographicSalesService {
       }
     }
 
-    final total = ptCounts.length;
-    var done = 0;
     final localities = <LocalityRow>[];
 
     for (final entry in ptCounts.entries) {
-      onProgress?.call('Locating ${entry.key}', done, total);
-      final result = await GeocodingService.geocode(entry.key);
+      final result = await Cp4CoordinatesService.lookup(entry.key);
       localities.add(
         LocalityRow(
           postalCode: entry.key,
@@ -86,7 +82,6 @@ class GeographicSalesService {
           revenue: ptRevenue[entry.key] ?? 0.0,
         ),
       );
-      done++;
     }
 
     final countries = [

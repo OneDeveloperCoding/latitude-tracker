@@ -1,4 +1,4 @@
-import 'package:latitude_tracker/features/heat_map/services/geocoding_service.dart';
+import 'package:latitude_tracker/features/heat_map/services/cp4_coordinates_service.dart';
 import 'package:latitude_tracker/features/sales/models/sale.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -41,21 +41,14 @@ class HeatMapService {
     return counts;
   }
 
-  // Geocodes each unique locality prefix. Rate limiting and caching are
-  // handled by [GeocodingService] — cached prefixes return immediately.
-  // [onProgress] receives a human-readable status string and progress counts.
-  static Future<List<HeatMapPoint>> buildPoints(
-    List<Sale> sales, {
-    void Function(String status, int done, int total)? onProgress,
-  }) async {
+  // Looks up coordinates for each unique locality prefix via the bundled
+  // static table.
+  static Future<List<HeatMapPoint>> buildPoints(List<Sale> sales) async {
     final counts = postalCounts(sales);
     final points = <HeatMapPoint>[];
-    var done = 0;
 
     for (final entry in counts.entries) {
-      onProgress?.call('Locating ${entry.key}', done, counts.length);
-
-      final result = await GeocodingService.geocode(entry.key);
+      final result = await Cp4CoordinatesService.lookup(entry.key);
       if (result != null) {
         points.add(
           HeatMapPoint(
@@ -66,8 +59,6 @@ class HeatMapService {
           ),
         );
       }
-
-      done++;
     }
 
     return points;
