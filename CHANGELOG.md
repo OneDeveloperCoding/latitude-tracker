@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.15.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.14.0...v1.15.0) (2026-07-02)
+
+
+### Features
+
+* accordion collapse for completed sections in Sale detail ([43bdf48](https://github.com/OneDeveloperCoding/latitude-tracker/commit/43bdf4849218e2029fc3a9045333cefb139920f3))
+* accordion collapse for completed sections in Sale detail ([9e92160](https://github.com/OneDeveloperCoding/latitude-tracker/commit/9e921605fbbaf2edbd9b7e9057861de0830d58da))
+* BackupRestore — partial restore by year ([6299b7e](https://github.com/OneDeveloperCoding/latitude-tracker/commit/6299b7e121c647c9201729221bb4a47847202724))
+* BackupRestore — partial restore by year ([db474e6](https://github.com/OneDeveloperCoding/latitude-tracker/commit/db474e6f59388a5a5b8d5e9cf5ea140a39541dd6))
+
+
+### Bug Fixes
+
+* address code review findings on BackupRestore partial restore ([41f18b5](https://github.com/OneDeveloperCoding/latitude-tracker/commit/41f18b535aaaf7edb67a8593c90c0e3efaebcf03))
+* preserve manual section collapse state across edit-mode round trip ([b5c5f0d](https://github.com/OneDeveloperCoding/latitude-tracker/commit/b5c5f0d5e13358cd96153baa79663c43a4b37fb0))
+* use dialog builder context instead of outer context in SettingsScreen ([35c8d66](https://github.com/OneDeveloperCoding/latitude-tracker/commit/35c8d66d4be7e24c3053d1b2b5036ea2a13b721a))
+* use dialog builder context instead of outer context in SettingsScreen confirmations ([962e893](https://github.com/OneDeveloperCoding/latitude-tracker/commit/962e893e39e946e3c5c17f99a582325fc8138f29))
+
 ## [1.14.0](https://github.com/OneDeveloperCoding/latitude-tracker/compare/v1.13.1...v1.14.0) (2026-06-29)
 
 
