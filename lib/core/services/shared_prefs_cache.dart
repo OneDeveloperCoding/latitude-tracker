@@ -61,4 +61,15 @@ class SharedPrefsCache {
       jsonEncode({...data, 'cachedAt': DateTime.now().millisecondsSinceEpoch}),
     );
   }
+
+  /// Removes every entry under [prefix] — for one-time cleanup after a cache
+  /// namespace is retired (e.g. a feature switching from a live/cached
+  /// lookup to a bundled static table).
+  static Future<void> purgeNamespace(String prefix) async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) => k.startsWith(prefix));
+    for (final key in keys) {
+      await prefs.remove(key);
+    }
+  }
 }

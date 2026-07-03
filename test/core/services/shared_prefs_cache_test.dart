@@ -175,4 +175,35 @@ void main() {
       );
     });
   });
+
+  group('SharedPrefsCache.purgeNamespace', () {
+    test('removes every key under the given prefix', () async {
+      final cache = SharedPrefsCache('old_');
+      await cache.set('a', {'v': 1});
+      await cache.set('b', {'v': 2});
+
+      await SharedPrefsCache.purgeNamespace('old_');
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('old_a'), isNull);
+      expect(prefs.getString('old_b'), isNull);
+    });
+
+    test('leaves keys under a different prefix untouched', () async {
+      final target = SharedPrefsCache('old_');
+      final other = SharedPrefsCache('keep_');
+      await target.set('a', {'v': 1});
+      await other.set('a', {'v': 2});
+
+      await SharedPrefsCache.purgeNamespace('old_');
+
+      final result = await other.get('a', ttlDays: (_) => 30);
+      expect(result!['v'], 2);
+    });
+
+    test('is a no-op when no keys match the prefix', () async {
+      await SharedPrefsCache.purgeNamespace('nonexistent_');
+      // No exception thrown — nothing to assert beyond that.
+    });
+  });
 }
